@@ -3,6 +3,7 @@ package app.sitara.music.core.designsystem
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
@@ -43,12 +44,18 @@ fun LargeTitle(title: String, modifier: Modifier = Modifier) {
 
 /** A 64 dp-tall track row: cover, title, artist. The whole row is one 48 dp+ target. */
 @Composable
-fun TrackRow(track: Track, onClick: () -> Unit, modifier: Modifier = Modifier, trailing: (@Composable () -> Unit)? = null) {
+fun TrackRow(
+    track: Track,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+    contentPadding: PaddingValues = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
+    trailing: (@Composable () -> Unit)? = null,
+) {
     Row(
         modifier
             .clickable(role = Role.Button, onClick = onClick)
             .semantics(mergeDescendants = true) { contentDescription = "${track.title} by ${track.artist}" }
-            .padding(horizontal = 20.dp, vertical = 8.dp),
+            .padding(contentPadding),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Start,
     ) {

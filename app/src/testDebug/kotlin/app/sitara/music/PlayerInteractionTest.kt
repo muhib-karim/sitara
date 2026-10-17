@@ -1,14 +1,18 @@
 package app.sitara.music
 
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.click
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipe
 import androidx.compose.ui.test.swipeLeft
 import androidx.compose.ui.test.swipeUp
 import app.sitara.music.core.model.DarkMode
@@ -20,6 +24,7 @@ import app.sitara.music.source.fake.FakeMusicSource
 import app.sitara.music.source.fake.SampleCatalog
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -31,7 +36,7 @@ import org.robolectric.annotation.Config
 class PlayerInteractionTest {
     @get:Rule val compose = createComposeRule()
 
-    private fun render(expanded: Boolean = false, page: Int = 0, actions: PlayerActions = PlayerActions.None) {
+    private fun render(expanded: Boolean = false, page: Int = 0, actions: PlayerActions = PlayerActions.None, durationMs: Long = 100_000) {
         val source = FakeMusicSource()
         val track = SampleCatalog.tracks.first()
         val home = runBlocking { source.home() }
@@ -44,7 +49,7 @@ class PlayerInteractionTest {
                 library = library,
                 query = "",
                 results = SearchResults.empty(),
-                player = PlayerUiState(track = track, durationMs = 100_000, lyrics = lyrics, positionMs = 15_300),
+                player = PlayerUiState(track = track, durationMs = durationMs, lyrics = lyrics, positionMs = 15_300),
                 actions = actions,
                 onQueryChange = {},
                 onPlay = { _, _ -> },
@@ -86,6 +91,33 @@ class PlayerInteractionTest {
         })
         compose.onNodeWithContentDescription("Seek").performSemanticsAction(SemanticsActions.SetProgress) { it(0.5f) }
         assertEquals(50_000L, seek)
+    }
+
+    @Test fun seekTapUsesTheFullTouchTarget() {
+        var seek = -1L
+        render(expanded = true, actions = object : PlayerActions by PlayerActions.None {
+            override fun seekTo(positionMs: Long) { seek = positionMs }
+        })
+        compose.onNodeWithContentDescription("Seek").performTouchInput {
+            click(Offset(width * 0.75f, centerY))
+        }
+        assertTrue("Tap must seek near three quarters", seek in 70_000L..80_000L)
+    }
+
+    @Test fun seekIsDisabledWhenDurationIsUnknown() {
+        render(expanded = true, durationMs = 0)
+        compose.onNodeWithContentDescription("Seek").assertIsNotEnabled()
+    }
+
+    @Test fun lyricsScrubberCommitsADrag() {
+        var seek = -1L
+        render(expanded = true, page = 1, actions = object : PlayerActions by PlayerActions.None {
+            override fun seekTo(positionMs: Long) { seek = positionMs }
+        })
+        compose.onNodeWithContentDescription("Seek").performTouchInput {
+            swipe(Offset(width * 0.2f, centerY), Offset(width * 0.8f, centerY))
+        }
+        assertTrue("Drag must commit near its final position", seek in 70_000L..90_000L)
     }
 
     @Test

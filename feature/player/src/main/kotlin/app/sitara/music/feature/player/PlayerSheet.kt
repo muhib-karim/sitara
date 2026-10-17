@@ -38,7 +38,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.pointer.pointerInput
+import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -69,10 +71,12 @@ fun PlayerSheet(
     initialPage: Int = 0,
     haze: dev.chrisbanes.haze.HazeState? = null,
     navigation: @Composable () -> Unit = {},
+    onDockHeightChanged: (Dp) -> Unit = {},
 ) {
     var expanded by rememberSaveable { mutableStateOf(initiallyExpanded) }
     val reduced = LocalReducedMotion.current
     val currentActions by rememberUpdatedState(actions)
+    val density = LocalDensity.current
     val track = state.track
     val open = expanded && track != null
     PlayerSystemBars(open)
@@ -86,11 +90,15 @@ fun PlayerSheet(
             },
             label = "player expansion",
         ) { full ->
-            val coverModifier = if (track == null) Modifier else Modifier.sharedElement(
-                sharedContentState = rememberSharedContentState("cover-${track.id}"),
-                animatedVisibilityScope = this,
-                boundsTransform = { _, _ -> SitaraMotion.orReduced(reduced, SitaraMotion.smooth()) },
-            )
+            val coverModifier = if (track == null) {
+                Modifier
+            } else {
+                Modifier.sharedElement(
+                    sharedContentState = rememberSharedContentState("cover-${track.id}"),
+                    animatedVisibilityScope = this,
+                    boundsTransform = { _, _ -> SitaraMotion.orReduced(reduced, SitaraMotion.smooth()) },
+                )
+            }
             if (full && track != null) {
                 FullPlayer(state, actions, onCollapse = { expanded = false }, initialPage = initialPage, artworkModifier = coverModifier)
             } else {
@@ -99,7 +107,11 @@ fun PlayerSheet(
                         Modifier.align(Alignment.BottomCenter).padding(horizontal = SitaraSpacing.Gutter).padding(bottom = bottomReserved).fillMaxWidth(),
                         haze = haze,
                     ) {
-                        Column {
+                        Column(
+                            Modifier.testTag("playback-dock").onSizeChanged { size ->
+                                onDockHeightChanged(with(density) { size.height.toDp() })
+                            },
+                        ) {
                             if (track != null) {
                                 val wash = LocalArtworkWash.current
                                 val tint = remember(track.artwork) { Color(ArtworkPalette.themeFrom(track.artwork.colors, true).accent) }

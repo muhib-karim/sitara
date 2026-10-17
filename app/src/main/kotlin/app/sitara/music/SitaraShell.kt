@@ -28,7 +28,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -43,12 +45,16 @@ import app.sitara.music.core.designsystem.ScrollEdge
 import app.sitara.music.core.designsystem.SitaraIcons
 import app.sitara.music.core.designsystem.SitaraSpacing
 import app.sitara.music.core.designsystem.SitaraTheme
+import app.sitara.music.core.model.Album
+import app.sitara.music.core.model.Artist
 import app.sitara.music.core.model.Library
 import app.sitara.music.core.model.SearchResults
 import app.sitara.music.core.model.Shelf
 import app.sitara.music.core.model.SitaraSettings
 import app.sitara.music.core.model.Track
 import app.sitara.music.feature.home.HomeScreen
+import app.sitara.music.feature.library.AlbumScreen
+import app.sitara.music.feature.library.ArtistScreen
 import app.sitara.music.feature.library.LibraryScreen
 import app.sitara.music.feature.player.PlayerActions
 import app.sitara.music.feature.player.PlayerSheet
@@ -87,7 +93,7 @@ fun SitaraRoot(vm: AppViewModel, systemReducedMotion: Boolean) {
     )
 }
 
-/** The whole app chrome, stateless so screenshot tests render it with sample data. */
+/** App chrome and saveable browse navigation; playback/data are supplied by the caller. */
 @Composable
 fun SitaraShell(
     settings: SitaraSettings,
@@ -107,23 +113,58 @@ fun SitaraShell(
     greetingText: String = greeting(),
 ) {
     var tab by rememberSaveable { mutableStateOf(if (initialSettingsOpen) Tab.SETTINGS else initialTab) }
-    BackHandler(enabled = tab == Tab.SETTINGS) { tab = Tab.HOME }
+    var albumId by rememberSaveable { mutableStateOf<String?>(null) }
+    var artistId by rememberSaveable { mutableStateOf<String?>(null) }
+    val browseState = rememberSaveableStateHolder()
+    val albums = remember(home, library.albums, results.albums) {
+        (library.albums + home.flatMap { it.albums } + results.albums).distinctBy { it.id }
+    }
+    val artists = remember(library.artists, results.artists) { (library.artists + results.artists).distinctBy { it.id } }
+    val tracks = remember(home, library, results, albums) {
+        (albums.flatMap { it.tracks } + library.likedTracks + library.playlists.flatMap { it.tracks } +
+            home.flatMap { it.tracks + it.playlists.flatMap { playlist -> playlist.tracks } } + results.tracks).distinctBy { it.id }
+    }
+    val album = albums.find { it.id == albumId }
+    val artist = artists.find { it.id == artistId }
+    val closeDetail: () -> Unit = { albumId = null; artistId = null }
+    val openAlbum: (Album) -> Unit = { albumId = it.id; artistId = null }
+    val openArtist: (Artist) -> Unit = { artistId = it.id; albumId = null }
+    BackHandler(enabled = albumId != null || artistId != null || tab == Tab.SETTINGS) {
+        if (albumId != null || artistId != null) closeDetail() else tab = Tab.HOME
+    }
     SitaraTheme(settings.themeMode, settings.darkMode, settings.reducedMotion) {
         val haze = rememberHazeState()
         val navBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-        val miniHeight = SitaraSpacing.MiniPlayerHeight * LocalDensity.current.fontScale.coerceAtLeast(1f)
-        val dockHeight = SitaraSpacing.NavigationHeight + if (player.track != null) miniHeight else 0.dp
+        val fontScale = LocalDensity.current.fontScale
+        val miniHeight = SitaraSpacing.MiniPlayerHeight * fontScale.coerceAtLeast(1f)
+        val minimumDockHeight = SitaraSpacing.NavigationHeight + (if (player.track != null) miniHeight else 0.dp)
+        var measuredDockHeight by remember(player.track != null, fontScale) { mutableStateOf(0.dp) }
+        val dockHeight = maxOf(minimumDockHeight, measuredDockHeight)
         val contentPadding = PaddingValues(
             top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding(),
-            bottom = dockHeight + navBottom + SitaraSpacing.DockBottom + 16.dp,
+            bottom = dockHeight + navBottom + SitaraSpacing.DockBottom + SitaraSpacing.Section,
         )
         Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
             Box(Modifier.fillMaxSize().hazeSource(haze)) {
-                when (tab) {
-                    Tab.HOME -> HomeScreen(greetingText, home, onPlay, contentPadding = contentPadding)
-                    Tab.SEARCH -> SearchScreen(query, onQueryChange, results, listOf("Lumen Drift", "Night Bus Static", "Gold Hour"), onPlay, contentPadding = contentPadding)
-                    Tab.LIBRARY -> LibraryScreen(library, onPlay, contentPadding = contentPadding)
-                    Tab.SETTINGS -> SettingsScreen(settings, onSettingsChange, onBack = { tab = Tab.HOME }, contentPadding = contentPadding)
+                val route = when {
+                    album != null -> "album-${album.id}"
+                    artist != null -> "artist-${artist.id}"
+                    else -> "tab-${tab.name}"
+                }
+                browseState.SaveableStateProvider(route) {
+                    when {
+                        album != null -> AlbumScreen(album, settings, onPlay, closeDetail, contentPadding)
+                        artist != null -> ArtistScreen(artist, tracks.filter { it.artist == artist.name }, settings, onPlay, closeDetail, contentPadding)
+                        else -> when (tab) {
+                            Tab.HOME -> HomeScreen(greetingText, home, onPlay, openAlbum, contentPadding = contentPadding)
+                            Tab.SEARCH -> SearchScreen(
+                                query, onQueryChange, results, listOf("Lumen Drift", "Night Bus Static", "Gold Hour"),
+                                onPlay, library, openAlbum, openArtist, contentPadding = contentPadding,
+                            )
+                            Tab.LIBRARY -> LibraryScreen(library, onPlay, openAlbum, openArtist, contentPadding = contentPadding)
+                            Tab.SETTINGS -> SettingsScreen(settings, onSettingsChange, onBack = { tab = Tab.HOME }, contentPadding = contentPadding)
+                        }
+                    }
                 }
             }
             ScrollEdge(haze, Modifier.align(Alignment.TopCenter).fillMaxWidth().height(contentPadding.calculateTopPadding() + 16.dp))
@@ -135,7 +176,8 @@ fun SitaraShell(
                 initiallyExpanded = playerExpanded,
                 initialPage = playerPage,
                 haze = haze,
-                navigation = { FloatingNav(tab, onSelect = { tab = it }) },
+                navigation = { FloatingNav(tab, onSelect = { closeDetail(); tab = it }) },
+                onDockHeightChanged = { measuredDockHeight = it },
             )
         }
     }

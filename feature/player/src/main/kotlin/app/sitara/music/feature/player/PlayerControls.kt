@@ -1,5 +1,6 @@
 package app.sitara.music.feature.player
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -7,12 +8,12 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -28,11 +29,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import app.sitara.music.core.common.formatDuration
 import app.sitara.music.core.designsystem.SitaraColors
@@ -70,28 +75,50 @@ internal fun PlayerControls(state: PlayerUiState, actions: PlayerActions, modifi
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun Scrubber(state: PlayerUiState, actions: PlayerActions) {
     var dragging by remember(state.track?.id) { mutableStateOf(false) }
     var dragValue by remember(state.track?.id) { mutableFloatStateOf(0f) }
     val duration = state.durationMs.coerceAtLeast(0)
-    val value = if (dragging) dragValue else if (duration > 0) (state.positionMs.toFloat() / duration).coerceIn(0f, 1f) else 0f
-    Slider(
-        value = value,
-        onValueChange = { dragging = true; dragValue = it },
-        onValueChangeFinished = {
-            if (dragging && duration > 0) actions.seekTo((dragValue * duration).toLong())
-            dragging = false
-        },
-        enabled = duration > 0,
-        colors = SliderDefaults.colors(
-            thumbColor = Color.White,
-            activeTrackColor = SitaraColors.Saffron,
-            inactiveTrackColor = Color(0xFF777777),
-        ),
-        modifier = Modifier.fillMaxWidth().height(48.dp).semantics { contentDescription = "Seek" },
-    )
+    val value = when {
+        dragging -> dragValue
+        duration > 0 -> (state.positionMs.toFloat() / duration).coerceIn(0f, 1f)
+        else -> 0f
+    }
+    val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+    Box(Modifier.fillMaxWidth().height(48.dp)) {
+        Canvas(Modifier.fillMaxSize()) {
+            // Keep the tiny visual handle inside the generous native seek target.
+            val inset = 8.dp.toPx()
+            val start = if (rtl) size.width - inset else inset
+            val end = if (rtl) inset else size.width - inset
+            val center = size.height / 2f
+            val thumb = start + (end - start) * value
+            drawLine(Color.White.copy(alpha = 0.30f), Offset(start, center), Offset(end, center), 3.dp.toPx(), StrokeCap.Round)
+            if (value > 0f) drawLine(SitaraColors.Saffron, Offset(start, center), Offset(thumb, center), 3.dp.toPx(), StrokeCap.Round)
+            if (duration > 0) drawCircle(SitaraColors.Saffron, (if (dragging) 6.dp else 5.dp).toPx(), Offset(thumb, center))
+        }
+        // Use the stable overload for touch, keyboard, RTL and accessibility behavior.
+        // Transparent colours keep the semantics visible to TalkBack (layer alpha=0 would not).
+        Slider(
+            value = value,
+            onValueChange = { dragging = true; dragValue = it },
+            onValueChangeFinished = {
+                if (dragging && duration > 0) actions.seekTo((dragValue * duration).toLong())
+                dragging = false
+            },
+            enabled = duration > 0,
+            colors = SliderDefaults.colors(
+                thumbColor = Color.Transparent,
+                activeTrackColor = Color.Transparent,
+                inactiveTrackColor = Color.Transparent,
+                disabledThumbColor = Color.Transparent,
+                disabledActiveTrackColor = Color.Transparent,
+                disabledInactiveTrackColor = Color.Transparent,
+            ),
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 6.dp).height(48.dp).semantics { contentDescription = "Seek" },
+        )
+    }
     Row(Modifier.fillMaxWidth()) {
         val timeStyle = MaterialTheme.typography.bodySmall.copy(fontFeatureSettings = "tnum")
         Text(formatDuration((value * duration).toLong()), color = SitaraColors.StageSecondary, style = timeStyle)

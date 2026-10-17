@@ -2,8 +2,18 @@ package app.sitara.music
 
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollToIndex
+import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipeLeft
 import androidx.compose.ui.unit.Density
 import app.sitara.music.core.model.DarkMode
 import app.sitara.music.core.model.Library
@@ -23,7 +33,7 @@ import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.robolectric.annotation.GraphicsMode
 
-/** Records the README screenshots. Run `recordRoborazziDebug` to refresh them. */
+/** Records/verifies baselines through the existing CI workflows only. */
 @RunWith(RobolectricTestRunner::class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 @Config(sdk = [35], qualifiers = "w411dp-h891dp-xxhdpi")
@@ -56,6 +66,7 @@ class ScreenshotTest {
         reduced: Boolean = true,
         fontScale: Float = 1f,
         playerState: PlayerUiState = playing,
+        beforeCapture: () -> Unit = {},
     ) {
         val settings = SitaraSettings(themeMode = mode, darkMode = if (dark) DarkMode.DARK else DarkMode.LIGHT, reducedMotion = reduced)
         val searchResults = runBlocking { source.search(query) }
@@ -80,6 +91,7 @@ class ScreenshotTest {
                 )
             }
         }
+        beforeCapture()
         compose.onRoot().captureRoboImage("src/test/screenshots/${name}_${if (dark) "dark" else "light"}.png")
     }
 
@@ -140,4 +152,67 @@ class ScreenshotTest {
     @Test fun settingsDark() = shot("settings", dark = true, settingsOpen = true)
 
     @Test fun settingsLight() = shot("settings", dark = false, settingsOpen = true)
+
+    @Test fun homeQuickPicksSecondPage() = shot("home_quick_page2", dark = true) {
+        compose.onNodeWithTag("quick-picks").performTouchInput { swipeLeft() }
+    }
+
+    @Test fun homeFocus() = shot("home_focus", dark = true) {
+        compose.onNodeWithText("Focus").performClick()
+    }
+
+    @Test fun homeBottomLargeText() = shot("home_bottom_large_text", dark = true, fontScale = 2f) {
+        compose.onNodeWithTag("home-content").performScrollToIndex(2 + home.size * 2 - 1)
+    }
+
+    @Test fun libraryListDark() = shot("library_list", dark = true, tab = Tab.LIBRARY) {
+        compose.onNodeWithContentDescription("Show list").performClick()
+    }
+
+    @Test fun libraryListLight() = shot("library_list", dark = false, tab = Tab.LIBRARY) {
+        compose.onNodeWithContentDescription("Show list").performClick()
+    }
+
+    @Test fun likedSongsGrid() = shot("library_liked", dark = true, tab = Tab.LIBRARY) {
+        compose.onNodeWithContentDescription("Open liked songs").performClick()
+    }
+
+    @Test fun albumDark() = albumShot(true)
+    @Test fun albumLight() = albumShot(false)
+    private fun albumShot(dark: Boolean) = shot("album", dark, tab = Tab.LIBRARY) {
+        compose.onNodeWithText("Albums").performClick()
+        compose.onNodeWithText(library.albums.first().title).performClick()
+    }
+
+    @Test fun artistDark() = artistShot(true)
+    @Test fun artistLight() = artistShot(false)
+    private fun artistShot(dark: Boolean) = shot("artist", dark, tab = Tab.LIBRARY) {
+        compose.onNodeWithText("Artists").performClick()
+        compose.onNode(hasText(library.artists.first().name) and hasAnyAncestor(hasTestTag("library-grid"))).performClick()
+    }
+
+    @Test fun searchBrowseDark() = shot("search_browse", dark = true, tab = Tab.SEARCH)
+    @Test fun searchBrowseLight() = shot("search_browse", dark = false, tab = Tab.SEARCH)
+    @Test fun searchGrouped() = shot("search_grouped", dark = true, tab = Tab.SEARCH, query = "Lumen Drift")
+
+    @Test fun settingsMotion() = shot("settings_motion", dark = true, settingsOpen = true) {
+        compose.onNodeWithTag("settings-content").performScrollToIndex(3)
+    }
+
+    @Test fun scrubberMidpoint() = shot(
+        "player_scrubber_midpoint", dark = true, expanded = true,
+        playerState = playing.copy(positionMs = track.durationMs / 2),
+    )
+
+    @Test
+    @Config(qualifiers = "w320dp-h720dp-xxhdpi")
+    fun homeNarrowLargeText() = shot("home_narrow_large_text", dark = true, fontScale = 2f)
+
+    @Test
+    @Config(qualifiers = "w320dp-h720dp-xxhdpi")
+    fun libraryNarrowLargeText() = shot("library_narrow_large_text", dark = true, tab = Tab.LIBRARY, fontScale = 2f)
+
+    @Test
+    @Config(qualifiers = "w320dp-h720dp-xxhdpi")
+    fun searchNarrowLargeText() = shot("search_narrow_large_text", dark = true, tab = Tab.SEARCH, fontScale = 2f)
 }

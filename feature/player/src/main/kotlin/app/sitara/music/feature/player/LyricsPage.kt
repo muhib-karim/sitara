@@ -40,8 +40,8 @@ import app.sitara.music.core.designsystem.LyricStyle
 import app.sitara.music.core.designsystem.SitaraMotion
 import app.sitara.music.core.model.Lyrics
 import app.sitara.music.source.lyrics.LyricsCursor
-import kotlinx.coroutines.flow.first
 import kotlin.math.abs
+import kotlinx.coroutines.flow.first
 
 private val LineStyle = LyricStyle
 private val PlainStyle = TextStyle(fontFamily = Inter, fontSize = 22.sp, lineHeight = 32.sp, fontWeight = FontWeight.SemiBold)
@@ -99,10 +99,11 @@ private fun SyncedLyrics(lyrics: Lyrics, positionMs: Long, contentColor: Color, 
         }
     }
     BoxWithConstraints(modifier.fillMaxSize()) {
+        val viewportHeight = maxHeight
         LazyColumn(
             Modifier.fillMaxSize().fadingEdges(),
             state = listState,
-            contentPadding = PaddingValues(top = 24.dp, bottom = maxHeight * 0.65f),
+            contentPadding = PaddingValues(top = 24.dp, bottom = viewportHeight * 0.65f),
         ) {
             itemsIndexed(lyrics.lines, key = { i, _ -> i }, contentType = { _, _ -> LINE_CONTENT_TYPE }) { i, line ->
                 val distance = if (active < 0) 2 else abs(i - active)

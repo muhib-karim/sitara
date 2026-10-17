@@ -3,6 +3,7 @@ package app.sitara.music.source.fake
 import app.sitara.music.core.model.Album
 import app.sitara.music.core.model.Artist
 import app.sitara.music.core.model.Artwork
+import app.sitara.music.core.model.ListeningMood
 import app.sitara.music.core.model.Playlist
 import app.sitara.music.core.model.Track
 
@@ -77,9 +78,9 @@ object SampleCatalog {
     val tracks: List<Track> = albums.flatMap { it.tracks }
 
     val playlists = listOf(
-        Playlist("pl-night", "Night Drive", "Slow-burning synths for empty roads", art(0xFF1E1B4B, 0xFF8B7CFF, 0xFFFF6B9A), tracks.filterIndexed { i, _ -> i % 2 == 0 }),
-        Playlist("pl-focus", "Deep Focus", "Long tracks, no surprises", art(0xFF0F2027, 0xFF4CA1AF), tracks.take(5)),
-        Playlist("pl-sun", "Sunday Gold", "Warm, bright, unhurried", art(0xFFF5C451, 0xFFFF6B9A), tracks.takeLast(5)),
+        Playlist("pl-night", "Night Drive", "Slow-burning synths for empty roads", art(0xFF1E1B4B, 0xFF8B7CFF, 0xFFFF6B9A), tracks.filterIndexed { i, _ -> i % 2 == 0 }, setOf(ListeningMood.UNWIND)),
+        Playlist("pl-focus", "Deep Focus", "Long tracks, no surprises", art(0xFF0F2027, 0xFF4CA1AF), tracks.take(5), setOf(ListeningMood.FOCUS)),
+        Playlist("pl-sun", "Sunday Gold", "Warm, bright, unhurried", art(0xFFF5C451, 0xFFFF6B9A), tracks.takeLast(5), setOf(ListeningMood.UPLIFT)),
     )
 
     /** Original sample lyrics with word timings, written for the demo. */

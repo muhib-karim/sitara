@@ -1,29 +1,39 @@
 package app.sitara.music.feature.settings
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.selection.toggleable
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
-import androidx.compose.material3.Slider
+import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
+import app.sitara.music.core.designsystem.GlassIconButton
 import app.sitara.music.core.designsystem.LargeTitle
 import app.sitara.music.core.designsystem.SectionHeader
 import app.sitara.music.core.designsystem.SitaraIcons
+import app.sitara.music.core.designsystem.SitaraRadius
+import app.sitara.music.core.designsystem.SitaraSpacing
 import app.sitara.music.core.model.DarkMode
 import app.sitara.music.core.model.SitaraSettings
 import app.sitara.music.core.model.ThemeMode
@@ -36,89 +46,94 @@ fun SettingsScreen(
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(),
 ) {
-    LazyColumn(modifier.fillMaxSize(), contentPadding = contentPadding) {
-        item {
-            IconButton(onClick = onBack, modifier = Modifier.padding(start = 8.dp, top = 8.dp)) {
-                Icon(SitaraIcons.Back, "Back", tint = MaterialTheme.colorScheme.onBackground)
-            }
+    LazyColumn(modifier.fillMaxSize().testTag("settings-content"), contentPadding = contentPadding) {
+        item(key = "title") {
+            GlassIconButton(SitaraIcons.Back, "Back", onBack, Modifier.padding(start = 12.dp, top = 8.dp))
             LargeTitle("Settings")
         }
-        item { SectionHeader("Colour") }
-        val themes = listOf(
-            ThemeMode.ARTWORK to "From artwork",
-            ThemeMode.DYNAMIC to "Material You (wallpaper)",
-            ThemeMode.AMOLED to "AMOLED black",
-        )
-        themes.forEach { (mode, label) ->
-            item { Choice(label, settings.themeMode == mode) { onChange(settings.copy(themeMode = mode)) } }
+        item(key = "colour") {
+            SettingsGroup("Colour", selection = true) {
+                Choice("From artwork", settings.themeMode == ThemeMode.ARTWORK) { onChange(settings.copy(themeMode = ThemeMode.ARTWORK)) }
+                InsetDivider()
+                // Wallpaper colours require Android 12; hide the option where it cannot work.
+                if (android.os.Build.VERSION.SDK_INT >= 31) {
+                    Choice("Wallpaper accent", settings.themeMode == ThemeMode.DYNAMIC) { onChange(settings.copy(themeMode = ThemeMode.DYNAMIC)) }
+                    InsetDivider()
+                }
+                Choice("AMOLED black", settings.themeMode == ThemeMode.AMOLED) { onChange(settings.copy(themeMode = ThemeMode.AMOLED)) }
+            }
         }
-        item { SectionHeader("Appearance", modifier = Modifier.padding(top = 12.dp)) }
-        listOf(DarkMode.SYSTEM to "Follow system", DarkMode.LIGHT to "Light", DarkMode.DARK to "Dark").forEach { (mode, label) ->
-            item { Choice(label, settings.darkMode == mode) { onChange(settings.copy(darkMode = mode)) } }
+        item(key = "appearance") {
+            SettingsGroup("Appearance", selection = true) {
+                listOf(DarkMode.SYSTEM to "Follow system", DarkMode.LIGHT to "Light", DarkMode.DARK to "Dark").forEachIndexed { index, (mode, label) ->
+                    if (index > 0) InsetDivider()
+                    Choice(label, settings.darkMode == mode) { onChange(settings.copy(darkMode = mode)) }
+                }
+            }
         }
-        item { SectionHeader("Motion and sound", modifier = Modifier.padding(top = 12.dp)) }
-        item {
-            Toggle("Reduced motion", "Swap springs for instant changes", settings.reducedMotion) { onChange(settings.copy(reducedMotion = it)) }
-        }
-        // Normalisation and crossfade are saved but not yet applied to playback, so they are shown
-        // disabled until the audio processors are connected rather than pretending to work.
-        item {
-            Toggle(
-                label = "Loudness normalisation",
-                detail = "Coming in a future update",
-                checked = settings.normalisation,
-                enabled = false,
-            ) { onChange(settings.copy(normalisation = it)) }
-        }
-        item {
-            Column(Modifier.padding(horizontal = 20.dp, vertical = 8.dp)) {
-                Text("Crossfade", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface.copy(alpha = DISABLED_ALPHA))
-                Text("Coming in a future update", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                Slider(
-                    value = settings.crossfadeSeconds.toFloat(),
-                    onValueChange = { onChange(settings.copy(crossfadeSeconds = it.toInt())) },
-                    enabled = false,
-                    valueRange = 0f..SitaraSettings.MAX_CROSSFADE_SECONDS.toFloat(),
-                    steps = SitaraSettings.MAX_CROSSFADE_SECONDS - 1,
-                )
+        item(key = "motion") {
+            SettingsGroup("Motion") {
+                Row(
+                    Modifier.fillMaxWidth().toggleable(
+                        settings.reducedMotion,
+                        role = Role.Switch,
+                        onValueChange = { onChange(settings.copy(reducedMotion = it)) },
+                    ).padding(16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Column(Modifier.weight(1f).padding(end = 12.dp)) {
+                        Text("Reduced motion", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+                        Text("Instant transitions, without blur", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    }
+                    Switch(
+                        checked = settings.reducedMotion,
+                        onCheckedChange = null,
+                        colors = SwitchDefaults.colors(
+                            checkedTrackColor = MaterialTheme.colorScheme.primary,
+                            checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
+                        ),
+                    )
+                }
             }
         }
     }
 }
 
-private const val DISABLED_ALPHA = 0.38f
+@Composable
+private fun SettingsGroup(title: String, selection: Boolean = false, content: @Composable ColumnScope.() -> Unit) {
+    Column(Modifier.padding(bottom = 20.dp)) {
+        SectionHeader(title)
+        Column(
+            Modifier.padding(horizontal = SitaraSpacing.Gutter).fillMaxWidth()
+                .clip(RoundedCornerShape(SitaraRadius.Tile)).background(MaterialTheme.colorScheme.surfaceContainer)
+                .then(if (selection) Modifier.selectableGroup() else Modifier),
+            content = content,
+        )
+    }
+}
+
+@Composable
+private fun InsetDivider() {
+    HorizontalDivider(Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant)
+}
 
 @Composable
 private fun Choice(label: String, selected: Boolean, onClick: () -> Unit) {
     Row(
-        Modifier
-            .fillMaxWidth()
-            .selectable(selected = selected, role = Role.RadioButton, onClick = onClick)
-            .padding(horizontal = 20.dp, vertical = 6.dp),
+        Modifier.fillMaxWidth().defaultMinSize(minHeight = 56.dp)
+            .selectable(selected, role = Role.RadioButton, onClick = onClick).padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        RadioButton(selected = selected, onClick = null)
-        Text(label, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.padding(start = 12.dp))
-    }
-}
-
-@Composable
-private fun Toggle(label: String, detail: String, checked: Boolean, enabled: Boolean = true, onChange: (Boolean) -> Unit) {
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .toggleable(value = checked, enabled = enabled, role = Role.Switch, onValueChange = onChange)
-            .padding(horizontal = 20.dp, vertical = 10.dp),
-        verticalAlignment = Alignment.CenterVertically,
-    ) {
-        Column(Modifier.weight(1f)) {
-            Text(
-                label,
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = if (enabled) 1f else DISABLED_ALPHA),
-            )
-            Text(detail, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-        Switch(checked = checked, onCheckedChange = null, enabled = enabled)
+        Text(
+            label, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.weight(1f).padding(end = 12.dp),
+        )
+        RadioButton(
+            selected, onClick = null,
+            colors = RadioButtonDefaults.colors(
+                selectedColor = MaterialTheme.colorScheme.primary,
+                unselectedColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            ),
+        )
     }
 }

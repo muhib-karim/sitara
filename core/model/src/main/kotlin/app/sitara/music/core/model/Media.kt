@@ -38,12 +38,15 @@ data class Artist(
     val artwork: Artwork,
 )
 
+enum class ListeningMood(val label: String) { FOCUS("Focus"), UNWIND("Unwind"), UPLIFT("Uplift") }
+
 data class Playlist(
     val id: String,
     val title: String,
     val description: String,
     val artwork: Artwork,
     val tracks: List<Track>,
+    val moods: Set<ListeningMood> = emptySet(),
 )
 
 /** A titled horizontal row on the home screen. */

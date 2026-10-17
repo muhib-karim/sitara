@@ -93,6 +93,26 @@ object SitaraIcons {
     }
     val ChevronDown = icon("chevron_down", filled = false) { moveTo(6f, 9.5f); lineTo(12f, 15.5f); lineTo(18f, 9.5f) }
     val Back = icon("back", filled = false) { moveTo(15f, 5f); lineTo(8f, 12f); lineTo(15f, 19f) }
+    val Close = icon("close", filled = false) {
+        moveTo(6f, 6f); lineTo(18f, 18f); moveTo(18f, 6f); lineTo(6f, 18f)
+    }
+    val List = icon("list", filled = false) {
+        for (y in listOf(6f, 12f, 18f)) {
+            moveTo(4f, y); lineTo(5f, y); moveTo(10f, y); lineTo(20f, y)
+        }
+    }
+    val Grid = icon("grid", filled = false) {
+        for (x in listOf(4f, 14f)) {
+            for (y in listOf(4f, 14f)) {
+                moveTo(x, y); lineTo(x + 6f, y); lineTo(x + 6f, y + 6f); lineTo(x, y + 6f); close()
+            }
+        }
+    }
+    val Heart = icon("heart", filled = false) {
+        moveTo(12f, 20f); curveTo(8f, 17f, 3f, 13f, 3f, 8f)
+        curveTo(3f, 3f, 9f, 2f, 12f, 7f); curveTo(15f, 2f, 21f, 3f, 21f, 8f)
+        curveTo(21f, 13f, 16f, 17f, 12f, 20f); close()
+    }
     val Timer = icon("timer", filled = false) {
         moveTo(19f, 13f)
         arcTo(7f, 7f, 0f, true, true, 5f, 13f)
