@@ -53,7 +53,7 @@ Bundle official Inter and Inter Display static weights with OFL. No system-font 
 Sheet spring: damping 0.85, stiffness 380. The dock opens from its own position; the cover travels from the dock to its stage. Wash enters during the first 40% of expansion. Fades: emphasized 250ms, artwork 400ms, lyric focus 220ms. Lyrics scale 1.0–1.04; keep the active line at 35% of viewport height. Reduced motion snaps every transition and disables blur. Never animate blur radius each frame. Read geometry and animation values in layout/draw phases.
 
 ### 2.5 Blur and glass
-ArtworkBackdrop draws the current cover overscaled, statically blurred 72dp on API 31+, with a dark scrim (0.40 / 0.55 / 0.85). Lower APIs and reduced motion use a flat palette tint. Glass uses existing Haze backdrop blur at 24dp, a contrast-protecting tint, 0.5dp hairline and subtle top highlight. Fallback is 92% opaque elevated fill. Blur is confined to artwork/chrome, never whole scrolling content.
+ArtworkBackdrop draws the current cover overscaled, statically blurred 72dp on API 31+, with a contrast-protecting dark scrim (0.72 / 0.78 / 0.90 over decoded artwork; 0.40 / 0.55 / 0.90 over the already-dark palette fallback). Lower APIs and reduced motion use a flat palette tint. Glass uses existing Haze backdrop blur at 24dp, a contrast-protecting tint, 0.5dp hairline and subtle top highlight. Fallback is 92% opaque elevated fill. Blur is confined to artwork/chrome, never whole scrolling content.
 
 ## 3. Components
 | Component | Contract |

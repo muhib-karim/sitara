@@ -25,7 +25,8 @@ How Sitara is built, and which skills were actually invoked. Only invoked skills
 | Docs: review response, architecture, plan status, accurate README, README screenshots from CI baselines (35cfe03, 99d4be0, fe0ec72, 718f369, this commit) | Claude Code · Opus 5.5 | ponytail-review (before push), verification-before-completion | CC s2 Skill calls; green CI run 39054185482 with artifact sitara-debug-apk |
 | Competitor parity matrix and roadmap ("beat Metrolist, Meld, BitChord, ReVanced") | Codex · GPT-6 Astra | spec-driven-development, planning-and-task-breakdown, ui-ux-pro-max, graphify, incremental-implementation, test-driven-development, context-engineering | Codex gap-analysis session log; docs/plan/ROADMAP.md (next) |
 
-**Gaps (to be closed next session):** playwright (verify the Pages site at mobile and desktop widths once deployed), understand-anything for docs/ARCHITECTURE.md, android-intent-security, and a second Codex GPT-6 Astra cross-review of the fix set before v0.1.0.
-
 | ui1 original design contract | Codex · GPT-6 Astra | ponytail, ui-ux-pro-max, impeccable, frontend-ui-engineering, brainstorming | Codex ui1: SKILL.md reads; design search, Impeccable context, reference study and docs/design/DESIGN_SPEC.md |
 | ui1 typography, palette and original launcher mark | Codex · GPT-6 Astra | ponytail, ui-ux-pro-max, impeccable, frontend-ui-engineering, test-driven-development, jetpack-compose-performance | Codex ui1: tests authored before palette change; Inter metadata read; SVG/vector master and design tokens; execution deferred by instruction |
+| ui1 artwork and glass primitives | Codex · GPT-6 Astra | ponytail, frontend-ui-engineering, jetpack-compose-performance, test-driven-development | Codex ui1: static blur and reduced-motion fallback; cached drawing; contrast contract test authored before scrim adjustment |
+
+**Gaps (to be closed next session):** playwright (verify the Pages site at mobile and desktop widths once deployed), understand-anything for docs/ARCHITECTURE.md, android-intent-security, and a second Codex GPT-6 Astra cross-review of the fix set before v0.1.0.

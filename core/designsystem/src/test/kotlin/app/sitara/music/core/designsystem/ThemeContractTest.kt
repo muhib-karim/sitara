@@ -2,6 +2,7 @@ package app.sitara.music.core.designsystem
 
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.toArgb
 import app.sitara.music.core.model.ThemeMode
 import org.junit.Assert.assertEquals
@@ -26,6 +27,14 @@ class ThemeContractTest {
         assertEquals(Color.Cyan, scheme.primary)
         assertEquals(Color.Black, scheme.background)
         assertEquals(sitaraColorScheme(ThemeMode.ARTWORK, true).surface, scheme.surface)
+    }
+
+    @Test
+    fun `lyrics stay readable even over completely white artwork`() {
+        val brightestBackdrop = Color.Black.copy(alpha = ArtworkScrim.Top).compositeOver(Color.White)
+        val inactive = Color.White.copy(alpha = ArtworkScrim.InactiveLyric).compositeOver(brightestBackdrop)
+        assertTrue(ArtworkPalette.contrast(inactive.toArgb(), brightestBackdrop.toArgb()) >= 4.5)
+        assertTrue(ArtworkPalette.contrast(SitaraColors.StageSecondary.toArgb(), brightestBackdrop.toArgb()) >= 4.5)
     }
 
     @Test
