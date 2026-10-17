@@ -36,7 +36,7 @@
 | **Player** | **Lyrics** | **Settings** |
 | <img src="docs/screenshots/player_dark.png" alt="Full player with artwork-tinted backdrop and scrubber" width="240"> | <img src="docs/screenshots/lyrics_dark.png" alt="Word-level karaoke lyrics" width="240"> | <img src="docs/screenshots/settings_dark.png" alt="Settings with theme and reduced motion options" width="240"> |
 
-<sub>Rendered by Roborazzi from the real composables. CI compares every screen pixel for pixel on each push, so these images match the code on `main`.</sub>
+<sub>Phase A captures, retained as historical images until the ui1 rebuild is recorded and reviewed in CI. They do not represent the new UI. Screenshot comparison remains enforced.</sub>
 
 </div>
 
@@ -44,9 +44,9 @@
 
 Existing clients cover the basics well. Sitara aims for the things that make an app feel *finished*:
 
-- **Motion you can feel.** Transitions ride springs. The player sheet follows your finger and hands its release velocity to a critically damped spring, bounded so it settles without overshoot.
-- **Colour from the music.** The now-playing backdrop, accents and controls are tinted from the cover art, with Material You and a pure AMOLED black mode as alternatives.
-- **Lyrics as the hero.** Word-by-word karaoke fill that respects syllables, and tap-to-seek. Transliteration for Bangla, Hindi and Urdu is planned so everyone can sing along.
+- **Motion you can feel.** Transitions ride springs. The cover travels from the unified dock to the player on a shared-element spring. Reduced motion uses instant transitions.
+- **Colour from the music.** Artwork colors the listening stage while the chrome keeps its saffron accent. Material You changes only the accent; AMOLED removes the wash.
+- **Lyrics as the hero.** Heavy Inter Display lyrics, a crisp active line, distance-softened context and tap-to-seek. Transliteration for Bangla, Hindi and Urdu is planned so everyone can sing along.
 - **Playback that outlives the screen.** The queue, auto-advance and sleep timer live in the playback service, so the notification, Bluetooth and Android Auto controls keep working when the app is closed.
 - **Reliable by design.** Stream sources sit behind an interface with automatic fallback, and only the app and system surfaces may control the media session.
 - **Accessible from the start.** TalkBack labels, a reduced-motion mode and contrast-checked artwork palettes are part of the design system.
@@ -58,15 +58,15 @@ Planned, not built yet: *Sitara Sync* (end-to-end encrypted sync through storage
 
 | Area | Feature | Status |
 | --- | --- | :---: |
-| **Shell** | Floating glass pill tab bar with spring selection, edge-to-edge layout | ✅ |
+| **Shell** | Unified glass dock with four destinations and edge-to-edge layout | Pending CI |
 | | Home, Search and Library on a sample source with generated gradient covers | ✅ |
-| **Player** | Mini player docked above the tab bar: swipe up to open, down to hide, sideways to skip | 🧪 |
-| | Full player sheet on one bounded spring with drag-velocity hand-off | 🧪 |
-| | Artwork-tinted backdrop, scrubber, Playing / Lyrics / Up next pager | ✅ |
+| **Player** | Mini player in the navigation dock: swipe up to open, sideways to skip | Pending CI |
+| | Shared artwork transition, white play disc and custom timeline | Pending CI |
+| | Artwork backdrop, scrubber, Playing / Lyrics / Up next pager | Pending CI |
 | | Queue: unique entries, shuffle with order restore, repeat off / all / one | ✅ |
 | | Sleep timer (minutes or end of track) on a monotonic clock | ✅ |
 | | Background playback service: the whole queue is a Media3 playlist, system controls skip | 🧪 |
-| **Lyrics** | LRC and enhanced word-timed LRC, syllable-safe karaoke fill, plain lyrics as static text | ✅ |
+| **Lyrics** | LRC and enhanced LRC parsing, line focus and seek, plain lyrics as static text | Pending CI |
 | **Settings** | Theme: dynamic, artwork or AMOLED black; light / dark; reduced motion | ✅ |
 | | Loudness normalisation and crossfade (maths tested, not yet in the audio path; shown disabled) | 🚧 |
 | **Source** | Real search and browse, stream resolution, health checks and fallback | Phase B |
@@ -76,7 +76,7 @@ Planned, not built yet: *Sitara Sync* (end-to-end encrypted sync through storage
 | | Sitara Sync, LAN remote control, smart offline | Phase C |
 | **Premium** | Animated canvas, automix, lyric translation and transliteration, Wear OS remote, TV layout | Phase D |
 
-✅ built and covered by unit or screenshot tests · 🧪 built and compiled in CI, awaiting a check on a real device · 🚧 partly built
+✅ covered by existing tests · 🧪 awaiting a real-device check · 🚧 partly built · Pending CI = changed in ui1; not built or visually verified yet
 
 ## Architecture
 

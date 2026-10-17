@@ -15,38 +15,39 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.drawWithContent
-import androidx.compose.ui.geometry.Rect
 import androidx.compose.ui.graphics.BlendMode
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.TransformOrigin
-import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.graphicsLayer
-import androidx.compose.ui.text.TextLayoutResult
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.selected
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import app.sitara.music.core.designsystem.ArtworkScrim
+import app.sitara.music.core.designsystem.Inter
 import app.sitara.music.core.designsystem.LocalReducedMotion
+import app.sitara.music.core.designsystem.LyricStyle
 import app.sitara.music.core.designsystem.SitaraMotion
 import app.sitara.music.core.model.Lyrics
-import app.sitara.music.core.model.LyricsLine
 import app.sitara.music.source.lyrics.LyricsCursor
+import kotlinx.coroutines.flow.first
 import kotlin.math.abs
 
-private val LineStyle = TextStyle(fontSize = 28.sp, lineHeight = 36.sp, fontWeight = FontWeight.Bold)
-private val PlainStyle = TextStyle(fontSize = 22.sp, lineHeight = 32.sp, fontWeight = FontWeight.SemiBold)
+private val LineStyle = LyricStyle
+private val PlainStyle = TextStyle(fontFamily = Inter, fontSize = 22.sp, lineHeight = 32.sp, fontWeight = FontWeight.SemiBold)
 private const val LINE_CONTENT_TYPE = "lyric"
 
 /**
- * Synced lyrics: the active line is in focus and words fill as they are sung; tapping a line seeks.
+ * Synced lyrics: the active line stays white and in focus; tapping a line seeks.
  * Plain lyrics have no timing, so they are shown as static text with no highlight, scrolling or seeking.
  */
 @Composable
@@ -88,10 +89,11 @@ private fun SyncedLyrics(lyrics: Lyrics, positionMs: Long, contentColor: Color, 
     val active = LyricsCursor.activeLineIndex(lyrics, positionMs)
     val listState = rememberLazyListState()
     val reduced = LocalReducedMotion.current
-    LaunchedEffect(active) {
+    LaunchedEffect(lyrics, active, reduced) {
         if (active >= 0) {
-            // Park the active line a quarter of the way down, so the previous line stays in view for context.
-            val offset = -listState.layoutInfo.viewportSize.height / 4
+            // Await measurement, then keep enough preceding context above the active line.
+            val viewport = snapshotFlow { listState.layoutInfo.viewportSize.height }.first { it > 0 }
+            val offset = -(viewport * 0.35f).toInt()
             if (reduced) listState.scrollToItem(active, offset) else listState.animateScrollToItem(active, offset)
         }
     }
@@ -102,17 +104,13 @@ private fun SyncedLyrics(lyrics: Lyrics, positionMs: Long, contentColor: Color, 
     ) {
         itemsIndexed(lyrics.lines, key = { i, _ -> i }, contentType = { _, _ -> LINE_CONTENT_TYPE }) { i, line ->
             val distance = if (active < 0) 2 else abs(i - active)
-            val scale by animateFloatAsState(if (i == active) 1f else 0.94f, SitaraMotion.orReduced(reduced, SitaraMotion.gentle()), label = "lineScale")
-            val targetAlpha = when {
-                i == active -> 1f
-                i < active -> 0.35f
-                else -> 0.5f
-            }
-            val alpha by animateFloatAsState(targetAlpha, SitaraMotion.fade(), label = "lineAlpha")
+            val scale by animateFloatAsState(if (i == active) 1.04f else 1f, SitaraMotion.orReduced(reduced, SitaraMotion.fade(SitaraMotion.LYRIC_FOCUS_MS)), label = "lineScale")
+            val alpha by animateFloatAsState(if (i == active) 1f else ArtworkScrim.InactiveLyric, SitaraMotion.orReduced(reduced, SitaraMotion.fade(SitaraMotion.LYRIC_FOCUS_MS)), label = "lineAlpha")
             Box(
                 Modifier
                     .fillMaxWidth()
-                    .clickable { onSeek(line.startMs) }
+                    .clickable(role = Role.Button) { onSeek(line.startMs) }
+                    .semantics { selected = i == active }
                     .padding(horizontal = 28.dp, vertical = 10.dp)
                     .graphicsLayer {
                         scaleX = scale
@@ -120,9 +118,9 @@ private fun SyncedLyrics(lyrics: Lyrics, positionMs: Long, contentColor: Color, 
                         this.alpha = alpha
                         transformOrigin = TransformOrigin(0f, 0.5f)
                     }
-                    .blur(if (reduced || distance == 0) 0.dp else (distance.coerceAtMost(3) * 1.2f).dp),
+                    .blur(if (reduced || distance == 0) 0.dp else distance.coerceAtMost(2).dp),
             ) {
-                if (i == active && line.isWordSynced) KaraokeLine(line, positionMs, contentColor) else Text(line.text, style = LineStyle, color = contentColor)
+                Text(line.text, style = LineStyle, color = contentColor)
             }
         }
     }
@@ -133,44 +131,11 @@ private fun Modifier.fadingEdges(): Modifier = graphicsLayer { compositingStrate
     .drawWithContent {
         drawContent()
         val fade = FADE_EDGE.toPx()
-        drawRect(Brush.verticalGradient(0f to Color.Transparent, fade / size.height to Color.Black), blendMode = BlendMode.DstIn)
+        drawRect(Brush.verticalGradient(0f to Color.Transparent, (fade / size.height.coerceAtLeast(1f)).coerceIn(0f, 0.5f) to Color.Black), blendMode = BlendMode.DstIn)
         drawRect(
-            Brush.verticalGradient((size.height - fade) / size.height to Color.Black, 1f to Color.Transparent),
+            Brush.verticalGradient(((size.height - fade) / size.height.coerceAtLeast(1f)).coerceIn(0.5f, 1f) to Color.Black, 1f to Color.Transparent),
             blendMode = BlendMode.DstIn,
         )
     }
 
 private val FADE_EDGE = 48.dp
-
-/**
- * The line is laid out once, exactly as written, and a bright copy is clipped to the sung
- * characters, so syllables such as "Hel" + "lo" stay one word and wrapping matches the dim copy.
- */
-@Composable
-private fun KaraokeLine(line: LyricsLine, positionMs: Long, color: Color) {
-    var layout by remember(line) { mutableStateOf<TextLayoutResult?>(null) }
-    val sweep = LyricsCursor.sweep(line, positionMs)
-    Box {
-        Text(line.text, style = LineStyle, color = color.copy(alpha = 0.35f), onTextLayout = { layout = it })
-        Text(
-            line.text,
-            style = LineStyle,
-            color = color,
-            modifier = Modifier.drawWithContent {
-                val text = layout ?: return@drawWithContent
-                val sung = text.getPathForRange(0, sweep.sungEnd)
-                if (sweep.activeEnd > sweep.activeStart) {
-                    val first = text.getLineForOffset(sweep.activeStart)
-                    if (first == text.getLineForOffset(sweep.activeEnd - 1)) {
-                        val left = text.getBoundingBox(sweep.activeStart).left
-                        val right = text.getBoundingBox(sweep.activeEnd - 1).right
-                        sung.addRect(Rect(left, text.getLineTop(first), left + (right - left) * sweep.activeProgress, text.getLineBottom(first)))
-                    } else if (sweep.activeProgress >= 0.5f) {
-                        sung.addPath(text.getPathForRange(sweep.activeStart, sweep.activeEnd))
-                    }
-                }
-                clipPath(sung) { this@drawWithContent.drawContent() }
-            },
-        )
-    }
-}
