@@ -50,20 +50,31 @@ object LrcParser {
         return Lyrics(lines, synced = true)
     }
 
+    /**
+     * Splits a line at its word tags without touching the text between them, so syllables
+     * (`<t>Hel<t>lo`) stay joined and separators survive. Text before the first tag is timed
+     * from the line start. A tag with no text after it only marks where the previous word ends.
+     */
     private fun buildLine(start: Long, end: Long, body: String, offset: Long): LyricsLine {
         val marks = wordTag.findAll(body).toList()
         if (marks.isEmpty()) return LyricsLine(start, end, body)
 
-        val words = marks.mapIndexedNotNull { i, m ->
+        val spans = mutableListOf<Pair<String, Long>>()
+        val lead = body.substring(0, marks.first().range.first)
+        if (lead.isNotEmpty()) spans += lead to start
+        val tagTimes = marks.map { (toMs(it.groupValues) - offset).coerceAtLeast(0) }
+        val ends = mutableListOf<Long>()
+        if (lead.isNotEmpty()) ends += tagTimes.first()
+        marks.forEachIndexed { i, m ->
             val textEnd = marks.getOrNull(i + 1)?.range?.first ?: body.length
-            val word = body.substring(m.range.last + 1, textEnd).trim()
-            if (word.isEmpty()) return@mapIndexedNotNull null
-            word to (toMs(m.groupValues) - offset).coerceAtLeast(0)
+            val text = body.substring(m.range.last + 1, textEnd)
+            if (text.isNotEmpty()) {
+                spans += text to tagTimes[i]
+                ends += tagTimes.getOrNull(i + 1) ?: end
+            }
         }
-        val timed = words.mapIndexed { i, (word, wStart) ->
-            LyricsWord(word, wStart, words.getOrNull(i + 1)?.second ?: end)
-        }
-        return LyricsLine(start, end, timed.joinToString(" ") { it.text }, timed)
+        val words = spans.mapIndexed { i, (text, wStart) -> LyricsWord(text, wStart, ends[i].coerceAtLeast(wStart)) }
+        return LyricsLine(start, end, words.joinToString("") { it.text }, words)
     }
 
     private fun toMs(groups: List<String>): Long {
