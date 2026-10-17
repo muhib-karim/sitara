@@ -1,11 +1,13 @@
 name: Record screenshots
 
+# Records Roborazzi baselines on the same runner image CI verifies on.
+# The images are uploaded as an artifact for review; a maintainer commits them
+# to app/src/test/screenshots (baselines) and docs/screenshots (README, site).
 on:
   workflow_dispatch:
 
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read
 
 jobs:
   record:
@@ -22,17 +24,9 @@ jobs:
           gradle-version: "9.8.1"
       - name: Record
         run: gradle :app:recordRoborazziDebug --stacktrace
-      - name: Open pull request
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          mkdir -p docs/screenshots
-          cp app/src/test/screenshots/*.png docs/screenshots/
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git checkout -B screenshots/auto
-          git add docs/screenshots app/src/test/screenshots
-          if git diff --cached --quiet; then echo "No changes"; exit 0; fi
-          git commit -m "docs: refresh screenshots"
-          git push --force-with-lease origin screenshots/auto
-          gh pr create --base main --head screenshots/auto --title "docs: refresh screenshots" --body "Screenshots recorded by Roborazzi in CI." || echo "PR already open"
+      - name: Upload baselines
+        uses: actions/upload-artifact@v5
+        with:
+          name: sitara-screenshot-baselines
+          path: app/src/test/screenshots/*.png
+          if-no-files-found: error

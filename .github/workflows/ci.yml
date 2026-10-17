@@ -49,7 +49,9 @@ jobs:
       - name: Unit tests
         run: gradle test --stacktrace
       - name: Screenshot tests
-        run: gradle :app:verifyRoborazziDebug --stacktrace || gradle :app:recordRoborazziDebug --stacktrace
+        # Compares against the committed baselines in app/src/test/screenshots and fails on any mismatch.
+        # Refresh baselines with the "Record screenshots" workflow, review them, then commit.
+        run: gradle :app:verifyRoborazziDebug --stacktrace
       - name: Assemble debug APK
         run: gradle :app:assembleDebug --stacktrace
       - name: Upload debug APK
