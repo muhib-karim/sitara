@@ -7,3 +7,7 @@ local.properties
 *.jks
 .DS_Store
 /captures
+/gradle/wrapper/gradle-wrapper.jar
+.kotlin/
+*.apk
+*.aab

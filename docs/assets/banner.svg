@@ -1,0 +1,97 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="400" viewBox="0 0 1280 400" role="img" aria-labelledby="t d">
+  <title id="t">Sitara</title>
+  <desc id="d">The Sitara star mark beside the wordmark and the tagline "Your music, beautifully." on a deep indigo night sky.</desc>
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0B0B14"/>
+      <stop offset="0.55" stop-color="#121029"/>
+      <stop offset="1" stop-color="#1B1240"/>
+    </linearGradient>
+    <radialGradient id="haloViolet" cx="0.3" cy="0.5" r="0.45">
+      <stop offset="0" stop-color="#8B7CFF" stop-opacity="0.38"/>
+      <stop offset="0.6" stop-color="#8B7CFF" stop-opacity="0.06"/>
+      <stop offset="1" stop-color="#8B7CFF" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="haloRose" cx="0.92" cy="1" r="0.5">
+      <stop offset="0" stop-color="#FF6B9A" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#FF6B9A" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="core" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#F5C451" stop-opacity="0.75"/>
+      <stop offset="0.35" stop-color="#F5C451" stop-opacity="0.18"/>
+      <stop offset="1" stop-color="#F5C451" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#FFE3A0"/>
+      <stop offset="0.5" stop-color="#F5C451"/>
+      <stop offset="1" stop-color="#E59A2F"/>
+    </linearGradient>
+    <linearGradient id="violetStar" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#B7ADFF"/>
+      <stop offset="1" stop-color="#8B7CFF"/>
+    </linearGradient>
+    <linearGradient id="wave" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#8B7CFF" stop-opacity="0.55"/>
+      <stop offset="1" stop-color="#FF6B9A" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="word" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#E9E4FF"/>
+    </linearGradient>
+    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="9" result="b"/>
+      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <!-- Four-point star with concave sides, centred on the origin, radius 100. -->
+    <path id="star" d="M0 -100 Q10 -10 100 0 Q10 10 0 100 Q-10 10 -100 0 Q-10 -10 0 -100 Z"/>
+  </defs>
+
+  <rect width="1280" height="400" fill="url(#sky)"/>
+  <rect width="1280" height="400" fill="url(#haloViolet)"/>
+  <rect width="1280" height="400" fill="url(#haloRose)"/>
+
+  <!-- Distant stars -->
+  <g fill="#FFFFFF">
+    <circle cx="92" cy="64" r="1.4" opacity="0.55"/>
+    <circle cx="188" cy="318" r="1.1" opacity="0.4"/>
+    <circle cx="262" cy="46" r="0.9" opacity="0.5"/>
+    <circle cx="612" cy="40" r="1.2" opacity="0.45"/>
+    <circle cx="742" cy="352" r="1" opacity="0.35"/>
+    <circle cx="904" cy="58" r="1.5" opacity="0.5"/>
+    <circle cx="1012" cy="300" r="1" opacity="0.4"/>
+    <circle cx="1118" cy="96" r="1.2" opacity="0.55"/>
+    <circle cx="1208" cy="210" r="0.9" opacity="0.4"/>
+    <circle cx="1236" cy="40" r="1.3" opacity="0.45"/>
+    <circle cx="56" cy="214" r="1" opacity="0.35"/>
+    <circle cx="520" cy="362" r="1.1" opacity="0.3"/>
+  </g>
+  <g fill="#F5C451" opacity="0.8">
+    <use href="#star" transform="translate(1060 120) scale(0.07)"/>
+    <use href="#star" transform="translate(152 120) scale(0.05)"/>
+    <use href="#star" transform="translate(820 330) scale(0.045)"/>
+  </g>
+
+  <!-- Sound-wave arcs radiating from the mark -->
+  <g fill="none" stroke="url(#wave)" stroke-linecap="round">
+    <path d="M396 60 A 150 150 0 0 1 396 340" stroke-width="2.2" opacity="0.55" transform="translate(-60 0)"/>
+    <path d="M396 30 A 180 180 0 0 1 396 370" stroke-width="1.8" opacity="0.35" transform="translate(-60 0)"/>
+    <path d="M396 0 A 210 210 0 0 1 396 400" stroke-width="1.4" opacity="0.2" transform="translate(-60 0)"/>
+  </g>
+  <path d="M760 312 C 820 296, 860 330, 920 314 S 1020 296, 1080 312 S 1180 330, 1240 312" fill="none" stroke="#8B7CFF" stroke-opacity="0.22" stroke-width="1.6"/>
+  <path d="M760 330 C 820 314, 860 348, 920 332 S 1020 314, 1080 330 S 1180 348, 1240 330" fill="none" stroke="#FF6B9A" stroke-opacity="0.14" stroke-width="1.4"/>
+
+  <!-- The Sitara mark -->
+  <g transform="translate(336 200)">
+    <circle r="150" fill="url(#core)"/>
+    <use href="#star" transform="rotate(45) scale(0.78)" fill="url(#violetStar)" opacity="0.85"/>
+    <use href="#star" transform="scale(1.0)" fill="url(#gold)" filter="url(#glow)"/>
+    <circle r="7" fill="#FFF6DC"/>
+  </g>
+
+  <!-- Wordmark and tagline -->
+  <g font-family="Inter, Manrope, 'Segoe UI', Roboto, 'Helvetica Neue', 'Liberation Sans', Arial, sans-serif">
+    <text x="500" y="214" font-size="124" font-weight="700" letter-spacing="-3" fill="url(#word)">Sitara</text>
+    <text x="506" y="270" font-size="34" font-weight="400" letter-spacing="0.5" fill="#C9C3EE">Your music, beautifully.</text>
+  </g>
+  <rect x="506" y="296" width="56" height="4" rx="2" fill="#F5C451"/>
+</svg>

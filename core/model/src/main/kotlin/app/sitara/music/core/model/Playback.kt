@@ -1,0 +1,26 @@
+package app.sitara.music.core.model
+
+enum class RepeatMode { OFF, ALL, ONE }
+
+enum class ThemeMode { DYNAMIC, ARTWORK, AMOLED }
+
+enum class DarkMode { SYSTEM, LIGHT, DARK }
+
+/** User preferences. Defaults are the values a fresh install starts with. */
+data class SitaraSettings(
+    val themeMode: ThemeMode = ThemeMode.ARTWORK,
+    val darkMode: DarkMode = DarkMode.SYSTEM,
+    val reducedMotion: Boolean = false,
+    val crossfadeSeconds: Int = 0,
+    val normalisation: Boolean = true,
+    val targetLufs: Float = DEFAULT_TARGET_LUFS,
+) {
+    init {
+        require(crossfadeSeconds in 0..MAX_CROSSFADE_SECONDS) { "crossfade out of range: $crossfadeSeconds" }
+    }
+
+    companion object {
+        const val MAX_CROSSFADE_SECONDS = 12
+        const val DEFAULT_TARGET_LUFS = -14f
+    }
+}
