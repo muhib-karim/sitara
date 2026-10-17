@@ -10,10 +10,11 @@ Original code and visual identity. References are technique studies only. No loc
 Original identity, fonts, logo and glass primitives committed in isolated Git metadata. Unified dock, shared cover transition, player and hero lyrics authored with interaction/screenshot cases. No build/test execution; baselines intentionally unchanged.
 
 ## Next step
-Commit debug-only device capture workflow, finish review/report and export the commit bundle. CI build, device captures and baseline recording need a later authorized push.
+Debug-only capture and readiness tests authored. Finish review/report and export the commit bundle. CI build, device captures and baseline recording need a later authorized push.
 
 ## Session log
-2026-10-17 22:30Z Codex / GPT-6 Astra: recorded original design and ui1 plan; next foundations and tests.
-2026-10-17 22:31Z Codex / GPT-6 Astra: foundations and original mark authored; next glass and player.
+2026-10-17 22:21Z Codex / GPT-6 Astra: recorded original design and ui1 plan; next foundations and tests.
+2026-10-17 22:24Z Codex / GPT-6 Astra: foundations and original mark authored; next glass and player.
 2026-10-17 22:31Z Codex / GPT-6 Astra: glass and artwork primitives prepared; next player and CI review.
-2026-10-17 22:31Z Codex / GPT-6 Astra: player and dock reviewed in source; next CI capture and final report.
+2026-10-17 22:32Z Codex / GPT-6 Astra: player and dock reviewed in source; next CI capture and final report.
+2026-10-17 22:34Z Codex / GPT-6 Astra: API 34 capture workflow and fake-queue tests prepared; final review next.
