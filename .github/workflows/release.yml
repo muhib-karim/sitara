@@ -1,0 +1,57 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+      - uses: gradle/actions/setup-gradle@v5
+        with:
+          gradle-version: "9.8.1"
+      - name: Decode signing key
+        id: signing
+        env:
+          SIGNING_KEYSTORE_B64: ${{ secrets.SIGNING_KEYSTORE_B64 }}
+        run: |
+          if [ -n "$SIGNING_KEYSTORE_B64" ]; then
+            echo "$SIGNING_KEYSTORE_B64" | base64 -d > "$RUNNER_TEMP/release.jks"
+            echo "SITARA_KEYSTORE_PATH=$RUNNER_TEMP/release.jks" >> "$GITHUB_ENV"
+            echo "signed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "signed=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: Assemble release
+        env:
+          SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
+          SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
+          SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
+        run: gradle :app:assembleRelease --stacktrace
+      - name: Collect artifacts
+        run: |
+          mkdir -p dist
+          apk=$(ls app/build/outputs/apk/release/*.apk | head -1)
+          cp "$apk" "dist/sitara-${GITHUB_REF_NAME}.apk"
+          (cd dist && sha256sum *.apk > SHA256SUMS)
+          if [ "${{ steps.signing.outputs.signed }}" = "true" ]; then
+            echo "Signed release build." > notes.md
+          else
+            echo "**Unsigned build:** signing secrets are not configured, so this APK is unsigned and must be signed before installing." > notes.md
+          fi
+          echo "" >> notes.md
+          echo "Verify with \`sha256sum -c SHA256SUMS\`." >> notes.md
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "$GITHUB_REF_NAME" dist/* --title "Sitara $GITHUB_REF_NAME" --notes-file notes.md
