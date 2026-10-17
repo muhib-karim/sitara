@@ -1,85 +1,77 @@
-# Sitara design spec v1: from "default Material" to a premium player
+# Sitara design spec v2: star and orbit
 
-Status: binding for the UI rebuild (owner order, Oct 17 2026). Every choice below cites the reference it comes from. Reference images are kept outside this repo (competitor assets are not ours to ship), so cites point to public URLs.
+Status: binding for the original UI rebuild, 2026-10-17. This supersedes docs/DESIGN.md. References set a quality bar, never a template. All Sitara code, marks and artwork are authored for this project; Inter remains under its own OFL licence.
 
-## 0. Why the current UI fails (audit of the CI baselines, `app/src/test/screenshots/*_dark.png`)
-- Default Material 3 surfaces: flat navy fill, tonal chips, stock radio buttons and switches, a stock tab-style bottom bar. Nothing reads as a music product.
-- Type is too small and too light for its role: titles about 22sp regular, rows at 14/12sp with no weight contrast, so there is no hierarchy.
-- Artwork is small and placeholder gradients dominate, so the screen color comes from the theme, not the music.
-- The now-playing and lyrics screens sit on a plain teal fill, not the artwork; the lyrics are about 20sp medium grey, not a hero.
-- The mini player and nav bar are two separate opaque slabs that stack and eat about 150dp.
+## 0. Identity and intent
+Sitara is an independent GPL-3.0 Android music player. Its identity is a split four-point star: two offset rays separated by a clear diagonal channel. The mark suggests a star and forward motion without a music-note cliché. It works as a single silhouette at 48dp and as a monochrome adaptive icon.
 
-## 1. References
-| Id | Source | What we take from it |
-|---|---|---|
-| BC-hero | BitChord README banner, https://github.com/kushagrasinghx/BitChord/blob/main/Banner.png | Lyrics as a hero: huge heavy type, active line pure white, others dimmed and softly blurred, artwork color washed across the whole screen; compact header with artwork, title and circular glass icon buttons |
-| BC-theme | BitChord `ui/theme/Theme.kt` | Neutral true-black / iOS-grey palette (bg #000, surface #0D0D0F, surfaceVariant #1C1C1E, secondary text #8E8E93, hairline #2C2C2E; light: #FFF / #F7F7F9 / #F2F2F7 / #6E6E73 / #E5E5EA), one accent; a tight display type scale with negative tracking |
-| BC-backdrop | BitChord `ui/components/ArtworkBackdrop.kt` | Artwork blurred about 72dp, overscaled, rasterised once (not animated), then a vertical scrim (dark: 0.40, 0.55, 0.85 alpha; light: 0.08, 0.25, 0.72); flat tint fallback when the user asks for less blur |
-| BC-palette | BitChord `ArtworkPalette.kt` | Player tint = the dominant swatch if it has real chroma (max-min channel), else the vibrant one; clamp the saturation and fix the lightness, so the tint is never neon or pink-washed; cache seeds per URL |
-| BC-glass | BitChord `GlassNavBar.kt`, `FloatingBottomBar.kt`, `MiniPlayer.kt`, `TopFadeBlur.kt`, `BottomFadeScrim.kt` | Floating pill nav (50% radius) on frosted glass, unselected at 65% alpha; mini player docked into the same floating glass group with a 0.5dp white 10% hairline; content fades under blurred top and bottom edges instead of hard bars |
-| ML-home | Metrolist screenshot 1, https://github.com/MetrolistGroup/Metrolist/tree/main/fastlane/metadata/android/en-US/images/screenshots | Mood chips row, "Quick picks" as a 4-row grid of rows that scrolls horizontally, "Keep listening" as big square tiles |
-| ML-artist | Metrolist screenshot 2 | Artist header: large art bleeding to the status bar, name in big bold type, primary actions as pills |
-| ML-player | Metrolist screenshot 5 | Player: very large artwork (about 85% of the width), title 22sp bold, share/like as circular buttons, a wide pill Play button, secondary actions in a bottom row |
-| ML-lyrics | Metrolist screenshot 6 | Centered lyrics option, the active line brighter and larger |
+The visual language is **star and orbit**: precise Inter lettering, a true-black stage, saffron signals, squared artwork with soft corners, and one continuous glass dock. Rounded controls belong to navigation and transport; content has quiet edges. No violet chrome, generic gradient branding, imitation iOS rows, copied screen compositions, or unimplemented controls.
 
-Typography note: BitChord bundles SF Pro, which Apple licenses only for Apple platforms. Sitara uses **Inter** (OFL) with Inter Display optical sizes for headings: same geometry class, legally shippable.
+## 1. Reference study and the quality bar
+Study implementation techniques: cached artwork colours, static GPU blur, scrims, gesture continuity and legible density. Do not copy source, assets, layout coordinates or proprietary fonts. See REFERENCES.md for provenance.
+
+### How Sitara aims to beat each reference
+These are design targets, not verified comparative claims.
+
+| Screen | BitChord quality target | Metrolist quality target | Meld quality target | Sitara's own decision |
+|---|---|---|---|---|
+| Home | Atmospheric chrome without visual noise | Fast discovery | Clear hierarchy | Quiet neutral listening shelves, one continuous playback dock; discovery expansion in ui2 |
+| Player | Blur with readable controls | Confident artwork scale | Direct transport | Artwork stage, offset glow, a continuous timeline and a white play disc; the same stage opens into lyrics |
+| Lyrics | Expressive focus | Easy reading and seeking | Predictable controls | Left-aligned Inter Display, active line at 35% of viewport, crisp white active text, distance-softened context |
+| Library | Restrained surfaces | Scannable collection | Fast return to music | Art-first collection, consistent saffron selection and common dock; richer sorting in ui2 |
+| Search | Readable contrast | Useful grouping | Clear entry point | Neutral query surface, compact results and persistent playback; category discovery in ui2 |
+| Settings | Consistent type | Clear controls | Honest options | Functional grouped controls, no decorative dead ends; row redesign in ui2 |
+| Album / artist | Immersive art | Clear primary action | Compact rows | Artwork dissolves into neutral content, white action pills; destination work in ui2 |
 
 ## 2. Foundations
 ### 2.1 Color
-- Base palette from BC-theme (neutral, not navy). Dark default: bg #000000, surface #0D0D0F, elevated #1C1C1E, separator #2C2C2E, text primary #FFFFFF, secondary #8E8E93 (about 60%), tertiary 38%.
-- Accent: Sitara saffron #FF9F1C (brand), used only for the active nav item, progress fill, toggles and primary CTAs. Never for large fills.
-- Dynamic color has three modes (setting already exists): From artwork (default; BC-palette rules, recomputed per track with a 400ms crossfade), Material You (wallpaper, accent only, the base stays neutral), AMOLED (pure black, no wash).
-- The artwork wash appears only on the player, the lyrics, the album/artist headers and the mini player tint (8% alpha). Lists stay neutral so the art stays the hero.
+- Dark: background #000000, surface #101010, elevated #202020, separator #383838, primary text #FFFFFF, secondary #A6A6A6. Light: background #FFFFFF, surface #F6F6F4, elevated #ECECE8, separator #C8C8C2, primary text #161614, secondary #62625D.
+- Brand saffron #FF9F1C; accessible light accent #9A4D00. Use for selection, progress and small signals; never a full-screen fill. White play disc with black glyph on the immersive player in both themes.
+- Artwork mode keeps brand chrome stable and colours only the player, lyrics and dock tint (8%). Wallpaper mode changes accent/on-accent only; base stays neutral. AMOLED suppresses artwork washes and glass blur.
+- Palette input is the current Artwork's swatches (first = dominant). Prefer it when chromatic; otherwise use the most chromatic swatch. Clamp saturation to 0.25–0.60, keep greys neutral. Cache per immutable artwork value; no network or extraction in composition.
+- Player/lyrics are a dark listening stage in both app themes, preserving white active lyrics and contrast. The surrounding app respects light mode. Wash changes crossfade over 400ms; reduced motion snaps.
 
-### 2.2 Type scale (Inter / Inter Display, tracking from BC-theme)
+### 2.2 Type scale
+Bundle official Inter and Inter Display static weights with OFL. No system-font substitutions in the authored scale.
+
 | Role | Size / weight / tracking | Use |
 |---|---|---|
-| display | 34sp W800, -0.8sp | Screen titles (Home, Library, Search) |
-| headline | 28sp W800, -0.6sp | Album/artist names in headers |
-| lyricActive | 30sp W800, -0.6sp, line height 1.15 | Synced lyrics (BC-hero) |
-| title | 22sp W700, -0.4sp | Now-playing title, section headers 20sp W700 |
-| rowTitle | 16sp W600, -0.2sp | List rows |
-| body | 15sp W400 | Body text |
-| meta | 13sp W500, secondary color | Artist, duration, counts |
-| label | 12sp W600, +0.2sp | Chips, buttons |
-Weight contrast is mandatory: every row has a W600 title and a secondary W500 meta.
+| display | 34sp / 800 / -0.8sp | Screen titles |
+| headline | 28sp / 800 / -0.6sp | Album/artist headers |
+| lyricActive | 30sp / 800 / -0.6sp; line height 35sp | Synced lyrics |
+| title | 22sp / 700 / -0.4sp | Player title |
+| section | 20sp / 700 / -0.4sp | Shelf headings |
+| rowTitle | 16sp / 600 / -0.2sp | Rows |
+| body | 15sp / 400 | Body |
+| meta | 13sp / 500 | Artist, counts, duration |
+| label | 12sp / 600 / +0.2sp | Controls |
 
-### 2.3 Spacing, shape, elevation
-- 4dp grid. Screen gutter 20dp. Section gap 28dp. Row height 64dp (artwork 48dp). Tile 160dp (Home), 44% of width (Library grid).
-- Radii: artwork in rows 8dp (BC-mini ART_CORNER), tiles 14dp, player artwork 20dp, sheets 28dp, pills 50%.
-- No Material shadows on dark. Depth comes from blur, hairlines (0.5dp white 10%) and scrims.
+### 2.3 Spacing and shape
+4dp grid; screen gutter 20dp; section gap 28dp. Rows at least 64dp, 48dp cover. Tiles 160dp. Radii: row cover 8dp, tile 14dp, player art 20dp, dock/sheet 28dp, controls 50%. No dark Material shadows: depth uses scrims and 0.5dp hairlines. Touch targets at least 48dp, even for 36dp visible circles. Content must remain reachable at 200% type and in landscape.
 
 ### 2.4 Motion
-- Springs: dampingRatio 0.85, stiffness 380 for sheets and the player expand; 250ms emphasized easing for crossfades.
-- Player expand: shared artwork transition from mini (48dp) to full, with the background wash fading in over the first 40% of progress.
-- Lyrics: the active line scales 1.0 to 1.04 and goes from 50% to 100% alpha over 220ms; the others blur 0, 1, 2dp by distance (API 31+, else alpha only); auto-scroll keeps the active line at 35% of the height.
-- Reduced motion (setting exists) swaps every spring for a 0ms snap and disables blur animation.
+Sheet spring: damping 0.85, stiffness 380. The dock opens from its own position; the cover travels from the dock to its stage. Wash enters during the first 40% of expansion. Fades: emphasized 250ms, artwork 400ms, lyric focus 220ms. Lyrics scale 1.0–1.04; keep the active line at 35% of viewport height. Reduced motion snaps every transition and disables blur. Never animate blur radius each frame. Read geometry and animation values in layout/draw phases.
 
 ### 2.5 Blur and glass
-- Frosted glass = blurred backdrop (RenderEffect 24dp on API 31+, a 92% opaque elevated fill below) + 0.5dp hairline + 8% white highlight on top. Use it for the floating nav, the mini player and the player header buttons.
-- Top and bottom edges of scrolling screens fade content under a 16dp blur band (BC-glass TopFadeBlur/BottomFadeScrim), not a hard app bar.
+ArtworkBackdrop draws the current cover overscaled, statically blurred 72dp on API 31+, with a dark scrim (0.40 / 0.55 / 0.85). Lower APIs and reduced motion use a flat palette tint. Glass uses existing Haze backdrop blur at 24dp, a contrast-protecting tint, 0.5dp hairline and subtle top highlight. Fallback is 92% opaque elevated fill. Blur is confined to artwork/chrome, never whole scrolling content.
 
 ## 3. Components
-| Component | Spec | Ref |
-|---|---|---|
-| FloatingNav | 64dp pill, 20dp from the edges, floating 12dp above the gesture bar, glass, 4 items icon + label 11sp; selected item = accent icon on a 50% glass indicator | BC-glass |
-| MiniPlayer | Docked directly above FloatingNav in the same glass group, 64dp, 12dp radius, artwork 44dp/8dp, title rowTitle, artist meta, play/pause 40dp glyph slot, a 2dp progress hairline along the bottom edge in the accent color; swipe left/right = next/previous; swipe up = expand | BC-glass, BC-mini |
-| GlassIconButton | 36dp circle, glass fill, 20dp icon | BC-hero |
-| PillButton | Primary: 48dp high, white fill and black label in dark (Play, Shuffle); secondary: glass | ML-player, ML-artist |
-| ArtworkTile | Square art with 14dp radius, title 14sp W600, meta 12sp; pressed scale 0.97 | ML-home |
-| SongRow | 64dp, art 48dp/8dp, title + meta, trailing overflow; now-playing row shows animated equalizer bars in the accent color | ML-home |
-| MoodChip | 32dp, 50% radius, elevated fill, label 13sp W600; selected = white fill, black text | ML-home |
-| SectionHeader | title 20sp W700, optional trailing "See all" chip | ML-home |
-| ArtworkBackdrop | Implementation of 2.5 + BC-backdrop recipe, as a reusable composable | BC-backdrop |
+| Component | Contract |
+|---|---|
+| FloatingNav | 64dp navigation row, Home / Search / Library / Settings; 20dp side gutters, 12dp above gesture bar; selected icon plus label and filled indicator |
+| MiniPlayer | 64dp docked directly above nav inside the same glass outline; 44dp cover, title + artist, play/pause, 2dp saffron timeline; horizontal swipe skips, upward swipe expands; equivalent accessible actions |
+| GlassSurface | Shared clipped blur, tint and hairline; no independently stacked slabs |
+| GlassIconButton | 36dp visible circle, 20dp glyph, 48dp target |
+| PillButton | 48dp minimum; white/black primary on stage, glass secondary; descriptive text |
+| ArtworkBackdrop | Artwork-driven wash, neutral scrim, API/reduced-motion/AMOLED fallback |
+| SongRow / ArtworkTile | Shared hierarchy and corner tokens; pressed feedback; no inert overflow controls |
 
 ## 4. Screens
-- **Home**: large "Good evening" display title on the bg; mood chips row; Quick picks as a horizontally paged 4-row grid of SongRows; "New for you" and "Keep listening" as ArtworkTile rails (160dp); content scrolls under the TopFadeBlur. (ML-home)
-- **Now playing**: full-bleed ArtworkBackdrop; header with a down chevron and a glass segmented control (Playing / Lyrics / Up next); artwork 85% width with a 20dp radius and a soft color glow (the palette tint at 35%, 48dp blur); title 22sp W700 + artist meta, left aligned, with like and overflow GlassIconButtons on the right; a thick 6dp scrubber that grows to 10dp on drag, times in meta; transport: prev / Play 72dp white circle / next, shuffle and repeat flanking at 60% alpha. (ML-player, BC-backdrop)
-- **Lyrics**: same backdrop; compact header (art 44dp, title, artist, GlassIconButtons, like BC-hero); lyricActive type, left aligned, active line white and the others at 45% with distance blur; tap a line to seek; plain (unsynced) lyrics render static at 22sp W600. (BC-hero, ML-lyrics)
-- **Library**: display title; filter chips scrollable; default view a 2-column ArtworkTile grid (playlists, albums) with a list/grid toggle; Liked songs pinned first as a gradient tile in the accent color. (ML-home)
-- **Search**: display title; a 48dp search field with a 50% radius on the elevated fill; empty state = browse-category tiles (2 columns, colored, 100dp); results grouped (Top result card, Songs, Albums, Artists). (ML-home)
-- **Settings**: grouped inset sections (16dp radius on the elevated fill, iOS-style rows 56dp with trailing value or switch), not raw radio lists; "Coming soon" items are hidden, not shown disabled. (BC-theme)
-- **Album / Artist**: header art bleeding under the status bar with the ArtworkBackdrop fade into bg, a headline name, PillButtons (Play, Shuffle), then rows. (ML-artist)
+**Now playing:** full-bleed artwork stage. Compact collapse control and glass Playing / Lyrics / Up next selector. Artwork uses about 85% of portrait width (bounded on wide/short screens), 20dp radius and a 35% palette glow at 48dp blur. Left-aligned 22sp title and artist. Functional timer and queue actions, with no pretend like/overflow controls until persistence exists. Custom 6dp timeline grows to 10dp while seeking; 48dp gesture/keyboard/accessibility target. Transport: shuffle / previous / 72dp white play circle / next / repeat, with selected state semantics. In short landscape, artwork and controls share columns; oversized type can scroll.
+
+**Lyrics:** same stage; compact 44dp cover with title and artist above the lyric viewport. Active line white and heavy, inactive lines dimmed with 0/1/2dp distance blur on supported devices. Contrast takes priority over literal 45% opacity: inactive text must remain readable. Tap a timed line to seek; untimed lyrics stay static at 22sp/600. Empty and end-of-track states remain useful. Transport stays available.
+
+**Home, Library, Search and Settings:** inherit type, neutral colors and shared dock in ui1. Their deeper content and layout redesign belongs to ui2; do not claim ui1 rebuilds them fully. Album and artist destinations are ui2.
 
 ## 5. Acceptance (checked against the CI screenshots, side by side with the references)
 1. No stock Material component is visible unstyled (bars, chips, radios, switches, sliders).
