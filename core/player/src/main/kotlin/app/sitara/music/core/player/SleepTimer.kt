@@ -1,5 +1,7 @@
 package app.sitara.music.core.player
 
+import kotlin.time.Duration.Companion.minutes
+import kotlin.time.TimeSource
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -18,11 +20,12 @@ sealed interface SleepTimerState {
 
 /**
  * Pauses playback after a number of minutes, or when the current track ends.
- * Ticks once a second against [clock] so the remaining time never drifts.
+ * Ticks once a second against a monotonic [timeSource], so wall-clock corrections
+ * can neither stretch nor cut short the countdown. Production passes [ElapsedRealtimeTimeSource].
  */
 class SleepTimer(
     private val scope: CoroutineScope,
-    private val clock: () -> Long = System::currentTimeMillis,
+    private val timeSource: TimeSource,
     private val onExpire: () -> Unit,
 ) {
     private val _state = MutableStateFlow<SleepTimerState>(SleepTimerState.Off)
@@ -32,11 +35,12 @@ class SleepTimer(
     fun start(minutes: Int) {
         require(minutes > 0) { "minutes must be positive" }
         job?.cancel()
-        val deadline = clock() + minutes * 60_000L
-        _state.value = SleepTimerState.Counting(deadline - clock())
+        val deadline = timeSource.markNow() + minutes.minutes
+        fun remainingMs() = -deadline.elapsedNow().inWholeMilliseconds
+        _state.value = SleepTimerState.Counting(remainingMs())
         job = scope.launch {
             while (true) {
-                val remaining = deadline - clock()
+                val remaining = remainingMs()
                 if (remaining <= 0) break
                 _state.value = SleepTimerState.Counting(remaining)
                 delay(minOf(TICK_MS, remaining))

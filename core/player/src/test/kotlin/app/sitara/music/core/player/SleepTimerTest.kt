@@ -5,8 +5,8 @@ import kotlin.time.AbstractLongTimeSource
 import kotlin.time.DurationUnit
 import kotlin.time.TimeSource
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
