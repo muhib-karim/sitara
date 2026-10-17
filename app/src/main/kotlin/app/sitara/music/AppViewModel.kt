@@ -43,7 +43,7 @@ class AppViewModel(private val app: SitaraApplication) : ViewModel(), PlayerActi
         .mapLatest { t -> t?.let { app.source.lyrics(it) } ?: Lyrics.Empty }
         .stateIn(viewModelScope, SharingStarted.Eagerly, Lyrics.Empty)
 
-    val playerState: StateFlow<PlayerUiState> = combine(player.state, lyrics, player.sleepTimer.state) { s, l, timer ->
+    val playerState: StateFlow<PlayerUiState> = combine(player.state, lyrics, player.sleepTimerState) { s, l, timer ->
         PlayerUiState(
             track = s.queue.current,
             isPlaying = s.isPlaying,
@@ -85,14 +85,14 @@ class AppViewModel(private val app: SitaraApplication) : ViewModel(), PlayerActi
 
     /** Off -> 15 min -> 30 min -> end of track -> off. */
     override fun cycleSleepTimer() {
-        val timer = player.sleepTimer
-        when (val s = timer.state.value) {
-            SleepTimerState.Off -> timer.start(15)
-            is SleepTimerState.Counting -> if (s.remainingMs > 15 * 60_000) timer.startEndOfTrack() else timer.start(30)
-            SleepTimerState.EndOfTrack -> timer.cancel()
+        when (val s = player.sleepTimerState.value) {
+            SleepTimerState.Off -> player.startSleepTimer(15)
+            is SleepTimerState.Counting -> if (s.remainingMs > 15 * 60_000) player.sleepAtEndOfTrack() else player.startSleepTimer(30)
+            SleepTimerState.EndOfTrack -> player.cancelSleepTimer()
         }
     }
 
+    /** Drops the UI's binding only; the service keeps playing, advancing and timing. */
     override fun onCleared() {
         player.release()
     }

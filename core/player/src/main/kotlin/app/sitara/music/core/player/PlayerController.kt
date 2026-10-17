@@ -3,168 +3,94 @@ package app.sitara.music.core.player
 import android.content.ComponentName
 import android.content.Context
 import androidx.core.content.ContextCompat
-import androidx.media3.common.MediaItem
-import androidx.media3.common.MediaMetadata
-import androidx.media3.common.Player
 import androidx.media3.session.MediaController
 import androidx.media3.session.SessionToken
-import app.sitara.music.core.model.RepeatMode
 import app.sitara.music.core.model.Track
-import app.sitara.music.source.api.StreamResolver
+import com.google.common.util.concurrent.ListenableFuture
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 
-data class PlaybackSnapshot(
-    val queue: QueueState = QueueState(),
-    val isPlaying: Boolean = false,
-    val positionMs: Long = 0,
-    val durationMs: Long = 0,
-)
-
 /**
- * App-side facade over the MediaController. Our [QueueState] is the source of truth
- * for order, shuffle and repeat; the player only ever holds the current item, which
- * keeps shuffle-restore and end-of-track sleep logic in tested Kotlin.
+ * UI-side facade. Connecting a MediaController binds [PlaybackService], which creates the
+ * [PlaybackEngine]; commands go to that engine (buffered by [EngineGate] until it exists) and
+ * state is read from it. Releasing only drops the binding: playback, the queue and the sleep
+ * timer carry on in the service.
  */
+@OptIn(ExperimentalCoroutinesApi::class)
 class PlayerController(
     private val context: Context,
-    private val resolver: StreamResolver,
     private val scope: CoroutineScope,
 ) {
-    private val _state = MutableStateFlow(PlaybackSnapshot())
-    val state: StateFlow<PlaybackSnapshot> = _state.asStateFlow()
-    private var controller: MediaController? = null
+    private val gate = EngineGate()
+    private var controllerFuture: ListenableFuture<MediaController>? = null
+    private var ticker: Job? = null
 
-    val sleepTimer = SleepTimer(scope) { controller?.pause() }
+    val state: StateFlow<PlaybackSnapshot> = PlaybackEngineRegistry.engine
+        .flatMapLatest { it?.state ?: flowOf(PlaybackSnapshot()) }
+        .stateIn(scope, SharingStarted.Eagerly, PlaybackSnapshot())
 
+    val sleepTimerState: StateFlow<SleepTimerState> = PlaybackEngineRegistry.engine
+        .flatMapLatest { it?.sleepTimerState ?: flowOf(SleepTimerState.Off) }
+        .stateIn(scope, SharingStarted.Eagerly, SleepTimerState.Off)
+
+    init {
+        scope.launch { PlaybackEngineRegistry.engine.collect(gate::attach) }
+    }
+
+    /** Safe to call repeatedly; a live connection is reused and never reloads the player. */
     fun connect() {
+        if (controllerFuture != null) return
         val token = SessionToken(context, ComponentName(context, PlaybackService::class.java))
-        val future = MediaController.Builder(context, token).buildAsync()
-        future.addListener({
-            val c = runCatching { future.get() }.getOrNull() ?: return@addListener
-            controller = c
-            c.addListener(object : Player.Listener {
-                override fun onIsPlayingChanged(isPlaying: Boolean) = refresh()
-
-                override fun onPlaybackStateChanged(playbackState: Int) {
-                    if (playbackState == Player.STATE_ENDED) onTrackEnded()
-                    refresh()
-                }
-            })
-            _state.value.queue.current?.let { load(it, play = false) }
-        }, ContextCompat.getMainExecutor(context))
-        scope.launch {
+        controllerFuture = MediaController.Builder(context, token).buildAsync().also { future ->
+            future.addListener({ runCatching { future.get() } }, ContextCompat.getMainExecutor(context))
+        }
+        ticker = scope.launch {
             while (isActive) {
-                if (_state.value.isPlaying) refresh()
-                delay(250)
+                if (state.value.isPlaying) gate.run { it.refresh() }
+                delay(POSITION_TICK_MS)
             }
         }
     }
 
     fun release() {
-        controller?.release()
-        controller = null
+        ticker?.cancel()
+        ticker = null
+        controllerFuture?.let(MediaController::releaseFuture)
+        controllerFuture = null
     }
 
-    fun play(tracks: List<Track>, index: Int) = setQueue(_state.value.queue.setQueue(tracks, index), play = true)
+    fun play(tracks: List<Track>, index: Int) = gate.run { it.play(tracks, index) }
 
-    fun togglePlay() {
-        val c = controller ?: return
-        if (c.isPlaying) c.pause() else c.play()
-    }
+    fun togglePlay() = gate.run { it.togglePlay() }
 
-    fun next() = setQueue(_state.value.queue.skipNext(), play = true)
+    fun next() = gate.run { it.next() }
 
-    fun previous() {
-        val c = controller
-        if (c != null && c.currentPosition > RESTART_THRESHOLD_MS) c.seekTo(0) else setQueue(_state.value.queue.previous(), play = true)
-    }
+    fun previous() = gate.run { it.previous() }
 
-    fun seekTo(positionMs: Long) {
-        controller?.seekTo(positionMs)
-        refresh()
-    }
+    fun seekTo(positionMs: Long) = gate.run { it.seekTo(positionMs) }
 
-    fun toggleShuffle() = setQueue(_state.value.queue.toggleShuffle(), play = null)
+    fun toggleShuffle() = gate.run { it.toggleShuffle() }
 
-    fun cycleRepeat() {
-        val q = _state.value.queue
-        val next = when (q.repeatMode) {
-            RepeatMode.OFF -> RepeatMode.ALL
-            RepeatMode.ALL -> RepeatMode.ONE
-            RepeatMode.ONE -> RepeatMode.OFF
-        }
-        _state.update { it.copy(queue = q.withRepeat(next)) }
-    }
+    fun cycleRepeat() = gate.run { it.cycleRepeat() }
 
-    fun playUpNext(upNextIndex: Int) {
-        val q = _state.value.queue
-        setQueue(q.skipTo(q.currentIndex + 1 + upNextIndex), play = true)
-    }
+    fun playUpNext(upNextIndex: Int) = gate.run { it.playUpNext(upNextIndex) }
 
-    private fun onTrackEnded() {
-        if (sleepTimer.onTrackEnded()) return
-        val q = _state.value.queue
-        if (q.repeatMode == RepeatMode.ONE) {
-            controller?.seekTo(0)
-            controller?.play()
-            return
-        }
-        setQueue(q.next(), play = true)
-    }
+    fun startSleepTimer(minutes: Int) = gate.run { it.startSleepTimer(minutes) }
 
-    /** play: true = start, false = load paused, null = keep the current item untouched. */
-    private fun setQueue(queue: QueueState, play: Boolean?) {
-        val before = _state.value.queue.current
-        _state.update { it.copy(queue = queue) }
-        val current = queue.current ?: return
-        if (queue.ended) {
-            controller?.pause()
-            return
-        }
-        if (play != null && (current != before || play)) load(current, play)
-    }
+    fun sleepAtEndOfTrack() = gate.run { it.sleepAtEndOfTrack() }
 
-    private fun load(track: Track, play: Boolean) {
-        scope.launch {
-            val stream = runCatching { resolver.resolve(track) }.getOrNull() ?: return@launch
-            val c = controller ?: return@launch
-            val item = MediaItem.Builder()
-                .setMediaId(track.id)
-                .setUri(stream.url)
-                .setMediaMetadata(
-                    MediaMetadata.Builder()
-                        .setTitle(track.title)
-                        .setArtist(track.artist)
-                        .setAlbumTitle(track.album)
-                        .build(),
-                )
-                .build()
-            c.setMediaItem(item)
-            c.prepare()
-            if (play) c.play()
-            refresh()
-        }
-    }
-
-    private fun refresh() {
-        val c = controller ?: return
-        _state.update {
-            it.copy(
-                isPlaying = c.isPlaying,
-                positionMs = c.currentPosition.coerceAtLeast(0),
-                durationMs = c.duration.takeIf { d -> d > 0 } ?: (it.queue.current?.durationMs ?: 0),
-            )
-        }
-    }
+    fun cancelSleepTimer() = gate.run { it.cancelSleepTimer() }
 
     private companion object {
-        const val RESTART_THRESHOLD_MS = 3_000L
+        const val POSITION_TICK_MS = 250L
     }
 }
