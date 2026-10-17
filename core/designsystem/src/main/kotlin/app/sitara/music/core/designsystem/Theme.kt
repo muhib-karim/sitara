@@ -2,111 +2,143 @@ package app.sitara.music.core.designsystem
 
 import android.os.Build
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ColorScheme
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Typography
+import androidx.compose.material3.Shapes
 import androidx.compose.material3.darkColorScheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
 import androidx.compose.material3.lightColorScheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.staticCompositionLocalOf
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.sp
+import androidx.compose.ui.unit.dp
 import app.sitara.music.core.model.DarkMode
 import app.sitara.music.core.model.ThemeMode
 
 object SitaraColors {
-    val Night = Color(0xFF0B0B14)
-    val NightRaised = Color(0xFF15152A)
-    val Gold = Color(0xFFF5C451)
-    val Violet = Color(0xFF8B7CFF)
-    val Rose = Color(0xFFFF6B9A)
-    val Mist = Color(0xFFF6F5FB)
+    val Saffron = Color(0xFFFF9F1C)
+    val SaffronInk = Color(0xFF9A4D00)
+    val Stage = Color(0xFF080808)
+    val StageContent = Color.White
+    val StageSecondary = Color(0xFFBDBDBD)
 }
 
 private val SitaraDark = darkColorScheme(
-    primary = SitaraColors.Gold,
-    onPrimary = SitaraColors.Night,
-    secondary = SitaraColors.Violet,
-    onSecondary = Color.White,
-    tertiary = SitaraColors.Rose,
-    background = SitaraColors.Night,
-    onBackground = Color(0xFFECEAF6),
-    surface = SitaraColors.Night,
-    onSurface = Color(0xFFECEAF6),
-    surfaceVariant = SitaraColors.NightRaised,
-    onSurfaceVariant = Color(0xFFB4B1C8),
-    surfaceContainer = Color(0xFF13131F),
-    surfaceContainerHigh = Color(0xFF1B1B2B),
+    primary = SitaraColors.Saffron,
+    onPrimary = Color.Black,
+    primaryContainer = Color(0xFF392308),
+    onPrimaryContainer = Color(0xFFFFDDB0),
+    secondary = Color(0xFFD8D8D2),
+    onSecondary = Color.Black,
+    secondaryContainer = Color(0xFF30302C),
+    onSecondaryContainer = Color.White,
+    tertiary = SitaraColors.Saffron,
+    onTertiary = Color.Black,
+    tertiaryContainer = Color(0xFF392308),
+    onTertiaryContainer = Color(0xFFFFDDB0),
+    background = Color.Black,
+    onBackground = Color.White,
+    surface = Color(0xFF101010),
+    onSurface = Color.White,
+    surfaceVariant = Color(0xFF202020),
+    onSurfaceVariant = Color(0xFFA6A6A6),
+    surfaceTint = Color.Transparent,
+    surfaceDim = Color.Black,
+    surfaceBright = Color(0xFF282828),
+    surfaceContainerLowest = Color.Black,
+    surfaceContainerLow = Color(0xFF101010),
+    surfaceContainer = Color(0xFF161616),
+    surfaceContainerHigh = Color(0xFF202020),
+    surfaceContainerHighest = Color(0xFF282828),
+    outline = Color(0xFF808080),
+    outlineVariant = Color(0xFF383838),
+    inverseSurface = Color(0xFFF6F6F4),
+    inverseOnSurface = Color(0xFF161614),
+    inversePrimary = SitaraColors.SaffronInk,
 )
 
 private val SitaraLight = lightColorScheme(
-    primary = Color(0xFF5B4BDB),
+    primary = SitaraColors.SaffronInk,
     onPrimary = Color.White,
-    secondary = Color(0xFF8A5A00),
-    tertiary = Color(0xFFC2185B),
-    background = SitaraColors.Mist,
-    onBackground = Color(0xFF15131F),
-    surface = SitaraColors.Mist,
-    onSurface = Color(0xFF15131F),
-    surfaceVariant = Color(0xFFE7E5F1),
-    onSurfaceVariant = Color(0xFF4A475C),
-    surfaceContainer = Color(0xFFEEEDF6),
-    surfaceContainerHigh = Color(0xFFE6E4F0),
+    primaryContainer = Color(0xFFFFE1B8),
+    onPrimaryContainer = Color(0xFF462300),
+    secondary = Color(0xFF454540),
+    onSecondary = Color.White,
+    secondaryContainer = Color(0xFFE4E4DF),
+    onSecondaryContainer = Color(0xFF161614),
+    tertiary = SitaraColors.SaffronInk,
+    onTertiary = Color.White,
+    tertiaryContainer = Color(0xFFFFE1B8),
+    onTertiaryContainer = Color(0xFF462300),
+    background = Color.White,
+    onBackground = Color(0xFF161614),
+    surface = Color(0xFFF6F6F4),
+    onSurface = Color(0xFF161614),
+    surfaceVariant = Color(0xFFECECE8),
+    onSurfaceVariant = Color(0xFF62625D),
+    surfaceTint = Color.Transparent,
+    surfaceDim = Color(0xFFE4E4DF),
+    surfaceBright = Color.White,
+    surfaceContainerLowest = Color.White,
+    surfaceContainerLow = Color(0xFFFAFAF8),
+    surfaceContainer = Color(0xFFF6F6F4),
+    surfaceContainerHigh = Color(0xFFECECE8),
+    surfaceContainerHighest = Color(0xFFE4E4DF),
+    outline = Color(0xFF777770),
+    outlineVariant = Color(0xFFC8C8C2),
+    inverseSurface = Color(0xFF202020),
+    inverseOnSurface = Color.White,
+    inversePrimary = SitaraColors.Saffron,
 )
 
-val SitaraTypography = Typography(
-    displaySmall = TextStyle(fontSize = 34.sp, lineHeight = 40.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.5).sp),
-    headlineMedium = TextStyle(fontSize = 28.sp, lineHeight = 34.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.3).sp),
-    titleLarge = TextStyle(fontSize = 22.sp, lineHeight = 28.sp, fontWeight = FontWeight.SemiBold),
-    titleMedium = TextStyle(fontSize = 17.sp, lineHeight = 22.sp, fontWeight = FontWeight.SemiBold),
-    bodyLarge = TextStyle(fontSize = 16.sp, lineHeight = 22.sp),
-    bodyMedium = TextStyle(fontSize = 14.sp, lineHeight = 20.sp),
-    labelLarge = TextStyle(fontSize = 14.sp, lineHeight = 18.sp, fontWeight = FontWeight.SemiBold),
-    labelMedium = TextStyle(fontSize = 12.sp, lineHeight = 16.sp, fontWeight = FontWeight.Medium),
-)
-
-/** Builds the colour scheme for a theme mode; artwork colours tint the brand scheme. */
-fun sitaraColorScheme(mode: ThemeMode, dark: Boolean, artwork: List<Int>?, dynamic: ColorScheme? = null): ColorScheme {
-    val base = if (dark) SitaraDark else SitaraLight
+/** Artwork belongs to the listening stage; chrome stays recognisably Sitara. */
+fun sitaraColorScheme(mode: ThemeMode, dark: Boolean, dynamic: ColorScheme? = null): ColorScheme {
+    val base = if (dark || mode == ThemeMode.AMOLED) SitaraDark else SitaraLight
     return when (mode) {
-        ThemeMode.DYNAMIC -> dynamic ?: base
-        ThemeMode.AMOLED -> SitaraDark.copy(background = Color.Black, surface = Color.Black, surfaceContainer = Color(0xFF0A0A0A))
-        ThemeMode.ARTWORK -> {
-            if (artwork.isNullOrEmpty()) return base
-            val t = ArtworkPalette.themeFrom(artwork, dark)
-            base.copy(primary = Color(t.accent), onPrimary = Color(t.onAccent))
-        }
+        ThemeMode.DYNAMIC -> if (dynamic == null) base else base.copy(primary = dynamic.primary, onPrimary = dynamic.onPrimary)
+        ThemeMode.AMOLED -> base.copy(surface = Color.Black, surfaceContainer = Color.Black)
+        ThemeMode.ARTWORK -> base
     }
 }
+
+val LocalArtworkWash = staticCompositionLocalOf { true }
 
 @Composable
 fun SitaraTheme(
     themeMode: ThemeMode = ThemeMode.ARTWORK,
     darkMode: DarkMode = DarkMode.SYSTEM,
-    artwork: List<Int>? = null,
     reducedMotion: Boolean = false,
     content: @Composable () -> Unit,
 ) {
-    val dark = when (darkMode) {
-        DarkMode.SYSTEM -> isSystemInDarkTheme() || themeMode == ThemeMode.AMOLED
-        DarkMode.LIGHT -> themeMode == ThemeMode.AMOLED
+    val dark = themeMode == ThemeMode.AMOLED || when (darkMode) {
+        DarkMode.SYSTEM -> isSystemInDarkTheme()
+        DarkMode.LIGHT -> false
         DarkMode.DARK -> true
     }
     val dynamic = if (themeMode == ThemeMode.DYNAMIC && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-        val ctx = LocalContext.current
-        if (dark) dynamicDarkColorScheme(ctx) else dynamicLightColorScheme(ctx)
+        val context = LocalContext.current
+        if (dark) dynamicDarkColorScheme(context) else dynamicLightColorScheme(context)
     } else {
         null
     }
-    CompositionLocalProvider(LocalReducedMotion provides reducedMotion) {
+    CompositionLocalProvider(
+        LocalReducedMotion provides reducedMotion,
+        LocalArtworkWash provides (themeMode != ThemeMode.AMOLED),
+    ) {
         MaterialTheme(
-            colorScheme = sitaraColorScheme(themeMode, dark, artwork, dynamic),
+            colorScheme = sitaraColorScheme(themeMode, dark, dynamic),
             typography = SitaraTypography,
+            shapes = Shapes(
+                extraSmall = RoundedCornerShape(8.dp),
+                small = RoundedCornerShape(14.dp),
+                medium = RoundedCornerShape(20.dp),
+                large = RoundedCornerShape(28.dp),
+                extraLarge = RoundedCornerShape(28.dp),
+            ),
             content = content,
         )
     }

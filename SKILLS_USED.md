@@ -28,3 +28,4 @@ How Sitara is built, and which skills were actually invoked. Only invoked skills
 **Gaps (to be closed next session):** playwright (verify the Pages site at mobile and desktop widths once deployed), understand-anything for docs/ARCHITECTURE.md, android-intent-security, and a second Codex GPT-6 Astra cross-review of the fix set before v0.1.0.
 
 | ui1 original design contract | Codex · GPT-6 Astra | ponytail, ui-ux-pro-max, impeccable, frontend-ui-engineering, brainstorming | Codex ui1: SKILL.md reads; design search, Impeccable context, reference study and docs/design/DESIGN_SPEC.md |
+| ui1 typography, palette and original launcher mark | Codex · GPT-6 Astra | ponytail, ui-ux-pro-max, impeccable, frontend-ui-engineering, test-driven-development, jetpack-compose-performance | Codex ui1: tests authored before palette change; Inter metadata read; SVG/vector master and design tokens; execution deferred by instruction |

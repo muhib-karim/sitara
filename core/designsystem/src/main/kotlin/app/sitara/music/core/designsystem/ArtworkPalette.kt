@@ -19,15 +19,16 @@ data class ArtworkTheme(
 
 object ArtworkPalette {
     private const val WHITE = 0xFFFFFFFF.toInt()
-    private const val NEAR_BLACK = 0xFF0B0B14.toInt()
+    private const val NEAR_BLACK = 0xFF080808.toInt()
 
     fun themeFrom(colors: List<Int>, dark: Boolean): ArtworkTheme {
         require(colors.isNotEmpty())
-        // The most saturated colour reads as the "voice" of the cover.
-        val seed = colors.maxBy { saturation(it) * 0.7f + lightness(it).let { l -> 1f - abs(l - 0.55f) } * 0.3f }
+        // Sources order swatches by prominence. A grey dominant can borrow a chromatic secondary.
+        val dominant = colors.first()
+        val seed = if (chroma(dominant) >= 0.08f) dominant else colors.maxBy { chroma(it) }
         val (h, rawS, _) = toHsl(seed)
         // Near-greys stay neutral instead of picking up an arbitrary hue.
-        val s = if (rawS < 0.08f) 0f else rawS
+        val s = if (chroma(seed) < 0.08f) 0f else rawS.coerceIn(0.25f, 0.60f)
         val accentS = if (s == 0f) 0f else s.coerceIn(0.45f, 0.9f)
         var accentL = if (dark) 0.68f else 0.42f
         var accent = fromHsl(h, accentS, accentL)
@@ -42,6 +43,13 @@ object ArtworkPalette {
         val bottom = if (dark) fromHsl(h, (s * 0.5f).coerceAtMost(0.4f), 0.07f) else fromHsl(h, (s * 0.3f).coerceAtMost(0.3f), 0.96f)
         val content = if (dark) WHITE else NEAR_BLACK
         return ArtworkTheme(accent, onAccent, top, bottom, content)
+    }
+
+    private fun chroma(color: Int): Float {
+        val r = (color shr 16) and 0xFF
+        val g = (color shr 8) and 0xFF
+        val b = color and 0xFF
+        return (max(r, max(g, b)) - min(r, min(g, b))) / 255f
     }
 
     private fun bestOn(color: Int): Int = if (contrast(color, WHITE) >= contrast(color, NEAR_BLACK)) WHITE else NEAR_BLACK

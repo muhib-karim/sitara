@@ -10,6 +10,21 @@ class ArtworkPaletteTest {
     private val indigo = 0xFF1E1B4B.toInt()
 
     @Test
+    fun `chromatic dominant swatch wins over a louder secondary swatch`() {
+        val dominant = 0xFF567C82.toInt()
+        val theme = ArtworkPalette.themeFrom(listOf(dominant, 0xFFFF0000.toInt()), true)
+        assertEquals(ArtworkPalette.toHsl(dominant).first, ArtworkPalette.toHsl(theme.backdropTop).first, 3f)
+    }
+
+    @Test
+    fun `grey artwork remains neutral and vivid artwork is restrained`() {
+        val neutral = ArtworkPalette.themeFrom(listOf(grey), true)
+        assertEquals(0f, ArtworkPalette.saturation(neutral.backdropTop), 0.01f)
+        val vivid = ArtworkPalette.themeFrom(listOf(0xFFFF0000.toInt()), true)
+        assertTrue(ArtworkPalette.saturation(vivid.backdropTop) <= 0.61f)
+    }
+
+    @Test
     fun `hsl round trips`() {
         for (c in listOf(gold, grey, indigo, 0xFFFF0000.toInt(), 0xFF00FF00.toInt())) {
             val (h, s, l) = ArtworkPalette.toHsl(c)

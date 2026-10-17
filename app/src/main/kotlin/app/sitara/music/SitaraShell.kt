@@ -106,7 +106,7 @@ fun SitaraShell(
     var tab by rememberSaveable { mutableStateOf(initialTab) }
     var settingsOpen by rememberSaveable { mutableStateOf(initialSettingsOpen) }
     BackHandler(enabled = settingsOpen) { settingsOpen = false }
-    SitaraTheme(settings.themeMode, settings.darkMode, player.track?.artwork?.colors, settings.reducedMotion) {
+    SitaraTheme(settings.themeMode, settings.darkMode, settings.reducedMotion) {
         val haze = rememberHazeState()
         val navBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
         val barSpace = 64.dp + 16.dp + navBottom

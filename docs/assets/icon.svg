@@ -1,37 +1,6 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="t">
-  <title id="t">Sitara app icon</title>
-  <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#1B1640"/>
-      <stop offset="0.6" stop-color="#110F26"/>
-      <stop offset="1" stop-color="#0B0B14"/>
-    </linearGradient>
-    <radialGradient id="core" cx="0.5" cy="0.5" r="0.5">
-      <stop offset="0" stop-color="#F5C451" stop-opacity="0.6"/>
-      <stop offset="0.4" stop-color="#F5C451" stop-opacity="0.12"/>
-      <stop offset="1" stop-color="#F5C451" stop-opacity="0"/>
-    </radialGradient>
-    <linearGradient id="gold" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#FFE3A0"/>
-      <stop offset="0.5" stop-color="#F5C451"/>
-      <stop offset="1" stop-color="#E59A2F"/>
-    </linearGradient>
-    <linearGradient id="violetStar" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#B7ADFF"/>
-      <stop offset="1" stop-color="#8B7CFF"/>
-    </linearGradient>
-    <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
-      <feGaussianBlur stdDeviation="8" result="b"/>
-      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-    </filter>
-    <path id="star" d="M0 -100 Q10 -10 100 0 Q10 10 0 100 Q-10 10 -100 0 Q-10 -10 0 -100 Z"/>
-  </defs>
-  <rect width="512" height="512" rx="116" fill="url(#bg)"/>
-  <rect x="1.5" y="1.5" width="509" height="509" rx="114.5" fill="none" stroke="#8B7CFF" stroke-opacity="0.25" stroke-width="3"/>
-  <g transform="translate(256 256)">
-    <circle r="190" fill="url(#core)"/>
-    <use href="#star" transform="rotate(45) scale(1.32)" fill="url(#violetStar)" opacity="0.85"/>
-    <use href="#star" transform="scale(1.7)" fill="url(#gold)" filter="url(#glow)"/>
-    <circle r="11" fill="#FFF6DC"/>
-  </g>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 108 108" role="img" aria-labelledby="title">
+  <title id="title">Sitara split star</title>
+  <rect width="108" height="108" rx="28" fill="#101010"/>
+  <path d="M54.00,25.00 L62.00,46.00 L64.95,47.12 L36.65,58.44 L25.00,54.00 L46.00,46.00 Z" fill="#FF9F1C"/>
+  <path d="M71.35,49.56 L83.00,54.00 L62.00,62.00 L54.00,83.00 L46.00,62.00 L43.05,60.88 Z" fill="#FF9F1C"/>
 </svg>
