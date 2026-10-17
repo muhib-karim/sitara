@@ -60,15 +60,24 @@ fun SettingsScreen(
         item {
             Toggle("Reduced motion", "Swap springs for instant changes", settings.reducedMotion) { onChange(settings.copy(reducedMotion = it)) }
         }
+        // Normalisation and crossfade are saved but not yet applied to playback, so they are shown
+        // disabled until the audio processors are connected rather than pretending to work.
         item {
-            Toggle("Loudness normalisation", "Match every song to ${settings.targetLufs.toInt()} LUFS", settings.normalisation) { onChange(settings.copy(normalisation = it)) }
+            Toggle(
+                label = "Loudness normalisation",
+                detail = "Coming in a future update",
+                checked = settings.normalisation,
+                enabled = false,
+            ) { onChange(settings.copy(normalisation = it)) }
         }
         item {
             Column(Modifier.padding(horizontal = 20.dp, vertical = 8.dp)) {
-                Text("Crossfade: ${if (settings.crossfadeSeconds == 0) "off" else "${settings.crossfadeSeconds} s"}", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface)
+                Text("Crossfade", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface.copy(alpha = DISABLED_ALPHA))
+                Text("Coming in a future update", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 Slider(
                     value = settings.crossfadeSeconds.toFloat(),
                     onValueChange = { onChange(settings.copy(crossfadeSeconds = it.toInt())) },
+                    enabled = false,
                     valueRange = 0f..SitaraSettings.MAX_CROSSFADE_SECONDS.toFloat(),
                     steps = SitaraSettings.MAX_CROSSFADE_SECONDS - 1,
                 )
@@ -76,6 +85,8 @@ fun SettingsScreen(
         }
     }
 }
+
+private const val DISABLED_ALPHA = 0.38f
 
 @Composable
 private fun Choice(label: String, selected: Boolean, onClick: () -> Unit) {
@@ -92,18 +103,22 @@ private fun Choice(label: String, selected: Boolean, onClick: () -> Unit) {
 }
 
 @Composable
-private fun Toggle(label: String, detail: String, checked: Boolean, onChange: (Boolean) -> Unit) {
+private fun Toggle(label: String, detail: String, checked: Boolean, enabled: Boolean = true, onChange: (Boolean) -> Unit) {
     Row(
         Modifier
             .fillMaxWidth()
-            .toggleable(value = checked, role = Role.Switch, onValueChange = onChange)
+            .toggleable(value = checked, enabled = enabled, role = Role.Switch, onValueChange = onChange)
             .padding(horizontal = 20.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f)) {
-            Text(label, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface)
+            Text(
+                label,
+                style = MaterialTheme.typography.bodyLarge,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = if (enabled) 1f else DISABLED_ALPHA),
+            )
             Text(detail, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
-        Switch(checked = checked, onCheckedChange = null)
+        Switch(checked = checked, onCheckedChange = null, enabled = enabled)
     }
 }

@@ -1,5 +1,6 @@
 package app.sitara.music.feature.library
 
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -7,6 +8,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -35,7 +37,13 @@ fun LibraryScreen(
     LazyColumn(modifier.fillMaxSize(), contentPadding = contentPadding) {
         item { LargeTitle("Library") }
         item {
-            Row(Modifier.padding(horizontal = 20.dp, vertical = 4.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            // Scrolls sideways so every filter stays reachable on narrow screens and large font scales.
+            Row(
+                Modifier
+                    .horizontalScroll(rememberScrollState())
+                    .padding(horizontal = 20.dp, vertical = 4.dp),
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+            ) {
                 LibraryFilter.entries.forEach { f ->
                     FilterChip(selected = f == filter, onClick = { filter = f }, label = { Text(f.label) })
                 }
@@ -52,7 +60,7 @@ fun LibraryScreen(
                 TrackRow(Track(ar.id, ar.name, "Artist", "", 0, ar.artwork), onClick = {})
             }
             LibraryFilter.SONGS -> items(library.likedTracks, key = { it.id }) { t ->
-                TrackRow(t, onClick = { onPlay(library.likedTracks, library.likedTracks.indexOf(t)) })
+                TrackRow(t, onClick = { onPlay(library.likedTracks, library.likedTracks.indexOfFirst { it.id == t.id }) })
             }
         }
     }
