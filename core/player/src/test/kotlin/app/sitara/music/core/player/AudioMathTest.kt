@@ -44,6 +44,20 @@ class AudioMathTest {
     }
 
     @Test
+    fun `normalisation attenuates when the true peak is already above the ceiling`() {
+        // -18 LUFS wants +4 dB, but a 0 dBTP peak needs -1 dB to stay under the -1 dBTP ceiling.
+        assertEquals(-1f, Loudness.gainDb(measuredLufs = -18f, targetLufs = -14f, truePeakDb = 0f), 1e-6f)
+    }
+
+    @Test
+    fun `fade window is bounded by a short track`() {
+        // A 1 s track with a 6 s window must start the fade at 0, not at 83 %.
+        assertEquals(0f, Crossfade.progress(positionMs = 0, durationMs = 1_000, windowMs = 6_000), 0f)
+        assertEquals(0.5f, Crossfade.progress(positionMs = 500, durationMs = 1_000, windowMs = 6_000), 1e-6f)
+        assertEquals(1f, Crossfade.progress(positionMs = 1_000, durationMs = 1_000, windowMs = 6_000), 0f)
+    }
+
+    @Test
     fun `decibels convert to linear gain`() {
         assertEquals(1f, Loudness.dbToLinear(0f), 1e-6f)
         assertEquals(0.5012f, Loudness.dbToLinear(-6f), 1e-3f)

@@ -40,10 +40,20 @@ class LrcParserTest {
         val lyrics = LrcParser.parse("[00:10.00]<00:10.00>Shine <00:10.40>on <00:10.90>me\n[00:12.00]Next")
         val line = lyrics.lines.first()
         assertEquals("Shine on me", line.text)
-        assertEquals(listOf("Shine", "on", "me"), line.words.map { it.text })
+        assertEquals(listOf("Shine ", "on ", "me"), line.words.map { it.text })
         assertEquals(listOf(10_000L, 10_400L, 10_900L), line.words.map { it.startMs })
         assertEquals(10_400, line.words[0].endMs)
         assertEquals(12_000, line.words[2].endMs)
+    }
+
+    @Test
+    fun `keeps syllables joined and the text before the first word tag`() {
+        val lyrics = LrcParser.parse("[00:01.00]Oh <00:01.50>Hel<00:02.00>lo <00:02.50>world\n[00:04.00]Next")
+        val line = lyrics.lines.first()
+        assertEquals("Oh Hello world", line.text)
+        assertEquals(listOf("Oh ", "Hel", "lo ", "world"), line.words.map { it.text })
+        assertEquals(listOf(1_000L, 1_500L, 2_000L, 2_500L), line.words.map { it.startMs })
+        assertEquals(line.text, line.words.joinToString("") { it.text })
     }
 
     @Test

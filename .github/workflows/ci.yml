@@ -47,7 +47,7 @@ jobs:
         with:
           gradle-version: ${{ env.GRADLE_VERSION }}
       - name: Unit tests
-        run: gradle test --stacktrace
+        run: gradle test --continue --stacktrace
       - name: Screenshot tests
         # Compares against the committed baselines in app/src/test/screenshots and fails on any mismatch.
         # Refresh baselines with the "Record screenshots" workflow, review them, then commit.

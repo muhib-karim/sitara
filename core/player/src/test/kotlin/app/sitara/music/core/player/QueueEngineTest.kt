@@ -62,6 +62,16 @@ class QueueEngineTest {
     }
 
     @Test
+    fun `unshuffle restores the duplicate entry that was playing`() {
+        val a = t(1)
+        val b = t(2)
+        val q = QueueState().setQueue(listOf(a, b, a), startIndex = 2)
+        val restored = q.toggleShuffle(Random(3)).toggleShuffle()
+        assertEquals(listOf("t1", "t2", "t1"), restored.items.map { it.id })
+        assertEquals(2, restored.currentIndex)
+    }
+
+    @Test
     fun `tracks added while shuffled survive unshuffle`() {
         val q = QueueState().setQueue(five, 0).toggleShuffle(Random(1)).add(t(9)).toggleShuffle()
         assertEquals(listOf("t1", "t2", "t3", "t4", "t5", "t9"), q.items.map { it.id })
