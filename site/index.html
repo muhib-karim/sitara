@@ -1,0 +1,255 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sitara: Your music, beautifully.</title>
+  <meta name="description" content="Sitara is a free, open-source YouTube Music client for Android with spring-physics motion, glass surfaces, artwork colour and word-level karaoke lyrics.">
+  <meta name="theme-color" content="#0B0B14">
+  <meta name="color-scheme" content="dark">
+  <link rel="canonical" href="https://muhib-karim.github.io/sitara/">
+  <link rel="icon" type="image/svg+xml" href="assets/icon.svg">
+  <link rel="apple-touch-icon" href="assets/icon-512.png">
+
+  <meta property="og:type" content="website">
+  <meta property="og:site_name" content="Sitara">
+  <meta property="og:title" content="Sitara: Your music, beautifully.">
+  <meta property="og:description" content="A free, open-source YouTube Music client for Android. Spring motion, glass, artwork colour and lyrics that sing along.">
+  <meta property="og:url" content="https://muhib-karim.github.io/sitara/">
+  <meta property="og:image" content="https://muhib-karim.github.io/sitara/assets/banner.png">
+  <meta property="og:image:width" content="1280">
+  <meta property="og:image:height" content="400">
+  <meta property="og:image:alt" content="The Sitara star mark and wordmark on a deep indigo night sky.">
+  <meta name="twitter:card" content="summary_large_image">
+
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <svg width="0" height="0" class="sprite" aria-hidden="true" focusable="false">
+    <defs>
+      <linearGradient id="g-gold" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#FFE3A0"/>
+        <stop offset="0.5" stop-color="#F5C451"/>
+        <stop offset="1" stop-color="#E59A2F"/>
+      </linearGradient>
+      <linearGradient id="g-violet" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0" stop-color="#B7ADFF"/>
+        <stop offset="1" stop-color="#8B7CFF"/>
+      </linearGradient>
+      <path id="star" d="M0 -100 Q10 -10 100 0 Q10 10 0 100 Q-10 10 -100 0 Q-10 -10 0 -100 Z"/>
+    </defs>
+  </svg>
+
+  <header class="topbar">
+    <div class="wrap topbar__inner">
+      <a class="brand" href="#top" aria-label="Sitara home">
+        <svg class="brand__mark" viewBox="-110 -110 220 220" aria-hidden="true" focusable="false">
+          <use href="#star" transform="rotate(45) scale(0.78)" fill="url(#g-violet)"/>
+          <use href="#star" fill="url(#g-gold)"/>
+        </svg>
+        <span>Sitara</span>
+      </a>
+      <nav aria-label="Primary">
+        <ul class="nav">
+          <li><a href="#features">Features</a></li>
+          <li><a href="#screens">Screens</a></li>
+          <li><a href="#why">Why Sitara</a></li>
+          <li><a href="#roadmap">Roadmap</a></li>
+          <li><a href="https://github.com/muhib-karim/sitara">GitHub</a></li>
+        </ul>
+      </nav>
+    </div>
+  </header>
+
+  <main id="main">
+    <section class="hero" id="top" aria-labelledby="hero-title">
+      <div class="wrap hero__inner">
+        <div class="hero__mark" aria-hidden="true">
+          <svg viewBox="-160 -160 320 320" focusable="false">
+            <defs>
+              <radialGradient id="g-core" cx="0.5" cy="0.5" r="0.5">
+                <stop offset="0" stop-color="#F5C451" stop-opacity="0.6"/>
+                <stop offset="0.4" stop-color="#F5C451" stop-opacity="0.14"/>
+                <stop offset="1" stop-color="#F5C451" stop-opacity="0"/>
+              </radialGradient>
+            </defs>
+            <circle r="160" fill="url(#g-core)"/>
+            <g class="hero__arcs" fill="none" stroke="#8B7CFF" stroke-linecap="round">
+              <circle r="118" stroke-opacity="0.32" stroke-width="1.5"/>
+              <circle r="138" stroke-opacity="0.2" stroke-width="1.2"/>
+              <circle r="156" stroke-opacity="0.12" stroke-width="1"/>
+            </g>
+            <g class="hero__star">
+              <use href="#star" transform="rotate(45) scale(0.62)" fill="url(#g-violet)" opacity="0.9"/>
+              <use href="#star" fill="url(#g-gold)"/>
+              <circle r="6" fill="#FFF6DC"/>
+            </g>
+          </svg>
+        </div>
+        <p class="eyebrow">Open source · Android 8.0+ · GPL-3.0</p>
+        <h1 id="hero-title" class="hero__title">Sitara</h1>
+        <p class="hero__tagline">Your music, beautifully.</p>
+        <p class="hero__lede">A free YouTube Music client for Android where every transition rides a spring, the chrome is glass, colour comes from the cover and the lyrics sing along word by word.</p>
+        <div class="cta">
+          <a class="btn btn--primary" href="https://github.com/muhib-karim/sitara/releases/latest">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 4v11m0 0-4.5-4.5M12 15l4.5-4.5M5 19h14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            Download APK
+          </a>
+          <a class="btn btn--ghost" href="https://github.com/muhib-karim/sitara">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="m8.5 7-5 5 5 5m7-10 5 5-5 5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            View source
+          </a>
+        </div>
+        <p class="hero__note">Early preview (Phase A). Also available through Obtainium: add <code>https://github.com/muhib-karim/sitara</code>.</p>
+      </div>
+    </section>
+
+    <section class="section" id="features" aria-labelledby="features-title">
+      <div class="wrap">
+        <h2 id="features-title" class="section__title">Made to feel finished</h2>
+        <p class="section__lede">The details you notice every time you press play.</p>
+        <figure class="karaoke">
+          <div class="karaoke__stage" aria-hidden="true">
+            <p class="karaoke__line karaoke__line--past">under a sky of quiet light</p>
+            <p class="karaoke__line karaoke__line--now"><span class="w w--done">every</span> <span class="w w--done">little</span> <span class="w w--cur">star</span> <span class="w">knows</span> <span class="w">your</span> <span class="w">name</span></p>
+            <p class="karaoke__line karaoke__line--next">and hums it back to you tonight</p>
+          </div>
+          <figcaption>Word-level karaoke lyrics: sung words fill with gold as the track plays.</figcaption>
+        </figure>
+        <ul class="grid features">
+          <li class="card">
+            <span class="card__icon card__icon--gold" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M3 17c3 0 4-10 9-10s6 10 9 10" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            </span>
+            <h3>Spring motion</h3>
+            <p>The player sheet follows your finger and hands its release velocity to a critically damped spring. No snaps, no overshoot.</p>
+          </li>
+          <li class="card">
+            <span class="card__icon card__icon--violet" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="4" fill="none" stroke="currentColor" stroke-width="2"/><path d="M4 15l4.5-4 4 3.5L16 11l4 3.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
+            </span>
+            <h3>Colour from the cover</h3>
+            <p>Backdrop and accents are tinted from the artwork, with contrast checked in code. Or choose Material You, or pure AMOLED black.</p>
+          </li>
+          <li class="card">
+            <span class="card__icon card__icon--rose" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M4 7h11M4 12h16M4 17h8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            </span>
+            <h3>Karaoke lyrics</h3>
+            <p>Word-level fill from enhanced LRC timing, a focused active line and tap-to-seek. Lyrics share the pager with Up next.</p>
+          </li>
+          <li class="card">
+            <span class="card__icon card__icon--violet" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><rect x="3" y="14" width="18" height="6" rx="3" fill="none" stroke="currentColor" stroke-width="2"/><path d="M7 10V8m5 2V5m5 5V8" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            </span>
+            <h3>Glass you can read</h3>
+            <p>A floating pill tab bar and frosted sheets with real blur on Android 12+, and a tuned tinted scrim on older devices.</p>
+          </li>
+          <li class="card">
+            <span class="card__icon card__icon--gold" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><path d="M6 8h12M6 16h12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/><path d="M15 5l3 3-3 3M9 13l-3 3 3 3" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            </span>
+            <h3>Gestures that make sense</h3>
+            <p>Swipe the mini player up to open, down to hide, sideways to skip. Shuffle restores your order when you turn it off.</p>
+          </li>
+          <li class="card">
+            <span class="card__icon card__icon--rose" aria-hidden="true">
+              <svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="7" fill="none" stroke="currentColor" stroke-width="2"/><path d="M12 9.5V13l2.5 1.5M10 3h4" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+            </span>
+            <h3>Sound that stays level</h3>
+            <p>Loudness matched to −14 LUFS, smooth crossfade curves and a sleep timer that can wait for the end of the song.</p>
+          </li>
+        </ul>
+      </div>
+    </section>
+
+    <section class="section section--tint" id="screens" aria-labelledby="screens-title">
+      <div class="wrap">
+        <h2 id="screens-title" class="section__title">A look inside</h2>
+        <p class="section__lede">Every screenshot is recorded by automated screenshot tests, so what you see matches the code.</p>
+      </div>
+      <ul class="shots" aria-label="App screenshots">
+        <li class="shot"><figure><img src="screenshots/home_dark.png" alt="Home screen with gradient album covers and the floating glass tab bar" width="270" height="585" loading="lazy" decoding="async"><figcaption>Home</figcaption></figure></li>
+        <li class="shot"><figure><img src="screenshots/search_dark.png" alt="Search screen with a results list" width="270" height="585" loading="lazy" decoding="async"><figcaption>Search</figcaption></figure></li>
+        <li class="shot"><figure><img src="screenshots/library_dark.png" alt="Library screen with playlists and albums" width="270" height="585" loading="lazy" decoding="async"><figcaption>Library</figcaption></figure></li>
+        <li class="shot"><figure><img src="screenshots/player_dark.png" alt="Full player with an artwork-tinted backdrop and scrubber" width="270" height="585" loading="lazy" decoding="async"><figcaption>Player</figcaption></figure></li>
+        <li class="shot"><figure><img src="screenshots/lyrics_dark.png" alt="Lyrics page with word-level karaoke highlighting" width="270" height="585" loading="lazy" decoding="async"><figcaption>Lyrics</figcaption></figure></li>
+        <li class="shot"><figure><img src="screenshots/settings_dark.png" alt="Settings with theme and reduced motion options" width="270" height="585" loading="lazy" decoding="async"><figcaption>Settings</figcaption></figure></li>
+      </ul>
+    </section>
+
+    <section class="section" id="why" aria-labelledby="why-title">
+      <div class="wrap why">
+        <div class="why__intro">
+          <h2 id="why-title" class="section__title">Why Sitara</h2>
+          <p class="section__lede">Existing clients cover the basics well. Sitara is built for what comes after: reliability you can see, data you own and an app that is a pleasure to hold.</p>
+        </div>
+        <dl class="why__list">
+          <div><dt>Reliable by design</dt><dd>The stream source sits behind an interface with health checks and automatic fallback, with a health dashboard planned so you can see what is working.</dd></div>
+          <div><dt>Your data, your storage</dt><dd>Sitara Sync is planned to keep library, likes and settings in step across devices, end-to-end encrypted, through storage you already own.</dd></div>
+          <div><dt>Lyrics for everyone</dt><dd>Transliteration for Bangla, Hindi and Urdu is on the roadmap, so you can sing along in any script.</dd></div>
+          <div><dt>Accessible from day one</dt><dd>TalkBack labels, 48 dp targets, 200% font scale and a reduced-motion mode are built into the design system.</dd></div>
+          <div><dt>Built in the open</dt><dd>GPL-3.0, a public test suite, screenshot tests and a reproducible build pipeline. No account required.</dd></div>
+        </dl>
+      </div>
+    </section>
+
+    <section class="section section--tint" id="roadmap" aria-labelledby="roadmap-title">
+      <div class="wrap">
+        <h2 id="roadmap-title" class="section__title">Roadmap</h2>
+        <p class="section__lede">Shipped in phases, each one tested and usable.</p>
+        <ol class="roadmap">
+          <li class="phase phase--now">
+            <span class="phase__tag">Phase A · now</span>
+            <h3>Foundation</h3>
+            <p>Design system, glass tab bar, mini and full player on springs, queue, karaoke lyrics engine, sleep timer, theme modes, green CI and screenshot tests.</p>
+          </li>
+          <li class="phase">
+            <span class="phase__tag">Phase B</span>
+            <h3>Real source</h3>
+            <p>Search and browse, stream resolution with health checks and fallback, downloads, local files, synced lyrics, playlists, import and backup.</p>
+          </li>
+          <li class="phase">
+            <span class="phase__tag">Phase C</span>
+            <h3>Accounts and connection</h3>
+            <p>Library sync, scrobbling, widgets, Android Auto, Cast, Sitara Sync and LAN remote control.</p>
+          </li>
+          <li class="phase">
+            <span class="phase__tag">Phase D</span>
+            <h3>Premium touches</h3>
+            <p>Animated canvas, automix, lyric translation and transliteration, Wear OS remote and a TV layout.</p>
+          </li>
+        </ol>
+      </div>
+    </section>
+
+    <section class="section closing" aria-labelledby="closing-title">
+      <div class="wrap closing__inner">
+        <h2 id="closing-title" class="section__title">Press play.</h2>
+        <p class="section__lede">Free, open source and ready to try.</p>
+        <div class="cta">
+          <a class="btn btn--primary" href="https://github.com/muhib-karim/sitara/releases/latest">Download APK</a>
+          <a class="btn btn--ghost" href="https://github.com/muhib-karim/sitara/blob/main/CONTRIBUTING.md">Contribute</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="footer">
+    <div class="wrap footer__inner">
+      <p class="footer__brand">Sitara <span lang="bn">সিতারা</span> · <span lang="ur">ستارہ</span> · star</p>
+      <ul class="footer__links">
+        <li><a href="https://github.com/muhib-karim/sitara">Source</a></li>
+        <li><a href="https://github.com/muhib-karim/sitara/releases">Releases</a></li>
+        <li><a href="https://github.com/muhib-karim/sitara/blob/main/docs/ARCHITECTURE.md">Architecture</a></li>
+        <li><a href="https://github.com/muhib-karim/sitara/blob/main/docs/DESIGN.md">Design system</a></li>
+        <li><a href="https://github.com/muhib-karim/sitara/blob/main/SECURITY.md">Security</a></li>
+      </ul>
+      <p class="footer__legal">Sitara is not affiliated with, endorsed by, or connected to YouTube or Google. All trademarks belong to their respective owners.</p>
+      <p class="footer__legal">Released under the <a href="https://github.com/muhib-karim/sitara/blob/main/LICENSE">GNU General Public License v3.0</a>.</p>
+    </div>
+  </footer>
+</body>
+</html>

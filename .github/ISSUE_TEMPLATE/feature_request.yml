@@ -1,0 +1,53 @@
+name: Feature request
+description: Suggest an idea or improvement for Sitara.
+title: "[Feature]: "
+labels: ["enhancement", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the idea. Please check the [roadmap](https://github.com/muhib-karim/sitara#roadmap) and [existing issues](https://github.com/muhib-karim/sitara/issues) first; many features are already planned for a later phase.
+  - type: textarea
+    id: problem
+    attributes:
+      label: What problem would this solve?
+      description: Describe the situation and why the current behaviour falls short.
+      placeholder: When I fall asleep listening, I want playback to stop at the end of the current song rather than mid-track.
+    validations:
+      required: true
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed solution
+      description: How you imagine it working. Sketches or mock-ups are welcome.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      multiple: true
+      options:
+        - Player and playback
+        - Lyrics
+        - Library and playlists
+        - Search and discovery
+        - Downloads and offline
+        - Design and motion
+        - Accessibility
+        - Sync and devices
+        - Settings
+        - Other
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched existing issues and the roadmap.
+          required: true
+        - label: This feature does not require circumventing DRM or paid-only service features.
+          required: true

@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Questions and ideas
+    url: https://github.com/muhib-karim/sitara/discussions
+    about: Ask questions, share ideas and talk with the community.
+  - name: Report a security vulnerability
+    url: https://github.com/muhib-karim/sitara/security/advisories/new
+    about: Please report security issues privately, never in a public issue.
+  - name: Documentation
+    url: https://muhib-karim.github.io/sitara/
+    about: Project website, architecture and design system.

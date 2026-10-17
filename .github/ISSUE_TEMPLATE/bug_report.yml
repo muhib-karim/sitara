@@ -1,0 +1,92 @@
+name: Bug report
+description: Something in Sitara is broken or behaves unexpectedly.
+title: "[Bug]: "
+labels: ["bug", "triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to report a bug. Please search [existing issues](https://github.com/muhib-karim/sitara/issues) first.
+        Security problems must be reported privately; see [SECURITY.md](https://github.com/muhib-karim/sitara/blob/main/SECURITY.md).
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: A clear description of the bug.
+      placeholder: The mini player does not hide when I swipe down while a track is buffering.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Open Home
+        2. Play any track
+        3. Swipe down on the mini player
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Sitara version
+      description: Settings > About, or the release / CI build you installed.
+      placeholder: 0.1.0-dev
+    validations:
+      required: true
+  - type: dropdown
+    id: source
+    attributes:
+      label: Where did you install Sitara from?
+      options:
+        - GitHub Releases
+        - Obtainium
+        - CI artifact (sitara-debug-apk)
+        - Built from source
+        - Other
+    validations:
+      required: true
+  - type: input
+    id: device
+    attributes:
+      label: Device and Android version
+      placeholder: Pixel 8, Android 16
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      multiple: true
+      options:
+        - Home
+        - Search
+        - Library
+        - Mini player
+        - Full player
+        - Lyrics
+        - Queue
+        - Settings
+        - Playback / audio
+        - Theme / colour
+        - Accessibility
+        - Other
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs, screenshots or recordings
+      description: Attach screenshots or a screen recording, and paste any relevant log output. Remove personal information first.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Checklist
+      options:
+        - label: I searched existing issues and this is not a duplicate.
+          required: true
+        - label: I am using the latest version of Sitara.

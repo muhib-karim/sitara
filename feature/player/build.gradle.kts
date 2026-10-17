@@ -19,6 +19,8 @@ dependencies {
     implementation(project(":core:designsystem"))
     implementation(project(":core:model"))
     implementation(project(":source:lyrics"))
+    implementation(project(":core:common"))
+    implementation(libs.activity.compose)
     implementation(libs.compose.runtime)
     implementation(libs.compose.foundation)
     implementation(libs.compose.ui)
