@@ -85,7 +85,7 @@ class PlaybackEngineTest {
         engine.play(listOf(t(1)), 0)
         port.positionMs = 1_000
         port.playing = false
-        engine.onPlaybackEnded()
+        engine.onPlaybackStateChanged(ended = true)
         assertTrue(engine.state.value.queue.ended)
 
         engine.togglePlay()
@@ -93,6 +93,75 @@ class PlaybackEngineTest {
         assertEquals(0L, port.positionMs)
         assertTrue(port.playing)
         assertFalse(engine.state.value.queue.ended)
+    }
+
+    @Test
+    fun `play after seeking from completion keeps the selected position`() = runTest {
+        val engine = engine()
+        engine.play(listOf(t(1)), 0)
+        port.positionMs = 1_000
+        port.playing = false
+        engine.onPlaybackStateChanged(ended = true)
+
+        engine.seekTo(400)
+        assertFalse(engine.state.value.queue.ended)
+        engine.togglePlay()
+
+        assertEquals(400L, port.positionMs)
+        assertTrue(engine.state.value.isPlaying)
+    }
+
+    @Test
+    fun `toggle pauses playback that resumed after seeking from completion`() = runTest {
+        val engine = engine()
+        engine.play(listOf(t(1)), 0)
+        port.playing = false
+        engine.onPlaybackStateChanged(ended = true)
+
+        engine.seekTo(400)
+        port.playing = true
+        engine.togglePlay()
+
+        assertEquals(400L, engine.state.value.positionMs)
+        assertFalse(engine.state.value.isPlaying)
+        assertFalse(engine.state.value.queue.ended)
+    }
+
+    @Test
+    fun `previous after completion clears the restart flag`() = runTest {
+        val engine = engine()
+        engine.play(listOf(t(1).copy(durationMs = 10_000)), 0)
+        port.positionMs = 10_000
+        port.playing = false
+        engine.onPlaybackStateChanged(ended = true)
+
+        engine.previous()
+        assertEquals(0L, engine.state.value.positionMs)
+        assertFalse(engine.state.value.queue.ended)
+        port.positionMs = 500
+        port.playing = true
+        engine.togglePlay()
+
+        assertEquals(500L, engine.state.value.positionMs)
+        assertFalse(engine.state.value.isPlaying)
+    }
+
+    @Test
+    fun `system seek leaving ended state clears completion without an item transition`() = runTest {
+        val engine = engine()
+        engine.play(listOf(t(1)), 0)
+        val entry = engine.state.value.queue.currentEntry
+        port.playing = false
+        engine.onPlaybackStateChanged(ended = true)
+
+        port.seekTo(400)
+        engine.onPlaybackStateChanged(ended = false)
+        assertFalse(engine.state.value.queue.ended)
+        engine.togglePlay()
+
+        assertEquals(entry, engine.state.value.queue.currentEntry)
+        assertEquals(400L, engine.state.value.positionMs)
+        assertTrue(engine.state.value.isPlaying)
     }
 
     @Test

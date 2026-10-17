@@ -1,5 +1,7 @@
 package app.sitara.music
 
+import androidx.activity.OnBackPressedDispatcher
+import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertIsDisplayed
@@ -24,6 +26,7 @@ import app.sitara.music.source.fake.FakeMusicSource
 import app.sitara.music.source.fake.SampleCatalog
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Rule
 import org.junit.Test
@@ -35,6 +38,7 @@ import org.robolectric.annotation.Config
 @Config(sdk = [35], qualifiers = "w411dp-h891dp-xxhdpi")
 class PlayerInteractionTest {
     @get:Rule val compose = createComposeRule()
+    private lateinit var backDispatcher: OnBackPressedDispatcher
 
     private fun render(expanded: Boolean = false, page: Int = 0, actions: PlayerActions = PlayerActions.None, durationMs: Long = 100_000) {
         val source = FakeMusicSource()
@@ -43,6 +47,7 @@ class PlayerInteractionTest {
         val library = runBlocking { source.library() }
         val lyrics = runBlocking { source.lyrics(track) }
         compose.setContent {
+            backDispatcher = checkNotNull(LocalOnBackPressedDispatcherOwner.current).onBackPressedDispatcher
             SitaraShell(
                 settings = SitaraSettings(darkMode = DarkMode.DARK, reducedMotion = true),
                 home = home,
@@ -81,6 +86,30 @@ class PlayerInteractionTest {
         assertEquals(1, next)
         compose.onNodeWithContentDescription("Open player").performTouchInput { swipeUp(startY = bottom, endY = -100f) }
         compose.onNodeWithContentDescription("Collapse player").assertIsDisplayed()
+    }
+
+    @Test
+    fun backHandlingStaysDisabledDuringDragAndCollapsesTheExpandedPlayer() {
+        render()
+        compose.runOnIdle { assertFalse(backDispatcher.hasEnabledCallbacks()) }
+        compose.onNodeWithContentDescription("Open player").performTouchInput {
+            down(center)
+            moveTo(Offset(centerX, top))
+        }
+        compose.runOnIdle { assertFalse(backDispatcher.hasEnabledCallbacks()) }
+        compose.onNodeWithContentDescription("Open player").performTouchInput { cancel() }
+        compose.runOnIdle { assertFalse(backDispatcher.hasEnabledCallbacks()) }
+
+        compose.onNodeWithContentDescription("Open player").performTouchInput { swipeUp(startY = bottom, endY = -100f) }
+        compose.onNodeWithContentDescription("Collapse player").assertIsDisplayed()
+        compose.runOnIdle {
+            assertTrue(backDispatcher.hasEnabledCallbacks())
+            backDispatcher.onBackPressed()
+        }
+
+        compose.onNodeWithContentDescription("Open player").assertIsDisplayed()
+        compose.onNodeWithText("Home").assertIsSelected()
+        compose.runOnIdle { assertFalse(backDispatcher.hasEnabledCallbacks()) }
     }
 
     @Test

@@ -29,8 +29,11 @@ class StreamUriResolver(
         val track = trackFor(id) ?: throw IOException("Track $id is not in the queue")
         val stream = try {
             runBlocking { resolver.resolve(track) }
+        } catch (e: InterruptedException) {
+            Thread.currentThread().interrupt()
+            throw InterruptedIOException("Resolving $id was interrupted").apply { initCause(e) }
         } catch (e: CancellationException) {
-            throw InterruptedIOException("Resolving $id was cancelled")
+            throw InterruptedIOException("Resolving $id was cancelled").apply { initCause(e) }
         } catch (e: Exception) {
             throw IOException("Could not resolve a stream for $id", e)
         }

@@ -62,13 +62,18 @@ class PlaybackEngine(
     fun next() = moveTo(queue.skipNext())
 
     fun previous() {
-        if (port.positionMs > RESTART_THRESHOLD_MS) port.seekTo(0) else moveTo(queue.previous())
+        if (port.positionMs > RESTART_THRESHOLD_MS) {
+            seekTo(0)
+        } else {
+            moveTo(queue.previous())
+        }
         refresh()
     }
 
     fun playUpNext(upNextIndex: Int) = moveTo(queue.skipTo(queue.currentIndex + 1 + upNextIndex))
 
     fun seekTo(positionMs: Long) {
+        publish(queue.copy(ended = false))
         port.seekTo(positionMs)
         refresh()
     }
@@ -110,9 +115,9 @@ class PlaybackEngine(
         refresh()
     }
 
-    /** The player reached the end of the last item with repeat off. */
-    fun onPlaybackEnded() {
-        publish(queue.copy(ended = true))
+    /** Mirrors completion in both directions, including same-item seeks from system controls. */
+    fun onPlaybackStateChanged(ended: Boolean) {
+        publish(queue.copy(ended = ended))
         refresh()
     }
 

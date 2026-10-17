@@ -14,6 +14,7 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeLeft
+import androidx.compose.ui.test.swipeUp
 import androidx.compose.ui.unit.Density
 import app.sitara.music.core.model.DarkMode
 import app.sitara.music.core.model.Library
@@ -141,7 +142,9 @@ class ScreenshotTest {
 
     @Test fun libraryLight() = shot("library", dark = false, tab = Tab.LIBRARY)
 
-    @Test fun playerDark() = shot("player", dark = true, expanded = true)
+    @Test fun playerDark() = shot("player", dark = true) {
+        compose.onNodeWithContentDescription("Open player").performTouchInput { swipeUp(startY = bottom, endY = -100f) }
+    }
 
     @Test fun playerLight() = shot("player", dark = false, expanded = true)
 

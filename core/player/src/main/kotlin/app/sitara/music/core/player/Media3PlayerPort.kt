@@ -9,7 +9,6 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import app.sitara.music.core.model.RepeatMode
 import app.sitara.music.core.model.Track
-import java.util.concurrent.ConcurrentHashMap
 
 /**
  * [PlayerPort] over ExoPlayer. Items carry a `sitara://track/<id>` URI that [StreamUriResolver]
@@ -18,7 +17,8 @@ import java.util.concurrent.ConcurrentHashMap
  */
 @OptIn(UnstableApi::class)
 class Media3PlayerPort(private val player: ExoPlayer) : PlayerPort {
-    private val tracks = ConcurrentHashMap<String, Track>()
+    @Volatile
+    private var tracks: Map<String, Track> = emptyMap()
 
     /** Called from the loader thread by [StreamUriResolver]. */
     fun track(id: String): Track? = tracks[id]
@@ -35,7 +35,7 @@ class Media3PlayerPort(private val player: ExoPlayer) : PlayerPort {
     }
 
     override fun reorder(entries: List<QueueEntry>, index: Int) {
-        remember(entries)
+        // Membership is unchanged; keep the same snapshot visible to in-flight loaders.
         val current = player.currentMediaItemIndex
         val count = player.mediaItemCount
         if (current + 1 < count) player.removeMediaItems(current + 1, count)
@@ -68,8 +68,8 @@ class Media3PlayerPort(private val player: ExoPlayer) : PlayerPort {
     }
 
     private fun remember(entries: List<QueueEntry>) {
-        tracks.clear()
-        entries.forEach { tracks[it.track.id] = it.track }
+        // Build privately, then publish once. Published maps are never mutated.
+        tracks = entries.associate { it.track.id to it.track }
     }
 
     private fun toMediaItem(entry: QueueEntry): MediaItem = MediaItem.Builder()

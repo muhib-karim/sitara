@@ -84,7 +84,7 @@ class PlaybackService : MediaSessionService() {
         }
 
         override fun onPlaybackStateChanged(playbackState: Int) {
-            if (playbackState == Player.STATE_ENDED) engine.onPlaybackEnded() else engine.refresh()
+            engine.onPlaybackStateChanged(ended = playbackState == Player.STATE_ENDED)
         }
 
         override fun onIsPlayingChanged(isPlaying: Boolean) = engine.refresh()
