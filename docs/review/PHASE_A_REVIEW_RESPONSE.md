@@ -1,5 +1,8 @@
 # Phase A review: response
 
+**CI:** green on `c189c13`, [run 39054185482](https://github.com/muhib-karim/sitara/actions/runs/39054185482) (ktlint,
+unit tests for both variants, screenshot verification, `assembleDebug`, artifact `sitara-debug-apk`).
+
 The response to the Phase A cross-model review (verdict: request changes; 17 findings). Every finding was fixed. Logic
 fixes followed red-green: the failing test was pushed first, CI showed it failing, and the fix followed in a separate
 commit. Plan: [`docs/plan/PHASE_A_FIX_PLAN.md`](../plan/PHASE_A_FIX_PLAN.md).
@@ -18,7 +21,7 @@ commit. Plan: [`docs/plan/PHASE_A_FIX_PLAN.md`](../plan/PHASE_A_FIX_PLAN.md).
 | 10 | Important | Sleep timer uses the wall clock | `e204e2a`: `SleepTimer` takes a `kotlin.time.TimeSource`; production uses `ElapsedRealtimeTimeSource` | `SleepTimerTest` (virtual monotonic time) |
 | 11 | Important | Enhanced LRC splits syllables and drops leading text | `ea463b5` (parser), `2223502` (karaoke rendering via `LyricsCursor.sweep`) | `LrcParserTest.keeps syllables joined and the text before the first word tag`, `LyricsCursorTest.karaoke sweep reports character offsets for sung and active spans` |
 | 12 | Important | Plain lyrics scroll to the end, dim and seek to 0 | `2223502`: unsynced lyrics render as static text | `LyricsCursorTest.plain lyrics never have an active line` |
-| 13 | Important | `verify \|\| record` hides screenshot mismatches; no baselines | `65a5e43`: CI runs `verifyRoborazziDebug` only; `screenshots.yml` records baselines as an artifact for review | CI `Screenshot tests` step (fails on any mismatch) |
+| 13 | Important | `verify \|\| record` hides screenshot mismatches; no baselines | `65a5e43`: CI runs `verifyRoborazziDebug` only; `screenshots.yml` records baselines as an artifact for review. `68717d7`: both jobs pinned to `ubuntu-24.04`. `c189c13`: reviewed baselines from run 39053926445 committed | CI `Screenshot tests` step: failed honestly with no baselines (run 39053530091), passes against them (run 39054185482) |
 | 14 | Important | Exported service accepts any controller with full commands | `55ea405` (policy), `1ddbbb9` (stream allowlist), `8d7f842` (session callback): `onConnect` applies `ControllerPolicy`; external media items rejected; player loads only `sitara://` and https | `ControllerPolicyTest` (5 tests), `StreamPolicyTest` (2 tests) |
 | 15 | Minor | Normalisation and crossfade controls do nothing | `a793769`: shown disabled, labelled "Coming in a future update" | screenshot `settings_*` |
 | 16 | Minor | Sheet geometry recomputed in composition every frame | `a87ca96`: geometry read in `offset`/`layout`/`graphicsLayer` lambdas; `derivedStateOf` thresholds for content | screenshot `player_*`; manual device check pending |
