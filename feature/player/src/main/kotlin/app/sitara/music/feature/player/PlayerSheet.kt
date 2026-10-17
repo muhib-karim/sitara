@@ -75,6 +75,7 @@ fun PlayerSheet(
     val currentActions by rememberUpdatedState(actions)
     val track = state.track
     val open = expanded && track != null
+    PlayerSystemBars(open)
     BackHandler(enabled = open) { expanded = false }
     SharedTransitionLayout(modifier.fillMaxSize()) {
         AnimatedContent(

@@ -3,6 +3,7 @@ package app.sitara.music.feature.player
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -97,30 +98,32 @@ private fun SyncedLyrics(lyrics: Lyrics, positionMs: Long, contentColor: Color, 
             if (reduced) listState.scrollToItem(active, offset) else listState.animateScrollToItem(active, offset)
         }
     }
-    LazyColumn(
-        modifier.fillMaxSize().fadingEdges(),
-        state = listState,
-        contentPadding = PaddingValues(top = 24.dp, bottom = 240.dp),
-    ) {
-        itemsIndexed(lyrics.lines, key = { i, _ -> i }, contentType = { _, _ -> LINE_CONTENT_TYPE }) { i, line ->
-            val distance = if (active < 0) 2 else abs(i - active)
-            val scale by animateFloatAsState(if (i == active) 1.04f else 1f, SitaraMotion.orReduced(reduced, SitaraMotion.fade(SitaraMotion.LYRIC_FOCUS_MS)), label = "lineScale")
-            val alpha by animateFloatAsState(if (i == active) 1f else ArtworkScrim.InactiveLyric, SitaraMotion.orReduced(reduced, SitaraMotion.fade(SitaraMotion.LYRIC_FOCUS_MS)), label = "lineAlpha")
-            Box(
-                Modifier
-                    .fillMaxWidth()
-                    .clickable(role = Role.Button) { onSeek(line.startMs) }
-                    .semantics { selected = i == active }
-                    .padding(horizontal = 28.dp, vertical = 10.dp)
-                    .graphicsLayer {
-                        scaleX = scale
-                        scaleY = scale
-                        this.alpha = alpha
-                        transformOrigin = TransformOrigin(0f, 0.5f)
-                    }
-                    .blur(if (reduced || distance == 0) 0.dp else distance.coerceAtMost(2).dp),
-            ) {
-                Text(line.text, style = LineStyle, color = contentColor)
+    BoxWithConstraints(modifier.fillMaxSize()) {
+        LazyColumn(
+            Modifier.fillMaxSize().fadingEdges(),
+            state = listState,
+            contentPadding = PaddingValues(top = 24.dp, bottom = maxHeight * 0.65f),
+        ) {
+            itemsIndexed(lyrics.lines, key = { i, _ -> i }, contentType = { _, _ -> LINE_CONTENT_TYPE }) { i, line ->
+                val distance = if (active < 0) 2 else abs(i - active)
+                val scale by animateFloatAsState(if (i == active) 1.04f else 1f, SitaraMotion.orReduced(reduced, SitaraMotion.fade(SitaraMotion.LYRIC_FOCUS_MS)), label = "lineScale")
+                val alpha by animateFloatAsState(if (i == active) 1f else ArtworkScrim.InactiveLyric, SitaraMotion.orReduced(reduced, SitaraMotion.fade(SitaraMotion.LYRIC_FOCUS_MS)), label = "lineAlpha")
+                Box(
+                    Modifier
+                        .fillMaxWidth()
+                        .clickable(role = Role.Button) { onSeek(line.startMs) }
+                        .semantics { selected = i == active }
+                        .padding(horizontal = 28.dp, vertical = 10.dp)
+                        .graphicsLayer {
+                            scaleX = scale
+                            scaleY = scale
+                            this.alpha = alpha
+                            transformOrigin = TransformOrigin(0f, 0.5f)
+                        }
+                        .blur(if (reduced || distance == 0) 0.dp else distance.coerceAtMost(2).dp),
+                ) {
+                    Text(line.text, style = LineStyle, color = contentColor)
+                }
             }
         }
     }

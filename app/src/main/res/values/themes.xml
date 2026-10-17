@@ -4,5 +4,5 @@
         <item name="android:statusBarColor">@android:color/transparent</item>
         <item name="android:navigationBarColor">@android:color/transparent</item>
     </style>
-    <color name="sitara_night">#FF0B0B14</color>
+    <color name="sitara_night">#FF000000</color>
 </resources>
