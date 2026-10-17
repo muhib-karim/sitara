@@ -126,7 +126,8 @@ internal fun FullPlayer(state: PlayerUiState, actions: PlayerActions, onCollapse
 @Composable
 private fun PlayingPage(state: PlayerUiState, actions: PlayerActions, artworkModifier: Modifier, onQueue: () -> Unit) {
     BoxWithConstraints(Modifier.fillMaxSize()) {
-        val landscape = maxWidth > maxHeight
+        val stageHeight = maxHeight
+        val landscape = maxWidth > stageHeight
         if (landscape) {
             Row(Modifier.fillMaxSize().padding(horizontal = 24.dp), verticalAlignment = Alignment.CenterVertically) {
                 ArtworkStage(state, artworkModifier, Modifier.weight(1f).fillMaxSize())
@@ -138,7 +139,7 @@ private fun PlayingPage(state: PlayerUiState, actions: PlayerActions, artworkMod
         } else {
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 24.dp, vertical = 16.dp)) {
                 // Reserve room for transport while keeping the sleeve prominent on tall phones.
-                ArtworkStage(state, artworkModifier, Modifier.fillMaxWidth().height((maxHeight - 240.dp).coerceIn(180.dp, 440.dp)))
+                ArtworkStage(state, artworkModifier, Modifier.fillMaxWidth().height((stageHeight - 240.dp).coerceIn(180.dp, 440.dp)))
                 Spacer(Modifier.height(24.dp))
                 TrackHeading(state, onQueue = onQueue)
                 Spacer(Modifier.height(12.dp))

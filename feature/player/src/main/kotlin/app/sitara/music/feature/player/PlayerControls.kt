@@ -17,6 +17,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -84,12 +85,11 @@ private fun Scrubber(state: PlayerUiState, actions: PlayerActions) {
             dragging = false
         },
         enabled = duration > 0,
-        thumb = { Box(Modifier.size(if (dragging) 16.dp else 10.dp).background(Color.White, CircleShape)) },
-        track = {
-            Box(Modifier.fillMaxWidth().height(if (dragging) 10.dp else 6.dp).clip(CircleShape).background(Color(0xFF777777))) {
-                Box(Modifier.fillMaxWidth(value).height(if (dragging) 10.dp else 6.dp).background(SitaraColors.Saffron))
-            }
-        },
+        colors = SliderDefaults.colors(
+            thumbColor = Color.White,
+            activeTrackColor = SitaraColors.Saffron,
+            inactiveTrackColor = Color(0xFF777777),
+        ),
         modifier = Modifier.fillMaxWidth().height(48.dp).semantics { contentDescription = "Seek" },
     )
     Row(Modifier.fillMaxWidth()) {
