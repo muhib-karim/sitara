@@ -11,3 +11,7 @@ local.properties
 .kotlin/
 *.apk
 *.aab
+
+# Local commit bundle when workspace Git metadata is read-only.
+/.ui1-handoff/
+/artifacts/
