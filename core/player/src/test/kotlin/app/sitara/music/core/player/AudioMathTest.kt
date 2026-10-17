@@ -1,8 +1,8 @@
 package app.sitara.music.core.player
 
+import kotlin.math.abs
 import org.junit.Assert.assertEquals
 import org.junit.Test
-import kotlin.math.abs
 
 class AudioMathTest {
     @Test

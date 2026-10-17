@@ -60,7 +60,12 @@ fun LyricsPage(
         itemsIndexed(lyrics.lines) { i, line ->
             val distance = if (active < 0) 2 else kotlin.math.abs(i - active)
             val scale by animateFloatAsState(if (i == active) 1f else 0.94f, SitaraMotion.orReduced(reduced, SitaraMotion.gentle()), label = "lineScale")
-            val alpha by animateFloatAsState(if (i == active) 1f else if (i < active) 0.35f else 0.5f, SitaraMotion.fade(), label = "lineAlpha")
+            val targetAlpha = when {
+                i == active -> 1f
+                i < active -> 0.35f
+                else -> 0.5f
+            }
+            val alpha by animateFloatAsState(targetAlpha, SitaraMotion.fade(), label = "lineAlpha")
             Box(
                 Modifier
                     .fillMaxWidth()

@@ -3,12 +3,12 @@ package app.sitara.music.core.player
 import app.sitara.music.core.model.Artwork
 import app.sitara.music.core.model.RepeatMode
 import app.sitara.music.core.model.Track
+import kotlin.random.Random
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import kotlin.random.Random
 
 class QueueEngineTest {
     private fun t(n: Int) = Track("t$n", "Song $n", "Artist", "Album", 1000, Artwork(listOf(0)))

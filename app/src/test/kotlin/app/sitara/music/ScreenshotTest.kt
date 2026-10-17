@@ -94,5 +94,4 @@ class ScreenshotTest {
     @Test fun settingsDark() = shot("settings", dark = true, settingsOpen = true)
 
     @Test fun settingsLight() = shot("settings", dark = false, settingsOpen = true)
-
 }
