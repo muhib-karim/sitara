@@ -19,7 +19,7 @@ This document describes how Sitara is put together: the module map, how data mov
 | `:core:model` | Pure Kotlin | Domain types: `Track`, `Album`, `Artist`, `Playlist`, `Queue`, `LyricsLine`, `LyricsWord` |
 | `:core:common` | Pure Kotlin | Result types, coroutine dispatchers, time and formatting helpers |
 | `:core:data` | Android library | Repositories over `MusicSource`, DataStore-backed settings |
-| `:core:player` | Android library | Media3 `MediaSessionService`, `PlayerController`, queue engine, crossfade curves, LUFS normalisation gain, sleep timer |
+| `:core:player` | Android library | `PlaybackService` (Media3 session + ExoPlayer), `PlaybackEngine`, `PlayerController` facade, queue engine, controller/stream policies, crossfade curves, LUFS gain, sleep timer |
 | `:core:designsystem` | Android library | Theme, colour roles, artwork palette mapping, `SitaraMotion`, glass surfaces, typography, icons, shared components |
 | `:source:api` | Pure Kotlin | Contracts: `MusicSource`, `StreamResolver`, `LyricsProvider`, `HealthCheck` |
 | `:source:fake` | Pure Kotlin | Deterministic sample catalogue with generated gradient covers, used by the app in Phase A and by every test |
@@ -88,20 +88,18 @@ Sitara follows unidirectional data flow. State flows down as immutable objects; 
 
 ```mermaid
 flowchart LR
-    src["MusicSource<br/>(:source:api)"] --> repo["Repositories<br/>(:core:data)"]
-    repo -->|Flow| vm["ViewModels"]
+    src["MusicSource<br/>(:source:api)"] -->|suspend calls| vm["AppViewModel"]
     vm -->|StateFlow&lt;UiState&gt;| ui["Compose screens"]
     ui -->|events| vm
-    vm -->|commands| pc["PlayerController<br/>(:core:player)"]
-    pc --> svc["MediaSessionService<br/>(Media3 ExoPlayer)"]
-    svc -->|player state| pc
-    pc -->|StateFlow&lt;PlaybackState&gt;| vm
-    ds["DataStore settings"] -->|Flow| vm
+    vm -->|commands| pc["PlayerController facade<br/>(:core:player)"]
+    pc -->|buffered until ready| eng["PlaybackEngine<br/>(in PlaybackService)"]
+    eng -->|StateFlow&lt;PlaybackSnapshot&gt;| vm
+    ds["DataStore settings<br/>(:core:data)"] -->|Flow| vm
 ```
 
 1. **Source.** A `MusicSource` exposes suspending calls and flows for home shelves, search, albums, playlists and track metadata, returning `:core:model` types.
-2. **Repositories.** `:core:data` wraps sources, adds caching and maps errors into `Result` types from `:core:common`.
-3. **ViewModels.** Each screen has a ViewModel that combines repository flows and settings into a single immutable `UiState`, exposed as `StateFlow`.
+2. **ViewModel.** In Phase A one `AppViewModel` combines the fake source, settings and playback state into immutable UI state exposed as `StateFlow`. Repositories with caching arrive with the real source in Phase B.
+3. **Errors.** `:core:common` provides an `Outcome` type for results that can fail.
 4. **Compose.** Screens are stateless functions of `UiState` plus an event callback. This is what makes them easy to preview and screenshot-test with fake state.
 5. **Settings.** Theme mode, reduced motion and playback preferences live in DataStore and are observed as flows, so changes apply instantly without restarts.
 
@@ -110,24 +108,41 @@ flowchart LR
 ```mermaid
 sequenceDiagram
     participant UI as Player UI
-    participant VM as PlayerViewModel
-    participant PC as PlayerController
-    participant Q as QueueEngine
-    participant S as MediaSessionService
-    UI->>VM: tap track
-    VM->>PC: play(queue, startIndex)
-    PC->>Q: set items, apply shuffle / repeat
-    PC->>S: connect via MediaController, set media items
-    S-->>PC: isPlaying, position, current item
-    PC-->>VM: PlaybackState flow
-    VM-->>UI: recomposed state (artwork palette, progress, lyrics line)
+    participant PC as PlayerController (facade)
+    participant E as PlaybackEngine
+    participant X as ExoPlayer
+    participant R as StreamUriResolver
+    UI->>PC: play(tracks, index)
+    PC->>E: play (buffered by EngineGate until the service is up)
+    E->>E: QueueState.setQueue (entries with unique ids)
+    E->>X: setMediaItems(sitara://track/<id> for every entry)
+    X->>R: open item (loader thread)
+    R-->>X: https stream URL from the StreamResolver
+    X-->>E: onMediaItemTransition / ENDED / pause at item end
+    E-->>UI: PlaybackSnapshot flow (queue, position, playing)
 ```
 
-- `PlayerController` is the single entry point for playback. It owns a Media3 `MediaController` connected to the `MediaSessionService`, so system media controls, the notification, Bluetooth buttons and lock screen all drive the same session.
-- The **queue engine** is pure Kotlin. Shuffle keeps the original order so turning shuffle off restores it exactly; repeat modes are off, all and one.
-- **Crossfade** and **normalisation** are computed as pure functions (fade curves; gain from measured LUFS towards a −14 LUFS target) and applied by the player layer. In Phase B they move into a Media3 `AudioProcessor` chain.
-- The **sleep timer** supports a duration in minutes or "end of current track".
-- Lyrics are parsed once per track into timed lines and words; the UI derives the active line and the karaoke fill fraction from the playback position.
+- **The service owns playback.** `PlaybackService` creates ExoPlayer and a `PlaybackEngine` and keeps them for as
+  long as the service lives. Screens only attach and detach, so auto-advance, system Next/Previous (notification,
+  Bluetooth, Android Auto) and the sleep timer keep working with no UI.
+- **`PlayerController` is a facade.** Connecting a `MediaController` binds the service. Commands go to the engine
+  through `EngineGate`, which buffers anything sent before the engine exists and replays it once. Reconnecting never
+  reloads the player.
+- **The queue engine is pure Kotlin** (`QueueState`). Entries carry unique ids, so a track queued twice is
+  unambiguous. Shuffle keeps the original order, so turning shuffle off restores it with the same entry selected.
+  The engine mirrors the queue into ExoPlayer as a playlist: shuffling reorders around the playing item without
+  reloading it, and repeat modes map onto the player's.
+- **Streams are resolved lazily.** Items use `sitara://track/<id>` URIs; a `ResolvingDataSource` asks the
+  `StreamResolver` for a URL when ExoPlayer opens the item. Only `sitara://` and https may be loaded (`StreamPolicy`).
+- **The session is filtered.** `ControllerPolicy` gives the app (identified by binder uid) full access, gives system
+  surfaces transport controls only, and rejects other apps. External media items are refused.
+- **The sleep timer** counts minutes on `elapsedRealtime` (monotonic), or pauses at the end of the current item using
+  ExoPlayer's pause-at-end.
+- **Crossfade** and **normalisation** are pure functions (fade curves; gain toward −14 LUFS, capped by the true
+  peak). They are tested but **not yet applied to playback**: the settings are disabled in the UI until a Media3
+  `AudioProcessor` chain lands in Phase B.
+- **Lyrics** are parsed into timed lines and words, keeping the original text and syllables. The UI derives the active
+  line and the karaoke character sweep from the position; unsynced lyrics are shown as static text.
 
 ## Stream source abstraction (Phase B)
 
@@ -154,17 +169,16 @@ flowchart TD
 
 | Layer | Tools | What is covered |
 | --- | --- | --- |
-| Pure logic | JUnit, Turbine, MockK | Queue engine, shuffle restore, repeat modes, crossfade curves, LUFS gain, sleep timer, LRC and enhanced LRC parsing, palette to theme mapping |
-| Flows and ViewModels | Turbine, coroutine test dispatchers | `UiState` emissions for loading, content and error; settings changes |
-| Android units | Robolectric | DataStore settings, service wiring that needs a `Context` |
-| Screenshots | Roborazzi on Robolectric | Every main screen in dark theme, plus key states; images are written to `docs/screenshots` |
+| Pure logic | JUnit 4/5, Turbine, coroutine test time | Queue engine (unique entries, shuffle restore, repeat), playback engine against a fake player (queue hand-off, transitions, end-of-queue restart, sleep timer), command gate, controller and stream policies, crossfade and LUFS maths, LRC and enhanced LRC parsing, karaoke sweep, sheet geometry, palette to theme mapping, settings codec, fake source |
+| Screenshots | Roborazzi on Robolectric (debug variant) | Home, search, library, player, lyrics and settings in light and dark; CI fails on any pixel mismatch against the committed baselines in `app/src/test/screenshots` |
 
 Principles:
 
 - Tests run on the JVM; no emulator is needed for the main suite.
 - The fake source is deterministic (stable ids, titles and generated covers), so screenshots are stable across runs.
 - A bug fix starts with a failing test.
-- Screenshot diffs are reviewed like code. An intentional UI change re-records the golden images in the same pull request.
+- Screenshot diffs are reviewed like code. An intentional UI change re-records the baselines with `screenshots.yml`, and they are reviewed and committed with that change.
+- Not covered by automated tests yet: the Media3 adapter (`Media3PlayerPort`, `StreamUriResolver`, `PlaybackService`) and gesture feel. Those need an instrumented or on-device check.
 
 ## CI pipeline
 
@@ -183,7 +197,7 @@ flowchart LR
     rel --> gh["GitHub Release"]
     main["push to main"] --> pages["pages.yml"] --> site["GitHub Pages site"]
     any["every push"] --> gl["gitleaks.yml"]
-    manual["manual dispatch"] --> shots["screenshots.yml"] --> pr["pull request updating docs/screenshots"]
+    manual["manual dispatch"] --> shots["screenshots.yml"] --> base["artifact: sitara-screenshot-baselines"]
 ```
 
 | Workflow | Trigger | Purpose |
@@ -192,6 +206,6 @@ flowchart LR
 | `release.yml` | Tags matching `v*` | Builds the release APK, signs it when the signing secrets are configured, writes `SHA256SUMS`, publishes a GitHub Release |
 | `pages.yml` | Push to `main` | Publishes `site/` to GitHub Pages, copying in `docs/assets` and `docs/screenshots` |
 | `gitleaks.yml` | Push and pull request | Scans for committed secrets |
-| `screenshots.yml` | Manual | Re-records Roborazzi screenshots and opens a pull request with the updated `docs/screenshots` |
+| `screenshots.yml` | Manual | Records Roborazzi baselines on the CI runner image and uploads them as an artifact; a maintainer reviews and commits them |
 
 Signing keys never live in the repository. They are provided only as encrypted GitHub Actions secrets; without them the release workflow still produces an unsigned build and says so.
