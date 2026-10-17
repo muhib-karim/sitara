@@ -7,30 +7,37 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class ControllerPolicyTest {
-    private val own = "app.sitara.music"
+    private val ownUid = 10_123
 
     private fun caller(
         pkg: String,
+        uid: Int = 10_999,
         trusted: Boolean = false,
         notification: Boolean = false,
         car: Boolean = false,
-    ) = ControllerIdentity(packageName = pkg, isTrusted = trusted, isMediaNotification = notification, isCar = car)
+    ) = ControllerIdentity(packageName = pkg, uid = uid, isTrusted = trusted, isMediaNotification = notification, isCar = car)
 
     @Test
     fun `the app itself gets full access`() {
-        assertEquals(ControllerAccess.FULL, ControllerPolicy.access(caller(own), own))
+        assertEquals(ControllerAccess.FULL, ControllerPolicy.access(caller("app.sitara.music", uid = ownUid), ownUid))
     }
 
     @Test
     fun `system surfaces get playback controls only`() {
-        assertEquals(ControllerAccess.PLAYBACK_ONLY, ControllerPolicy.access(caller(own, notification = true), own))
-        assertEquals(ControllerAccess.PLAYBACK_ONLY, ControllerPolicy.access(caller("com.google.android.projection.gearhead", car = true), own))
-        assertEquals(ControllerAccess.PLAYBACK_ONLY, ControllerPolicy.access(caller("com.android.bluetooth", trusted = true), own))
+        assertEquals(ControllerAccess.PLAYBACK_ONLY, ControllerPolicy.access(caller("app.sitara.music", uid = ownUid, notification = true), ownUid))
+        assertEquals(ControllerAccess.PLAYBACK_ONLY, ControllerPolicy.access(caller("com.google.android.projection.gearhead", car = true), ownUid))
+        assertEquals(ControllerAccess.PLAYBACK_ONLY, ControllerPolicy.access(caller("com.android.bluetooth", trusted = true), ownUid))
+        assertEquals(ControllerAccess.PLAYBACK_ONLY, ControllerPolicy.access(caller("com.android.bluetooth", uid = 1_002), ownUid))
     }
 
     @Test
     fun `unknown apps are rejected`() {
-        assertEquals(ControllerAccess.REJECT, ControllerPolicy.access(caller("com.example.other"), own))
+        assertEquals(ControllerAccess.REJECT, ControllerPolicy.access(caller("com.example.other"), ownUid))
+    }
+
+    @Test
+    fun `claiming the app's package name from another uid is not enough`() {
+        assertEquals(ControllerAccess.REJECT, ControllerPolicy.access(caller("app.sitara.music", uid = 10_500), ownUid))
     }
 
     @Test
