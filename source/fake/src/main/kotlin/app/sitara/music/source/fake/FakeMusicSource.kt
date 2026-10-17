@@ -25,7 +25,7 @@ class FakeMusicSource(
         simulateLatency()
         val tracks = SampleCatalog.tracks
         return listOf(
-            Shelf("quick", "Quick picks", "Start here", tracks = tracks.take(6)),
+            Shelf("quick", "Quick picks", tracks = tracks.take(6)),
             Shelf("albums", "New for you", albums = SampleCatalog.albums),
             Shelf("mixes", "Your mixes", playlists = SampleCatalog.playlists),
             Shelf("again", "Listen again", tracks = tracks.reversed().take(6)),

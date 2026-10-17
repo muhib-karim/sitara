@@ -22,11 +22,12 @@ import app.sitara.music.core.model.Track
 
 @Composable
 fun SectionHeader(title: String, modifier: Modifier = Modifier, subtitle: String? = null) {
+    // The title leads; an optional subtitle follows as quiet supporting text, never as a label above it.
     Column(modifier.padding(horizontal = 20.dp, vertical = 8.dp)) {
-        if (subtitle != null) {
-            Text(subtitle.uppercase(), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.primary)
-        }
         Text(title, style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onBackground)
+        if (subtitle != null) {
+            Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
     }
 }
 

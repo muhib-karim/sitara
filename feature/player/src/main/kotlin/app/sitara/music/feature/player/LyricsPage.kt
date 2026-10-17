@@ -22,7 +22,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.drawWithContent
 import androidx.compose.ui.geometry.Rect
+import androidx.compose.ui.graphics.BlendMode
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.drawscope.clipPath
 import androidx.compose.ui.graphics.graphicsLayer
@@ -65,7 +68,7 @@ fun LyricsPage(
 
 @Composable
 private fun PlainLyrics(lyrics: Lyrics, contentColor: Color, modifier: Modifier) {
-    LazyColumn(modifier.fillMaxSize(), contentPadding = PaddingValues(top = 24.dp, bottom = 240.dp)) {
+    LazyColumn(modifier.fillMaxSize().fadingEdges(), contentPadding = PaddingValues(top = 24.dp, bottom = 240.dp)) {
         item(contentType = "caption") {
             Text(
                 "These lyrics are not time-synced",
@@ -87,10 +90,16 @@ private fun SyncedLyrics(lyrics: Lyrics, positionMs: Long, contentColor: Color, 
     val reduced = LocalReducedMotion.current
     LaunchedEffect(active) {
         if (active >= 0) {
-            if (reduced) listState.scrollToItem(active) else listState.animateScrollToItem(active)
+            // Park the active line a quarter of the way down, so the previous line stays in view for context.
+            val offset = -listState.layoutInfo.viewportSize.height / 4
+            if (reduced) listState.scrollToItem(active, offset) else listState.animateScrollToItem(active, offset)
         }
     }
-    LazyColumn(modifier.fillMaxSize(), state = listState, contentPadding = PaddingValues(top = 24.dp, bottom = 240.dp)) {
+    LazyColumn(
+        modifier.fillMaxSize().fadingEdges(),
+        state = listState,
+        contentPadding = PaddingValues(top = 24.dp, bottom = 240.dp),
+    ) {
         itemsIndexed(lyrics.lines, key = { i, _ -> i }, contentType = { _, _ -> LINE_CONTENT_TYPE }) { i, line ->
             val distance = if (active < 0) 2 else abs(i - active)
             val scale by animateFloatAsState(if (i == active) 1f else 0.94f, SitaraMotion.orReduced(reduced, SitaraMotion.gentle()), label = "lineScale")
@@ -118,6 +127,20 @@ private fun SyncedLyrics(lyrics: Lyrics, positionMs: Long, contentColor: Color, 
         }
     }
 }
+
+/** Lines dissolve into the backdrop at the top and bottom instead of being cut off by the page edge. */
+private fun Modifier.fadingEdges(): Modifier = graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
+    .drawWithContent {
+        drawContent()
+        val fade = FADE_EDGE.toPx()
+        drawRect(Brush.verticalGradient(0f to Color.Transparent, fade / size.height to Color.Black), blendMode = BlendMode.DstIn)
+        drawRect(
+            Brush.verticalGradient((size.height - fade) / size.height to Color.Black, 1f to Color.Transparent),
+            blendMode = BlendMode.DstIn,
+        )
+    }
+
+private val FADE_EDGE = 48.dp
 
 /**
  * The line is laid out once, exactly as written, and a bright copy is clipped to the sung
