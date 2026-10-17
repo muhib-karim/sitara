@@ -1,7 +1,19 @@
 package app.sitara.music.source.lyrics
 
+import app.sitara.music.core.model.Lyrics
 import app.sitara.music.core.model.LyricsLine
 import app.sitara.music.core.model.LyricsWord
+
+/**
+ * Character offsets into [LyricsLine.text] for the karaoke fill: `[0, sungEnd)` is fully sung,
+ * `[activeStart, activeEnd)` is the word being sung, [activeProgress] of the way through.
+ */
+data class KaraokeSweep(
+    val sungEnd: Int,
+    val activeStart: Int,
+    val activeEnd: Int,
+    val activeProgress: Float,
+)
 
 /** Position lookups used by the lyrics screen on every frame, so they stay O(log n). */
 object LyricsCursor {
@@ -20,6 +32,23 @@ object LyricsCursor {
             }
         }
         return found
+    }
+
+    /** Like the list overload, but unsynced lyrics have no timing, so no line is ever active. */
+    fun activeLineIndex(lyrics: Lyrics, positionMs: Long): Int = if (lyrics.synced) activeLineIndex(lyrics.lines, positionMs) else -1
+
+    /** Where the karaoke fill is inside a word-synced line; word texts concatenate to the line text. */
+    fun sweep(line: LyricsLine, positionMs: Long): KaraokeSweep {
+        var offset = 0
+        for (word in line.words) {
+            val end = offset + word.text.length
+            if (positionMs < word.endMs) {
+                val progress = if (positionMs < word.startMs) 0f else wordProgress(word, positionMs)
+                return KaraokeSweep(sungEnd = offset, activeStart = offset, activeEnd = if (progress > 0f) end else offset, activeProgress = progress)
+            }
+            offset = end
+        }
+        return KaraokeSweep(sungEnd = offset, activeStart = offset, activeEnd = offset, activeProgress = 0f)
     }
 
     fun activeWordIndex(line: LyricsLine, positionMs: Long): Int {
