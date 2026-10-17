@@ -1,6 +1,10 @@
 <div align="center">
 
-<img src="docs/assets/banner.svg" alt="Sitara: Your music, beautifully." width="100%">
+<img src="docs/brand/sitara-logo.svg" alt="Sitara split-star logo" width="112">
+
+<h1>Sitara</h1>
+
+<p><strong>Your music, beautifully.</strong></p>
 
 <br>
 
@@ -24,19 +28,17 @@
 
 > [!NOTE]
 > Sitara is in **Phase A** (`v0.1.0-dev`), an early preview. The app shell, design system and player run against a built-in
-> sample catalogue with royalty-free demo streams; the real streaming source lands in Phase B. There is no release yet.
+> sample catalogue with royalty-free demo streams; the real streaming source lands in Phase B. `v0.1.0` is the first preview release; the signed APK is on the [Releases](https://github.com/muhib-karim/sitara/releases) page.
 
 ## Screenshots
 
 <div align="center">
 
-| Home | Search | Library |
-| :---: | :---: | :---: |
-| <img src="docs/screenshots/home_dark.png" alt="Home screen with gradient album covers and the floating glass tab bar" width="240"> | <img src="docs/screenshots/search_dark.png" alt="Search screen with results list" width="240"> | <img src="docs/screenshots/library_dark.png" alt="Library screen with playlists and albums" width="240"> |
-| **Player** | **Lyrics** | **Settings** |
-| <img src="docs/screenshots/player_dark.png" alt="Full player with artwork-tinted backdrop and scrubber" width="240"> | <img src="docs/screenshots/lyrics_dark.png" alt="Word-level karaoke lyrics" width="240"> | <img src="docs/screenshots/settings_dark.png" alt="Settings with theme and reduced motion options" width="240"> |
+| Home | Library | Player | Lyrics |
+| :---: | :---: | :---: | :---: |
+| <img src="docs/screenshots/home_dark.png" alt="Home with quick picks, new releases and mixes" width="200"> | <img src="docs/screenshots/library_dark.png" alt="Library with playlists in grid view" width="200"> | <img src="docs/screenshots/player_dark.png" alt="Full player with artwork, slim scrubber and controls" width="200"> | <img src="docs/screenshots/lyrics_dark.png" alt="Synced karaoke lyrics" width="200"> |
 
-<sub>Phase A captures, retained as historical images until the ui1 rebuild is recorded and reviewed in CI. They do not represent the new UI. Screenshot comparison remains enforced.</sub>
+<sub>Captured on an Android emulator by the Device screens workflow on every push to main. Light theme captures live in docs/screenshots.</sub>
 
 </div>
 
@@ -159,7 +161,7 @@ The debug APK is written to `app/build/outputs/apk/debug/`.
 
 ## Roadmap
 
-- **Phase A: foundation** (now). Design system, navigation, player sheet, service-owned queue, lyrics engine, settings, CI with screenshot verification. Next: an on-device check, then `v0.1.0`.
+- **Phase A: foundation** (`v0.1.0`). Design system, navigation, player sheet, service-owned queue, lyrics engine, settings, CI with screenshot verification.
 - **Phase B: real source.** Search and browse, stream resolution with health checks and fallback, downloads, local files, synced lyrics, playlists, import and backup.
 - **Phase C: accounts and connection.** Library sync, scrobbling, widgets, Android Auto, Cast, Sitara Sync, LAN remote control.
 - **Phase D: premium touches.** Animated canvas, automix, lyric translation and transliteration, Wear OS remote, TV layout.
