@@ -35,7 +35,8 @@ jobs:
 
   build:
     name: Test and assemble
-    runs-on: ubuntu-latest
+    # Pinned: screenshot baselines are only comparable on the image that recorded them.
+    runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v5

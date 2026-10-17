@@ -11,7 +11,8 @@ permissions:
 
 jobs:
   record:
-    runs-on: ubuntu-latest
+    # Must match the CI build job's image, or verification compares different renderers.
+    runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v5
