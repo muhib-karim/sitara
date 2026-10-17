@@ -34,6 +34,7 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -50,14 +51,15 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.util.VelocityTracker
+import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.util.lerp
 import app.sitara.music.core.common.formatDuration
 import app.sitara.music.core.designsystem.ArtworkImage
 import app.sitara.music.core.designsystem.ArtworkPalette
@@ -71,6 +73,8 @@ import kotlin.math.roundToInt
 import kotlinx.coroutines.launch
 
 private val MiniHeight = 64.dp
+private const val MINI_FADE_END = 0.6f
+private const val FULL_FADE_START = 0.05f
 
 /**
  * The mini player and the full player are one surface driven by a single progress
@@ -91,7 +95,12 @@ fun PlayerSheet(
     val scope = rememberCoroutineScope()
     val reduced = LocalReducedMotion.current
     val haptics = LocalHapticFeedback.current
-    val progress = remember { Animatable(if (initiallyExpanded) 1f else 0f) }
+    // Bounded so a fling's velocity hand-off can never overshoot past docked or full screen.
+    val progress = remember { Animatable(if (initiallyExpanded) 1f else 0f).apply { updateBounds(0f, 1f) } }
+    // Thresholds change a few times per gesture, not every frame, so only they recompose the content.
+    val showMini by remember { derivedStateOf { progress.value < MINI_FADE_END } }
+    val showFull by remember { derivedStateOf { progress.value > FULL_FADE_START } }
+    val docked by remember { derivedStateOf { progress.value == 0f } }
     var hidden by remember { mutableStateOf(false) }
     var lastTrackId by remember { mutableStateOf(track.id) }
     if (track.id != lastTrackId) {
@@ -116,23 +125,33 @@ fun PlayerSheet(
         val fullH = constraints.maxHeight.toFloat()
         val miniH = with(density) { MiniHeight.toPx() }
         val collapsedTop = fullH - with(density) { bottomReserved.toPx() } - miniH
-        val p = progress.value
+        val sidePx = with(density) { 12.dp.toPx() }
+        val shadowPx = with(density) { 16.dp.toPx() }
         val hideOffset = remember { Animatable(0f) }
         val swipeX = remember { Animatable(0f) }
-        if (hidden && p == 0f) return@BoxWithConstraints
+        if (hidden && docked) return@BoxWithConstraints
 
-        val y = lerp(collapsedTop, 0f, p) + hideOffset.value
-        val h = lerp(miniH, fullH, p)
-        val side = lerp(with(density) { 12.dp.toPx() }, 0f, p)
-        val radius = lerp(22f, 0f, p)
+        // Read only inside layout and draw lambdas, so dragging or springing never recomposes the sheet.
+        fun geometry() = SheetGeometry.at(progress.value, collapsedTop, fullH, miniH, sidePx)
 
         Box(
             Modifier
-                .offset { IntOffset(side.roundToInt(), y.roundToInt()) }
-                .width(with(density) { (constraints.maxWidth - 2 * side).toDp() })
-                .height(with(density) { h.toDp() })
-                .shadow(if (p < 1f) 16.dp else 0.dp, RoundedCornerShape(radius.dp))
-                .clip(RoundedCornerShape(radius.dp))
+                .offset {
+                    val g = geometry()
+                    IntOffset(g.side.roundToInt(), (g.y + hideOffset.value).roundToInt())
+                }
+                .layout { measurable, constraints ->
+                    val g = geometry()
+                    val width = (constraints.maxWidth - 2 * g.side).roundToInt().coerceAtLeast(0)
+                    val height = g.height.roundToInt()
+                    val placeable = measurable.measure(Constraints.fixed(width, height))
+                    layout(width, height) { placeable.place(0, 0) }
+                }
+                .graphicsLayer {
+                    shape = RoundedCornerShape(geometry().cornerRadiusDp.dp)
+                    clip = true
+                    shadowElevation = if (progress.value < 1f) shadowPx else 0f
+                }
                 .background(Brush.verticalGradient(listOf(top, bottom)))
                 .pointerInput(collapsedTop) {
                     val tracker = VelocityTracker()
@@ -185,20 +204,20 @@ fun PlayerSheet(
                     }
                 },
         ) {
-            if (p < 0.6f) {
+            if (showMini) {
                 MiniPlayer(
                     state = state,
                     actions = actions,
                     content = content,
                     modifier = Modifier
                         .graphicsLayer {
-                            alpha = 1f - p / 0.6f
+                            alpha = 1f - progress.value / MINI_FADE_END
                             translationX = swipeX.value
                         }
                         .clickable { settle(1f) },
                 )
             }
-            if (p > 0.05f) {
+            if (showFull) {
                 FullPlayer(
                     state = state,
                     actions = actions,
@@ -207,7 +226,7 @@ fun PlayerSheet(
                     onAccent = Color(palette.onAccent),
                     onCollapse = { settle(0f) },
                     initialPage = initialPage,
-                    modifier = Modifier.graphicsLayer { alpha = ((p - 0.05f) / 0.6f).coerceIn(0f, 1f) },
+                    modifier = Modifier.graphicsLayer { alpha = ((progress.value - FULL_FADE_START) / MINI_FADE_END).coerceIn(0f, 1f) },
                 )
             }
         }
