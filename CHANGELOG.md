@@ -6,7 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
-Phase A: foundation (`v0.1.0-dev`).
+## [0.1.0] - 2026-10-18
+
+Phase A: foundation, plus the first UI redesign.
+
+### Changed
+
+- Redesigned Home screen.
+- Library with grid and list views, plus new album and artist pages.
+- Redesigned Search and Settings screens.
+- Slimmer scrubber in the full player.
+- README with the split-star logo and current device screenshots.
+
+### Fixed
+
+- Play/Pause now responds correctly after seeking within a track.
+- Shuffle no longer fails on an empty queue lookup.
+- Track completion is synchronised with the player, and the stream loader keeps its state across reloads.
 
 ### Added
 
@@ -28,4 +44,5 @@ Phase A: foundation (`v0.1.0-dev`).
 - GitHub Actions workflows: CI (ktlint, unit tests, screenshot tests, debug APK artifact), release on `v*` tags with SHA256SUMS, GitHub Pages site, gitleaks scanning and a manual screenshot refresh workflow.
 - Project documentation: README, architecture and design system guides, contributing guide, code of conduct, security policy and the project website.
 
-[Unreleased]: https://github.com/muhib-karim/sitara/commits/main
+[Unreleased]: https://github.com/muhib-karim/sitara/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/muhib-karim/sitara/releases/tag/v0.1.0
