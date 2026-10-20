@@ -7,7 +7,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
@@ -17,7 +16,6 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.performScrollToKey
-import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeLeft
 import androidx.compose.ui.test.swipeUp
@@ -336,9 +334,11 @@ class ScreenshotTest {
 
     private val rock = EqualiserSettings().withPreset(EqualiserPreset.ROCK)
 
+    // The Sound group at the top, so its first row is clear of the dock; then make sure the page opened before capturing.
     private fun openEqualiser() {
-        compose.onNodeWithTag("settings-content").performScrollToNode(hasText("Equaliser"))
+        compose.onNodeWithTag("settings-content").performScrollToIndex(4)
         compose.onNodeWithText("Equaliser").performClick()
+        compose.onNodeWithContentDescription("Preamp").assertExists()
     }
 
     @Test fun equaliserDark() = shot("equaliser", dark = true, settingsOpen = true, equaliser = rock) { openEqualiser() }
