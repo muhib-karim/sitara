@@ -11,7 +11,9 @@ import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.datasource.ResolvingDataSource
+import androidx.media3.datasource.cache.Cache
 import androidx.media3.datasource.cache.CacheDataSource
+import androidx.media3.datasource.cache.ContentMetadata
 import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.audio.AudioSink
@@ -54,9 +56,9 @@ class PlaybackService : MediaSessionService() {
         super.onCreate()
         val dependencies = application as PlaybackDependencies
         this.dependencies = dependencies
-        val resolver = dependencies.streamResolver
+        val streams = PrefetchingStreamResolver(dependencies.streamResolver, scope, ElapsedRealtimeTimeSource)
         lateinit var port: Media3PlayerPort
-        val stream = ResolvingDataSource.Factory(DefaultDataSource.Factory(this), StreamUriResolver(resolver) { port.track(it) })
+        val stream = ResolvingDataSource.Factory(DefaultDataSource.Factory(this), StreamUriResolver(streams) { port.track(it) })
         // A downloaded song plays from the download cache with no network; others stream without being written to it.
         val dataSource = CacheDataSource.Factory()
             .setCache(dependencies.downloadCache)
@@ -88,7 +90,10 @@ class PlaybackService : MediaSessionService() {
         crossfader = Crossfader(player, tail, scope, trackOf = { item -> item.localConfiguration?.uri?.lastPathSegment?.let(port::track) }) {
             tailLeveller.startFrom(leveller)
         }
-        val engine = PlaybackEngine(port, scope, ElapsedRealtimeTimeSource, dependencies::onTrackStarted)
+        val engine = PlaybackEngine(port, scope, ElapsedRealtimeTimeSource, dependencies::onTrackStarted) { track ->
+            // A downloaded song plays from the cache and needs no lookup.
+            if (!dependencies.downloadCache.holdsWhole(StreamUriResolver.uriFor(track.id).toString())) streams.prepare(track)
+        }
         player.addListener(EngineListener(engine))
         this.engine = engine
         session = MediaSession.Builder(this, player).setCallback(ConnectionPolicyCallback()).build()
@@ -118,6 +123,11 @@ class PlaybackService : MediaSessionService() {
             null
         }
         saved?.let(engine::restore)
+    }
+
+    private fun Cache.holdsWhole(key: String): Boolean {
+        val length = ContentMetadata.getContentLength(getContentMetadata(key))
+        return length > 0 && isCached(key, 0, length)
     }
 
     override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? = session

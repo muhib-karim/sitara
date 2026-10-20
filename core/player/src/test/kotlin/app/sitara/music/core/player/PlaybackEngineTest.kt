@@ -24,6 +24,7 @@ class PlaybackEngineTest {
     private val five = (1..5).map(::t)
     private val port = FakePlayerPort()
     private val started = mutableListOf<String>()
+    private val prepared = mutableListOf<String>()
 
     private fun TestScope.engine() = PlaybackEngine(
         port = port,
@@ -32,7 +33,81 @@ class PlaybackEngineTest {
             override fun read(): Long = testScheduler.currentTime
         },
         onTrackStarted = { started += it.id },
+        prepareAhead = { prepared += it.id },
     )
+
+    @Test
+    fun `the song after the current one is prepared once playback starts`() = runTest {
+        val engine = engine()
+        engine.restore(SavedQueue(five, 0, 0, RepeatMode.OFF))
+        assertTrue("a paused, restored queue prepares nothing", prepared.isEmpty())
+
+        engine.togglePlay()
+        assertEquals(listOf("t2"), prepared)
+    }
+
+    @Test
+    fun `a skip prepares the song after the new one`() = runTest {
+        val engine = engine()
+        engine.play(five, 0)
+        engine.refresh()
+        engine.next()
+        engine.playUpNext(1)
+        engine.onItemTransition(port.entries[4].uid)
+        assertEquals(listOf("t2", "t3", "t5"), prepared)
+    }
+
+    @Test
+    fun `shuffle on and off prepares whatever now follows`() = runTest {
+        val engine = engine()
+        engine.play(five, 0)
+        engine.refresh()
+        engine.toggleShuffle(Random(7))
+        val shuffledNext = engine.state.value.queue.entries[1].track.id
+        engine.toggleShuffle()
+        assertEquals(listOf("t2", shuffledNext, "t2").distinctConsecutive(), prepared)
+    }
+
+    @Test
+    fun `queue edits prepare the new next song and leave a still-valid one alone`() = runTest {
+        val engine = engine()
+        engine.play(five, 0)
+        engine.refresh()
+        engine.moveUpNext(2, 3)
+        engine.append(listOf(t(6)))
+        engine.playNext(listOf(t(9)))
+        engine.removeUpNext(0)
+        engine.moveUpNext(0, 1)
+        assertEquals(listOf("t2", "t9", "t2", "t3"), prepared)
+    }
+
+    @Test
+    fun `repeat decides what follows the last song`() = runTest {
+        val engine = engine()
+        engine.play(five, 4)
+        engine.refresh()
+        assertTrue("the queue ends after the last song", prepared.isEmpty())
+
+        engine.cycleRepeat() // all: wraps to the first song
+        engine.cycleRepeat() // one: the playing song is already loaded
+        engine.cycleRepeat() // off
+        engine.cycleRepeat() // all again
+        assertEquals(listOf("t1", "t1"), prepared)
+    }
+
+    @Test
+    fun `nothing is prepared after the song the sleep timer stops on`() = runTest {
+        val engine = engine()
+        engine.play(five, 0)
+        engine.sleepAtEndOfTrack()
+        engine.refresh()
+        assertTrue(prepared.isEmpty())
+
+        engine.cancelSleepTimer()
+        assertEquals(listOf("t2"), prepared)
+    }
+
+    private fun List<String>.distinctConsecutive() = filterIndexed { i, id -> i == 0 || this[i - 1] != id }
 
     @Test
     fun `the whole queue is handed to the player`() = runTest {

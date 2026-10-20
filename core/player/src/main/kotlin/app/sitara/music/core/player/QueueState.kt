@@ -32,6 +32,14 @@ data class QueueState(
     val upNext: List<Track> get() = if (currentIndex < 0) items else items.drop(currentIndex + 1)
     val hasNext: Boolean get() = repeatMode != RepeatMode.OFF || currentIndex < entries.lastIndex
 
+    /** The entry the player moves to by itself when the current one ends; null when playback stops there or repeats it. */
+    val followingEntry: QueueEntry? get() = when {
+        currentIndex < 0 || ended || repeatMode == RepeatMode.ONE -> null
+        currentIndex < entries.lastIndex -> entries[currentIndex + 1]
+        repeatMode == RepeatMode.ALL && entries.size > 1 -> entries[0]
+        else -> null
+    }
+
     /** At most one entry left after the current one and nothing repeats: the moment to extend the queue. */
     val runningOut: Boolean get() = currentIndex >= 0 && repeatMode == RepeatMode.OFF && currentIndex >= entries.lastIndex - 1
 

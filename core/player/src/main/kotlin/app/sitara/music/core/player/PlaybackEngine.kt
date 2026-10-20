@@ -31,6 +31,8 @@ class PlaybackEngine(
     scope: CoroutineScope,
     timeSource: TimeSource,
     private val onTrackStarted: (Track) -> Unit = {},
+    /** Gets the song the player will move to next ready while the current one plays (gapless joins, instant skips). */
+    private val prepareAhead: (Track) -> Unit = {},
 ) {
     private val _state = MutableStateFlow(PlaybackSnapshot())
     val state: StateFlow<PlaybackSnapshot> = _state.asStateFlow()
@@ -42,6 +44,9 @@ class PlaybackEngine(
 
     // The entry whose start was last reported; cleared when that same entry starts over.
     private var startedUid: Long? = null
+
+    // The entry last handed to prepareAhead, so each following entry is prepared once.
+    private var preparedUid: Long? = null
 
     fun play(tracks: List<Track>, index: Int) {
         val next = queue.setQueue(tracks, index)
@@ -163,16 +168,19 @@ class PlaybackEngine(
     fun startSleepTimer(minutes: Int) {
         port.setPauseAtEndOfItem(false)
         sleepTimer.start(minutes)
+        prepareFollowing()
     }
 
     fun sleepAtEndOfTrack() {
         sleepTimer.startEndOfTrack()
         port.setPauseAtEndOfItem(true)
+        prepareFollowing()
     }
 
     fun cancelSleepTimer() {
         sleepTimer.cancel()
         port.setPauseAtEndOfItem(false)
+        prepareFollowing()
     }
 
     /** The player moved to another entry by itself (auto-advance or a system control). */
@@ -208,6 +216,16 @@ class PlaybackEngine(
             startedUid = entry.uid
             onTrackStarted(entry.track)
         }
+        prepareFollowing()
+    }
+
+    /** Once the current entry plays, hands over the one that follows it, unless playback stops after this one. */
+    private fun prepareFollowing() {
+        if (!port.isPlaying) return
+        val following = queue.followingEntry.takeUnless { sleepTimer.state.value == SleepTimerState.EndOfTrack }
+        if (following?.uid == preparedUid) return
+        preparedUid = following?.uid
+        following?.let { prepareAhead(it.track) }
     }
 
     private fun moveTo(next: QueueState) {
@@ -222,7 +240,10 @@ class PlaybackEngine(
         refresh()
     }
 
-    private fun publish(next: QueueState) = _state.update { it.copy(queue = next) }
+    private fun publish(next: QueueState) {
+        _state.update { it.copy(queue = next) }
+        prepareFollowing()
+    }
 
     private companion object {
         const val RESTART_THRESHOLD_MS = 3_000L
