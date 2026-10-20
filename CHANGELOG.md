@@ -6,11 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
-## [0.8.2] - 2026-10-20
+## [0.8.3] - 2026-10-20
 
 ### Fixed
 
-- No grey bar is left over the bottom of the dock after the keyboard closes (seen on Android 14; 0.8.1 did not fix it). The fade under the dock is now a plain gradient instead of a blur.
+- No grey bar is left over the bottom of the dock after you search (seen on Android 14). Sending a search, from the keyboard's search key or a hardware Enter, now closes the keyboard; before, part of it could stay open as a grey band under the dock. 0.8.1 and 0.8.2 did not fix it.
+
+## [0.8.2] - 2026-10-20
+
+### Changed
+
+- The fade under the dock is a plain gradient instead of a blur.
 
 ## [0.8.1] - 2026-10-20
 
@@ -183,7 +189,8 @@ Phase A: foundation, plus the first UI redesign.
 - GitHub Actions workflows: CI (ktlint, unit tests, screenshot tests, debug APK artifact), release on `v*` tags with SHA256SUMS, GitHub Pages site, gitleaks scanning and a manual screenshot refresh workflow.
 - Project documentation: README, architecture and design system guides, contributing guide, code of conduct, security policy and the project website.
 
-[Unreleased]: https://github.com/muhib-karim/sitara/compare/v0.8.2...HEAD
+[Unreleased]: https://github.com/muhib-karim/sitara/compare/v0.8.3...HEAD
+[0.8.3]: https://github.com/muhib-karim/sitara/compare/v0.8.2...v0.8.3
 [0.8.2]: https://github.com/muhib-karim/sitara/compare/v0.8.1...v0.8.2
 [0.8.1]: https://github.com/muhib-karim/sitara/compare/v0.8.0...v0.8.1
 [0.8.0]: https://github.com/muhib-karim/sitara/compare/v0.7.0...v0.8.0
