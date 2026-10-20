@@ -44,3 +44,4 @@ Owner, before tagging v0.6.0: on-device pass of the checklist in REPORT_b5.md (d
 2026-10-20 10:05Z Claude Code / Opus 5.5: b3 shipped (7c7f058..08d9f88 + docs); CI 39402430963, Device screens 39402430844 (re-run), Secret scan green; next owner device check and v0.4.0 tag.
 2026-10-20 12:05Z Claude Code / Opus 5.5: b4 shipped (0fd6d61..360a64f + docs): real Home, queue kept across restarts + headset resume, LRCLIB lyrics; next owner device check and v0.5.0 tag.
 2026-10-20 13:00Z Claude Code / Opus 5.5: b5 shipped (14dfd28..f0634b0 + docs): downloads/offline, loudness levelling, crossfade, baselines, README/PLAN/ARCHITECTURE for finished Phase B; next owner device check and v0.6.0 tag.
+2026-10-20 13:25Z Claude Code / Opus 5.5: resumed after interruption; fixed device capture logcat decoding (b5e1ee4); CI 39427356213, Secret scan 39427356124, Device screens 39427356075 (re-run after an emulator ANR) green; b5 complete, next owner device check and v0.6.0 tag.
