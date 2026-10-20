@@ -1,6 +1,7 @@
 package app.sitara.music
 
 import android.content.Intent
+import android.os.Build
 import android.os.Bundle
 import android.provider.Settings
 import androidx.activity.ComponentActivity
@@ -14,6 +15,8 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+        // Otherwise Android keeps a grey navigation bar scrim over the dock once the keyboard has closed.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) window.isNavigationBarContrastEnforced = false
         vm = ViewModelProvider(this, AppViewModel.factory(application as SitaraApplication))[AppViewModel::class.java]
         // A recreated activity has already handled the intent that launched it.
         if (savedInstanceState == null) {

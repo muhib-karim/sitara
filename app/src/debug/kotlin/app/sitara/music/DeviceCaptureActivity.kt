@@ -1,5 +1,6 @@
 package app.sitara.music
 
+import android.os.Build
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -36,6 +37,8 @@ class DeviceCaptureActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         SingletonImageLoader.setUnsafe(sampleImageLoader(applicationContext))
         enableEdgeToEdge()
+        // Otherwise Android keeps a grey navigation bar scrim over the dock once the keyboard has closed.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) window.isNavigationBarContrastEnforced = false
         val screen = intent.getStringExtra("screen").orEmpty()
         val dark = intent.getBooleanExtra("dark", true)
         val reduced = intent.getBooleanExtra("reduced", false)
