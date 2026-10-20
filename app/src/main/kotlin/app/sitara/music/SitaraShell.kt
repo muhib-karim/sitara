@@ -25,6 +25,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -64,6 +65,8 @@ import app.sitara.music.feature.search.SearchState
 import app.sitara.music.feature.settings.SettingsScreen
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emptyFlow
 
 enum class Tab(val label: String, val icon: ImageVector) {
     HOME("Home", SitaraIcons.Home),
@@ -92,6 +95,7 @@ fun SitaraRoot(vm: AppViewModel, systemReducedMotion: Boolean) {
         onRetrySearch = vm::retrySearch,
         onPlay = vm::play,
         onSettingsChange = vm::updateSettings,
+        tabRequests = vm.requestedTabs,
     )
 }
 
@@ -114,6 +118,7 @@ fun SitaraShell(
     playerExpanded: Boolean = false,
     playerPage: Int = 0,
     greetingText: String = greeting(),
+    tabRequests: Flow<Tab> = emptyFlow(),
 ) {
     var tab by rememberSaveable { mutableStateOf(if (initialSettingsOpen) Tab.SETTINGS else initialTab) }
     var albumId by rememberSaveable { mutableStateOf<String?>(null) }
@@ -133,6 +138,9 @@ fun SitaraShell(
     val closeDetail: () -> Unit = { albumId = null; artistId = null }
     val openAlbum: (Album) -> Unit = { albumId = it.id; artistId = null }
     val openArtist: (Artist) -> Unit = { artistId = it.id; albumId = null }
+    LaunchedEffect(tabRequests) {
+        tabRequests.collect { closeDetail(); tab = it }
+    }
     BackHandler(enabled = albumId != null || artistId != null || tab == Tab.SETTINGS) {
         if (albumId != null || artistId != null) closeDetail() else tab = Tab.HOME
     }

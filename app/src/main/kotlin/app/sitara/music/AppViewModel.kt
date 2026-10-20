@@ -17,6 +17,8 @@ import app.sitara.music.feature.player.PlayerUiState
 import app.sitara.music.feature.search.SearchState
 import app.sitara.music.feature.search.searchStates
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -25,6 +27,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.mapLatest
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
@@ -36,6 +39,11 @@ class AppViewModel(private val app: SitaraApplication) : ViewModel(), PlayerActi
     val library = MutableStateFlow(Library(emptyList(), emptyList(), emptyList(), emptyList()))
     val query = MutableStateFlow("")
     private val searchRetries = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    private val tabRequests = Channel<Tab>(Channel.CONFLATED)
+    private var pendingShare: SharedRequest? = null
+
+    /** Tabs the shell should switch to, buffered until the UI collects them. */
+    val requestedTabs: Flow<Tab> = tabRequests.receiveAsFlow()
     val search: StateFlow<SearchState> = searchStates(query, searchRetries, debounceMs = 300, search = app.search::search)
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SearchState.Idle)
     val settings: StateFlow<SitaraSettings> = app.settings.settings.stateIn(viewModelScope, SharingStarted.Eagerly, SitaraSettings())
@@ -68,6 +76,22 @@ class AppViewModel(private val app: SitaraApplication) : ViewModel(), PlayerActi
             home.value = app.sampleSource.home()
             library.value = app.sampleSource.library()
         }
+        viewModelScope.launch { search.collect { playSharedSongIfResolved(it) } }
+    }
+
+    /** Shows a shared link or text in Search; a linked song starts playing as soon as it resolves. */
+    fun open(request: SharedRequest) {
+        pendingShare = request.takeIf { it.playVideoId != null }
+        query.value = request.query
+        tabRequests.trySend(Tab.SEARCH)
+        // Sharing the link already on screen changes no state, so check the current one too.
+        playSharedSongIfResolved(search.value)
+    }
+
+    private fun playSharedSongIfResolved(state: SearchState) {
+        val track = pendingShare?.let { autoplayTrack(state, it) } ?: return
+        pendingShare = null
+        player.play(listOf(track), 0)
     }
 
     fun play(tracks: List<Track>, index: Int) = player.play(tracks, index)

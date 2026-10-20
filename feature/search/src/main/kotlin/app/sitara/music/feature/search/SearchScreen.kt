@@ -140,7 +140,7 @@ private fun LazyListScope.searchResults(results: SearchResults, onPlay: (List<Tr
         return
     }
     if (results.tracks.isNotEmpty()) {
-        item(key = "songs-title") { SectionHeader("Songs", subtitle = "${results.tracks.size} results", modifier = Modifier.padding(top = 20.dp)) }
+        item(key = "songs-title") { SectionHeader("Songs", subtitle = if (results.tracks.size == 1) "1 result" else "${results.tracks.size} results", modifier = Modifier.padding(top = 20.dp)) }
         itemsIndexed(results.tracks, key = { _, track -> "song-${track.id}" }) { index, track ->
             TrackRow(track, { onPlay(results.tracks, index) })
         }
