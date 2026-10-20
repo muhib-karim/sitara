@@ -43,7 +43,6 @@ import app.sitara.music.core.designsystem.SitaraSheet
 import app.sitara.music.core.designsystem.SitaraSpacing
 import app.sitara.music.core.model.EqualiserPreset
 import app.sitara.music.core.model.EqualiserSettings
-import kotlin.math.abs
 import kotlin.math.roundToInt
 
 /** "31 Hz", "1 kHz", "16 kHz". */
@@ -53,7 +52,11 @@ internal fun bandLabel(band: Int): String {
 }
 
 /** "+3 dB", "0 dB", "−4 dB". */
-internal fun decibelLabel(db: Int): String = "${if (db > 0) "+" else if (db < 0) "−" else ""}${abs(db)} dB"
+internal fun decibelLabel(db: Int): String = when {
+    db > 0 -> "+$db dB"
+    db < 0 -> "−${-db} dB"
+    else -> "0 dB"
+}
 
 /** What the equaliser is doing, in a word or two: "Off", "Rock", "Custom", "Phone equaliser". */
 fun equaliserSummary(equaliser: EqualiserSettings, systemEqualiser: Boolean): String = when {
