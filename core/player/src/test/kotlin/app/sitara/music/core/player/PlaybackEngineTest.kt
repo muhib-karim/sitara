@@ -116,15 +116,15 @@ class PlaybackEngineTest {
         engine.play(five, 0)
         engine.setSpeed(1.5f)
         engine.setPitch(-2)
-        assertEquals(PlaybackTuning(speed = 1.5f, semitones = -2), port.tuning)
+        assertEquals(PlaybackTuning(speed = 1.5f, semitones = -2), port.applied)
 
         engine.play(five.take(2), 1)
         assertEquals(PlaybackTuning(speed = 1.5f, semitones = -2), engine.state.value.tuning)
 
         engine.setSpeed(9f)
-        assertEquals("clamped to double speed", 2f, port.tuning.speed)
+        assertEquals("clamped to double speed", 2f, port.applied.speed, 0f)
         engine.resetTuning()
-        assertEquals(PlaybackTuning(), port.tuning)
+        assertEquals(PlaybackTuning(), port.applied)
         assertEquals(PlaybackTuning(), engine.state.value.tuning)
     }
 

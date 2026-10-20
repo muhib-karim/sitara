@@ -10,7 +10,7 @@ class FakePlayerPort : PlayerPort {
     var playing: Boolean = false
     var repeat: RepeatMode = RepeatMode.OFF
     var pauseAtEnd: Boolean = false
-    var tuning: PlaybackTuning = PlaybackTuning()
+    var applied: PlaybackTuning = PlaybackTuning()
     var setQueueCalls = 0
     var reorderCalls = 0
     override var positionMs: Long = 0
@@ -78,6 +78,6 @@ class FakePlayerPort : PlayerPort {
     }
 
     override fun setTuning(tuning: PlaybackTuning) {
-        this.tuning = tuning
+        applied = tuning
     }
 }
