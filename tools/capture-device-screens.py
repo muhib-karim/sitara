@@ -62,7 +62,8 @@ def main():
                 (OUTPUT / f"{screen}_{theme}.png").write_bytes(png)
                 (OUTPUT / f"{screen}_{theme}.xml").write_text(hierarchy)
     finally:
-        (OUTPUT / "logcat.txt").write_text(adb("logcat", "-d", "-v", "brief"))
+        # Raw bytes: logcat can carry non-UTF-8 output from any process, which must not fail a finished capture.
+        (OUTPUT / "logcat.txt").write_bytes(adb("logcat", "-d", "-v", "brief", binary=True))
 
 
 if __name__ == "__main__":

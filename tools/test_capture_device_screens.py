@@ -1,5 +1,7 @@
 import importlib.util
 import pathlib
+import subprocess
+import tempfile
 import unittest
 from unittest.mock import patch
 
@@ -32,6 +34,19 @@ class CaptureReadinessTest(unittest.TestCase):
         with patch.object(capture, "adb", return_value=xml), patch.object(capture.time, "sleep"):
             with self.assertRaisesRegex(RuntimeError, "library"):
                 capture.wait_for_screen("library", "Library")
+
+    def test_logcat_with_non_utf8_bytes_is_saved_as_is(self):
+        raw = b"I/proc: \xc0\xff\n"
+
+        def run(cmd, **kwargs):
+            if kwargs.get("text"):
+                raw.decode("utf-8")  # what subprocess does with text=True, and where the capture used to fail
+            return subprocess.CompletedProcess(cmd, 0, stdout=raw)
+
+        with tempfile.TemporaryDirectory() as out, patch.object(capture, "OUTPUT", pathlib.Path(out)), \
+                patch.dict(capture.SCREENS, clear=True), patch.object(capture.subprocess, "run", side_effect=run):
+            capture.main()
+            self.assertEqual(raw, (pathlib.Path(out) / "logcat.txt").read_bytes())
 
 
 if __name__ == "__main__":
