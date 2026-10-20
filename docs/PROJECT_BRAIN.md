@@ -13,10 +13,10 @@ Goal: an original app with its own design and logo (not a reskin), shipped as a 
 - ui2 source review complete; CI acceptance pending: Home mood collections and paged picks; Library grid/list and detail navigation; Search browse/results; functional-only Settings; approved ui1 split-star retained; slim seek drawing and measured dock clearance. Reuse ui1 components and tokens.
 - fix1 source review complete: N1/6 completion synchronization, N2 atomic lookup and 5 resolver cancellation fixes retained with regression coverage; interrupt-status assertion added. Item 16 is superseded by the current sheet, covered by Back/drag and screenshot cases. Review copy and REPORT_fix1.md ready. All execution and acceptance remain pending in CI.
 - v0.1.0 RELEASED.
-- b1 (Phase B slice 1, real music) IN PROGRESS: :source:youtube on NewPipeExtractor v0.26.5 (JitPack, exclusiveContent), OkHttp downloader, desugaring. Next: stream resolver, YT Music search, search UI states, docs.
+- b1 (Phase B slice 1, real music) DONE on main: live YouTube Music song search + playback via :source:youtube (NewPipeExtractor v0.26.5); search states with retry; home, library, lyrics and covers still sample and labelled. Report: docs/reports/REPORT_b1.md.
 
 ## Next step
-b1 goals 2-6 in order (resolver, search mapper, search UI + wiring, baselines, docs), each committed, pushed and CI-checked; then docs/reports/REPORT_b1.md.
+Owner: on-device check of live search/playback (incl. offline error + retry), then a release-build check (R8 rules for Rhino/NewPipeExtractor are untested) before tagging. Next slice: image loader for artwork, real home feed and album/artist browse, LRCLIB lyrics.
 
 ## Session log
 2026-10-17 22:21Z Codex / GPT-6 Astra: recorded original design and ui1 plan; next foundations and tests.
@@ -30,3 +30,4 @@ b1 goals 2-6 in order (resolver, search mapper, search UI + wiring, baselines, d
 2026-10-17 23:13Z Codex: resumed ui2, retained the approved split-star, completed browse/settings and scrubber corrections with CI test cases; final source review and report next.
 2026-10-17 23:15Z Codex: completed ui2 source review, regression/screenshot cases and report; whitespace check passed, all execution and visual acceptance deferred to CI.
 2026-10-17 23:43Z Codex: resumed fix1, retained targeted playback fixes, strengthened cancellation coverage and completed source review/report; next CI and device verification, with all edits uncommitted.
+2026-10-20 07:37Z Claude Code / Opus 5.5: b1 shipped (6 commits b29996d..e144854 + docs), CI green through 39387182255; next device + release-build check, then artwork/browse/lyrics.
