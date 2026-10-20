@@ -10,10 +10,7 @@ internal fun SemanticsNodeInteraction.performCustomAction(label: String) {
     fetchSemanticsNode().config[SemanticsActions.CustomActions].first { it.label == label }.action()
 }
 
-/**
- * Sets a text field's text without focusing it. A focused field's blinking cursor keeps Robolectric's frame clock
- * busy until the idling timeout, and every frame leaks native text layouts until the test JVM runs out of memory.
- */
+/** Sets a text field's text through its SetText action, as accessibility services do, without focusing it. */
 internal fun SemanticsNodeInteraction.setTextUnfocused(text: String) {
     performSemanticsAction(SemanticsActions.SetText) { it(AnnotatedString(text)) }
 }

@@ -63,7 +63,7 @@ fun LibraryScreen(
 ) {
     var naming by rememberSaveable { mutableStateOf(false) }
     if (naming) {
-        PlaylistNameDialog("New playlist", "", "Create", onConfirm = { naming = false; onNewPlaylist(it) }, onDismiss = { naming = false })
+        PlaylistNameSheet("New playlist", "", "Create", onConfirm = { naming = false; onNewPlaylist(it) }, onDismiss = { naming = false })
     }
     LazyColumn(modifier.fillMaxSize().testTag("library-content"), contentPadding = contentPadding, verticalArrangement = Arrangement.spacedBy(8.dp)) {
         item(key = "title") { LargeTitle("Library") }

@@ -10,13 +10,11 @@ import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsDisplayed
-import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
-import androidx.compose.ui.test.isDialog
 import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -145,7 +143,7 @@ class BrowseInteractionTest {
             override fun createPlaylist(name: String, first: Track?) { created += name }
         })
         compose.onNodeWithText("New playlist").performClick()
-        compose.onNodeWithText("Create").assertIsNotEnabled()
+        compose.onNodeWithText("Create").assertDoesNotExist()
         compose.onNode(hasSetTextAction()).setTextUnfocused("  Road trip ")
         compose.onNodeWithText("Create").performClick()
         assertEquals(listOf("Road trip"), created)
@@ -208,7 +206,7 @@ class BrowseInteractionTest {
         compose.onNode(hasSetTextAction()).setTextUnfocused("Evening")
         compose.onNodeWithText("Save").performClick()
         compose.onNodeWithText("Delete").performClick()
-        compose.onNode(hasText("Delete") and hasAnyAncestor(isDialog())).performClick()
+        compose.onNodeWithText("Delete playlist").performClick()
 
         assertEquals(listOf("move 1 0 1", "remove 1 ${second.id}", "rename 1 Evening", "delete 1"), calls)
         compose.onNodeWithTag("home-content").assertExists()

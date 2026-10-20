@@ -108,12 +108,12 @@ fun DetailScreen(
         val playlist = state.playlist
         when (dialog) {
             PlaylistDialog.NONE -> Unit
-            PlaylistDialog.RENAME -> PlaylistNameDialog(
+            PlaylistDialog.RENAME -> PlaylistNameSheet(
                 "Rename playlist", playlist.name, "Save",
                 onConfirm = { dialog = PlaylistDialog.NONE; library.renamePlaylist(playlist.id, it) },
                 onDismiss = { dialog = PlaylistDialog.NONE },
             )
-            PlaylistDialog.DELETE -> DeletePlaylistDialog(
+            PlaylistDialog.DELETE -> DeletePlaylistSheet(
                 playlist.name,
                 onConfirm = { dialog = PlaylistDialog.NONE; onBack(); library.deletePlaylist(playlist.id) },
                 onDismiss = { dialog = PlaylistDialog.NONE },
