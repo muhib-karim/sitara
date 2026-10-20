@@ -24,3 +24,15 @@ data class SitaraSettings(
         const val DEFAULT_TARGET_LUFS = -14f
     }
 }
+
+/**
+ * The play queue as kept across a restart: songs in play order, the current one and how far into it playback was.
+ * When shuffled, [unshuffledOrder] lists the play-order indices in the order the songs were queued.
+ */
+data class SavedQueue(
+    val tracks: List<Track>,
+    val currentIndex: Int,
+    val positionMs: Long,
+    val repeatMode: RepeatMode,
+    val unshuffledOrder: List<Int>? = null,
+)

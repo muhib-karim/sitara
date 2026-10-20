@@ -25,3 +25,10 @@ data class Lyrics(
         val Empty = Lyrics(emptyList(), synced = false)
     }
 }
+
+/** A lyrics lookup as a provider answered it: LRC text, plain text, both, or neither when nothing was found. */
+data class CachedLyrics(
+    val synced: String?,
+    val plain: String?,
+    val fetchedAtMs: Long,
+)

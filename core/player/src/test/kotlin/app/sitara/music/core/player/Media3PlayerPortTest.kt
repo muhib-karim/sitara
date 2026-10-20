@@ -85,6 +85,25 @@ class Media3PlayerPortTest {
         assertLoaderSees(entries + added)
     }
 
+    @Test
+    fun `items carry the title, artist and cover the notification and lock screen show`() {
+        val cover = QueueEntry(7, Track("t7", "Song 7", "Artist 7", "Album 7", 1_000, Artwork(listOf(0), "https://i.example.org/cover.jpg")))
+
+        port.setQueue(listOf(cover) + entries.take(1), 0, play = false)
+
+        verify {
+            player.setMediaItems(
+                match<List<MediaItem>> { items ->
+                    val first = items[0].mediaMetadata
+                    first.title == "Song 7" && first.artist == "Artist 7" && first.albumTitle == "Album 7" &&
+                        first.artworkUri.toString() == "https://i.example.org/cover.jpg" && items[1].mediaMetadata.artworkUri == null
+                },
+                0,
+                0L,
+            )
+        }
+    }
+
     private fun assertLoaderSees(expected: List<QueueEntry>) {
         for (entry in expected) {
             val actual = loader.submit<Track?> { port.track(entry.track.id) }.get(5, TimeUnit.SECONDS)

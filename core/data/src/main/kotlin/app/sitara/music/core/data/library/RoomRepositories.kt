@@ -3,7 +3,10 @@ package app.sitara.music.core.data.library
 import app.sitara.music.core.model.Album
 import app.sitara.music.core.model.Artist
 import app.sitara.music.core.model.Artwork
+import app.sitara.music.core.model.CachedLyrics
 import app.sitara.music.core.model.PlaylistSummary
+import app.sitara.music.core.model.RepeatMode
+import app.sitara.music.core.model.SavedQueue
 import app.sitara.music.core.model.Track
 import app.sitara.music.core.model.UserPlaylist
 import kotlinx.coroutines.flow.Flow
@@ -76,4 +79,35 @@ class RoomPlaylists(private val dao: PlaylistDao, private val clock: () -> Long 
     override suspend fun remove(id: Long, trackId: String) = dao.remove(id, trackId, clock())
 
     private fun validName(name: String): String = name.trim().also { require(it.isNotEmpty()) { "A playlist needs a name" } }
+}
+
+class RoomPlaybackQueue(private val dao: PlaybackQueueDao) : PlaybackQueueRepository {
+    // The entries last written; most saves only move the position, which then rewrites one row instead of the queue.
+    private var written: List<QueueEntryEntity>? = null
+
+    override suspend fun load(): SavedQueue? {
+        val state = dao.state() ?: return null
+        val entries = dao.entries()
+        val unshuffled = entries.takeIf { rows -> rows.all { it.originalPosition != null } && rows.isNotEmpty() }
+            ?.sortedBy { it.originalPosition }?.map { it.position }
+        return SavedQueue(entries.map { it.track.toTrack() }, state.currentIndex, state.positionMs, RepeatMode.valueOf(state.repeatMode), unshuffled)
+    }
+
+    override suspend fun save(queue: SavedQueue?) {
+        val original = queue?.unshuffledOrder?.withIndex()?.associate { (unshuffledAt, playAt) -> playAt to unshuffledAt }
+        val entries = queue?.tracks?.mapIndexed { i, track -> QueueEntryEntity(i, original?.get(i), track.toColumns()) }.orEmpty()
+        val state = queue?.let { QueueStateEntity(currentIndex = it.currentIndex, positionMs = it.positionMs, repeatMode = it.repeatMode.name) }
+        if (state != null && entries == written) {
+            dao.upsertState(state)
+        } else {
+            dao.replace(entries, state)
+            written = entries.takeIf { state != null }
+        }
+    }
+}
+
+class RoomLyricsCache(private val dao: LyricsCacheDao) : LyricsCacheRepository {
+    override suspend fun get(trackId: String): CachedLyrics? = dao.get(trackId)?.let { CachedLyrics(it.synced, it.plain, it.fetchedAt) }
+
+    override suspend fun put(trackId: String, lyrics: CachedLyrics) = dao.put(LyricsCacheEntity(trackId, lyrics.synced, lyrics.plain, lyrics.fetchedAtMs))
 }

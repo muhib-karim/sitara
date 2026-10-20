@@ -2,7 +2,9 @@ package app.sitara.music.core.data.library
 
 import app.sitara.music.core.model.Album
 import app.sitara.music.core.model.Artist
+import app.sitara.music.core.model.CachedLyrics
 import app.sitara.music.core.model.PlaylistSummary
+import app.sitara.music.core.model.SavedQueue
 import app.sitara.music.core.model.Track
 import app.sitara.music.core.model.UserPlaylist
 import kotlinx.coroutines.flow.Flow
@@ -57,4 +59,19 @@ interface PlaylistRepository {
     suspend fun move(id: Long, from: Int, to: Int)
 
     suspend fun remove(id: Long, trackId: String)
+}
+
+/** The play queue kept for after a restart; there is at most one. */
+interface PlaybackQueueRepository {
+    suspend fun load(): SavedQueue?
+
+    /** Replaces the saved queue; null forgets it. */
+    suspend fun save(queue: SavedQueue?)
+}
+
+/** Lyrics lookups by song id, so a song is not looked up again. */
+interface LyricsCacheRepository {
+    suspend fun get(trackId: String): CachedLyrics?
+
+    suspend fun put(trackId: String, lyrics: CachedLyrics)
 }

@@ -1,5 +1,6 @@
 package app.sitara.music.core.player
 
+import app.sitara.music.core.model.SavedQueue
 import app.sitara.music.core.model.Track
 import app.sitara.music.source.api.StreamResolver
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -29,4 +30,10 @@ interface PlaybackDependencies {
 
     /** A queued song started playing; called on the main thread, so implementations hand slow work off. */
     fun onTrackStarted(track: Track)
+
+    /** The queue saved before the process last ended, or null. */
+    suspend fun savedQueue(): SavedQueue?
+
+    /** Keeps [queue] for after a restart; called on the main thread and must outlive the service, so implementations hand the write off. */
+    fun saveQueue(queue: SavedQueue)
 }

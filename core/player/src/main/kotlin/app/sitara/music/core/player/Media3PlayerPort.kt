@@ -1,6 +1,7 @@
 package app.sitara.music.core.player
 
 import androidx.annotation.OptIn
+import androidx.core.net.toUri
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
@@ -90,6 +91,8 @@ class Media3PlayerPort(private val player: ExoPlayer) : PlayerPort {
                 .setTitle(entry.track.title)
                 .setArtist(entry.track.artist)
                 .setAlbumTitle(entry.track.album)
+                // The session's bitmap loader fetches it for the notification, lock screen and Bluetooth displays.
+                .setArtworkUri(entry.track.artwork.imageUrl?.toUri())
                 .build(),
         )
         .build()

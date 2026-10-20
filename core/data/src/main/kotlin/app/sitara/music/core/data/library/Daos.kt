@@ -138,3 +138,43 @@ abstract class PlaylistDao {
 
     private suspend fun renumber(id: Long, order: List<String>) = order.forEachIndexed { position, trackId -> setPosition(id, trackId, position) }
 }
+
+@Dao
+abstract class PlaybackQueueDao {
+    @Query("SELECT * FROM queue_entries ORDER BY position")
+    abstract suspend fun entries(): List<QueueEntryEntity>
+
+    @Query("SELECT * FROM queue_state WHERE id = 0")
+    abstract suspend fun state(): QueueStateEntity?
+
+    @Insert
+    abstract suspend fun insertEntries(entries: List<QueueEntryEntity>)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    abstract suspend fun upsertState(state: QueueStateEntity)
+
+    @Query("DELETE FROM queue_entries")
+    abstract suspend fun clearEntries()
+
+    @Query("DELETE FROM queue_state")
+    abstract suspend fun clearState()
+
+    /** Replaces the saved queue in one transaction, so a crash mid-save never leaves half a queue. */
+    @Transaction
+    open suspend fun replace(entries: List<QueueEntryEntity>, state: QueueStateEntity?) {
+        clearEntries()
+        clearState()
+        if (state == null) return
+        insertEntries(entries)
+        upsertState(state)
+    }
+}
+
+@Dao
+interface LyricsCacheDao {
+    @Query("SELECT * FROM lyrics_cache WHERE track_id = :trackId")
+    suspend fun get(trackId: String): LyricsCacheEntity?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun put(entry: LyricsCacheEntity)
+}

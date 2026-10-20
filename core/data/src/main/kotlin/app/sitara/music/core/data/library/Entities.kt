@@ -104,3 +104,28 @@ internal fun TrackColumns.toTrack() = Track(id, title, artist, album, durationMs
 internal fun SavedAlbumEntity.toAlbum() = Album(id, title, artist, year, Artwork(decodeColors(artworkColors), artworkUrl), emptyList(), artistId)
 
 internal fun SavedArtistEntity.toArtist() = Artist(id, name, Artwork(decodeColors(artworkColors), artworkUrl))
+
+/** One slot of the saved play queue, by play order; [originalPosition] is its unshuffled place, null when not shuffled. */
+@Entity(tableName = "queue_entries")
+data class QueueEntryEntity(
+    @PrimaryKey val position: Int,
+    @ColumnInfo(name = "original_position") val originalPosition: Int?,
+    @Embedded(prefix = "track_") val track: TrackColumns,
+)
+
+/** The single row saying which queue entry is current and where in it playback was. */
+@Entity(tableName = "queue_state")
+data class QueueStateEntity(
+    @PrimaryKey val id: Int = 0,
+    @ColumnInfo(name = "current_index") val currentIndex: Int,
+    @ColumnInfo(name = "position_ms") val positionMs: Long,
+    @ColumnInfo(name = "repeat_mode") val repeatMode: String,
+)
+
+@Entity(tableName = "lyrics_cache")
+data class LyricsCacheEntity(
+    @PrimaryKey @ColumnInfo(name = "track_id") val trackId: String,
+    val synced: String?,
+    val plain: String?,
+    @ColumnInfo(name = "fetched_at") val fetchedAt: Long,
+)

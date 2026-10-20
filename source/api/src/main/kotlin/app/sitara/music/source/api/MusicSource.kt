@@ -1,8 +1,8 @@
 package app.sitara.music.source.api
 
 import app.sitara.music.core.model.Album
-import app.sitara.music.core.model.Chart
 import app.sitara.music.core.model.ArtistPage
+import app.sitara.music.core.model.Chart
 import app.sitara.music.core.model.Library
 import app.sitara.music.core.model.Lyrics
 import app.sitara.music.core.model.Playlist

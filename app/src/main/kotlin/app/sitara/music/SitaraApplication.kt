@@ -4,6 +4,7 @@ import android.app.Application
 import android.util.Log
 import app.sitara.music.core.data.SettingsRepository
 import app.sitara.music.core.data.library.LibraryStore
+import app.sitara.music.core.model.SavedQueue
 import app.sitara.music.core.model.Track
 import app.sitara.music.core.player.PlaybackDependencies
 import app.sitara.music.core.player.PlayerController
@@ -33,6 +34,10 @@ class SitaraApplication :
     val player by lazy { PlayerController(this, appScope) }
 
     override fun onTrackStarted(track: Track) = writeLibrary { library.history.record(track) }
+
+    override suspend fun savedQueue(): SavedQueue? = library.queue.load()
+
+    override fun saveQueue(queue: SavedQueue) = writeLibrary { library.queue.save(queue) }
 
     /** Runs a library write past the screen that asked for it; a failed write (disk full, a playlist deleted meanwhile) is logged, never fatal. */
     fun writeLibrary(write: suspend () -> Unit) {

@@ -1,6 +1,7 @@
 package app.sitara.music.core.player
 
 import app.sitara.music.core.model.RepeatMode
+import app.sitara.music.core.model.SavedQueue
 import app.sitara.music.core.model.Track
 import kotlin.random.Random
 import kotlin.time.TimeSource
@@ -93,6 +94,20 @@ class PlaybackEngine(
         publish(next)
         port.remove(q.currentIndex + 1 + index)
     }
+
+    /** Puts back a queue saved before a restart, paused where it was; ignored once the listener has queued anything. */
+    fun restore(saved: SavedQueue) {
+        if (queue.currentEntry != null) return
+        val restored = saved.toQueueState() ?: return
+        publish(restored)
+        port.setRepeatMode(restored.repeatMode)
+        port.setQueue(restored.entries, restored.currentIndex, play = false)
+        port.seekToItem(restored.currentIndex, saved.positionMs)
+        refresh()
+    }
+
+    /** The queue to keep for after a restart, at the player's position; null when nothing is queued. */
+    fun savedQueue(): SavedQueue? = queue.toSaved(port.positionMs)
 
     fun togglePlay() {
         val q = queue

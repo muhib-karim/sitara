@@ -2,11 +2,13 @@ package app.sitara.music.core.player
 
 import app.sitara.music.core.model.Artwork
 import app.sitara.music.core.model.RepeatMode
+import app.sitara.music.core.model.SavedQueue
 import app.sitara.music.core.model.Track
 import kotlin.random.Random
 import kotlin.time.AbstractLongTimeSource
 import kotlin.time.DurationUnit
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.runCurrent
@@ -310,5 +312,67 @@ class PlaybackEngineTest {
         engine.previous()
         assertEquals(2, port.index)
         assertEquals(0L, port.positionMs)
+    }
+
+    @Test
+    fun `a saved queue comes back paused at its song and position`() = runTest {
+        val engine = engine()
+
+        engine.restore(SavedQueue(five, 3, 61_000, RepeatMode.ALL))
+
+        assertEquals(t(4), engine.state.value.queue.current)
+        assertEquals(five.map { it.id }, port.entries.map { it.track.id })
+        assertEquals(3, port.index)
+        assertEquals(61_000, port.positionMs)
+        assertEquals(RepeatMode.ALL, port.repeat)
+        assertFalse(port.playing)
+        assertTrue("a restored song has not started playing", started.isEmpty())
+    }
+
+    @Test
+    fun `a saved queue never replaces music the listener already started`() = runTest {
+        val engine = engine()
+        engine.play(five.take(2), 0)
+
+        engine.restore(SavedQueue(five, 3, 61_000, RepeatMode.OFF))
+
+        assertEquals(listOf("t1", "t2"), port.entries.map { it.track.id })
+        assertTrue(port.playing)
+    }
+
+    @Test
+    fun `the queue to save reads the position from the player`() = runTest {
+        val engine = engine()
+        assertEquals(null, engine.savedQueue())
+        engine.play(five, 1)
+        port.positionMs = 12_345
+
+        assertEquals(SavedQueue(five, 1, 12_345, RepeatMode.OFF), engine.savedQueue())
+    }
+
+    @Test
+    fun `the queue is saved after a change settles, when playback pauses and while playing`() = runTest {
+        val engine = engine()
+        val saves = mutableListOf<SavedQueue>()
+        backgroundScope.launch { keepSaving(engine) { saves += it } }
+        runCurrent()
+        assertTrue("an empty queue is never saved over the last one", saves.isEmpty())
+
+        engine.play(five, 0)
+        engine.refresh()
+        advanceTimeBy(QUEUE_SAVE_DEBOUNCE_MS + 1)
+        assertEquals(1, saves.size)
+
+        port.positionMs = 30_000
+        advanceTimeBy(QUEUE_SAVE_INTERVAL_MS)
+        assertEquals(30_000, saves.last().positionMs)
+
+        port.positionMs = 31_000
+        engine.togglePlay()
+        runCurrent()
+        assertEquals(31_000, saves.last().positionMs)
+        val afterPause = saves.size
+        advanceTimeBy(QUEUE_SAVE_INTERVAL_MS * 3)
+        assertEquals("nothing changes while paused", afterPause, saves.size)
     }
 }
