@@ -1,6 +1,6 @@
 # Sitara architecture
 
-This document describes how Sitara is put together: the module map, how data moves from a music source to the screen, how playback is wired to Media3, how the stream source stays reliable, and how the code is tested and shipped.
+This document describes how Sitara is put together: the module map, how data moves from a music source to the screen, how playback is wired to Media3, how stream lookups fall back, and how the code is tested and shipped.
 
 > Status: Phase C slice 2 (after the complete Phase B). Home's trending chart, search, artist/album/playlist pages, radio and streams are live (YouTube through NewPipeExtractor); lyrics come from LRCLIB; the library, the play queue and fetched lyrics are stored on the device with Room; downloaded songs live in a Media3 cache and play offline; playback levels loudness, can crossfade, joins songs gapless, changes speed and pitch and can skip silence; covers load through Coil and colour the player. The app contains no sample data; the sample catalogue is a test and debug fixture. Modules marked *planned* do not exist yet.
 
@@ -82,7 +82,7 @@ graph TD
 Rules enforced in review:
 
 - `:core:model`, `:core:common`, `:source:api`, `:source:fake`, `:source:lyrics` and `:source:youtube` stay free of Android dependencies.
-- Only `:app` chooses concrete sources. Home's chart, search, detail pages, radio and streams use YouTube (`YouTubeMusicSource`, `YouTubeStreamResolver`); lyrics use `LrclibLyricsProvider`; the Library tab and Home's shelves read only `LibraryStore`. The sample source is a fixture: it reaches only debug builds and tests.
+- Only `:app` chooses concrete sources. Home's chart, search, detail pages, radio and streams use YouTube (`YouTubeMusicSource`, `youTubeStreamResolver()`); lyrics use `LrclibLyricsProvider`; the Library tab and Home's shelves read only `LibraryStore`. The sample source is a fixture: it reaches only debug builds and tests.
 - UI modules depend on `:core:designsystem` for every colour, shape, spring and duration. Hard-coded values in feature code are a review comment.
 
 ## Data flow
@@ -243,32 +243,28 @@ flowchart LR
 - The view model looks lyrics up when the current song changes (a retry asks again for the same song); the
   Lyrics page shows loading, the lyrics with an "LRCLIB" credit, "No lyrics found", or an error with Try again.
 
-## Stream source abstraction (Phase B)
+## Stream source fallback
 
-The most common failure in streaming clients is the upstream service changing. Sitara treats that as a normal operating condition rather than an emergency.
+The most common failure in streaming clients is the upstream service changing or refusing one client. Sitara treats that as a normal operating condition rather than an emergency.
 
 ```mermaid
 flowchart TD
-    req["resolve(trackId)"] --> chain["ResolverChain"]
-    chain --> r1["Primary resolver"]
-    chain --> r2["Secondary resolver"]
-    chain --> r3["Further resolvers"]
-    hc["HealthCheck (periodic + on failure)"] -.scores.-> chain
-    chain --> out["StreamInfo or typed error"]
-    chain --> dash["Source health dashboard"]
+    req["resolve(track)"] --> chain["FallbackStreamResolver<br/>(:source:api)"]
+    chain -->|1| np["NewPipe extraction<br/>(Android client + visionOS streams)"]
+    chain -->|2| vos["visionOS player response"]
+    chain -->|3| ios["iOS player response"]
+    chain --> out["ResolvedStream, or StreamUnavailableException with every cause"]
 ```
 
-- `StreamResolver` turns a track id into playable stream info. Several resolvers are registered in priority order.
-- Each resolver has a `HealthCheck`. Results are cached with a short time-to-live and refreshed after any failure.
-- The chain picks the healthiest resolver, falls back on error, and records why. Errors are typed (network, region, parse, unavailable) so the UI can say something useful.
-- A **source health dashboard** in settings shows each resolver's state and offers a one-tap diagnostics export for bug reports.
-- Network-aware quality selection (Wi-Fi versus mobile) lives in the chain, not in the resolvers.
+- `StreamResolver` turns a track into a playable stream. `youTubeStreamResolver()` registers three routes in a fixed order: NewPipe's full extraction (`YouTubeStreamResolver`), then the visionOS and iOS clients asked directly through NewPipe's `YoutubeStreamHelper` (`ClientStreamResolver`). NewPipe's extraction fails as a whole when YouTube refuses its Android request (UNPLAYABLE, LOGIN_REQUIRED), which is why the other clients are asked on their own.
+- `FallbackStreamResolver` tries the routes in order and stops at the first stream. The route that served a song is asked first for that song for the rest of the process. When every route fails, the exception carries each cause (also as suppressed exceptions, so logcat shows them).
+- None of the routes passes a bot check aimed at the device's network, and YouTube can close any of them. A proof-of-origin token provider is still open.
 
 ## Testing strategy
 
 | Layer | Tools | What is covered |
 | --- | --- | --- |
-| Pure logic | JUnit 4/5, Turbine, coroutine test time | Queue engine (unique entries, shuffle restore, repeat), playback engine against a fake player (queue hand-off, transitions, end-of-queue restart, sleep timer and its extension, restore, save triggers, which song is prepared ahead after a skip, shuffle, queue edit and repeat change, speed and pitch), the one-slot stream prefetch (hand-over, wait, replace, failure, expiry), speed and pitch limits, lyric timing at 1.5x, saved queue round trip (shuffle order, broken data), Home feed shelves, download state mapping and the downloaded-song codec, Download all selection, byte formatting, loudness levelling (target, boost cap, gate, slew, peak ceiling, bit-exact when off), crossfade rules and curve, LRCLIB lookups against an interceptor (exact, search fallback, best match, cache freshness, errors, User-Agent), lyric title clean-up, an LRCLIB-shaped LRC fixture (offset, repeated timestamps, blank break), command gate, controller and stream policies, crossfade and LUFS maths, LRC and enhanced LRC parsing, karaoke sweep, sheet geometry, palette to theme mapping, settings codec, fake source, YouTube song mapping, audio stream selection, OkHttp downloader request/response mapping (interceptor, no network), search states |
+| Pure logic | JUnit 4/5, Turbine, coroutine test time | Queue engine (unique entries, shuffle restore, repeat), playback engine against a fake player (queue hand-off, transitions, end-of-queue restart, sleep timer and its extension, restore, save triggers, which song is prepared ahead after a skip, shuffle, queue edit and repeat change, speed and pitch), the one-slot stream prefetch (hand-over, wait, replace, failure, expiry), speed and pitch limits, lyric timing at 1.5x, saved queue round trip (shuffle order, broken data), Home feed shelves, download state mapping and the downloaded-song codec, Download all selection, byte formatting, loudness levelling (target, boost cap, gate, slew, peak ceiling, bit-exact when off), crossfade rules and curve, LRCLIB lookups against an interceptor (exact, search fallback, best match, cache freshness, errors, User-Agent), lyric title clean-up, an LRCLIB-shaped LRC fixture (offset, repeated timestamps, blank break), command gate, controller and stream policies, crossfade and LUFS maths, LRC and enhanced LRC parsing, karaoke sweep, sheet geometry, palette to theme mapping, settings codec, fake source, YouTube song mapping, audio stream selection, OkHttp downloader request/response mapping (interceptor, no network), stream fallback order and per-song memory, player-response audio selection and refusals, search states |
 | Library store | Robolectric, in-memory Room | Liked songs, capped history and its last-play order, saved albums and artists, playlist order, duplicates, renumbering, rename, delete cascading to entries, name validation, song details surviving storage; saved queue (repeats, shuffle order, replace, clear, position-only saves) and the lyrics cache |
 | Playback service | Robolectric | The real `PlaybackService` restores a saved queue paused at its song, position and repeat mode, and saves it on destroy; normalisation, skip silence and crossfade follow setting changes while it runs; media item titles and covers are covered by `Media3PlayerPortTest` |
 | Screenshots | Roborazzi on Robolectric (debug variant) | Home, search, library (with Downloads), album page with downloaded badges, player, lyrics, song menus and settings (Sound, Downloads) in light and dark; CI fails on any pixel mismatch against the committed baselines in `app/src/test/screenshots` |

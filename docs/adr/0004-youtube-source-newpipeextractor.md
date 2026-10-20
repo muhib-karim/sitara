@@ -17,8 +17,8 @@ a Google account or API key, and it must survive upstream changes (ADR 0003). Th
 `:source:youtube` uses NewPipeExtractor v0.26.5 from JitPack. The repository is declared with `exclusiveContent` for
 the `com.github.TeamNewPipe` group only, so no other dependency can resolve from JitPack. Its HTTP layer is Sitara's
 own `OkHttpDownloader`. Extractor types stay inside the module: pure, unit-tested functions map song search items to
-`Track` and pick the audio stream (`selectAudioStream`). The app uses `YouTubeMusicSource` for search and puts
-`YouTubeStreamResolver` behind the sample resolver in `FallbackStreamResolver`.
+`Track` and pick the audio stream (`selectAudioStream`). The app uses `YouTubeMusicSource` for search and `youTubeStreamResolver()`
+for streams: NewPipe's extraction, then the visionOS and iOS clients, in a `FallbackStreamResolver`.
 
 GPL-3.0-or-later is compatible with Sitara's GPL-3.0 (ADR 0002).
 

@@ -36,6 +36,7 @@ dependencies {
     api(project(":source:api"))
     implementation(libs.newpipe.extractor)
     implementation(libs.okhttp)
+    implementation(libs.nanojson)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(platform(libs.junit5.bom))
     testImplementation(libs.junit5.jupiter)

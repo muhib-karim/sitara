@@ -19,8 +19,8 @@ import app.sitara.music.source.api.StreamResolver
 import app.sitara.music.source.lyrics.LyricsCache
 import app.sitara.music.source.lyrics.lrclibLyrics
 import app.sitara.music.source.youtube.YouTubeMusicSource
-import app.sitara.music.source.youtube.YouTubeStreamResolver
 import app.sitara.music.source.youtube.installNewPipe
+import app.sitara.music.source.youtube.youTubeStreamResolver
 import coil3.SingletonImageLoader
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
@@ -53,7 +53,7 @@ class SitaraApplication :
         )
     }
 
-    override val streamResolver: StreamResolver by lazy { YouTubeStreamResolver() }
+    override val streamResolver: StreamResolver by lazy { youTubeStreamResolver() }
     override val songDownloads: SongDownloads by lazy { SongDownloads(this, streamResolver, appScope, settings.settings.map { it.downloadOnWifiOnly }.distinctUntilChanged()) }
     override val downloadCache: Cache get() = songDownloads.cache
     override val playbackSettings get() = settings.settings

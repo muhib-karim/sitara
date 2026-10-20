@@ -9,6 +9,7 @@ import app.sitara.music.core.model.Playlist
 import app.sitara.music.core.model.SearchFilter
 import app.sitara.music.core.model.SearchResults
 import app.sitara.music.core.model.Track
+import java.util.concurrent.ConcurrentHashMap
 
 /** Catalogue search on its own, for sources that do not offer browse or a library yet. */
 interface SearchSource {
@@ -79,7 +80,9 @@ interface HealthCheck {
 
 /**
  * Tries each resolver in order and returns the first stream, so a broken
- * resolver degrades to the next one instead of failing playback.
+ * resolver degrades to the next one instead of failing playback. The resolver
+ * that last worked for a song is asked first next time, for as long as this
+ * object lives (the app keeps one per process).
  */
 class FallbackStreamResolver(
     private val resolvers: List<StreamResolver>,
@@ -90,11 +93,16 @@ class FallbackStreamResolver(
 
     override val id: String = resolvers.joinToString("+") { it.id }
 
+    // Track id -> the resolver that served it. One small entry per song played; read and written from loader threads.
+    private val winners = ConcurrentHashMap<String, StreamResolver>()
+
     override suspend fun resolve(track: Track): ResolvedStream {
         val failures = mutableListOf<Throwable>()
-        for (resolver in resolvers) {
+        val remembered = winners[track.id]
+        val order = if (remembered == null) resolvers else listOf(remembered) + (resolvers - remembered)
+        for (resolver in order) {
             try {
-                return resolver.resolve(track)
+                return resolver.resolve(track).also { winners[track.id] = resolver }
             } catch (e: kotlinx.coroutines.CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -108,4 +116,8 @@ class FallbackStreamResolver(
 class StreamUnavailableException(
     trackId: String,
     val causes: List<Throwable>,
-) : Exception("No resolver could stream $trackId (${causes.size} failed)")
+) : Exception("No resolver could stream $trackId (${causes.size} failed)") {
+    init {
+        causes.forEach { addSuppressed(it) } // so a logged stack trace shows why each resolver failed
+    }
+}
