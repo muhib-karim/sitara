@@ -2,6 +2,7 @@ package app.sitara.music.feature.library
 
 import app.sitara.music.core.model.Album
 import app.sitara.music.core.model.Artist
+import app.sitara.music.core.model.DownloadState
 import app.sitara.music.core.model.PlaylistSummary
 import app.sitara.music.core.model.Track
 
@@ -26,6 +27,12 @@ interface LibraryActions {
 
     fun removePlaylistEntry(id: Long, trackId: String)
 
+    /** Downloads the songs in [tracks] that are not downloaded or on their way. */
+    fun download(tracks: List<Track>)
+
+    /** Cancels a running download or deletes a finished one. */
+    fun removeDownload(trackId: String)
+
     object None : LibraryActions {
         override fun setLiked(track: Track, liked: Boolean) = Unit
         override fun setSaved(album: Album, saved: Boolean) = Unit
@@ -36,14 +43,17 @@ interface LibraryActions {
         override fun deletePlaylist(id: Long) = Unit
         override fun movePlaylistEntry(id: Long, from: Int, to: Int) = Unit
         override fun removePlaylistEntry(id: Long, trackId: String) = Unit
+        override fun download(tracks: List<Track>) = Unit
+        override fun removeDownload(trackId: String) = Unit
     }
 }
 
-/** Which songs, albums and artists are in the library, so every like and save control shows its live state. */
+/** Which songs, albums and artists are in the library and which songs are downloaded, so every control shows its live state. */
 data class SavedIds(
     val tracks: Set<String> = emptySet(),
     val albums: Set<String> = emptySet(),
     val artists: Set<String> = emptySet(),
+    val downloads: Map<String, DownloadState> = emptyMap(),
 )
 
 /** Everything the Library tab lists, read from the on-device store. */

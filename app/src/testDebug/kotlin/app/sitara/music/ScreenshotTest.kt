@@ -12,16 +12,19 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performScrollToIndex
+import androidx.compose.ui.test.performScrollToKey
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeLeft
 import androidx.compose.ui.test.swipeUp
 import androidx.compose.ui.unit.Density
 import app.sitara.music.core.designsystem.SitaraTheme
 import app.sitara.music.core.model.DarkMode
+import app.sitara.music.core.model.DownloadState
 import app.sitara.music.core.model.Library
 import app.sitara.music.core.model.SearchFilter
 import app.sitara.music.core.model.SearchResults
 import app.sitara.music.core.model.SitaraSettings
+import app.sitara.music.core.model.SongDownload
 import app.sitara.music.core.model.ThemeMode
 import app.sitara.music.core.model.UserPlaylist
 import app.sitara.music.feature.home.HomeFeed
@@ -29,6 +32,7 @@ import app.sitara.music.feature.home.TrendingState
 import app.sitara.music.feature.library.AddToPlaylist
 import app.sitara.music.feature.library.DetailState
 import app.sitara.music.feature.library.LibraryState
+import app.sitara.music.feature.library.SavedIds
 import app.sitara.music.feature.library.SavedLibrary
 import app.sitara.music.feature.library.SongActions
 import app.sitara.music.feature.player.LyricsState
@@ -94,6 +98,8 @@ class ScreenshotTest {
         route: DetailRoute? = null,
         saved: LibraryState = LibraryState.Ready(sampleSavedLibrary(library)),
         homeFeed: HomeFeed = home,
+        savedIds: SavedIds = SavedIds(),
+        downloads: List<SongDownload> = emptyList(),
         beforeCapture: () -> Unit = {},
     ) {
         val settings = SitaraSettings(themeMode = mode, darkMode = if (dark) DarkMode.DARK else DarkMode.LIGHT, reducedMotion = reduced)
@@ -122,6 +128,8 @@ class ScreenshotTest {
                     playerExpanded = expanded,
                     playerPage = page,
                     greetingText = "Good evening",
+                    savedIds = savedIds,
+                    downloads = downloads,
                 )
             }
         }
@@ -223,7 +231,21 @@ class ScreenshotTest {
     @Test fun upNext() = shot("up_next", dark = true, expanded = true, page = 2)
     @Test fun playerLiked() = shot("player_liked", dark = true, expanded = true, playerState = playing.copy(liked = true))
 
-    @Test fun songActionsSheet() = sheet("song_actions") { SongActions(Fixtures.playlist.tracks.first(), liked = true, {}, {}, {}, {}) }
+    @Test fun songActionsSheet() = sheet("song_actions") { SongActions(Fixtures.playlist.tracks.first(), liked = true, download = null, {}, {}, {}, {}, {}, {}) }
+    @Test fun songActionsDownloaded() = sheet("song_actions_downloaded") {
+        SongActions(Fixtures.playlist.tracks.first(), liked = false, download = DownloadState.DOWNLOADED, {}, {}, {}, {}, {}, {})
+    }
+
+    @Test fun libraryDownloads() = shot("library_downloads", dark = true, tab = Tab.LIBRARY, downloads = Fixtures.downloads) {
+        compose.onNodeWithTag("library-content").performScrollToKey("download-${Fixtures.downloads.last().track.id}")
+    }
+    @Test fun libraryDownloadsLight() = shot("library_downloads", dark = false, tab = Tab.LIBRARY, downloads = Fixtures.downloads) {
+        compose.onNodeWithTag("library-content").performScrollToKey("download-${Fixtures.downloads.last().track.id}")
+    }
+    @Test fun albumPageDownloads() = shot(
+        "album_page_downloads", dark = true, tab = Tab.SEARCH, detail = DetailState.AlbumReady(Fixtures.album),
+        savedIds = SavedIds(downloads = Fixtures.downloadStates), downloads = Fixtures.downloads,
+    )
     @Test fun addToPlaylistSheet() = sheet("add_to_playlist") { AddToPlaylist(Fixtures.playlist.tracks.first(), sampleSavedLibrary(library).playlists, {}, {}) }
 
     // Sheets open in a dialog window; their content is captured on the sheet's own surface colour.
@@ -257,6 +279,10 @@ class ScreenshotTest {
         compose.onNodeWithTag("settings-content").performScrollToIndex(3)
     }
 
+    @Test fun settingsDownloads() = shot("settings_downloads", dark = true, settingsOpen = true, downloads = Fixtures.downloads) {
+        compose.onNodeWithTag("settings-content").performScrollToIndex(4)
+    }
+
     @Test fun scrubberMidpoint() = shot(
         "player_scrubber_midpoint", dark = true, expanded = true,
         playerState = playing.copy(positionMs = track.durationMs / 2),
@@ -276,7 +302,7 @@ class ScreenshotTest {
 }
 
 /** Shows one page whatever route is open, so a screenshot needs no catalogue. */
-private class FixedPage(state: DetailState) : DetailPages {
+internal class FixedPage(state: DetailState) : DetailPages {
     private val flow = MutableStateFlow(state)
 
     override fun state(route: DetailRoute): StateFlow<DetailState> = flow

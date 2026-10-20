@@ -1,6 +1,7 @@
 package app.sitara.music.feature.settings
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
@@ -22,26 +23,35 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.unit.dp
+import app.sitara.music.core.common.formatBytes
 import app.sitara.music.core.designsystem.GlassIconButton
 import app.sitara.music.core.designsystem.LargeTitle
+import app.sitara.music.core.designsystem.PillButton
 import app.sitara.music.core.designsystem.SectionHeader
 import app.sitara.music.core.designsystem.SitaraIcons
 import app.sitara.music.core.designsystem.SitaraRadius
 import app.sitara.music.core.designsystem.SitaraSpacing
 import app.sitara.music.core.model.DarkMode
 import app.sitara.music.core.model.SitaraSettings
+import app.sitara.music.core.model.SongDownload
 import app.sitara.music.core.model.ThemeMode
 
 @Composable
 fun SettingsScreen(
     settings: SitaraSettings,
     onChange: (SitaraSettings) -> Unit,
+    downloads: List<SongDownload>,
+    onRemoveAllDownloads: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(),
@@ -73,29 +83,67 @@ fun SettingsScreen(
         }
         item(key = "motion") {
             SettingsGroup("Motion") {
-                Row(
-                    Modifier.fillMaxWidth().toggleable(
-                        settings.reducedMotion,
-                        role = Role.Switch,
-                        onValueChange = { onChange(settings.copy(reducedMotion = it)) },
-                    ).padding(16.dp),
-                    verticalAlignment = Alignment.CenterVertically,
-                ) {
-                    Column(Modifier.weight(1f).padding(end = 12.dp)) {
-                        Text("Reduced motion", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
-                        Text("Instant transitions, without blur", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    }
-                    Switch(
-                        checked = settings.reducedMotion,
-                        onCheckedChange = null,
-                        colors = SwitchDefaults.colors(
-                            checkedTrackColor = MaterialTheme.colorScheme.primary,
-                            checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
-                        ),
-                    )
+                SwitchRow("Reduced motion", "Instant transitions, without blur", settings.reducedMotion) { onChange(settings.copy(reducedMotion = it)) }
+            }
+        }
+        item(key = "downloads") {
+            DownloadSettings(settings, onChange, downloads, onRemoveAllDownloads)
+        }
+    }
+}
+
+@Composable
+private fun DownloadSettings(settings: SitaraSettings, onChange: (SitaraSettings) -> Unit, downloads: List<SongDownload>, onRemoveAll: () -> Unit) {
+    var confirming by rememberSaveable { mutableStateOf(false) }
+    val songs = if (downloads.size == 1) "1 song" else "${downloads.size} songs"
+    SettingsGroup("Downloads") {
+        SwitchRow("Download on Wi-Fi only", "Downloads wait for Wi-Fi instead of using mobile data", settings.downloadOnWifiOnly) {
+            onChange(settings.copy(downloadOnWifiOnly = it))
+        }
+        InsetDivider()
+        Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f).padding(end = 12.dp)) {
+                Text("Storage used", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+                Text(
+                    if (downloads.isEmpty()) "Nothing downloaded" else "$songs · ${formatBytes(downloads.sumOf { it.bytes })}",
+                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            if (downloads.isNotEmpty() && !confirming) PillButton("Remove all", { confirming = true }, primary = false)
+        }
+        if (downloads.isNotEmpty() && confirming) {
+            Column(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(
+                    "Remove all downloads? $songs will stream again and need a connection.",
+                    style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface,
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    PillButton("Remove all downloads", { confirming = false; onRemoveAll() })
+                    PillButton("Keep", { confirming = false }, primary = false)
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun SwitchRow(title: String, description: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().toggleable(checked, role = Role.Switch, onValueChange = onCheckedChange).padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f).padding(end = 12.dp)) {
+            Text(title, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+            Text(description, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        Switch(
+            checked = checked,
+            onCheckedChange = null,
+            colors = SwitchDefaults.colors(
+                checkedTrackColor = MaterialTheme.colorScheme.primary,
+                checkedThumbColor = MaterialTheme.colorScheme.onPrimary,
+            ),
+        )
     }
 }
 

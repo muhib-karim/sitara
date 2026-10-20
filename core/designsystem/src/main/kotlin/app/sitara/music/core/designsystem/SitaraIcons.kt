@@ -133,6 +133,22 @@ object SitaraIcons {
         moveTo(12f, 13f); lineTo(12f, 9f)
         moveTo(10f, 3f); lineTo(14f, 3f)
     }
+    val Download = icon("download", filled = false) {
+        moveTo(12f, 4f); lineTo(12f, 15f)
+        moveTo(7f, 10.5f); lineTo(12f, 15.5f); lineTo(17f, 10.5f)
+        moveTo(5f, 20f); lineTo(19f, 20f)
+    }
+    val Downloaded = icon("downloaded", filled = false) {
+        moveTo(20f, 12f)
+        arcTo(8f, 8f, 0f, true, true, 4f, 12f)
+        arcTo(8f, 8f, 0f, true, true, 20f, 12f)
+        moveTo(8.5f, 12.5f); lineTo(11f, 15f); lineTo(15.5f, 9.5f)
+    }
+    val Delete = icon("delete", filled = false) {
+        moveTo(4f, 7f); lineTo(20f, 7f)
+        moveTo(10f, 4f); lineTo(14f, 4f)
+        moveTo(6.5f, 7f); lineTo(7.5f, 20f); lineTo(16.5f, 20f); lineTo(17.5f, 7f)
+    }
     val Star = icon("star") {
         moveTo(12f, 2f); curveTo(12.8f, 8f, 16f, 11.2f, 22f, 12f)
         curveTo(16f, 12.8f, 12.8f, 16f, 12f, 22f)

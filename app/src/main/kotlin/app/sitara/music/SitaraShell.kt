@@ -52,6 +52,7 @@ import app.sitara.music.core.model.Artist
 import app.sitara.music.core.model.PlaylistSummary
 import app.sitara.music.core.model.SearchFilter
 import app.sitara.music.core.model.SitaraSettings
+import app.sitara.music.core.model.SongDownload
 import app.sitara.music.core.model.Track
 import app.sitara.music.feature.home.HomeFeed
 import app.sitara.music.feature.home.HomeScreen
@@ -92,6 +93,7 @@ fun SitaraRoot(vm: AppViewModel, systemReducedMotion: Boolean) {
     val query by vm.query.collectAsState()
     val searchFilter by vm.searchFilter.collectAsState()
     val search by vm.search.collectAsState()
+    val downloads by vm.downloads.collectAsState()
     SitaraShell(
         settings = settings.let { if (systemReducedMotion) it.copy(reducedMotion = true) else it },
         home = home,
@@ -113,6 +115,8 @@ fun SitaraRoot(vm: AppViewModel, systemReducedMotion: Boolean) {
         onShuffle = vm::shuffle,
         onSettingsChange = vm::updateSettings,
         tabRequests = vm.requestedTabs,
+        downloads = downloads,
+        onRemoveAllDownloads = vm::removeAllDownloads,
     )
 }
 
@@ -145,6 +149,8 @@ fun SitaraShell(
     savedIds: SavedIds = SavedIds(),
     playlists: List<PlaylistSummary> = emptyList(),
     libraryActions: LibraryActions = LibraryActions.None,
+    downloads: List<SongDownload> = emptyList(),
+    onRemoveAllDownloads: () -> Unit = {},
 ) {
     var tab by rememberSaveable { mutableStateOf(if (initialSettingsOpen) Tab.SETTINGS else initialTab) }
     var detailStack by rememberSaveable(stateSaver = DetailStackSaver) { mutableStateOf(listOfNotNull(initialDetail)) }
@@ -204,15 +210,19 @@ fun SitaraShell(
                                 openAlbum, openArtist, { open(DetailRoute.Playlist(it.id)) }, openMenu, contentPadding = contentPadding,
                             )
                             Tab.LIBRARY -> LibraryScreen(
-                                library, onPlay,
+                                library, downloads, onPlay,
                                 onLikedSongs = { open(DetailRoute.LikedSongs) },
                                 onPlaylist = { open(DetailRoute.UserPlaylist(it.id)) },
                                 onAlbum = openAlbum,
                                 onArtist = openArtist,
                                 onNewPlaylist = { libraryActions.createPlaylist(it, null) },
+                                library = libraryActions,
                                 contentPadding = contentPadding,
                             )
-                            Tab.SETTINGS -> SettingsScreen(settings, onSettingsChange, onBack = { tab = Tab.HOME }, contentPadding = contentPadding)
+                            Tab.SETTINGS -> SettingsScreen(
+                                settings, onSettingsChange, downloads, onRemoveAllDownloads,
+                                onBack = { tab = Tab.HOME }, contentPadding = contentPadding,
+                            )
                         }
                     }
                 }
@@ -235,11 +245,13 @@ fun SitaraShell(
                 SitaraSheet(onDismiss = { menuTrack = null }) { close ->
                     val liked = track.id in savedIds.tracks
                     SongActions(
-                        track, liked,
+                        track, liked, savedIds.downloads[track.id],
                         onToggleLike = { close { libraryActions.setLiked(track, !liked) } },
                         onPlayNext = { close { actions.playNext(track) } },
                         onAddToQueue = { close { actions.addToQueue(track) } },
                         onAddToPlaylist = { close { playlistTrack = track } },
+                        onDownload = { close { libraryActions.download(listOf(track)) } },
+                        onRemoveDownload = { close { libraryActions.removeDownload(track.id) } },
                     )
                 }
             }

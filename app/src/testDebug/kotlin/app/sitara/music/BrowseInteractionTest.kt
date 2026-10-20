@@ -9,15 +9,18 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -25,6 +28,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToIndex
+import androidx.compose.ui.test.performScrollToKey
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTouchInput
@@ -33,10 +37,12 @@ import androidx.compose.ui.unit.Density
 import app.sitara.music.core.model.Album
 import app.sitara.music.core.model.Chart
 import app.sitara.music.core.model.DarkMode
+import app.sitara.music.core.model.DownloadState
 import app.sitara.music.core.model.PlaylistSummary
 import app.sitara.music.core.model.SearchFilter
 import app.sitara.music.core.model.SearchResults
 import app.sitara.music.core.model.SitaraSettings
+import app.sitara.music.core.model.SongDownload
 import app.sitara.music.core.model.ThemeMode
 import app.sitara.music.core.model.Track
 import app.sitara.music.feature.home.HomeFeed
@@ -90,6 +96,8 @@ class BrowseInteractionTest {
         initialDetail: DetailRoute? = null,
         home: HomeFeed = sampleHomeFeed(chart, (saved as? LibraryState.Ready)?.library ?: sampleSavedLibrary(library)),
         onRetryTrending: () -> Unit = {},
+        downloads: List<SongDownload> = emptyList(),
+        onRemoveAllDownloads: () -> Unit = {},
     ): StateRestorationTester {
         val restoration = StateRestorationTester(compose)
         restoration.setContent {
@@ -104,6 +112,7 @@ class BrowseInteractionTest {
                     onRetrySearch = onRetrySearch, onRetryTrending = onRetryTrending, onPlay = onPlay, onShuffle = onShuffle,
                     onSettingsChange = { settings = it; onSettings(it) }, initialTab = tab, initialDetail = initialDetail,
                     savedIds = savedIds, playlists = (saved as? LibraryState.Ready)?.library?.playlists.orEmpty(), libraryActions = libraryActions,
+                    downloads = downloads, onRemoveAllDownloads = onRemoveAllDownloads,
                 )
             }
         }
@@ -177,6 +186,116 @@ class BrowseInteractionTest {
         val target = sampleSavedLibrary(library).playlists[1]
         compose.onNode(hasText(target.name) and hasAnyAncestor(hasTestTag("playlist-picker"))).performClick()
         assertEquals(listOf(target to track), added)
+    }
+
+    @Test fun songMenuDownloadsCancelsAndRemoves() {
+        val calls = mutableListOf<String>()
+        val (downloading, waiting, failed, downloaded) = Fixtures.downloads.map { it.track }
+        val fresh = Fixtures.playlist.tracks.last()
+        render(
+            initialDetail = DetailRoute.Playlist(Fixtures.playlist.id),
+            details = FixedPage(DetailState.PlaylistReady(Fixtures.playlist)),
+            savedIds = SavedIds(downloads = Fixtures.downloadStates),
+            libraryActions = object : LibraryActions by LibraryActions.None {
+                override fun download(tracks: List<Track>) { calls += "download ${tracks.joinToString { it.id }}" }
+                override fun removeDownload(trackId: String) { calls += "remove $trackId" }
+            },
+        )
+        fun menu(track: Track, action: String) {
+            compose.onNodeWithTag("detail-content").performScrollToNode(hasContentDescription("More options for ${track.title}"))
+            compose.onNodeWithContentDescription("More options for ${track.title}").performSemanticsAction(SemanticsActions.OnClick)
+            compose.onNodeWithText(action).performClick()
+        }
+        menu(fresh, "Download")
+        menu(failed, "Download")
+        menu(downloading, "Cancel download")
+        menu(waiting, "Cancel download")
+        menu(downloaded, "Remove download")
+        assertEquals(
+            listOf("download ${fresh.id}", "download ${failed.id}", "remove ${downloading.id}", "remove ${waiting.id}", "remove ${downloaded.id}"),
+            calls,
+        )
+    }
+
+    @Test fun downloadAllOffersOnlyWhatIsMissingAndBadgesDownloadedSongs() {
+        val asked = mutableListOf<List<Track>>()
+        val album = Fixtures.album
+        val actions = object : LibraryActions by LibraryActions.None {
+            override fun download(tracks: List<Track>) { asked += tracks }
+        }
+        var ids by mutableStateOf(SavedIds(downloads = Fixtures.downloadStates))
+        compose.setContent {
+            SitaraShell(
+                SitaraSettings(darkMode = DarkMode.DARK, reducedMotion = true), HomeFeed(), LibraryState.Loading, "", SearchFilter.SONGS, SearchState.Idle,
+                PlayerUiState(), PlayerActions.None, FixedPage(DetailState.AlbumReady(album)),
+                onQueryChange = {}, onSearchFilterChange = {}, onRetrySearch = {}, onRetryTrending = {}, onPlay = { _, _ -> }, onShuffle = {},
+                onSettingsChange = {}, initialDetail = DetailRoute.Album(album.id), savedIds = ids, libraryActions = actions,
+            )
+        }
+        compose.onAllNodesWithContentDescription("Downloaded").assertCountEquals(1)
+        compose.onNodeWithText("Download all").performClick()
+        assertEquals(listOf(album.tracks), asked)
+
+        ids = SavedIds(downloads = album.tracks.associate { it.id to DownloadState.DOWNLOADED })
+        compose.onNodeWithText("Download all").assertDoesNotExist()
+        compose.onAllNodesWithContentDescription("Downloaded").assertCountEquals(album.tracks.size)
+    }
+
+    @Test fun libraryDownloadsShowProgressAndCancelDeleteOrRetry() {
+        val calls = mutableListOf<String>()
+        val (downloading, waiting, failed, downloaded) = Fixtures.downloads.map { it.track }
+        var queue = emptyList<Track>()
+        render(
+            Tab.LIBRARY,
+            onPlay = { tracks, _ -> queue = tracks },
+            downloads = Fixtures.downloads,
+            libraryActions = object : LibraryActions by LibraryActions.None {
+                override fun download(tracks: List<Track>) { calls += "download ${tracks.joinToString { it.id }}" }
+                override fun removeDownload(trackId: String) { calls += "remove $trackId" }
+            },
+        )
+        val list = compose.onNodeWithTag("library-content")
+        list.performScrollToNode(hasText("4 songs · 8.5 MB"))
+        // The end of the list, so the rows clear the floating dock.
+        list.performScrollToKey("download-${downloaded.id}")
+        compose.onNodeWithText("42%").assertIsDisplayed()
+        compose.onNodeWithText("Waiting for Wi-Fi").assertIsDisplayed()
+        compose.onNodeWithText("Failed").assertIsDisplayed()
+        compose.onNodeWithText("6.2 MB").assertIsDisplayed()
+
+        compose.onNodeWithContentDescription("Cancel the download of ${downloading.title}").performSemanticsAction(SemanticsActions.OnClick)
+        compose.onNodeWithContentDescription("Cancel the download of ${waiting.title}").performSemanticsAction(SemanticsActions.OnClick)
+        compose.onNodeWithContentDescription("Download ${failed.title} again").performSemanticsAction(SemanticsActions.OnClick)
+        compose.onNodeWithContentDescription("Remove ${failed.title} from downloads").performSemanticsAction(SemanticsActions.OnClick)
+        compose.onNodeWithContentDescription("Delete the download of ${downloaded.title}").performSemanticsAction(SemanticsActions.OnClick)
+        assertEquals(
+            listOf("remove ${downloading.id}", "remove ${waiting.id}", "download ${failed.id}", "remove ${failed.id}", "remove ${downloaded.id}"),
+            calls,
+        )
+
+        compose.onNodeWithContentDescription("${downloaded.title} by ${downloaded.artist}").performSemanticsAction(SemanticsActions.OnClick)
+        assertEquals(Fixtures.downloads.map { it.track }, queue)
+    }
+
+    @Test fun settingsShowStorageAndAskBeforeRemovingEveryDownload() {
+        var removals = 0
+        var changed: SitaraSettings? = null
+        render(Tab.SETTINGS, downloads = Fixtures.downloads, onRemoveAllDownloads = { removals++ }, onSettings = { changed = it })
+        val list = compose.onNodeWithTag("settings-content")
+        list.performScrollToNode(hasText("Download on Wi-Fi only"))
+        compose.onNodeWithText("Download on Wi-Fi only").performSemanticsAction(SemanticsActions.OnClick)
+        assertEquals(false, changed?.downloadOnWifiOnly)
+
+        list.performScrollToNode(hasText("4 songs · 8.5 MB"))
+        compose.onNodeWithText("Remove all").performSemanticsAction(SemanticsActions.OnClick)
+        list.performScrollToNode(hasText("Keep"))
+        compose.onNodeWithText("Keep").performSemanticsAction(SemanticsActions.OnClick)
+        assertEquals("keeping cancels", 0, removals)
+
+        compose.onNodeWithText("Remove all").performSemanticsAction(SemanticsActions.OnClick)
+        list.performScrollToNode(hasText("Remove all downloads"))
+        compose.onNodeWithText("Remove all downloads").performSemanticsAction(SemanticsActions.OnClick)
+        assertEquals(1, removals)
     }
 
     @Test fun albumSaveButtonShowsAndTogglesItsLibraryState() {

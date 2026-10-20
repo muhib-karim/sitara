@@ -1,5 +1,6 @@
 package app.sitara.music.core.player
 
+import androidx.media3.datasource.cache.Cache
 import app.sitara.music.core.model.SavedQueue
 import app.sitara.music.core.model.Track
 import app.sitara.music.source.api.StreamResolver
@@ -27,6 +28,9 @@ object PlaybackEngineRegistry {
 /** Implemented by the Application so the service can reach app-level dependencies without a DI framework. */
 interface PlaybackDependencies {
     val streamResolver: StreamResolver
+
+    /** Downloaded songs; the player plays from it before it streams. */
+    val downloadCache: Cache
 
     /** A queued song started playing; called on the main thread, so implementations hand slow work off. */
     fun onTrackStarted(track: Track)

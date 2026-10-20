@@ -12,7 +12,9 @@ import app.sitara.music.core.model.Artist
 import app.sitara.music.core.model.PlaylistSummary
 import app.sitara.music.core.model.SearchFilter
 import app.sitara.music.core.model.SitaraSettings
+import app.sitara.music.core.model.SongDownload
 import app.sitara.music.core.model.Track
+import app.sitara.music.core.model.toDownload
 import app.sitara.music.core.player.QueueState
 import app.sitara.music.core.player.SleepTimerState
 import app.sitara.music.feature.home.HomeFeed
@@ -91,8 +93,12 @@ class AppViewModel(private val app: SitaraApplication) :
         }
         .stateIn(viewModelScope, SharingStarted.Eagerly, LyricsState.NotFound)
 
-    val savedIds: StateFlow<SavedIds> = combine(app.library.likedSongs.ids, app.library.saved.albumIds, app.library.saved.artistIds, ::SavedIds)
-        .stateIn(viewModelScope, SharingStarted.Eagerly, SavedIds())
+    val downloads: StateFlow<List<SongDownload>> = app.songDownloads.songs
+
+    val savedIds: StateFlow<SavedIds> = combine(
+        app.library.likedSongs.ids, app.library.saved.albumIds, app.library.saved.artistIds, downloads.map { songs -> songs.associate { it.track.id to it.state } },
+        ::SavedIds,
+    ).stateIn(viewModelScope, SharingStarted.Eagerly, SavedIds())
 
     val library: StateFlow<LibraryState> = combine(
         app.library.likedSongs.tracks, app.library.history.recent(RECENT_SHELF), app.library.playlists.all, app.library.saved.albums, app.library.saved.artists,
@@ -292,6 +298,18 @@ class AppViewModel(private val app: SitaraApplication) :
     override fun deletePlaylist(id: Long) = app.writeLibrary { app.library.playlists.delete(id) }
     override fun movePlaylistEntry(id: Long, from: Int, to: Int) = app.writeLibrary { app.library.playlists.move(id, from, to) }
     override fun removePlaylistEntry(id: Long, trackId: String) = app.writeLibrary { app.library.playlists.remove(id, trackId) }
+
+    override fun download(tracks: List<Track>) {
+        // Straight from the download manager: the saved ids wait for the library store before they say anything.
+        val wanted = tracks.toDownload(downloads.value.associate { it.track.id to it.state })
+        if (wanted.isEmpty()) return
+        toast(if (wanted.size == 1) "Downloading" else "Downloading ${wanted.size} songs")
+        app.songDownloads.download(wanted)
+    }
+
+    override fun removeDownload(trackId: String) = app.songDownloads.remove(trackId)
+
+    fun removeAllDownloads() = app.songDownloads.removeAll()
 
     override fun createPlaylist(name: String, first: Track?) = app.writeLibrary {
         val id = app.library.playlists.create(name)

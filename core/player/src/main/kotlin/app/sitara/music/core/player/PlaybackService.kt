@@ -10,6 +10,7 @@ import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.datasource.ResolvingDataSource
+import androidx.media3.datasource.cache.CacheDataSource
 import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.session.MediaSession
@@ -46,7 +47,12 @@ class PlaybackService : MediaSessionService() {
         this.dependencies = dependencies
         val resolver = dependencies.streamResolver
         lateinit var port: Media3PlayerPort
-        val dataSource = ResolvingDataSource.Factory(DefaultDataSource.Factory(this), StreamUriResolver(resolver) { port.track(it) })
+        val stream = ResolvingDataSource.Factory(DefaultDataSource.Factory(this), StreamUriResolver(resolver) { port.track(it) })
+        // A downloaded song plays from the download cache with no network; others stream without being written to it.
+        val dataSource = CacheDataSource.Factory()
+            .setCache(dependencies.downloadCache)
+            .setUpstreamDataSourceFactory(stream)
+            .setCacheWriteDataSinkFactory(null)
         val player = ExoPlayer.Builder(this)
             .setMediaSourceFactory(DefaultMediaSourceFactory(dataSource))
             .setAudioAttributes(

@@ -19,6 +19,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -33,6 +34,7 @@ import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
+import app.sitara.music.core.common.formatBytes
 import app.sitara.music.core.designsystem.ArtworkTile
 import app.sitara.music.core.designsystem.CollectionRow
 import app.sitara.music.core.designsystem.EmptyCollectionArtwork
@@ -42,22 +44,27 @@ import app.sitara.music.core.designsystem.SectionHeader
 import app.sitara.music.core.designsystem.SitaraIcons
 import app.sitara.music.core.designsystem.SitaraRadius
 import app.sitara.music.core.designsystem.SitaraSpacing
+import app.sitara.music.core.designsystem.TrackRow
 import app.sitara.music.core.designsystem.byline
 import app.sitara.music.core.model.Album
 import app.sitara.music.core.model.Artist
+import app.sitara.music.core.model.DownloadState
 import app.sitara.music.core.model.PlaylistSummary
+import app.sitara.music.core.model.SongDownload
 import app.sitara.music.core.model.Track
 
-/** The listener's own library: liked songs, playlists, recent plays, saved albums and artists. */
+/** The listener's own library: liked songs, playlists, recent plays, saved albums and artists, downloads. */
 @Composable
 fun LibraryScreen(
     state: LibraryState,
+    downloads: List<SongDownload>,
     onPlay: (tracks: List<Track>, index: Int) -> Unit,
     onLikedSongs: () -> Unit,
     onPlaylist: (PlaylistSummary) -> Unit,
     onAlbum: (Album) -> Unit,
     onArtist: (Artist) -> Unit,
     onNewPlaylist: (name: String) -> Unit,
+    library: LibraryActions,
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(),
 ) {
@@ -70,18 +77,20 @@ fun LibraryScreen(
         when (state) {
             LibraryState.Loading -> item(key = "loading") { LibraryMessage("Loading your library…") }
             LibraryState.Failed -> item(key = "failed") { LibraryMessage("Your library couldn’t be read. Restart Sitara to try again.") }
-            is LibraryState.Ready -> savedSections(state.library, onPlay, onLikedSongs, onPlaylist, onAlbum, onArtist, onNewPlaylist = { naming = true })
+            is LibraryState.Ready -> savedSections(state.library, downloads, onPlay, onLikedSongs, onPlaylist, onAlbum, onArtist, library, onNewPlaylist = { naming = true })
         }
     }
 }
 
 private fun LazyListScope.savedSections(
     library: SavedLibrary,
+    downloads: List<SongDownload>,
     onPlay: (List<Track>, Int) -> Unit,
     onLikedSongs: () -> Unit,
     onPlaylist: (PlaylistSummary) -> Unit,
     onAlbum: (Album) -> Unit,
     onArtist: (Artist) -> Unit,
+    actions: LibraryActions,
     onNewPlaylist: () -> Unit,
 ) {
     item(key = "liked") { LikedEntry(library.liked.size, onLikedSongs) }
@@ -111,6 +120,8 @@ private fun LazyListScope.savedSections(
     shelf("artists", "Artists", library.artists, "Save an artist from their page to keep them here.") { _, artist ->
         ArtworkTile(artist.name, "Artist", artist.artwork, { onArtist(artist) }, Modifier.width(132.dp), round = true)
     }
+    // Last, so a long list of downloads never pushes the shelves out of reach.
+    downloadsSection(downloads, onPlay, actions)
 }
 
 private fun <T> LazyListScope.shelf(key: String, title: String, values: List<T>, emptyText: String, tile: @Composable (Int, T) -> Unit) {
@@ -124,6 +135,50 @@ private fun <T> LazyListScope.shelf(key: String, title: String, values: List<T>,
             }
         }
     }
+}
+
+private fun LazyListScope.downloadsSection(downloads: List<SongDownload>, onPlay: (List<Track>, Int) -> Unit, actions: LibraryActions) {
+    item(key = "downloads-heading") {
+        val summary = downloads.takeIf { it.isNotEmpty() }?.let { "${songCount(it.size)} · ${formatBytes(it.sumOf { download -> download.bytes })}" }
+        SectionHeader("Downloads", Modifier.padding(top = 16.dp), subtitle = summary)
+    }
+    if (downloads.isEmpty()) {
+        item(key = "downloads-empty") { LibraryMessage("Download a song from its menu, or a whole album with Download all, to play it offline.") }
+    }
+    val tracks = downloads.map { it.track }
+    itemsIndexed(downloads, key = { _, download -> "download-${download.track.id}" }) { index, download ->
+        DownloadRow(download, { onPlay(tracks, index) }, { actions.download(listOf(download.track)) }, { actions.removeDownload(download.track.id) })
+    }
+}
+
+@Composable
+private fun DownloadRow(download: SongDownload, onPlay: () -> Unit, onRetry: () -> Unit, onRemove: () -> Unit) {
+    val title = download.track.title
+    val colors = MaterialTheme.colorScheme
+    TrackRow(download.track, onPlay, Modifier.testTag("download-row")) {
+        Text(
+            downloadLabel(download), style = MaterialTheme.typography.bodySmall,
+            color = if (download.state == DownloadState.FAILED) colors.error else colors.onSurfaceVariant,
+        )
+        if (download.state == DownloadState.FAILED) {
+            IconButton(onClick = onRetry) { Icon(SitaraIcons.Download, "Download $title again", tint = colors.onSurfaceVariant) }
+        }
+        val (icon, label) = when (download.state) {
+            DownloadState.DOWNLOADED -> SitaraIcons.Delete to "Delete the download of $title"
+            DownloadState.FAILED -> SitaraIcons.Close to "Remove $title from downloads"
+            else -> SitaraIcons.Close to "Cancel the download of $title"
+        }
+        IconButton(onClick = onRemove) { Icon(icon, label, tint = colors.onSurfaceVariant) }
+    }
+}
+
+private fun downloadLabel(download: SongDownload): String = when (download.state) {
+    DownloadState.DOWNLOADED -> formatBytes(download.bytes)
+    DownloadState.DOWNLOADING -> download.percent?.let { "$it%" } ?: "Downloading"
+    DownloadState.WAITING -> "Waiting"
+    DownloadState.WAITING_FOR_WIFI -> "Waiting for Wi-Fi"
+    DownloadState.WAITING_FOR_NETWORK -> "Waiting for a connection"
+    DownloadState.FAILED -> "Failed"
 }
 
 internal fun songCount(count: Int) = if (count == 1) "1 song" else "$count songs"

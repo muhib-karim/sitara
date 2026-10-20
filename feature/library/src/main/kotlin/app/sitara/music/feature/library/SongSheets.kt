@@ -40,19 +40,23 @@ import app.sitara.music.core.designsystem.PillButton
 import app.sitara.music.core.designsystem.SitaraIcons
 import app.sitara.music.core.designsystem.SitaraRadius
 import app.sitara.music.core.designsystem.SitaraSpacing
+import app.sitara.music.core.model.DownloadState
 import app.sitara.music.core.model.PlaylistSummary
 import app.sitara.music.core.model.Track
 import kotlinx.coroutines.launch
 
-/** What can be done with one song: like it, queue it, or put it in a playlist. */
+/** What can be done with one song: like it, queue it, put it in a playlist, or download it ([download] is where its download stands). */
 @Composable
 fun SongActions(
     track: Track,
     liked: Boolean,
+    download: DownloadState?,
     onToggleLike: () -> Unit,
     onPlayNext: () -> Unit,
     onAddToQueue: () -> Unit,
     onAddToPlaylist: () -> Unit,
+    onDownload: () -> Unit,
+    onRemoveDownload: () -> Unit,
 ) {
     Column(Modifier.fillMaxWidth().navigationBarsPadding().padding(bottom = 8.dp)) {
         SheetTrackHeading(track)
@@ -60,6 +64,11 @@ fun SongActions(
         SheetAction(SitaraIcons.Next, "Play next", onPlayNext)
         SheetAction(SitaraIcons.Queue, "Add to queue", onAddToQueue)
         SheetAction(SitaraIcons.Add, "Add to playlist", onAddToPlaylist)
+        when (download) {
+            null, DownloadState.FAILED -> SheetAction(SitaraIcons.Download, "Download", onDownload)
+            DownloadState.DOWNLOADED -> SheetAction(SitaraIcons.Delete, "Remove download", onRemoveDownload)
+            else -> SheetAction(SitaraIcons.Close, "Cancel download", onRemoveDownload)
+        }
     }
 }
 

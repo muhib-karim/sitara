@@ -14,6 +14,8 @@ data class SitaraSettings(
     val crossfadeSeconds: Int = 0,
     val normalisation: Boolean = true,
     val targetLufs: Float = DEFAULT_TARGET_LUFS,
+    /** Downloads wait for an unmetered network (Wi-Fi) instead of using mobile data. */
+    val downloadOnWifiOnly: Boolean = true,
 ) {
     init {
         require(crossfadeSeconds in 0..MAX_CROSSFADE_SECONDS) { "crossfade out of range: $crossfadeSeconds" }

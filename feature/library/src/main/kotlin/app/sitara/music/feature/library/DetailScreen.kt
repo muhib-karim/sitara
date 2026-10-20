@@ -59,10 +59,12 @@ import app.sitara.music.core.model.Album
 import app.sitara.music.core.model.ArtistPage
 import app.sitara.music.core.model.Artwork
 import app.sitara.music.core.model.DarkMode
+import app.sitara.music.core.model.DownloadState
 import app.sitara.music.core.model.Playlist
 import app.sitara.music.core.model.SitaraSettings
 import app.sitara.music.core.model.Track
 import app.sitara.music.core.model.UserPlaylist
+import app.sitara.music.core.model.toDownload
 
 /** An artist, album or playlist page as it loads. */
 sealed interface DetailState {
@@ -145,7 +147,7 @@ fun DetailScreen(
                 }
                 if (songs.isNotEmpty()) {
                     item(key = "songs-heading") { SectionHeader("Top songs", modifier = Modifier.padding(top = 16.dp)) }
-                    trackRows(songs, onPlay, onTrackMenu)
+                    trackRows(songs, saved.downloads, onPlay, onTrackMenu)
                 }
                 if (page.releases.isNotEmpty()) {
                     item(key = "releases-heading") { SectionHeader("Albums and singles", modifier = Modifier.padding(top = 16.dp)) }
@@ -169,9 +171,12 @@ fun DetailScreen(
                     DetailHeader(
                         album.artwork, album.title, listOfNotNull("Album", album.year?.toString()).joinToString(" · "), album.artist,
                         artistId?.let { { onArtist(it) } }, album.tracks, settings, onBack, onPlay, onShuffle,
-                    ) { SaveButton(isSaved) { library.setSaved(album, !isSaved) } }
+                    ) {
+                        SaveButton(isSaved) { library.setSaved(album, !isSaved) }
+                        DownloadAllButton(album.tracks, saved.downloads, library)
+                    }
                 }
-                collectionTracks(album.tracks, "No songs in this album", onPlay, onTrackMenu)
+                collectionTracks(album.tracks, saved.downloads, "No songs in this album", onPlay, onTrackMenu)
             }
             is DetailState.PlaylistReady -> {
                 val playlist = state.playlist
@@ -179,9 +184,9 @@ fun DetailScreen(
                     DetailHeader(
                         playlist.artwork, playlist.title, "Playlist", playlist.curator.ifEmpty { playlist.description }, null,
                         playlist.tracks, settings, onBack, onPlay, onShuffle,
-                    )
+                    ) { DownloadAllButton(playlist.tracks, saved.downloads, library) }
                 }
-                collectionTracks(playlist.tracks, "No songs in this playlist", onPlay, onTrackMenu)
+                collectionTracks(playlist.tracks, saved.downloads, "No songs in this playlist", onPlay, onTrackMenu)
             }
             is DetailState.LikedReady -> {
                 val tracks = state.tracks
@@ -189,9 +194,9 @@ fun DetailScreen(
                     DetailHeader(
                         tracks.firstOrNull()?.artwork ?: EmptyCollectionArtwork, "Liked songs", "Your library", "", null,
                         tracks, settings, onBack, onPlay, onShuffle,
-                    )
+                    ) { DownloadAllButton(tracks, saved.downloads, library) }
                 }
-                collectionTracks(tracks, "Songs you like show up here. Tap the heart in the player, or Like in a song’s menu.", onPlay, onTrackMenu)
+                collectionTracks(tracks, saved.downloads, "Songs you like show up here. Tap the heart in the player, or Like in a song’s menu.", onPlay, onTrackMenu)
             }
             is DetailState.UserPlaylistReady -> {
                 val playlist = state.playlist
@@ -202,6 +207,7 @@ fun DetailScreen(
                     ) {
                         PillButton("Rename", { dialog = PlaylistDialog.RENAME }, primary = false)
                         PillButton("Delete", { dialog = PlaylistDialog.DELETE }, primary = false)
+                        DownloadAllButton(entries, saved.downloads, library)
                     }
                 }
                 if (entries.isEmpty()) {
@@ -217,6 +223,7 @@ fun DetailScreen(
                             track, { onPlay(entries, index) }, Modifier.reorderableRow(reorder, index, entries.size, move),
                             onMore = { onTrackMenu(track) },
                         ) {
+                            if (saved.downloads[track.id] == DownloadState.DOWNLOADED) DownloadedBadge()
                             IconButton(onClick = { library.removePlaylistEntry(playlist.id, track.id) }) {
                                 Icon(SitaraIcons.Close, "Remove ${track.title} from this playlist", tint = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
@@ -239,18 +246,35 @@ private fun SaveButton(saved: Boolean, onToggle: () -> Unit) {
     PillButton(if (saved) "Saved" else "Save", onToggle, Modifier.semantics { stateDescription = if (saved) "In your library" else "Not in your library" }, primary = false)
 }
 
+/** Shown while any song on the page is neither downloaded nor on its way. */
+@Composable
+private fun DownloadAllButton(tracks: List<Track>, downloads: Map<String, DownloadState>, library: LibraryActions) {
+    if (tracks.toDownload(downloads).isNotEmpty()) PillButton("Download all", { library.download(tracks) }, primary = false)
+}
+
+@Composable
+private fun DownloadedBadge() {
+    Icon(SitaraIcons.Downloaded, "Downloaded", Modifier.padding(horizontal = 4.dp).size(16.dp), tint = MaterialTheme.colorScheme.primary)
+}
+
 private fun artistSummary(page: ArtistPage): String = listOfNotNull(
     page.topSongs.size.takeIf { it > 0 }?.let { if (it == 1) "1 song" else "$it songs" },
     page.releases.size.takeIf { it > 0 }?.let { if (it == 1) "1 release" else "$it releases" },
 ).joinToString(" · ")
 
-private fun LazyListScope.collectionTracks(tracks: List<Track>, emptyText: String, onPlay: (List<Track>, Int) -> Unit, onTrackMenu: (Track) -> Unit) {
+private fun LazyListScope.collectionTracks(
+    tracks: List<Track>,
+    downloads: Map<String, DownloadState>,
+    emptyText: String,
+    onPlay: (List<Track>, Int) -> Unit,
+    onTrackMenu: (Track) -> Unit,
+) {
     if (tracks.isEmpty()) {
         item(key = "empty") { EmptyMessage(emptyText) }
         return
     }
     songsHeading(tracks)
-    trackRows(tracks, onPlay, onTrackMenu)
+    trackRows(tracks, downloads, onPlay, onTrackMenu)
 }
 
 private fun LazyListScope.songsHeading(tracks: List<Track>) {
@@ -260,9 +284,10 @@ private fun LazyListScope.songsHeading(tracks: List<Track>) {
     }
 }
 
-private fun LazyListScope.trackRows(tracks: List<Track>, onPlay: (List<Track>, Int) -> Unit, onTrackMenu: (Track) -> Unit) {
+private fun LazyListScope.trackRows(tracks: List<Track>, downloads: Map<String, DownloadState>, onPlay: (List<Track>, Int) -> Unit, onTrackMenu: (Track) -> Unit) {
     itemsIndexed(tracks, key = { _, track -> "track-${track.id}" }) { index, track ->
         TrackRow(track, { onPlay(tracks, index) }, onMore = { onTrackMenu(track) }) {
+            if (downloads[track.id] == DownloadState.DOWNLOADED) DownloadedBadge()
             if (track.durationMs > 0) {
                 Text(formatDuration(track.durationMs), color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall)
             }

@@ -2,6 +2,12 @@ package app.sitara.music.core.player
 
 import android.app.Application
 import android.os.Looper
+import androidx.annotation.OptIn
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.database.StandaloneDatabaseProvider
+import androidx.media3.datasource.cache.Cache
+import androidx.media3.datasource.cache.NoOpCacheEvictor
+import androidx.media3.datasource.cache.SimpleCache
 import app.sitara.music.core.model.Artwork
 import app.sitara.music.core.model.RepeatMode
 import app.sitara.music.core.model.SavedQueue
@@ -9,6 +15,7 @@ import app.sitara.music.core.model.Track
 import app.sitara.music.source.api.ResolvedStream
 import app.sitara.music.source.api.StreamResolver
 import java.io.IOException
+import kotlin.io.path.createTempDirectory
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Test
@@ -23,6 +30,7 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], application = PlaybackServiceTest.TestApp::class)
 class PlaybackServiceTest {
+    @OptIn(UnstableApi::class)
     class TestApp :
         Application(),
         PlaybackDependencies {
@@ -34,6 +42,8 @@ class PlaybackServiceTest {
 
             override suspend fun resolve(track: Track): ResolvedStream = throw IOException("No streams in tests")
         }
+
+        override val downloadCache: Cache by lazy { SimpleCache(createTempDirectory().toFile(), NoOpCacheEvictor(), StandaloneDatabaseProvider(this)) }
 
         override fun onTrackStarted(track: Track) = Unit
 

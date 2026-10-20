@@ -10,13 +10,20 @@ import org.junit.Test
 class SettingsCodecTest {
     @Test
     fun `round trips every field`() {
-        val s = SitaraSettings(ThemeMode.AMOLED, DarkMode.DARK, reducedMotion = true, crossfadeSeconds = 6, normalisation = false, targetLufs = -16f)
+        val s = SitaraSettings(ThemeMode.AMOLED, DarkMode.DARK, reducedMotion = true, crossfadeSeconds = 6, normalisation = false, targetLufs = -16f, downloadOnWifiOnly = false)
         assertEquals(s, SettingsCodec.decode(SettingsCodec.encode(s)))
     }
 
     @Test
     fun `empty storage gives defaults`() {
         assertEquals(SitaraSettings(), SettingsCodec.decode(emptyMap()))
+    }
+
+    @Test
+    fun `downloads wait for wifi unless the listener allows mobile data`() {
+        assertEquals(true, SettingsCodec.decode(emptyMap()).downloadOnWifiOnly)
+        assertEquals(true, SettingsCodec.decode(mapOf(SettingsCodec.WIFI_ONLY to "maybe")).downloadOnWifiOnly)
+        assertEquals(false, SettingsCodec.decode(mapOf(SettingsCodec.WIFI_ONLY to "false")).downloadOnWifiOnly)
     }
 
     @Test

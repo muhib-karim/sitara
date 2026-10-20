@@ -16,7 +16,10 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         vm = ViewModelProvider(this, AppViewModel.factory(application as SitaraApplication))[AppViewModel::class.java]
         // A recreated activity has already handled the intent that launched it.
-        if (savedInstanceState == null) open(intent)
+        if (savedInstanceState == null) {
+            open(intent)
+            (application as SitaraApplication).songDownloads.resumeUnfinished()
+        }
         val systemReducedMotion = Settings.Global.getFloat(contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f) == 0f
         setContent { SitaraRoot(vm, systemReducedMotion) }
     }

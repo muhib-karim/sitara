@@ -4,7 +4,9 @@ import app.sitara.music.core.model.Album
 import app.sitara.music.core.model.Artist
 import app.sitara.music.core.model.ArtistPage
 import app.sitara.music.core.model.Artwork
+import app.sitara.music.core.model.DownloadState
 import app.sitara.music.core.model.Playlist
+import app.sitara.music.core.model.SongDownload
 import app.sitara.music.core.model.Track
 
 /** Hand-built pages shaped like YouTube Music data (no year on albums, channel and playlist ids), with invented names. */
@@ -45,4 +47,16 @@ internal object Fixtures {
         tracks = songs.reversed() + song("fixture0005", "Northern Static", 263, tide),
         curator = "Sitara listeners",
     )
+
+    /** One download in each state the Library shows, newest first: 8.5 MB on the device in all. */
+    val downloads = songs.let { (first, second, third, fourth) ->
+        listOf(
+            SongDownload(first, DownloadState.DOWNLOADING, 42, 1_700_000),
+            SongDownload(second, DownloadState.WAITING_FOR_WIFI, null, 0),
+            SongDownload(third, DownloadState.FAILED, 12, 600_000),
+            SongDownload(fourth, DownloadState.DOWNLOADED, 100, 6_200_000),
+        )
+    }
+
+    val downloadStates = downloads.associate { it.track.id to it.state }
 }

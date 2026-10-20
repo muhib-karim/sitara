@@ -24,3 +24,13 @@ fun formatDuration(ms: Long): String {
     val s = total % 60
     return if (h > 0) "%d:%02d:%02d".format(h, m, s) else "%d:%02d".format(m, s)
 }
+
+/** Formats a byte count the way Android's storage settings do (1 kB = 1000 bytes): "820 kB", "4.2 MB", "1.3 GB". */
+fun formatBytes(bytes: Long): String {
+    val b = bytes.coerceAtLeast(0)
+    return when {
+        b < 999_500 -> "${(b + 500) / 1000} kB"
+        b < 999_950_000 -> "%.1f MB".format(b / 1e6)
+        else -> "%.1f GB".format(b / 1e9)
+    }
+}

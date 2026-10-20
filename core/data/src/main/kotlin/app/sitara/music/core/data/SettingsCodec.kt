@@ -15,6 +15,7 @@ object SettingsCodec {
     const val CROSSFADE = "crossfade_seconds"
     const val NORMALISE = "normalisation"
     const val TARGET_LUFS = "target_lufs"
+    const val WIFI_ONLY = "download_wifi_only"
 
     fun encode(s: SitaraSettings): Map<String, String> = mapOf(
         THEME to s.themeMode.name,
@@ -23,6 +24,7 @@ object SettingsCodec {
         CROSSFADE to s.crossfadeSeconds.toString(),
         NORMALISE to s.normalisation.toString(),
         TARGET_LUFS to s.targetLufs.toString(),
+        WIFI_ONLY to s.downloadOnWifiOnly.toString(),
     )
 
     fun decode(map: Map<String, String>): SitaraSettings {
@@ -34,6 +36,7 @@ object SettingsCodec {
             crossfadeSeconds = map[CROSSFADE]?.toIntOrNull()?.coerceIn(0, SitaraSettings.MAX_CROSSFADE_SECONDS) ?: d.crossfadeSeconds,
             normalisation = map[NORMALISE]?.toBooleanStrictOrNull() ?: d.normalisation,
             targetLufs = map[TARGET_LUFS]?.toFloatOrNull()?.takeIf { it in -30f..-5f } ?: d.targetLufs,
+            downloadOnWifiOnly = map[WIFI_ONLY]?.toBooleanStrictOrNull() ?: d.downloadOnWifiOnly,
         )
     }
 }
