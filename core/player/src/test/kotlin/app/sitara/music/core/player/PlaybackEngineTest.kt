@@ -37,6 +37,90 @@ class PlaybackEngineTest {
         prepareAhead = { prepared += it.id },
     )
 
+    /** The player stopped on an error, as ExoPlayer does when a stream cannot be loaded. */
+    private fun PlaybackEngine.failCurrent() {
+        port.playing = false
+        onPlayerError()
+    }
+
+    @Test
+    fun `a playback error marks the current song as failed and does not skip it`() = runTest {
+        val engine = engine()
+        engine.play(five, 0)
+
+        engine.failCurrent()
+
+        assertTrue(engine.state.value.failed)
+        assertFalse(engine.state.value.isPlaying)
+        assertEquals("t1", engine.state.value.queue.current?.id)
+        assertEquals(0, port.index)
+    }
+
+    @Test
+    fun `retry clears the failure and plays the same song again from where it stopped`() = runTest {
+        val engine = engine()
+        engine.play(five, 0)
+        port.positionMs = 12_000
+        engine.failCurrent()
+
+        engine.retry()
+
+        assertFalse(engine.state.value.failed)
+        assertTrue(port.playing)
+        assertEquals(0, port.index)
+        assertEquals(12_000L, port.positionMs)
+    }
+
+    @Test
+    fun `play on a failed song retries it`() = runTest {
+        val engine = engine()
+        engine.play(five, 0)
+        engine.failCurrent()
+
+        engine.togglePlay()
+
+        assertFalse(engine.state.value.failed)
+        assertTrue(port.playing)
+        assertEquals(0, port.index)
+    }
+
+    @Test
+    fun `skipping a failed song plays the next one without the failure`() = runTest {
+        val engine = engine()
+        engine.play(five, 0)
+        engine.failCurrent()
+
+        engine.next()
+
+        assertFalse(engine.state.value.failed)
+        assertEquals("t2", engine.state.value.queue.current?.id)
+        assertEquals(1, port.index)
+        assertTrue(port.playing)
+    }
+
+    @Test
+    fun `a failure stays with its song when the player moves on by itself`() = runTest {
+        val engine = engine()
+        engine.play(five, 0)
+        engine.failCurrent()
+
+        engine.onItemTransition(port.entries[1].uid)
+
+        assertFalse(engine.state.value.failed)
+    }
+
+    @Test
+    fun `a failed song that plays again is no longer failed`() = runTest {
+        val engine = engine()
+        engine.play(five, 0)
+        engine.failCurrent()
+
+        port.playing = true // the player recovered, for example after a system control re-prepared it
+        engine.refresh()
+
+        assertFalse(engine.state.value.failed)
+    }
+
     @Test
     fun `the song after the current one is prepared once playback starts`() = runTest {
         val engine = engine()

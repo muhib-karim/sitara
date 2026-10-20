@@ -142,6 +142,7 @@ class AppViewModel(private val app: SitaraApplication) :
             radio = radioStatus,
             liked = s.queue.current?.id in saved.tracks,
             tuning = s.tuning,
+            failed = s.failed,
         )
     }.stateIn(viewModelScope, SharingStarted.Eagerly, PlayerUiState())
 
@@ -267,6 +268,7 @@ class AppViewModel(private val app: SitaraApplication) :
     }
 
     override fun togglePlay() = player.togglePlay()
+    override fun retryPlayback() = player.retry()
     override fun next() = player.next()
     override fun previous() = player.previous()
     override fun seekTo(positionMs: Long) = player.seekTo(positionMs)

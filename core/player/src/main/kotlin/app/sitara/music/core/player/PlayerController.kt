@@ -84,6 +84,8 @@ class PlayerController(
 
     fun togglePlay() = gate.run { it.togglePlay() }
 
+    fun retry() = gate.run { it.retry() }
+
     fun next() = gate.run { it.next() }
 
     fun previous() = gate.run { it.previous() }

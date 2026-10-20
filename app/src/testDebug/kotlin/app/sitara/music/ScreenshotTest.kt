@@ -251,6 +251,10 @@ class ScreenshotTest {
         playerState = playing.copy(track = track.copy(artwork = track.artwork.copy(imageUrl = "https://offline.invalid/cover.jpg"))),
     )
 
+    @Test fun miniPlayerFailed() = shot("mini_player_failed", dark = true, playerState = playing.copy(isPlaying = false, positionMs = 0, failed = true))
+
+    @Test fun playerFailed() = shot("player_failed", dark = true, expanded = true, playerState = playing.copy(isPlaying = false, positionMs = 0, failed = true))
+
     @Test fun playerLiked() = shot("player_liked", dark = true, expanded = true, playerState = playing.copy(liked = true))
 
     @Test fun songActionsSheet() = sheet("song_actions") { SongActions(Fixtures.playlist.tracks.first(), liked = true, download = null, {}, {}, {}, {}, {}, {}) }

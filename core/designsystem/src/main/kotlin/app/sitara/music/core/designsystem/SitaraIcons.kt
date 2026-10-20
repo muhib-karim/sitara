@@ -134,6 +134,12 @@ object SitaraIcons {
         moveTo(12f, 13f); lineTo(12f, 9f)
         moveTo(10f, 3f); lineTo(14f, 3f)
     }
+    val Retry = icon("retry", filled = false) {
+        // Clockwise loop, open at the top right, with its head at twelve o'clock.
+        moveTo(12f, 5f)
+        arcTo(7f, 7f, 0f, true, false, 16.95f, 7.05f)
+        moveTo(9.5f, 2.5f); lineTo(12f, 5f); lineTo(9.5f, 7.5f)
+    }
     val Download = icon("download", filled = false) {
         moveTo(12f, 4f); lineTo(12f, 15f)
         moveTo(7f, 10.5f); lineTo(12f, 15.5f); lineTo(17f, 10.5f)

@@ -14,6 +14,7 @@ import androidx.compose.ui.test.click
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasTestTag
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -62,6 +63,7 @@ class PlayerInteractionTest {
         lyricsState: LyricsState? = null,
         tuning: PlaybackTuning = PlaybackTuning(),
         sleepTimer: SleepTimerStatus = SleepTimerStatus.Off,
+        failed: Boolean = false,
     ) {
         val source = FakeMusicSource()
         val track = SampleCatalog.tracks.first()
@@ -75,7 +77,7 @@ class PlayerInteractionTest {
                 query = "",
                 searchFilter = SearchFilter.SONGS,
                 search = SearchState.Idle,
-                player = PlayerUiState(track = track, durationMs = durationMs, lyrics = lyricsState ?: LyricsState.Found(lyrics), positionMs = 15_300, upNext = upNext, tuning = tuning, sleepTimer = sleepTimer),
+                player = PlayerUiState(track = track, durationMs = durationMs, lyrics = lyricsState ?: LyricsState.Found(lyrics), positionMs = 15_300, upNext = upNext, tuning = tuning, sleepTimer = sleepTimer, failed = failed),
                 actions = actions,
                 details = SampleDetailPages(source),
                 onQueryChange = {},
@@ -100,6 +102,40 @@ class PlayerInteractionTest {
         compose.onNodeWithText("Home").assertIsSelected()
         compose.onNodeWithText("Settings").performClick()
         compose.onNodeWithText("Appearance").assertIsDisplayed()
+    }
+
+    private class RecoveryActions : PlayerActions by PlayerActions.None {
+        var retries = 0
+        var skips = 0
+        override fun retryPlayback() { retries++ }
+        override fun next() { skips++ }
+    }
+
+    @Test
+    fun failedSongInTheDockSaysSoAndOffersTryAgainAndSkipInsteadOfPlay() {
+        val actions = RecoveryActions()
+        render(actions = actions, failed = true)
+
+        val inDock = hasAnyAncestor(hasTestTag("playback-dock"))
+        compose.onNode(hasText("Couldn’t play this song") and inDock).assertIsDisplayed()
+        compose.onNode(hasContentDescription("Play") and inDock).assertDoesNotExist()
+        compose.onNode(hasContentDescription("Try again") and inDock).performClick()
+        compose.onNode(hasContentDescription("Skip to next song") and inDock).performClick()
+        assertEquals(1, actions.retries)
+        assertEquals(1, actions.skips)
+    }
+
+    @Test
+    fun failedSongInNowPlayingReplacesTheScrubberWithTryAgainAndSkip() {
+        val actions = RecoveryActions()
+        render(expanded = true, actions = actions, failed = true)
+
+        compose.onNodeWithText("Couldn’t play this song").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Seek").assertDoesNotExist()
+        compose.onNodeWithText("Try again").performClick()
+        compose.onNodeWithText("Skip").performClick()
+        assertEquals(1, actions.retries)
+        assertEquals(1, actions.skips)
     }
 
     @Test

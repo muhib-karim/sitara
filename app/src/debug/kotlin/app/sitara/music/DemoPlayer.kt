@@ -31,10 +31,11 @@ internal class DemoPlayer(private var original: List<Track>, lyrics: Lyrics) : P
 
     private fun select(target: Int) {
         index = target.coerceIn(queue.indices)
-        state = state.copy(track = queue[index], durationMs = queue[index].durationMs, positionMs = 0, upNext = queue.drop(index + 1))
+        state = state.copy(track = queue[index], durationMs = queue[index].durationMs, positionMs = 0, upNext = queue.drop(index + 1), failed = false)
     }
 
     override fun togglePlay() { state = state.copy(isPlaying = !state.isPlaying) }
+    override fun retryPlayback() { state = state.copy(isPlaying = true, failed = false) }
     override fun next() = select(index + 1)
     override fun previous() = select(index - 1)
     override fun seekTo(positionMs: Long) { state = state.copy(positionMs = positionMs.coerceIn(0, state.durationMs)) }

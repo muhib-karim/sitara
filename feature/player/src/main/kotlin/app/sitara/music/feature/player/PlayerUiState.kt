@@ -21,6 +21,8 @@ data class PlayerUiState(
     val liked: Boolean = false,
     /** Speed and pitch for this session. */
     val tuning: PlaybackTuning = PlaybackTuning(),
+    /** The current song could not be played; the player surfaces offer Try again and Skip instead of Play. */
+    val failed: Boolean = false,
 )
 
 /** The current song's lyrics, looked up when it starts. */
@@ -40,6 +42,9 @@ enum class RadioStatus { READY, LOADING, UNAVAILABLE }
 
 interface PlayerActions {
     fun togglePlay()
+
+    /** Loads the current song again after it failed to play. */
+    fun retryPlayback()
     fun next()
     fun previous()
     fun seekTo(positionMs: Long)
@@ -84,6 +89,7 @@ interface PlayerActions {
 
     object None : PlayerActions {
         override fun togglePlay() = Unit
+        override fun retryPlayback() = Unit
         override fun next() = Unit
         override fun previous() = Unit
         override fun seekTo(positionMs: Long) = Unit

@@ -41,9 +41,11 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.CustomAccessibilityAction
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.customActions
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
@@ -178,11 +180,27 @@ private fun MiniPlayer(state: PlayerUiState, actions: PlayerActions, artworkModi
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
                     Text(track.title, color = content, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    Text(track.artist, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                    Text(
+                        if (state.failed) PLAYBACK_FAILED else track.artist,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        style = MaterialTheme.typography.bodySmall,
+                        maxLines = 1,
+                        overflow = TextOverflow.Ellipsis,
+                        modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+                    )
                 }
             }
-            IconButton(onClick = actions::togglePlay, modifier = Modifier.size(48.dp)) {
-                Icon(if (state.isPlaying) SitaraIcons.Pause else SitaraIcons.Play, if (state.isPlaying) "Pause" else "Play", tint = content)
+            if (state.failed) {
+                IconButton(onClick = actions::retryPlayback, modifier = Modifier.size(48.dp)) {
+                    Icon(SitaraIcons.Retry, "Try again", tint = content)
+                }
+                IconButton(onClick = actions::next, modifier = Modifier.size(48.dp)) {
+                    Icon(SitaraIcons.Next, "Skip to next song", tint = content)
+                }
+            } else {
+                IconButton(onClick = actions::togglePlay, modifier = Modifier.size(48.dp)) {
+                    Icon(if (state.isPlaying) SitaraIcons.Pause else SitaraIcons.Play, if (state.isPlaying) "Pause" else "Play", tint = content)
+                }
             }
         }
         val fraction = if (state.durationMs > 0) state.positionMs.toFloat() / state.durationMs else 0f

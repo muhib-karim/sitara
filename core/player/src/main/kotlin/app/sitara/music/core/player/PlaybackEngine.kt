@@ -18,7 +18,12 @@ data class PlaybackSnapshot(
     val positionMs: Long = 0,
     val durationMs: Long = 0,
     val tuning: PlaybackTuning = PlaybackTuning(),
-)
+    /** The entry the player last stopped on with an error; cleared once it plays or is retried. */
+    val failedUid: Long? = null,
+) {
+    /** The current song could not be played; the player waits for Retry or Skip. */
+    val failed: Boolean get() = failedUid != null && failedUid == queue.currentEntry?.uid
+}
 
 /**
  * Playback logic that lives as long as the [PlaybackService], not as long as a screen.
@@ -119,6 +124,7 @@ class PlaybackEngine(
     fun togglePlay() {
         val q = queue
         if (q.currentEntry == null) return
+        if (_state.value.failed) return retry()
         when {
             q.ended -> {
                 startedUid = null
@@ -129,6 +135,17 @@ class PlaybackEngine(
             port.isPlaying -> port.pause()
             else -> port.play()
         }
+        refresh()
+    }
+
+    /**
+     * Loads the failed song again from where it stopped, which looks its stream up afresh. A failure never skips by
+     * itself: when YouTube refuses one song it usually refuses the next too, and skipping would run through the queue.
+     */
+    fun retry() {
+        if (queue.currentEntry == null) return
+        _state.update { it.copy(failedUid = null) }
+        port.play()
         refresh()
     }
 
@@ -207,6 +224,12 @@ class PlaybackEngine(
         refresh()
     }
 
+    /** The player stopped because the current entry could not be loaded or played. */
+    fun onPlayerError() {
+        _state.update { it.copy(failedUid = queue.currentEntry?.uid) }
+        refresh()
+    }
+
     /** The player paused itself at the end of an item because end-of-track sleep was set. */
     fun onPausedAtEndOfItem() {
         if (sleepTimer.onTrackEnded()) port.setPauseAtEndOfItem(false)
@@ -220,6 +243,7 @@ class PlaybackEngine(
                 isPlaying = port.isPlaying,
                 positionMs = port.positionMs.coerceAtLeast(0),
                 durationMs = port.durationMs.takeIf { d -> d > 0 } ?: (it.queue.current?.durationMs ?: 0),
+                failedUid = it.failedUid.takeUnless { port.isPlaying },
             )
         }
         val entry = queue.currentEntry

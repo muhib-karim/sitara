@@ -33,13 +33,16 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import app.sitara.music.core.common.formatDuration
+import app.sitara.music.core.designsystem.PillButton
 import app.sitara.music.core.designsystem.SitaraColors
 import app.sitara.music.core.designsystem.SitaraIcons
 import app.sitara.music.core.model.RepeatMode
@@ -47,7 +50,7 @@ import app.sitara.music.core.model.RepeatMode
 @Composable
 internal fun PlayerControls(state: PlayerUiState, actions: PlayerActions, modifier: Modifier = Modifier) {
     Column(modifier) {
-        Scrubber(state, actions)
+        if (state.failed) PlaybackFailed(actions) else Scrubber(state, actions)
         Row(Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 8.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = actions::toggleShuffle, modifier = Modifier.semantics { stateDescription = if (state.shuffled) "On" else "Off" }) {
                 Icon(SitaraIcons.Shuffle, "Shuffle", tint = if (state.shuffled) MaterialTheme.colorScheme.primary else SitaraColors.StageSecondary)
@@ -55,12 +58,18 @@ internal fun PlayerControls(state: PlayerUiState, actions: PlayerActions, modifi
             IconButton(onClick = actions::previous, modifier = Modifier.size(48.dp)) {
                 Icon(SitaraIcons.Previous, "Previous track", tint = Color.White, modifier = Modifier.size(28.dp))
             }
+            // On a failed song the main button retries it (the engine treats play as retry there).
+            val (mainIcon, mainLabel) = when {
+                state.failed -> SitaraIcons.Retry to "Try again"
+                state.isPlaying -> SitaraIcons.Pause to "Pause"
+                else -> SitaraIcons.Play to "Play"
+            }
             Box(
                 Modifier.size(72.dp).clip(CircleShape).background(Color.White).clickable(role = Role.Button, onClick = actions::togglePlay)
-                    .semantics { contentDescription = if (state.isPlaying) "Pause" else "Play" },
+                    .semantics { contentDescription = mainLabel },
                 contentAlignment = Alignment.Center,
             ) {
-                Icon(if (state.isPlaying) SitaraIcons.Pause else SitaraIcons.Play, null, tint = Color.Black, modifier = Modifier.size(32.dp))
+                Icon(mainIcon, null, tint = Color.Black, modifier = Modifier.size(32.dp))
             }
             IconButton(onClick = actions::next, modifier = Modifier.size(48.dp)) {
                 Icon(SitaraIcons.Next, "Next track", tint = Color.White, modifier = Modifier.size(28.dp))
@@ -74,6 +83,20 @@ internal fun PlayerControls(state: PlayerUiState, actions: PlayerActions, modifi
         }
     }
 }
+
+/** Takes the scrubber's place while the current song cannot play: a stream that never loaded has nothing to seek. */
+@Composable
+private fun PlaybackFailed(actions: PlayerActions) {
+    Column(Modifier.fillMaxWidth().semantics { liveRegion = LiveRegionMode.Polite }) {
+        Text(PLAYBACK_FAILED, color = SitaraColors.StageContent, style = MaterialTheme.typography.titleSmall)
+        Row(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            PillButton("Try again", actions::retryPlayback)
+            PillButton("Skip", actions::next, primary = false)
+        }
+    }
+}
+
+internal const val PLAYBACK_FAILED = "Couldn’t play this song"
 
 @Composable
 private fun Scrubber(state: PlayerUiState, actions: PlayerActions) {
