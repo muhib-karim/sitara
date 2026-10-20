@@ -41,7 +41,7 @@ import app.sitara.music.core.model.Track
 @Composable
 fun AlbumScreen(album: Album, settings: SitaraSettings, onPlay: (List<Track>, Int) -> Unit, onBack: () -> Unit, contentPadding: PaddingValues) {
     CollectionScreen(
-        album.title, "Album · ${album.year}", album.artist, album.artwork, album.tracks,
+        album.title, listOfNotNull("Album", album.year?.toString()).joinToString(" · "), album.artist, album.artwork, album.tracks,
         "Play album", settings, onPlay, onBack, contentPadding,
     )
 }

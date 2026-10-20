@@ -22,7 +22,11 @@ import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import app.sitara.music.core.model.Album
 import app.sitara.music.core.model.Artwork
+
+/** "Artist · 2021", or just the artist when the source gives no year. */
+val Album.byline: String get() = listOfNotNull(artist, year?.toString()).joinToString(" · ")
 
 @Composable
 fun SelectionPill(label: String, selected: Boolean, onClick: () -> Unit, modifier: Modifier = Modifier) {

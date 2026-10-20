@@ -21,8 +21,10 @@ class SongMappingTest {
             Image("https://lh3.googleusercontent.com/cover=w60-h60-l90-rj", 60, 60, ResolutionLevel.LOW),
             Image("https://lh3.googleusercontent.com/cover=w120-h120-l90-rj", 120, 120, ResolutionLevel.LOW),
         ),
+        artistUrl: String? = "https://www.youtube.com/channel/UCuAXFkgsw1L7xaCfnd5JJOw",
     ) = StreamInfoItem(0, url, title, StreamType.VIDEO_STREAM).apply {
         uploaderName = artist
+        uploaderUrl = artistUrl
         duration = seconds
         setThumbnails(thumbnails)
     }
@@ -36,6 +38,12 @@ class SongMappingTest {
         assertEquals("Rick Astley", track.artist)
         assertEquals("", track.album)
         assertEquals(214_000L, track.durationMs)
+    }
+
+    @Test
+    fun `links the artist page when the artist has a channel`() {
+        assertEquals("UCuAXFkgsw1L7xaCfnd5JJOw", song().toTrack()!!.artistId)
+        assertNull(song(artistUrl = null).toTrack()!!.artistId)
     }
 
     @Test

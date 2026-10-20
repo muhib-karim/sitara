@@ -36,6 +36,7 @@ import app.sitara.music.core.designsystem.SectionHeader
 import app.sitara.music.core.designsystem.SelectionPill
 import app.sitara.music.core.designsystem.SitaraSpacing
 import app.sitara.music.core.designsystem.TrackRow
+import app.sitara.music.core.designsystem.byline
 import app.sitara.music.core.model.Album
 import app.sitara.music.core.model.ListeningMood
 import app.sitara.music.core.model.Shelf
@@ -141,7 +142,7 @@ private fun ArtworkRail(shelf: Shelf, onPlay: (List<Track>, Int) -> Unit, onAlbu
                 ArtworkTile(track.title, track.artist, track.artwork, { onPlay(shelf.tracks, index) }, Modifier.width(156.dp))
             }
             shelf.albums.isNotEmpty() -> items(shelf.albums, key = { it.id }) { album ->
-                ArtworkTile(album.title, "${album.artist} · ${album.year}", album.artwork, { onAlbum(album) }, Modifier.width(164.dp))
+                ArtworkTile(album.title, album.byline, album.artwork, { onAlbum(album) }, Modifier.width(164.dp))
             }
             shelf.playlists.isNotEmpty() -> items(shelf.playlists, key = { it.id }) { playlist ->
                 ArtworkTile(

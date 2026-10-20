@@ -7,6 +7,7 @@ import org.schabi.newpipe.extractor.stream.StreamInfo
 import org.schabi.newpipe.extractor.stream.StreamInfoItem
 
 private val THUMBNAIL_SIZE = Regex("=w\\d+-h\\d+")
+private val AVATAR_SIZE = Regex("=s\\d+(?=-|$)")
 
 // Gradient pairs for the generated cover shown until a thumbnail can be drawn; picked by video id so a song keeps its colours.
 private val COVER_COLORS = listOf(
@@ -24,21 +25,28 @@ private val COVER_COLORS = listOf(
  */
 internal fun StreamInfoItem.toTrack(): Track? {
     val videoId = videoIdFromLink(url) ?: return null
-    return youTubeTrack(videoId, name, uploaderName, duration, thumbnails)
+    return youTubeTrack(videoId, name, uploaderName, uploaderUrl, duration, thumbnails)
 }
 
 /** The video behind a pasted or shared link as a [Track]. */
-internal fun StreamInfo.toTrack(): Track = youTubeTrack(id, name, uploaderName, duration, thumbnails)
+internal fun StreamInfo.toTrack(): Track = youTubeTrack(id, name, uploaderName, uploaderUrl, duration, thumbnails)
 
-private fun youTubeTrack(videoId: String, title: String, uploader: String?, seconds: Long, thumbnails: List<Image>) = Track(
+private fun youTubeTrack(videoId: String, title: String, uploader: String?, uploaderUrl: String?, seconds: Long, thumbnails: List<Image>) = Track(
     id = videoId,
     title = title,
-    // Auto-generated artist channels are named "<artist> - Topic".
-    artist = uploader.orEmpty().removeSuffix(" - Topic"),
+    artist = artistName(uploader),
     album = "",
     durationMs = seconds.coerceAtLeast(0) * 1_000,
-    artwork = Artwork(
-        COVER_COLORS[Math.floorMod(videoId.hashCode(), COVER_COLORS.size)],
-        thumbnails.maxByOrNull { it.height.toLong() * it.width }?.url?.replace(THUMBNAIL_SIZE, "=w544-h544"),
-    ),
+    artwork = artwork(videoId, thumbnails),
+    artistId = channelIdFromUrl(uploaderUrl),
 )
+
+// Auto-generated artist channels are named "<artist> - Topic".
+internal fun artistName(uploader: String?): String = uploader.orEmpty().removeSuffix(" - Topic")
+
+/** Generated colours picked by [id], so an item keeps them, plus the largest image upgraded to a 544 px cover. */
+internal fun artwork(id: String, images: List<Image>) = Artwork(COVER_COLORS[Math.floorMod(id.hashCode(), COVER_COLORS.size)], images.largest()?.coverSize())
+
+internal fun List<Image>.largest(): String? = maxByOrNull { it.height.toLong() * it.width }?.url
+
+private fun String.coverSize() = replace(THUMBNAIL_SIZE, "=w544-h544").replace(AVATAR_SIZE, "=s544")

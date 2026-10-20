@@ -42,6 +42,7 @@ import app.sitara.music.core.designsystem.SitaraIcons
 import app.sitara.music.core.designsystem.SitaraRadius
 import app.sitara.music.core.designsystem.SitaraSpacing
 import app.sitara.music.core.designsystem.TrackRow
+import app.sitara.music.core.designsystem.byline
 import app.sitara.music.core.model.Album
 import app.sitara.music.core.model.Artist
 import app.sitara.music.core.model.Artwork
@@ -137,7 +138,7 @@ fun LibraryScreen(
             }
             LibraryFilter.ALBUMS -> items(library.albums.size, key = { "album-${library.albums[it].id}" }) { index ->
                 val album = library.albums[index]
-                LibraryEntry(album.title, "${album.artist} · ${album.year}", album.artwork, grid, index) { onAlbum(album) }
+                LibraryEntry(album.title, album.byline, album.artwork, grid, index) { onAlbum(album) }
             }
             LibraryFilter.ARTISTS -> items(library.artists.size, key = { "artist-${library.artists[it].id}" }) { index ->
                 val artist = library.artists[index]

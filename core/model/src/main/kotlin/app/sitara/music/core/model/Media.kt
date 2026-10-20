@@ -21,21 +21,32 @@ data class Track(
     val durationMs: Long,
     val artwork: Artwork,
     val explicit: Boolean = false,
+    /** The artist's page id in the catalogue the track came from, when known. */
+    val artistId: String? = null,
 )
 
 data class Album(
     val id: String,
     val title: String,
     val artist: String,
-    val year: Int,
+    val year: Int?,
     val artwork: Artwork,
     val tracks: List<Track>,
+    val artistId: String? = null,
 )
 
 data class Artist(
     val id: String,
     val name: String,
     val artwork: Artwork,
+)
+
+/** Everything an artist's page shows; [releases] are album previews whose tracks load on their own page. */
+data class ArtistPage(
+    val artist: Artist,
+    val bannerUrl: String?,
+    val topSongs: List<Track>,
+    val releases: List<Album>,
 )
 
 enum class ListeningMood(val label: String) { FOCUS("Focus"), UNWIND("Unwind"), UPLIFT("Uplift") }
