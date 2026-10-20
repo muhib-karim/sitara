@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+Phase C, slice 3: sound II.
+
+### Added
+
+- A 10-band equaliser (31 Hz to 16 kHz, ±12 dB per band, preamp ±12 dB) built into the player, with ten presets (Flat, Bass boost, Treble boost, Vocal, Rock, Pop, Classical, Electronic, Acoustic, Late night) and your own bands. It applies while you listen, gliding to new settings without clicks, and a limiter keeps boosts from clipping. Each preset lowers the preamp by its largest boost, so it adds no level. Open it from Settings → Sound → Equaliser or from Now Playing → More.
+- Use phone equaliser: on phones with an equaliser of their own (Wavelet, a vendor's sound settings), Sitara can hand its sound to it instead. Sitara's bands turn off while it is on; the option is not shown on phones without one.
+- Volume for this song: a trim from −6 to +6 dB for a song mastered louder or quieter than the rest, kept with the song and applied every time it plays. Set it from Now Playing → More.
+
+### Changed
+
+- Now Playing's Add to playlist moved into the new More menu, next to the equaliser and the song's volume.
+
 ## [0.8.3] - 2026-10-20
 
 ### Fixed

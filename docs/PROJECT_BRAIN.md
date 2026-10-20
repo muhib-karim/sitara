@@ -27,8 +27,10 @@ Goal: an original app with its own design and logo (not a reskin), shipped as a 
 
 - c2b (fixes from the v0.7.0 phone test) on main, required for v0.8.0: stream fallback NewPipe -> visionOS -> iOS client with per-song memory (all three bot-checked from CI); "Couldn't play this song" with Try again / Skip in Now Playing and the mini player, never auto-skips; lyric titles drop feat./Topic, cleaned then raw LRCLIB lookup; insets not reproduced on the API 34 emulator (gesture + three-button, both themes), device capture now guards Settings' last row. Report: docs/reports/REPORT_c2b.md.
 
+- c3 (Phase C slice 3, sound II) on main, target v0.9.0 (owner tags): built-in 10-band equaliser (own biquad processor after the leveller, gliding gains, limiter), ten presets + custom bands in the settings store, phone equaliser hand-off (never both; tail shares the audio session), per-song volume trim (Room 3, song_gain), equaliser page (Settings -> Sound) and sheet (Now Playing -> More), baselines c941685. Report: docs/reports/REPORT_c3.md.
+
 ## Next step
-Owner: on-device pass of the REPORT_b5, REPORT_c1, REPORT_c2 and REPORT_c2b "not verified" lists (fallback clients from a home network, error UI on real failures, gaps on real albums, speed/pitch artefacts, skip silence, timer with the screen off, R8 release build; if the Settings/Search inset symptoms recur, note nav mode, themes, font/display size), then tag v0.8.0. Next slice: c3 (equaliser) per docs/plan/PHASE_C_PLAN.md; bot-check message + PoToken provider still open.
+Owner: on-device pass of the REPORT_b5, REPORT_c1, REPORT_c2, REPORT_c2b and REPORT_c3 "not verified" lists (for c3: how bands and presets sound, limiter on loud masters, phone equaliser hand-off per vendor, Bluetooth, CPU on a low-end phone, TalkBack on the faders), then tag v0.8.0 / v0.9.0. Next slice: c4 (local audio) per docs/plan/PHASE_C_PLAN.md; bot-check message + PoToken provider still open.
 
 ## Session log
 2026-10-17 22:21Z Codex / GPT-6 Astra: recorded original design and ui1 plan; next foundations and tests.
@@ -54,3 +56,4 @@ Owner: on-device pass of the REPORT_b5, REPORT_c1, REPORT_c2 and REPORT_c2b "not
 2026-10-20 16:55Z Claude Code / Opus 5.5: c1 shipped (ea05949..cb3d295 + docs): device capture ANR hardening, real covers via Coil, cover-coloured player, lyrics follow mode; CI 39460003902, Secret scan 39460003860, Device screens 39460003949 green; next owner device check and v0.7.0 tag, then c2.
 2026-10-20 18:05Z Claude Code / Opus 5.5: c2 shipped (3f87869..3ecf0ec + docs): gapless prefetch, speed/pitch, skip silence, sleep timer sheet; baselines from Record screenshots 39468939585; next owner device check and v0.8.0 tag, then c3.
 2026-10-20 18:55Z Claude Code / Opus 5.5: c2b shipped (5f9ce3b..78920ad + docs): stream client fallback, playback error UI with Try again/Skip, lyric title cleaning, device-capture inset guard (symptoms not reproduced); CI 39476007550, Device screens 39476007551 green; next owner device check and v0.8.0 tag, then c3.
+2026-10-20 21:25Z Claude Code / Opus 5.5: c3 code pushed (5f43a51..756b7a5): equaliser DSP, presets, phone equaliser, per-song trim (Room 3), equaliser screen; fader length/touch fixes after inspecting recorded baselines; resumed after interruption, next commit baselines + docs + REPORT_c3, CI and Device screens green.

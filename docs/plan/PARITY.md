@@ -25,7 +25,8 @@ Last updated: v0.8.0 (c2, on `main`; the owner tags).
 | Speed and independent pitch | Y/— | Y/Y | Y/Y | ? | v0.8.0 (0.5× to 2×, ±6 semitones) |
 | Skip silence | Y | Y | Y | — | v0.8.0 |
 | Sleep timer with custom time | Y | Y | Y | Y | v0.8.0 (any minutes up to 3 h, extend, end of song; presets since v0.1.0) |
-| Equaliser (built-in or system) | Y | Y | Y | system | c3 |
+| Equaliser (built-in or system) | Y | Y | Y | system | v0.9.0 (10 bands, presets, preamp, limiter; or the phone's own equaliser) |
+| Per-song volume trim | ? | ? | ? | — | v0.9.0 (±6 dB, kept with the song) |
 | Local audio files | Y | — | — | ~ | c4 |
 | Downloads exported as tagged files with lyrics | — | ? | ? | — | c5 |
 | Backup and restore | Y | Y | Y | — | c5 |

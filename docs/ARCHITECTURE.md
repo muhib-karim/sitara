@@ -18,7 +18,7 @@ This document describes how Sitara is put together: the module map, how data mov
 | `:app` | Android application | Activity, app shell (glass tab bar, mini player dock, detail back stack of typed `DetailRoute`s), dependency wiring |
 | `:core:model` | Pure Kotlin | Domain types: `Track`, `Album`, `Artist`, `Playlist`, `Queue`, `LyricsLine`, `LyricsWord` |
 | `:core:common` | Pure Kotlin | Result types, coroutine dispatchers, time and formatting helpers |
-| `:core:data` | Android library | DataStore-backed settings (theme, motion, sound, Wi-Fi-only downloads); the on-device store (`LibraryStore`): repositories for liked songs, play history, saved albums and artists, playlists, the saved play queue and the lyrics cache, implemented with Room, whose schema is exported to `core/data/schemas` |
+| `:core:data` | Android library | DataStore-backed settings (theme, motion, sound, Wi-Fi-only downloads); the on-device store (`LibraryStore`): repositories for liked songs, play history, saved albums and artists, playlists, the saved play queue, the lyrics cache and per-song volume trims, implemented with Room, whose schema is exported to `core/data/schemas` |
 | `:core:player` | Android library | `PlaybackService` (Media3 session + ExoPlayer), `PlaybackEngine`, `PlayerController` facade, queue engine and its save/restore, controller/stream policies, sleep timer, `PrefetchingStreamResolver` (the next song's stream, looked up ahead); `SongDownloads` and `SitaraDownloadService` (Media3 downloads); `LoudnessLeveller` in a Media3 audio processor; `Crossfader` and its timing rules |
 | `:core:designsystem` | Android library | Theme, colour roles, `SitaraMotion`, glass surfaces, typography, icons, shared components; covers: the Coil image loader (memory and disk cache), cover URLs sized to their slot, square crops of video thumbnails, the cover palette and its contrast-checked stage theme |
 | `:source:api` | Pure Kotlin | Contracts: `SearchSource`, `ChartsSource`, `MusicSource`, `BrowseSource` (artist, album, playlist pages), `RadioSource`, `StreamResolver`, `LyricsProvider`, `HealthCheck` |
@@ -179,6 +179,20 @@ sequenceDiagram
   the target (−14 LUFS by default), at most +6 dB and at most −15 dB, moving no faster than 3 dB/s down and 1 dB/s up,
   ramped across each buffer, and a boost never lifts a peak past −1 dBFS. Off, audio passes through bit-exact.
   16-bit and float PCM are levelled; other encodings pass by.
+- **Equaliser** (`Equaliser`, after the leveller in `SoundAudioProcessor`). Ten peaking biquads (RBJ cookbook, Q for
+  one octave) at 31.25 Hz to 16 kHz, ±12 dB, in direct form I with double-precision state, after a preamp that also
+  carries the current song's volume trim (`song_gain`, Room schema 3). Gains glide at 240 dB/s: the filters are
+  re-designed every 32 frames and the preamp is ramped per sample, so moving a slider never clicks. A band at 0 dB keeps
+  running until its memory has caught up with its input, then drops out; flat settings with no trim pass audio through
+  bit for bit. Bands at or above 0.45 × the sample rate stay flat. Headroom is the listener's (each preset's preamp
+  cancels its largest boost); a peak limiter with instant attack and a 40 dB/s release holds every sample under 0.99,
+  so boosts squash rather than clip. A seek or a new stream (the processor's flush) clears the filter memory.
+- **Phone equaliser** (`SystemEqualiserSession`). With "Use phone equaliser" on and an app answering
+  `ACTION_DISPLAY_AUDIO_EFFECT_CONTROL_PANEL` (queried in the manifest), the built-in equaliser is set flat and the
+  player's audio session is announced with `ACTION_OPEN_AUDIO_EFFECT_CONTROL_SESSION` while the player is buffering or
+  ready; it is closed on idle or ended, when the listener switches back, when the session changes and when the service
+  ends. The crossfade tail adopts the main player's audio session (reported asynchronously by ExoPlayer), so the
+  phone's equaliser shapes it too. Settings → Sound → Equaliser opens the phone's panel for that session.
 - **Crossfade** (`Crossfader`, timing rules in `Crossfade`). Ten seconds before the last N seconds of a song, a second
   ExoPlayer (the tail, without audio focus) loads that song at the fade point, and a `PlayerMessage` fires when the
   main player reaches it. The tail starts; once its output runs, both play the same audio for 80 ms while the main

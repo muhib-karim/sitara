@@ -39,9 +39,9 @@
 
 <div align="center">
 
-| Home | Player | Lyrics | Downloads | Sound |
-| :---: | :---: | :---: | :---: | :---: |
-| <img src="docs/screenshots/home_dark.png" alt="Home with the trending chart, recently played and jump back in" width="160"> | <img src="docs/screenshots/player_dark.png" alt="Full player with artwork, slim scrubber, controls, and the speed and sleep timer buttons" width="160"> | <img src="docs/screenshots/lyrics_dark.png" alt="Synced karaoke lyrics with the LRCLIB credit" width="160"> | <img src="docs/screenshots/downloads_dark.png" alt="Library downloads with progress, waiting for Wi-Fi, failed and downloaded songs" width="160"> | <img src="docs/screenshots/sound_dark.png" alt="Sound settings with normalise loudness, skip silence and the crossfade slider" width="160"> |
+| Home | Player | Lyrics | Downloads | Sound | Equaliser |
+| :---: | :---: | :---: | :---: | :---: | :---: |
+| <img src="docs/screenshots/home_dark.png" alt="Home with the trending chart, recently played and jump back in" width="160"> | <img src="docs/screenshots/player_dark.png" alt="Full player with artwork, slim scrubber, controls, the speed and sleep timer buttons and the More menu button" width="160"> | <img src="docs/screenshots/lyrics_dark.png" alt="Synced karaoke lyrics with the LRCLIB credit" width="160"> | <img src="docs/screenshots/downloads_dark.png" alt="Library downloads with progress, waiting for Wi-Fi, failed and downloaded songs" width="160"> | <img src="docs/screenshots/sound_dark.png" alt="Sound settings with the equaliser, normalise loudness, skip silence and the crossfade slider" width="160"> | <img src="docs/screenshots/equaliser_dark.png" alt="Equaliser with presets, ten band faders and their gains" width="160"> |
 
 <sub>Recorded by the Record screenshots workflow (Roborazzi on Robolectric) from hand-built fixtures shaped like a listener's library; release builds contain no sample data. Light versions and more screens live in docs/screenshots.</sub>
 
@@ -55,7 +55,7 @@ Existing clients cover the basics well. Sitara aims for the things that make an 
 - **Colour from the music.** The cover's own palette colours the listening stage and its controls, contrast-checked to stay readable; the rest of the app keeps its saffron (or Material You) accent. AMOLED removes the wash.
 - **Lyrics as the hero.** Heavy Inter Display lyrics, a crisp active line, distance-softened context and tap-to-seek; scroll away to read ahead and one tap brings you back to the current line. Transliteration for Bangla, Hindi and Urdu is planned so everyone can sing along.
 - **Playback that outlives the screen.** The queue, auto-advance and sleep timer live in the playback service, so the notification, Bluetooth and Android Auto controls keep working when the app is closed.
-- **Sound that flows.** Songs play at a similar volume, and can crossfade into each other while albums stay gapless.
+- **Sound that flows.** Songs play at a similar volume, and can crossfade into each other while albums stay gapless. A 10-band equaliser shapes them, or hands the sound to your phone's own.
 - **Offline when you need it.** Download songs, albums and playlists, on Wi-Fi only unless you allow mobile data.
 - **Reliable by design.** Stream sources sit behind an interface with automatic fallback, and only the app and system surfaces may control the media session.
 - **Accessible from the start.** TalkBack labels, a reduced-motion mode and contrast-checked artwork palettes are part of the design system.
@@ -89,6 +89,8 @@ Planned, not built yet: *Sitara Sync* (end-to-end encrypted sync through storage
 | | Gapless: the next song's stream is looked up while the current one plays, so songs join without inserted silence | 🧪 |
 | | Crossfade, Off or 1 to 12 s; songs from one album stay gapless | 🧪 |
 | | Skip silence (off by default) | 🧪 |
+| | Equaliser: 10 bands (31 Hz to 16 kHz, ±12 dB), preamp, ten presets and your own bands, applied while playing with a limiter against clipping; or the phone's own equaliser where it has one, never both | 🧪 |
+| | Volume for this song: −6 to +6 dB, kept with the song | 🧪 |
 | **Lyrics** | Synced lyrics from LRCLIB that follow the song and seek on tap; scrolling by hand pauses following until "Back to current line"; plain lyrics when nothing is synced; "No lyrics found" otherwise; cached on the device | 🧪 |
 | | LRC and enhanced LRC parsing (offsets, repeated timestamps, word timing) | ✅ |
 | **Settings** | Theme: dynamic, artwork or AMOLED black; light / dark; reduced motion | ✅ |
@@ -98,7 +100,6 @@ Planned, not built yet: *Sitara Sync* (end-to-end encrypted sync through storage
 | | Artist, album and playlist pages with Play all and Shuffle | 🧪 |
 | | Radio: Start radio from Up next, and a queue about to run out continues with related songs | 🧪 |
 | **Later** | Resolver health checks, local files, import, backup and restore | Not started |
-| | Equaliser | Not started |
 | **Accounts** | Account library sync, scrobbling, widgets, Android Auto, Cast | Phase C |
 | | Sitara Sync, LAN remote control, smart offline | Phase C |
 | **Premium** | Animated canvas, automix, lyric translation and transliteration, Wear OS remote, TV layout | Phase D |
@@ -111,7 +112,7 @@ Planned, not built yet: *Sitara Sync* (end-to-end encrypted sync through storage
 - **Links.** Paste a `music.youtube.com`, `youtube.com/watch` or `youtu.be` link into Search, or share one to Sitara from another app; the song plays as soon as it resolves. Only the video id is read from the link.
 - **Lyrics.** For the playing song Sitara asks [LRCLIB](https://lrclib.net) by title, artist and length (then a search), first with the title cleaned of video labels and featured artists, then as uploaded; it prefers synced lyrics, and keeps what it finds on the device. Requests carry only the app's name and repository URL.
 - **Downloads.** A download stores the song's audio in an app-private cache through Media3's download manager, resolving a fresh stream URL whenever it starts or resumes. The player always looks in that cache first, so a downloaded song plays with no connection. Downloads wait for Wi-Fi unless you turn off "Download on Wi-Fi only".
-- **Sound.** Loudness levelling runs inside the audio pipeline and adjusts gain slowly as a song plays. Crossfade hands the end of a song to a second player while the next one starts; the main player keeps the queue, so skipping, editing Up next and restoring after a restart behave as usual. While a song plays, the stream of the song that follows it is looked up ahead, so the player has it ready at the join (and a skip to it starts at once). Speed and pitch are applied by the player for as long as playback runs; skip silence is Media3's silence-skipping step in the same audio chain.
+- **Sound.** Loudness levelling runs inside the audio pipeline and adjusts gain slowly as a song plays. Crossfade hands the end of a song to a second player while the next one starts; the main player keeps the queue, so skipping, editing Up next and restoring after a restart behave as usual. While a song plays, the stream of the song that follows it is looked up ahead, so the player has it ready at the join (and a skip to it starts at once). Speed and pitch are applied by the player for as long as playback runs; skip silence is Media3's silence-skipping step in the same audio chain. The equaliser runs after the leveller in Sitara's own audio step (a filter per band, a song's volume trim with the preamp, then a limiter); with the phone's equaliser chosen, Sitara's bands stay flat and the phone's equaliser gets the player's audio session.
 
 ## Known limits
 
@@ -121,6 +122,8 @@ Planned, not built yet: *Sitara Sync* (end-to-end encrypted sync through storage
 - Crossfade overlaps by switching to a second player; the hand-over may be audible on some devices.
 - Gapless joins rely on the player trimming each format's encoder padding; how YouTube's opus and m4a streams join on real albums has not been checked on a phone yet.
 - Speed and pitch reset when playback stops and the service ends; they are not saved.
+- Handing the sound to the phone's equaliser relies on that equaliser following Android's audio effect announcements; some vendors' equalisers may not, and it has not been checked on a phone yet. The built-in equaliser's sound has been measured in tests, not yet listened to on a phone.
+- A song's volume trim is picked up as the song starts, so its first moment may glide from the previous song's level.
 - Covers are cached on the device, and the cache can drop old covers when storage runs low; a downloaded song played offline then shows its generated cover instead.
 - An unofficial client can break when YouTube changes; fixes land in `:source:youtube`.
 
