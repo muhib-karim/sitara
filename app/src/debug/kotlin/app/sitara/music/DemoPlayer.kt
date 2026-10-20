@@ -8,6 +8,7 @@ import app.sitara.music.core.model.RepeatMode
 import app.sitara.music.core.model.Track
 import app.sitara.music.feature.player.PlayerActions
 import app.sitara.music.feature.player.PlayerUiState
+import app.sitara.music.feature.player.RadioStatus
 
 /** Debug capture fixture: a frozen clock and local queue, with no service or network connection. */
 internal class DemoPlayer(private var original: List<Track>, lyrics: Lyrics) : PlayerActions {
@@ -47,6 +48,8 @@ internal class DemoPlayer(private var original: List<Track>, lyrics: Lyrics) : P
     override fun cycleSleepTimer() {
         state = state.copy(sleepTimerLabel = if (state.sleepTimerLabel == null) "15:00" else null)
     }
+    // Every sample song is already in the demo queue, so there is nothing left to suggest.
+    override fun startRadio() { state = state.copy(radio = RadioStatus.UNAVAILABLE) }
     fun play(tracks: List<Track>, start: Int) {
         if (tracks.isEmpty()) return
         original = tracks

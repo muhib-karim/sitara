@@ -1,6 +1,7 @@
 package app.sitara.music.feature.search
 
 import app.cash.turbine.test
+import app.sitara.music.core.model.SearchFilter
 import app.sitara.music.core.model.SearchResults
 import java.io.IOException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -21,7 +22,7 @@ class SearchStatesTest {
     fun typingSearchesOnceForTheSettledTrimmedQuery() = runTest {
         val queries = MutableStateFlow("")
         val searched = mutableListOf<String>()
-        searchStates(queries, emptyFlow(), debounceMs = 300) { searched += it; SearchResults.empty(it) }.test {
+        searchStates(queries, emptyFlow(), debounceMs = 300) { query, _ -> searched += query; SearchResults.empty(query) }.test {
             assertEquals(SearchState.Idle, awaitItem())
             queries.value = "n"
             advanceTimeBy(100)
@@ -38,10 +39,10 @@ class SearchStatesTest {
     fun failureOffersRetryWhichRunsTheSameQueryAgain() = runTest {
         val retries = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
         var attempts = 0
-        searchStates(MutableStateFlow("lofi"), retries, debounceMs = 300) {
+        searchStates(MutableStateFlow("lofi"), retries, debounceMs = 300) { query, _ ->
             attempts++
             if (attempts == 1) throw IOException("offline")
-            SearchResults.empty(it)
+            SearchResults.empty(query)
         }.test {
             assertEquals(SearchState.Loading("lofi"), awaitItem())
             assertEquals(SearchState.Failed("lofi"), awaitItem())
@@ -57,7 +58,7 @@ class SearchStatesTest {
     @Test
     fun aNewQueryCancelsTheSearchItReplaces() = runTest {
         val queries = MutableStateFlow("a")
-        searchStates(queries, emptyFlow(), debounceMs = 300) { delay(1_000); SearchResults.empty(it) }.test {
+        searchStates(queries, emptyFlow(), debounceMs = 300) { query, _ -> delay(1_000); SearchResults.empty(query) }.test {
             assertEquals(SearchState.Loading("a"), awaitItem())
 
             queries.value = "ab"
@@ -70,7 +71,7 @@ class SearchStatesTest {
     @Test
     fun clearingTheQueryGoesIdleWithoutWaiting() = runTest {
         val queries = MutableStateFlow("jazz")
-        searchStates(queries, emptyFlow(), debounceMs = 300) { SearchResults.empty(it) }.test {
+        searchStates(queries, emptyFlow(), debounceMs = 300) { query, _ -> SearchResults.empty(query) }.test {
             assertEquals(SearchState.Loading("jazz"), awaitItem())
             assertEquals(SearchState.Loaded("jazz", SearchResults.empty("jazz")), awaitItem())
             val clearedAt = currentTime
@@ -79,6 +80,27 @@ class SearchStatesTest {
 
             assertEquals(SearchState.Idle, awaitItem())
             assertEquals(clearedAt, currentTime)
+        }
+    }
+
+    @Test
+    fun changingTheFilterSearchesTheSameQueryAtOnceWithThatFilter() = runTest {
+        val filters = MutableStateFlow(SearchFilter.SONGS)
+        val searched = mutableListOf<Pair<String, SearchFilter>>()
+        searchStates(MutableStateFlow("xefer"), emptyFlow(), debounceMs = 300, filters) { query, filter ->
+            searched += query to filter
+            SearchResults.empty(query)
+        }.test {
+            assertEquals(SearchState.Loading("xefer"), awaitItem())
+            assertEquals(SearchState.Loaded("xefer", SearchResults.empty("xefer")), awaitItem())
+            val switchedAt = currentTime
+
+            filters.value = SearchFilter.ARTISTS
+
+            assertEquals(SearchState.Loading("xefer", SearchFilter.ARTISTS), awaitItem())
+            assertEquals(SearchState.Loaded("xefer", SearchResults.empty("xefer"), SearchFilter.ARTISTS), awaitItem())
+            assertEquals(switchedAt, currentTime)
+            assertEquals(listOf("xefer" to SearchFilter.SONGS, "xefer" to SearchFilter.ARTISTS), searched)
         }
     }
 }

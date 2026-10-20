@@ -6,12 +6,15 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
@@ -25,15 +28,18 @@ import androidx.compose.ui.test.swipeLeft
 import androidx.compose.ui.unit.Density
 import app.sitara.music.core.model.DarkMode
 import app.sitara.music.core.model.Library
+import app.sitara.music.core.model.SearchFilter
 import app.sitara.music.core.model.SearchResults
 import app.sitara.music.core.model.SitaraSettings
 import app.sitara.music.core.model.ThemeMode
 import app.sitara.music.core.model.Track
+import app.sitara.music.feature.library.DetailState
 import app.sitara.music.feature.player.PlayerActions
 import app.sitara.music.feature.player.PlayerUiState
 import app.sitara.music.feature.search.SearchState
 import app.sitara.music.source.fake.FakeMusicSource
 import app.sitara.music.source.fake.SampleCatalog
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
@@ -48,6 +54,7 @@ import org.robolectric.annotation.Config
 @Config(sdk = [35], qualifiers = "w411dp-h891dp-xxhdpi")
 class BrowseInteractionTest {
     @get:Rule val compose = createComposeRule()
+    private val opensArtist = SemanticsMatcher("opens the artist") { it.config.getOrNull(SemanticsActions.OnClick)?.label == "Open artist" }
     private val source = FakeMusicSource()
     private val home = runBlocking { source.home() }
     private val library = runBlocking { source.library() }
@@ -62,17 +69,23 @@ class BrowseInteractionTest {
         initialQuery: String = "",
         search: SearchState = SearchState.Idle,
         onRetrySearch: () -> Unit = {},
+        details: DetailPages = SampleDetailPages(source),
+        onShuffle: (List<Track>) -> Unit = {},
+        onFilter: (SearchFilter) -> Unit = {},
+        initialDetail: DetailRoute? = null,
     ): StateRestorationTester {
         val restoration = StateRestorationTester(compose)
         restoration.setContent {
             var settings by remember { mutableStateOf(SitaraSettings(darkMode = DarkMode.DARK, reducedMotion = true)) }
             var query by remember { mutableStateOf(initialQuery) }
+            var filter by remember { mutableStateOf(SearchFilter.SONGS) }
             CompositionLocalProvider(LocalDensity provides Density(LocalDensity.current.density, fontScale)) {
                 SitaraShell(
-                    settings, home, libraryState, query, search,
-                    PlayerUiState(track = SampleCatalog.tracks.first()), PlayerActions.None,
-                    onQueryChange = { query = it; onQuery(it) }, onRetrySearch = onRetrySearch, onPlay = onPlay,
-                    onSettingsChange = { settings = it; onSettings(it) }, initialTab = tab,
+                    settings, home, libraryState, query, filter, search,
+                    PlayerUiState(track = SampleCatalog.tracks.first()), PlayerActions.None, details,
+                    onQueryChange = { query = it; onQuery(it) }, onSearchFilterChange = { filter = it; onFilter(it) },
+                    onRetrySearch = onRetrySearch, onPlay = onPlay, onShuffle = onShuffle,
+                    onSettingsChange = { settings = it; onSettings(it) }, initialTab = tab, initialDetail = initialDetail,
                 )
             }
         }
@@ -121,14 +134,73 @@ class BrowseInteractionTest {
         render(Tab.LIBRARY, onPlay = { tracks, _ -> queue = tracks })
         compose.onNodeWithText("Albums").performClick()
         compose.onNodeWithText(library.albums.first().title).performClick()
-        compose.onNodeWithText("Play album").performClick()
+        compose.onNodeWithText("Play all").performClick()
         assertEquals(library.albums.first().tracks, queue)
-        compose.onNodeWithContentDescription("Back to browse").performClick()
+        compose.onNodeWithContentDescription("Back").performClick()
         compose.onNodeWithText("Artists").performClick()
         compose.onNode(hasText(library.artists.first().name) and hasAnyAncestor(hasTestTag("library-grid"))).performClick()
-        compose.onNodeWithText("Play artist").performClick()
+        compose.onNodeWithText("Play all").performClick()
         assertTrue(queue.isNotEmpty())
         assertTrue(queue.all { it.artist == library.artists.first().name })
+    }
+
+    @Test fun detailBackStackSurvivesRestorationAndUnwindsInOrder() {
+        val album = library.albums.first()
+        val restoration = render(Tab.LIBRARY, initialDetail = DetailRoute.Album(album.id))
+        compose.onNode(hasText(album.artist) and opensArtist).performClick()
+        compose.onNodeWithText("Top songs").assertIsDisplayed()
+        restoration.emulateSavedInstanceStateRestore()
+        compose.onNodeWithText("Top songs").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Back").performClick()
+        compose.onNodeWithText("Play all").assertIsDisplayed()
+        compose.onNodeWithText(album.title).assertIsDisplayed()
+        compose.onNodeWithContentDescription("Back").performClick()
+        compose.onNodeWithTag("library-grid").assertExists()
+    }
+
+    @Test fun playlistPagePlaysFromATappedRowAndShuffles() {
+        val playlist = library.playlists.first()
+        var queue = emptyList<Track>()
+        var index = -1
+        var shuffled = emptyList<Track>()
+        render(
+            initialDetail = DetailRoute.Playlist(playlist.id),
+            onPlay = { tracks, selected -> queue = tracks; index = selected },
+            onShuffle = { shuffled = it },
+        )
+        val second = playlist.tracks[1]
+        compose.onNodeWithContentDescription("${second.title} by ${second.artist}").performClick()
+        assertEquals(playlist.tracks, queue)
+        assertEquals(1, index)
+        compose.onNodeWithText("Shuffle").performClick()
+        assertEquals(playlist.tracks, shuffled)
+    }
+
+    @Test fun failedPageRetriesItsOwnRoute() {
+        val route = DetailRoute.Artist("UCabcdefghijklmnopqrstuv")
+        val retried = mutableListOf<DetailRoute>()
+        val failing = object : DetailPages {
+            override fun state(route: DetailRoute) = MutableStateFlow<DetailState>(DetailState.Failed)
+            override fun retry(route: DetailRoute) { retried += route }
+        }
+        render(details = failing, initialDetail = route)
+        compose.onNodeWithText("Try again").performClick()
+        assertEquals(listOf(route), retried)
+    }
+
+    @Test fun searchFiltersSwitchTheResultKindAndOpenPages() {
+        val filters = mutableListOf<SearchFilter>()
+        val playlist = library.playlists.first()
+        render(
+            Tab.SEARCH, initialQuery = "night", onFilter = { filters += it },
+            search = SearchState.Loaded("night", SearchResults.empty("night").copy(playlists = listOf(playlist)), SearchFilter.PLAYLISTS),
+        )
+        compose.onNodeWithText("Searching…").assertIsDisplayed()
+        compose.onNodeWithText("Playlists").performClick()
+        assertEquals(listOf(SearchFilter.PLAYLISTS), filters)
+        compose.onNode(hasText("Playlists") and isSelectable()).assertIsSelected()
+        compose.onNodeWithText(playlist.title).performClick()
+        compose.onNodeWithText("Play all").assertIsDisplayed()
     }
 
     @Test fun quickPickSecondPageUsesTheOriginalQueueIndex() {
@@ -147,8 +219,8 @@ class BrowseInteractionTest {
         render(Tab.SEARCH, onQuery = { query = it })
         compose.onNodeWithText("Albums").performClick()
         compose.onNodeWithText(library.albums.first().title).performClick()
-        compose.onNodeWithText("Play album").assertIsDisplayed()
-        compose.onNodeWithContentDescription("Back to browse").performClick()
+        compose.onNodeWithText("Play all").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Back").performClick()
         compose.onNodeWithContentDescription("All browse categories").performClick()
         compose.onNodeWithTag("search-content").performScrollToIndex(4)
         compose.onNodeWithText("Jazz piano").performClick()

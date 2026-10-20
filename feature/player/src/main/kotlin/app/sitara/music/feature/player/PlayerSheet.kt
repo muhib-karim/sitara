@@ -72,6 +72,7 @@ fun PlayerSheet(
     haze: dev.chrisbanes.haze.HazeState? = null,
     navigation: @Composable () -> Unit = {},
     onDockHeightChanged: (Dp) -> Unit = {},
+    onArtist: (artistId: String) -> Unit = {},
 ) {
     var expanded by rememberSaveable { mutableStateOf(initiallyExpanded) }
     val reduced = LocalReducedMotion.current
@@ -100,7 +101,10 @@ fun PlayerSheet(
                 )
             }
             if (full && track != null) {
-                FullPlayer(state, actions, onCollapse = { expanded = false }, initialPage = initialPage, artworkModifier = coverModifier)
+                FullPlayer(
+                    state, actions, onCollapse = { expanded = false }, initialPage = initialPage, artworkModifier = coverModifier,
+                    onArtist = { expanded = false; onArtist(it) },
+                )
             } else {
                 Box(Modifier.fillMaxSize()) {
                     GlassSurface(

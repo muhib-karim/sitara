@@ -15,7 +15,11 @@ data class PlayerUiState(
     val repeatMode: RepeatMode = RepeatMode.OFF,
     val lyrics: Lyrics = Lyrics.Empty,
     val sleepTimerLabel: String? = null,
+    val radio: RadioStatus = RadioStatus.READY,
 )
+
+/** Whether "Start radio" can extend the queue from the current song right now. */
+enum class RadioStatus { READY, LOADING, UNAVAILABLE }
 
 interface PlayerActions {
     fun togglePlay()
@@ -27,6 +31,9 @@ interface PlayerActions {
     fun playQueueIndex(upNextIndex: Int)
     fun cycleSleepTimer()
 
+    /** Queues songs related to the current one after the last entry. */
+    fun startRadio()
+
     object None : PlayerActions {
         override fun togglePlay() = Unit
         override fun next() = Unit
@@ -36,5 +43,6 @@ interface PlayerActions {
         override fun cycleRepeat() = Unit
         override fun playQueueIndex(upNextIndex: Int) = Unit
         override fun cycleSleepTimer() = Unit
+        override fun startRadio() = Unit
     }
 }

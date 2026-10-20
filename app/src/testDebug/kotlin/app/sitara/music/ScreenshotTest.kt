@@ -20,14 +20,18 @@ import app.sitara.music.core.model.DarkMode
 import app.sitara.music.core.model.Library
 import app.sitara.music.core.model.Lyrics
 import app.sitara.music.core.model.SearchFilter
+import app.sitara.music.core.model.SearchResults
 import app.sitara.music.core.model.SitaraSettings
 import app.sitara.music.core.model.ThemeMode
+import app.sitara.music.feature.library.DetailState
 import app.sitara.music.feature.player.PlayerActions
 import app.sitara.music.feature.player.PlayerUiState
 import app.sitara.music.feature.search.SearchState
 import app.sitara.music.source.fake.FakeMusicSource
 import app.sitara.music.source.fake.SampleCatalog
 import com.github.takahirom.roborazzi.captureRoboImage
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.runBlocking
 import org.junit.Rule
 import org.junit.Test
@@ -76,6 +80,8 @@ class ScreenshotTest {
         fontScale: Float = 1f,
         playerState: PlayerUiState = playing,
         search: SearchState = SearchState.Loaded(query.trim(), allKinds(query)),
+        filter: SearchFilter = SearchFilter.SONGS,
+        detail: DetailState? = null,
         beforeCapture: () -> Unit = {},
     ) {
         val settings = SitaraSettings(themeMode = mode, darkMode = if (dark) DarkMode.DARK else DarkMode.LIGHT, reducedMotion = reduced)
@@ -86,14 +92,19 @@ class ScreenshotTest {
                     home = home,
                     library = library,
                     query = query,
+                    searchFilter = filter,
                     search = search,
                     player = playerState,
                     actions = PlayerActions.None,
+                    details = detail?.let(::FixedPage) ?: SampleDetailPages(source),
                     onQueryChange = {},
+                    onSearchFilterChange = {},
                     onRetrySearch = {},
                     onPlay = { _, _ -> },
+                    onShuffle = {},
                     onSettingsChange = {},
                     initialTab = tab,
+                    initialDetail = detail?.let { DetailRoute.Album("fixture") },
                     initialSettingsOpen = settingsOpen,
                     playerExpanded = expanded,
                     playerPage = page,
@@ -208,6 +219,18 @@ class ScreenshotTest {
     @Test fun searchFailed() = shot("search_failed", dark = true, tab = Tab.SEARCH, query = "lofi", search = SearchState.Failed("lofi"))
     @Test fun searchGrouped() = shot("search_grouped", dark = true, tab = Tab.SEARCH, query = "Lumen Drift")
 
+    @Test fun artistPageDark() = shot("artist_page", dark = true, tab = Tab.SEARCH, detail = DetailState.ArtistReady(Fixtures.artistPage))
+    @Test fun artistPageLight() = shot("artist_page", dark = false, tab = Tab.SEARCH, detail = DetailState.ArtistReady(Fixtures.artistPage))
+    @Test fun albumPageDark() = shot("album_page", dark = true, tab = Tab.SEARCH, detail = DetailState.AlbumReady(Fixtures.album))
+    @Test fun playlistPageDark() = shot("playlist_page", dark = true, tab = Tab.SEARCH, detail = DetailState.PlaylistReady(Fixtures.playlist))
+    @Test fun detailLoading() = shot("detail_loading", dark = true, tab = Tab.SEARCH, detail = DetailState.Loading)
+    @Test fun detailFailed() = shot("detail_failed", dark = true, tab = Tab.SEARCH, detail = DetailState.Failed)
+    @Test fun albumEmpty() = shot("album_empty", dark = true, tab = Tab.SEARCH, detail = DetailState.AlbumReady(Fixtures.album.copy(tracks = emptyList())))
+    @Test fun searchAlbumsFilter() = shot(
+        "search_albums", dark = true, tab = Tab.SEARCH, query = "orchid", filter = SearchFilter.ALBUMS,
+        search = SearchState.Loaded("orchid", SearchResults.empty("orchid").copy(albums = Fixtures.artistPage.releases), SearchFilter.ALBUMS),
+    )
+
     @Test fun settingsMotion() = shot("settings_motion", dark = true, settingsOpen = true) {
         compose.onNodeWithTag("settings-content").performScrollToIndex(3)
     }
@@ -228,4 +251,13 @@ class ScreenshotTest {
     @Test
     @Config(qualifiers = "w320dp-h720dp-xxhdpi")
     fun searchNarrowLargeText() = shot("search_narrow_large_text", dark = true, tab = Tab.SEARCH, fontScale = 2f)
+}
+
+/** Shows one page whatever route is open, so a screenshot needs no catalogue. */
+private class FixedPage(state: DetailState) : DetailPages {
+    private val flow = MutableStateFlow(state)
+
+    override fun state(route: DetailRoute): StateFlow<DetailState> = flow
+
+    override fun retry(route: DetailRoute) = Unit
 }

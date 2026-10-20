@@ -5,7 +5,6 @@ import app.sitara.music.core.data.SettingsRepository
 import app.sitara.music.core.player.PlaybackDependencies
 import app.sitara.music.core.player.PlayerController
 import app.sitara.music.source.api.FallbackStreamResolver
-import app.sitara.music.source.api.SearchSource
 import app.sitara.music.source.api.StreamResolver
 import app.sitara.music.source.fake.FakeMusicSource
 import app.sitara.music.source.youtube.YouTubeMusicSource
@@ -15,13 +14,13 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 
-/** Dependencies are wired by hand (see ADR 0001). Search and streams are live; home, library and lyrics are samples. */
+/** Dependencies are wired by hand (see ADR 0001). Search, detail pages, radio and streams are live; home, library and lyrics are samples. */
 class SitaraApplication :
     Application(),
     PlaybackDependencies {
     val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     val sampleSource by lazy { FakeMusicSource() }
-    val search: SearchSource by lazy { YouTubeMusicSource() }
+    val youtube by lazy { YouTubeMusicSource() }
     val settings by lazy { SettingsRepository(this) }
 
     // Samples first: that check is local and instant, so only YouTube tracks reach the network.

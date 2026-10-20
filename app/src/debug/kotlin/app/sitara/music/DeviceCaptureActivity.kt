@@ -18,6 +18,7 @@ import androidx.compose.ui.semantics.semantics
 import app.sitara.music.core.model.DarkMode
 import app.sitara.music.core.model.Library
 import app.sitara.music.core.model.Lyrics
+import app.sitara.music.core.model.SearchFilter
 import app.sitara.music.core.model.SearchResults
 import app.sitara.music.core.model.Shelf
 import app.sitara.music.core.model.SitaraSettings
@@ -49,19 +50,25 @@ private fun CaptureScreen(screen: String, dark: Boolean, reduced: Boolean) {
     val player = remember(ready) { DemoPlayer(SampleCatalog.tracks, ready.lyrics) }
     var settings by remember { mutableStateOf(SitaraSettings(darkMode = if (dark) DarkMode.DARK else DarkMode.LIGHT, reducedMotion = reduced)) }
     var query by remember { mutableStateOf("") }
-    val results by produceState(SearchResults.empty(), query) { value = source.search(query) }
+    var filter by remember { mutableStateOf(SearchFilter.SONGS) }
+    val results by produceState(SearchResults.empty(), query, filter) { value = source.search(query, filter) }
+    val details = remember(source) { SampleDetailPages(source) }
     Box(Modifier.fillMaxSize().semantics { contentDescription = "Device capture: $screen" }) {
         SitaraShell(
             settings = settings,
             home = ready.home,
             library = ready.library,
             query = query,
-            search = SearchState.Loaded(results.query.trim(), results),
+            searchFilter = filter,
+            search = SearchState.Loaded(results.query.trim(), results, filter),
             player = player.state,
             actions = player,
+            details = details,
             onQueryChange = { query = it },
+            onSearchFilterChange = { filter = it },
             onRetrySearch = {},
             onPlay = player::play,
+            onShuffle = { player.play(it.shuffled(), 0) },
             onSettingsChange = { settings = it },
             initialTab = when (screen) {
                 "library" -> Tab.LIBRARY

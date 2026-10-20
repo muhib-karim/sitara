@@ -1,10 +1,12 @@
 package app.sitara.music.feature.search
 
+import app.sitara.music.core.model.SearchFilter
 import app.sitara.music.core.model.SearchResults
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
@@ -13,7 +15,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.transformLatest
 
-/** What the results area shows; [query] is the trimmed query it belongs to. */
+/** What the results area shows; [query] is the trimmed query it belongs to, searched with a filter. */
 sealed interface SearchState {
     val query: String
 
@@ -21,35 +23,41 @@ sealed interface SearchState {
         override val query = ""
     }
 
-    data class Loading(override val query: String) : SearchState
+    data class Loading(override val query: String, val filter: SearchFilter = SearchFilter.SONGS) : SearchState
 
-    data class Loaded(override val query: String, val results: SearchResults) : SearchState
+    data class Loaded(override val query: String, val results: SearchResults, val filter: SearchFilter = SearchFilter.SONGS) : SearchState
 
-    data class Failed(override val query: String) : SearchState
+    data class Failed(override val query: String, val filter: SearchFilter = SearchFilter.SONGS) : SearchState
 }
 
 /**
- * Searches as the user types: waits [debounceMs] after the last change, cancels a search that a newer query
- * replaces, goes idle at once when the query is cleared, and runs the current query again on every [retries] event.
+ * Searches as the user types: waits [debounceMs] after the last change, cancels a search that a newer query or filter
+ * replaces, searches again at once when the filter changes, goes idle at once when the query is cleared, and runs the
+ * current search again on every [retries] event.
  */
 @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
-fun searchStates(queries: Flow<String>, retries: Flow<Unit>, debounceMs: Long, search: suspend (String) -> SearchResults): Flow<SearchState> =
-    queries.map { it.trim() }
-        .debounce { if (it.isEmpty()) 0L else debounceMs }
+fun searchStates(
+    queries: Flow<String>,
+    retries: Flow<Unit>,
+    debounceMs: Long,
+    filters: Flow<SearchFilter> = flowOf(SearchFilter.SONGS),
+    search: suspend (String, SearchFilter) -> SearchResults,
+): Flow<SearchState> =
+    combine(queries.map { it.trim() }.debounce { if (it.isEmpty()) 0L else debounceMs }, filters) { query, filter -> query to filter }
         .distinctUntilChanged()
-        .flatMapLatest<String, SearchState> { query ->
+        .flatMapLatest<Pair<String, SearchFilter>, SearchState> { (query, filter) ->
             if (query.isEmpty()) {
                 flowOf(SearchState.Idle)
             } else {
                 retries.onStart { emit(Unit) }.transformLatest {
-                    emit(SearchState.Loading(query))
+                    emit(SearchState.Loading(query, filter))
                     emit(
                         try {
-                            SearchState.Loaded(query, search(query))
+                            SearchState.Loaded(query, search(query, filter), filter)
                         } catch (e: CancellationException) {
                             throw e
                         } catch (e: Exception) {
-                            SearchState.Failed(query)
+                            SearchState.Failed(query, filter)
                         },
                     )
                 }

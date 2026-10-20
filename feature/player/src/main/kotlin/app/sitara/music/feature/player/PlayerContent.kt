@@ -2,6 +2,7 @@ package app.sitara.music.feature.player
 
 import android.os.Build
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
@@ -28,6 +29,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.remember
@@ -61,7 +63,7 @@ import dev.chrisbanes.haze.rememberHazeState
 import kotlinx.coroutines.launch
 
 @Composable
-internal fun FullPlayer(state: PlayerUiState, actions: PlayerActions, onCollapse: () -> Unit, initialPage: Int, artworkModifier: Modifier) {
+internal fun FullPlayer(state: PlayerUiState, actions: PlayerActions, onCollapse: () -> Unit, initialPage: Int, artworkModifier: Modifier, onArtist: (String) -> Unit) {
     val track = state.track ?: return
     val reduced = LocalReducedMotion.current
     val wash = LocalArtworkWash.current
@@ -97,13 +99,14 @@ internal fun FullPlayer(state: PlayerUiState, actions: PlayerActions, onCollapse
                     }
                     HorizontalPager(pager, Modifier.weight(1f), userScrollEnabled = true) { page ->
                         when (page) {
-                            0 -> PlayingPage(state, actions, artworkModifier, onQueue = { selectPage(2) })
+                            0 -> PlayingPage(state, actions, artworkModifier, onQueue = { selectPage(2) }, onArtist = onArtist)
                             1 -> LyricsPanel(state, actions)
                             else -> Column(Modifier.fillMaxSize()) {
                                 Row(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                                     Text("Up next", style = MaterialTheme.typography.headlineMedium, color = SitaraColors.StageContent, modifier = Modifier.weight(1f))
                                     PillButton("Now playing", { selectPage(0) }, primary = false)
                                 }
+                                RadioControl(state.radio, actions::startRadio, Modifier.padding(horizontal = 24.dp, vertical = 4.dp))
                                 if (state.upNext.isEmpty()) {
                                     Text("You're at the end of the queue", color = SitaraColors.StageSecondary, modifier = Modifier.padding(24.dp).weight(1f))
                                 } else {
@@ -124,7 +127,7 @@ internal fun FullPlayer(state: PlayerUiState, actions: PlayerActions, onCollapse
 }
 
 @Composable
-private fun PlayingPage(state: PlayerUiState, actions: PlayerActions, artworkModifier: Modifier, onQueue: () -> Unit) {
+private fun PlayingPage(state: PlayerUiState, actions: PlayerActions, artworkModifier: Modifier, onQueue: () -> Unit, onArtist: (String) -> Unit) {
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val stageHeight = maxHeight
         val landscape = maxWidth > stageHeight
@@ -132,7 +135,7 @@ private fun PlayingPage(state: PlayerUiState, actions: PlayerActions, artworkMod
             Row(Modifier.fillMaxSize().padding(horizontal = 24.dp), verticalAlignment = Alignment.CenterVertically) {
                 ArtworkStage(state, artworkModifier, Modifier.weight(1f).fillMaxSize())
                 Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(start = 24.dp, bottom = 12.dp)) {
-                    TrackHeading(state, onQueue = onQueue)
+                    TrackHeading(state, onQueue = onQueue, onArtist = onArtist)
                     PlayerControls(state, actions)
                 }
             }
@@ -141,7 +144,7 @@ private fun PlayingPage(state: PlayerUiState, actions: PlayerActions, artworkMod
                 // Reserve room for transport while keeping the sleeve prominent on tall phones.
                 ArtworkStage(state, artworkModifier, Modifier.fillMaxWidth().height((stageHeight - 240.dp).coerceIn(180.dp, 440.dp)))
                 Spacer(Modifier.height(24.dp))
-                TrackHeading(state, onQueue = onQueue)
+                TrackHeading(state, onQueue = onQueue, onArtist = onArtist)
                 Spacer(Modifier.height(12.dp))
                 PlayerControls(state, actions)
             }
@@ -168,7 +171,7 @@ private fun ArtworkStage(state: PlayerUiState, artworkModifier: Modifier, modifi
 }
 
 @Composable
-private fun TrackHeading(state: PlayerUiState, modifier: Modifier = Modifier, compact: Boolean = false, onQueue: (() -> Unit)? = null) {
+private fun TrackHeading(state: PlayerUiState, modifier: Modifier = Modifier, compact: Boolean = false, onQueue: (() -> Unit)? = null, onArtist: ((String) -> Unit)? = null) {
     val track = state.track ?: return
     Row(modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         if (compact) {
@@ -177,7 +180,13 @@ private fun TrackHeading(state: PlayerUiState, modifier: Modifier = Modifier, co
         }
         Column(Modifier.weight(1f)) {
             Text(track.title, color = SitaraColors.StageContent, style = if (compact) MaterialTheme.typography.titleMedium else MaterialTheme.typography.titleLarge, maxLines = 2, overflow = TextOverflow.Ellipsis)
-            Text(track.artist, color = SitaraColors.StageSecondary, style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            val artistId = track.artistId
+            val link = if (onArtist != null && artistId != null) {
+                Modifier.minimumInteractiveComponentSize().clickable(role = Role.Button, onClickLabel = "Open artist") { onArtist(artistId) }
+            } else {
+                Modifier
+            }
+            Text(track.artist, color = SitaraColors.StageSecondary, style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = link)
         }
         if (onQueue != null) GlassIconButton(SitaraIcons.Queue, "Open queue", onQueue)
     }
@@ -201,5 +210,14 @@ private fun LyricsPanel(state: PlayerUiState, actions: PlayerActions) {
                 PlayerControls(state, actions, Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
             }
         }
+    }
+}
+
+@Composable
+private fun RadioControl(status: RadioStatus, onStart: () -> Unit, modifier: Modifier = Modifier) {
+    when (status) {
+        RadioStatus.READY -> PillButton("Start radio", onStart, modifier, primary = false)
+        RadioStatus.LOADING -> Text("Finding similar songs…", color = SitaraColors.StageSecondary, style = MaterialTheme.typography.bodyMedium, modifier = modifier)
+        RadioStatus.UNAVAILABLE -> Text("No similar songs found for this one", color = SitaraColors.StageSecondary, style = MaterialTheme.typography.bodyMedium, modifier = modifier)
     }
 }

@@ -2,6 +2,7 @@ package app.sitara.music.feature.search
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -18,6 +19,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.itemsIndexed
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -47,6 +49,7 @@ import app.sitara.music.core.designsystem.GlassIconButton
 import app.sitara.music.core.designsystem.LargeTitle
 import app.sitara.music.core.designsystem.PillButton
 import app.sitara.music.core.designsystem.SectionHeader
+import app.sitara.music.core.designsystem.SelectionPill
 import app.sitara.music.core.designsystem.SitaraIcons
 import app.sitara.music.core.designsystem.SitaraRadius
 import app.sitara.music.core.designsystem.SitaraSpacing
@@ -55,6 +58,8 @@ import app.sitara.music.core.designsystem.byline
 import app.sitara.music.core.model.Album
 import app.sitara.music.core.model.Artist
 import app.sitara.music.core.model.Library
+import app.sitara.music.core.model.Playlist
+import app.sitara.music.core.model.SearchFilter
 import app.sitara.music.core.model.SearchResults
 import app.sitara.music.core.model.Track
 
@@ -64,6 +69,8 @@ private enum class BrowseCategory(val label: String) { ALBUMS("Albums"), ARTISTS
 fun SearchScreen(
     query: String,
     onQueryChange: (String) -> Unit,
+    filter: SearchFilter,
+    onFilterChange: (SearchFilter) -> Unit,
     state: SearchState,
     onRetry: () -> Unit,
     suggestions: List<String>,
@@ -71,6 +78,7 @@ fun SearchScreen(
     library: Library,
     onAlbum: (Album) -> Unit,
     onArtist: (Artist) -> Unit,
+    onPlaylist: (Playlist) -> Unit,
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(),
 ) {
@@ -114,13 +122,21 @@ fun SearchScreen(
                         SectionHeader(selected.label)
                     }
                 }
-                browseItems(selected, library, onPlay, onAlbum, onArtist)
+                browseItems(selected, library, onPlay, onAlbum, onArtist, onPlaylist)
             }
         } else {
+            item(key = "filters") {
+                Row(
+                    Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = SitaraSpacing.Gutter, vertical = 12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                ) {
+                    SearchFilter.entries.forEach { SelectionPill(it.label, it == filter, { onFilterChange(it) }) }
+                }
+            }
             val current = query.trim()
             when {
-                state is SearchState.Loaded && state.query == current -> searchResults(state.results, onPlay, onAlbum, onArtist)
-                state is SearchState.Failed && state.query == current -> item(key = "failed") {
+                state is SearchState.Loaded && state.query == current && state.filter == filter -> searchResults(state.results, filter, onPlay, onAlbum, onArtist, onPlaylist)
+                state is SearchState.Failed && state.query == current && state.filter == filter -> item(key = "failed") {
                     Column(Modifier.padding(SitaraSpacing.Gutter), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                         Text(
                             "Search isn’t working right now. Check your connection, then try again.",
@@ -135,9 +151,16 @@ fun SearchScreen(
     }
 }
 
-private fun LazyListScope.searchResults(results: SearchResults, onPlay: (List<Track>, Int) -> Unit, onAlbum: (Album) -> Unit, onArtist: (Artist) -> Unit) {
+private fun LazyListScope.searchResults(
+    results: SearchResults,
+    filter: SearchFilter,
+    onPlay: (List<Track>, Int) -> Unit,
+    onAlbum: (Album) -> Unit,
+    onArtist: (Artist) -> Unit,
+    onPlaylist: (Playlist) -> Unit,
+) {
     if (results.isEmpty) {
-        item(key = "no-results") { SearchMessage("Nothing found for “${results.query}”. Try a song or an artist.") }
+        item(key = "no-results") { SearchMessage("No ${filter.label.lowercase()} found for “${results.query}”.") }
         return
     }
     if (results.tracks.isNotEmpty()) {
@@ -158,6 +181,12 @@ private fun LazyListScope.searchResults(results: SearchResults, onPlay: (List<Tr
             CollectionRow(artist.name, "Artist", artist.artwork, { onArtist(artist) }, Modifier.padding(horizontal = SitaraSpacing.Gutter))
         }
     }
+    if (results.playlists.isNotEmpty()) {
+        item(key = "playlists-title") { SectionHeader("Playlists", modifier = Modifier.padding(top = 20.dp)) }
+        items(results.playlists, key = { "playlist-${it.id}" }) { playlist ->
+            CollectionRow(playlist.title, playlist.curator.ifEmpty { "Playlist" }, playlist.artwork, { onPlaylist(playlist) }, Modifier.padding(horizontal = SitaraSpacing.Gutter))
+        }
+    }
 }
 
 private fun categoryCount(category: BrowseCategory, library: Library): Int = when (category) {
@@ -167,7 +196,14 @@ private fun categoryCount(category: BrowseCategory, library: Library): Int = whe
     BrowseCategory.LIKED -> library.likedTracks.size
 }
 
-private fun LazyListScope.browseItems(category: BrowseCategory, library: Library, onPlay: (List<Track>, Int) -> Unit, onAlbum: (Album) -> Unit, onArtist: (Artist) -> Unit) {
+private fun LazyListScope.browseItems(
+    category: BrowseCategory,
+    library: Library,
+    onPlay: (List<Track>, Int) -> Unit,
+    onAlbum: (Album) -> Unit,
+    onArtist: (Artist) -> Unit,
+    onPlaylist: (Playlist) -> Unit,
+) {
     if (categoryCount(category, library) == 0) {
         item { SearchMessage("No ${category.label.lowercase()} in your library yet") }
     }
@@ -179,11 +215,7 @@ private fun LazyListScope.browseItems(category: BrowseCategory, library: Library
             CollectionRow(artist.name, "Artist", artist.artwork, { onArtist(artist) }, Modifier.padding(horizontal = SitaraSpacing.Gutter))
         }
         BrowseCategory.PLAYLISTS -> items(library.playlists, key = { "playlist-${it.id}" }) { playlist ->
-            CollectionRow(
-                playlist.title, "${playlist.tracks.size} songs", playlist.artwork,
-                { onPlay(playlist.tracks, 0) }, Modifier.padding(horizontal = SitaraSpacing.Gutter),
-                enabled = playlist.tracks.isNotEmpty(),
-            )
+            CollectionRow(playlist.title, "${playlist.tracks.size} songs", playlist.artwork, { onPlaylist(playlist) }, Modifier.padding(horizontal = SitaraSpacing.Gutter))
         }
         BrowseCategory.LIKED -> itemsIndexed(library.likedTracks, key = { _, track -> "liked-${track.id}" }) { index, track ->
             TrackRow(track, { onPlay(library.likedTracks, index) })

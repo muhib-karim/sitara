@@ -4,6 +4,7 @@ import androidx.activity.OnBackPressedDispatcher
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsSelected
@@ -18,6 +19,7 @@ import androidx.compose.ui.test.swipe
 import androidx.compose.ui.test.swipeLeft
 import androidx.compose.ui.test.swipeUp
 import app.sitara.music.core.model.DarkMode
+import app.sitara.music.core.model.SearchFilter
 import app.sitara.music.core.model.SitaraSettings
 import app.sitara.music.feature.player.PlayerActions
 import app.sitara.music.feature.player.PlayerUiState
@@ -53,12 +55,16 @@ class PlayerInteractionTest {
                 home = home,
                 library = library,
                 query = "",
+                searchFilter = SearchFilter.SONGS,
                 search = SearchState.Idle,
                 player = PlayerUiState(track = track, durationMs = durationMs, lyrics = lyrics, positionMs = 15_300),
                 actions = actions,
+                details = SampleDetailPages(source),
                 onQueryChange = {},
+                onSearchFilterChange = {},
                 onRetrySearch = {},
                 onPlay = { _, _ -> },
+                onShuffle = {},
                 onSettingsChange = {},
                 playerExpanded = expanded,
                 playerPage = page,
@@ -111,6 +117,24 @@ class PlayerInteractionTest {
         compose.onNodeWithContentDescription("Open player").assertIsDisplayed()
         compose.onNodeWithText("Home").assertIsSelected()
         compose.runOnIdle { assertFalse(backDispatcher.hasEnabledCallbacks()) }
+    }
+
+    @Test
+    fun artistNameInNowPlayingCollapsesThePlayerAndOpensTheArtist() {
+        render(expanded = true)
+        compose.onNode(SemanticsMatcher("opens the artist") { it.config.getOrNull(SemanticsActions.OnClick)?.label == "Open artist" }).performClick()
+        compose.onNodeWithContentDescription("Collapse player").assertDoesNotExist()
+        compose.onNodeWithText("Top songs").assertIsDisplayed()
+    }
+
+    @Test
+    fun upNextOffersToStartRadio() {
+        var radios = 0
+        render(expanded = true, page = 2, actions = object : PlayerActions by PlayerActions.None {
+            override fun startRadio() { radios++ }
+        })
+        compose.onNodeWithText("Start radio").performClick()
+        assertEquals(1, radios)
     }
 
     @Test

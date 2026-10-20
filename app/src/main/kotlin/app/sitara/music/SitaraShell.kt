@@ -30,6 +30,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
 import androidx.compose.runtime.setValue
@@ -49,13 +50,12 @@ import app.sitara.music.core.designsystem.SitaraTheme
 import app.sitara.music.core.model.Album
 import app.sitara.music.core.model.Artist
 import app.sitara.music.core.model.Library
-import app.sitara.music.core.model.SearchResults
+import app.sitara.music.core.model.SearchFilter
 import app.sitara.music.core.model.Shelf
 import app.sitara.music.core.model.SitaraSettings
 import app.sitara.music.core.model.Track
 import app.sitara.music.feature.home.HomeScreen
-import app.sitara.music.feature.library.AlbumScreen
-import app.sitara.music.feature.library.ArtistScreen
+import app.sitara.music.feature.library.DetailScreen
 import app.sitara.music.feature.library.LibraryScreen
 import app.sitara.music.feature.player.PlayerActions
 import app.sitara.music.feature.player.PlayerSheet
@@ -82,38 +82,48 @@ fun SitaraRoot(vm: AppViewModel, systemReducedMotion: Boolean) {
     val home by vm.home.collectAsState()
     val library by vm.library.collectAsState()
     val query by vm.query.collectAsState()
+    val searchFilter by vm.searchFilter.collectAsState()
     val search by vm.search.collectAsState()
     SitaraShell(
         settings = settings.let { if (systemReducedMotion) it.copy(reducedMotion = true) else it },
         home = home,
         library = library,
         query = query,
+        searchFilter = searchFilter,
         search = search,
         player = player,
         actions = vm,
+        details = vm,
         onQueryChange = { vm.query.value = it },
+        onSearchFilterChange = { vm.searchFilter.value = it },
         onRetrySearch = vm::retrySearch,
         onPlay = vm::play,
+        onShuffle = vm::shuffle,
         onSettingsChange = vm::updateSettings,
         tabRequests = vm.requestedTabs,
     )
 }
 
-/** App chrome and saveable browse navigation; playback/data are supplied by the caller. */
+/** App chrome and saveable browse navigation (tabs plus a back stack of detail pages); playback/data are supplied by the caller. */
 @Composable
 fun SitaraShell(
     settings: SitaraSettings,
     home: List<Shelf>,
     library: Library,
     query: String,
+    searchFilter: SearchFilter,
     search: SearchState,
     player: PlayerUiState,
     actions: PlayerActions,
+    details: DetailPages,
     onQueryChange: (String) -> Unit,
+    onSearchFilterChange: (SearchFilter) -> Unit,
     onRetrySearch: () -> Unit,
     onPlay: (List<Track>, Int) -> Unit,
+    onShuffle: (List<Track>) -> Unit,
     onSettingsChange: (SitaraSettings) -> Unit,
     initialTab: Tab = Tab.HOME,
+    initialDetail: DetailRoute? = null,
     initialSettingsOpen: Boolean = false,
     playerExpanded: Boolean = false,
     playerPage: Int = 0,
@@ -121,28 +131,15 @@ fun SitaraShell(
     tabRequests: Flow<Tab> = emptyFlow(),
 ) {
     var tab by rememberSaveable { mutableStateOf(if (initialSettingsOpen) Tab.SETTINGS else initialTab) }
-    var albumId by rememberSaveable { mutableStateOf<String?>(null) }
-    var artistId by rememberSaveable { mutableStateOf<String?>(null) }
+    var detailStack by rememberSaveable(stateSaver = DetailStackSaver) { mutableStateOf(listOfNotNull(initialDetail)) }
     val browseState = rememberSaveableStateHolder()
-    val results = (search as? SearchState.Loaded)?.results ?: SearchResults.empty()
-    val albums = remember(home, library.albums, results.albums) {
-        (library.albums + home.flatMap { it.albums } + results.albums).distinctBy { it.id }
-    }
-    val artists = remember(library.artists, results.artists) { (library.artists + results.artists).distinctBy { it.id } }
-    val tracks = remember(home, library, results, albums) {
-        (albums.flatMap { it.tracks } + library.likedTracks + library.playlists.flatMap { it.tracks } +
-            home.flatMap { it.tracks + it.playlists.flatMap { playlist -> playlist.tracks } } + results.tracks).distinctBy { it.id }
-    }
-    val album = albums.find { it.id == albumId }
-    val artist = artists.find { it.id == artistId }
-    val closeDetail: () -> Unit = { albumId = null; artistId = null }
-    val openAlbum: (Album) -> Unit = { albumId = it.id; artistId = null }
-    val openArtist: (Artist) -> Unit = { artistId = it.id; albumId = null }
+    val open: (DetailRoute) -> Unit = { detailStack = detailStack + it }
+    val closeDetails: () -> Unit = { detailStack = emptyList() }
     LaunchedEffect(tabRequests) {
-        tabRequests.collect { closeDetail(); tab = it }
+        tabRequests.collect { closeDetails(); tab = it }
     }
-    BackHandler(enabled = albumId != null || artistId != null || tab == Tab.SETTINGS) {
-        if (albumId != null || artistId != null) closeDetail() else tab = Tab.HOME
+    BackHandler(enabled = detailStack.isNotEmpty() || tab == Tab.SETTINGS) {
+        if (detailStack.isNotEmpty()) detailStack = detailStack.dropLast(1) else tab = Tab.HOME
     }
     SitaraTheme(settings.themeMode, settings.darkMode, settings.reducedMotion) {
         val haze = rememberHazeState()
@@ -158,23 +155,33 @@ fun SitaraShell(
         )
         Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
             Box(Modifier.fillMaxSize().hazeSource(haze)) {
-                val route = when {
-                    album != null -> "album-${album.id}"
-                    artist != null -> "artist-${artist.id}"
-                    else -> "tab-${tab.name}"
-                }
-                browseState.SaveableStateProvider(route) {
-                    when {
-                        album != null -> AlbumScreen(album, settings, onPlay, closeDetail, contentPadding)
-                        artist != null -> ArtistScreen(artist, tracks.filter { it.artist == artist.name }, settings, onPlay, closeDetail, contentPadding)
-                        else -> when (tab) {
+                val route = detailStack.lastOrNull()
+                val openAlbum: (Album) -> Unit = { open(DetailRoute.Album(it.id)) }
+                val openArtist: (Artist) -> Unit = { open(DetailRoute.Artist(it.id)) }
+                // The stack depth keeps two visits to the same page apart, each with its own scroll position.
+                browseState.SaveableStateProvider(route?.let { "${detailStack.size}-${it.encode()}" } ?: "tab-${tab.name}") {
+                    if (route != null) {
+                        val state by remember(details, route) { details.state(route) }.collectAsState()
+                        DetailScreen(
+                            state, settings,
+                            onBack = { detailStack = detailStack.dropLast(1) },
+                            onRetry = { details.retry(route) },
+                            onPlay = onPlay,
+                            onShuffle = onShuffle,
+                            onArtist = { open(DetailRoute.Artist(it)) },
+                            onAlbum = { open(DetailRoute.Album(it)) },
+                            contentPadding = contentPadding,
+                        )
+                    } else {
+                        when (tab) {
                             Tab.HOME -> HomeScreen(
                                 greetingText, home, onPlay, openAlbum, contentPadding = contentPadding,
-                                note = "These shelves are built-in sample music. Search finds and plays real songs.",
+                                note = "These shelves are built-in sample music. Search finds real songs, albums, artists and playlists.",
                             )
                             Tab.SEARCH -> SearchScreen(
-                                query, onQueryChange, search, onRetrySearch, listOf("Lo-fi beats", "Jazz piano", "Classical focus"),
-                                onPlay, library, openAlbum, openArtist, contentPadding = contentPadding,
+                                query, onQueryChange, searchFilter, onSearchFilterChange, search, onRetrySearch,
+                                listOf("Lo-fi beats", "Jazz piano", "Classical focus"), onPlay, library,
+                                openAlbum, openArtist, { open(DetailRoute.Playlist(it.id)) }, contentPadding = contentPadding,
                             )
                             Tab.LIBRARY -> LibraryScreen(
                                 library, onPlay, openAlbum, openArtist, contentPadding = contentPadding,
@@ -194,12 +201,18 @@ fun SitaraShell(
                 initiallyExpanded = playerExpanded,
                 initialPage = playerPage,
                 haze = haze,
-                navigation = { FloatingNav(tab, onSelect = { closeDetail(); tab = it }) },
+                navigation = { FloatingNav(tab, onSelect = { closeDetails(); tab = it }) },
                 onDockHeightChanged = { measuredDockHeight = it },
+                onArtist = { open(DetailRoute.Artist(it)) },
             )
         }
     }
 }
+
+private val DetailStackSaver = listSaver<List<DetailRoute>, String>(
+    save = { stack -> stack.map { it.encode() } },
+    restore = { saved -> saved.mapNotNull(::decodeDetailRoute) },
+)
 
 @Composable
 private fun FloatingNav(selected: Tab, onSelect: (Tab) -> Unit) {
