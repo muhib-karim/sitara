@@ -28,6 +28,10 @@ GPL-3.0-or-later is compatible with Sitara's GPL-3.0 (ADR 0002).
 - An upstream break is fixed by bumping one version in `gradle/libs.versions.toml`, or by adding an InnerTube resolver
   behind the same `StreamResolver` interface.
 - The extractor uses Java 9+ APIs, so the app enables core library desugaring, and Rhino needs R8 keep rules.
-- Song search items carry no album, so `Track.album` is empty for search results.
+- Song search items carry no album, so `Track.album` is empty for search results. Album items and album playlists
+  carry no release year, so `Album.year` is null for YouTube albums.
+- Browse uses the same extractor (slice 2): an artist is a channel (`ChannelInfo`, its Releases tab for albums and
+  singles, and a songs search filtered to that channel for top songs), albums and playlists are `PlaylistInfo` paged
+  up to 500 items, and radio is the watch page's related songs.
 - Thumbnail URLs are mapped (upgraded to 544 px) but not drawn yet; covers stay generated gradients until an image
   loader is added.

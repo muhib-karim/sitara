@@ -2,7 +2,7 @@
 
 This document describes how Sitara is put together: the module map, how data moves from a music source to the screen, how playback is wired to Media3, how the stream source stays reliable, and how the code is tested and shipped.
 
-> Status: Phase B, slice 1. Search and streams are live (YouTube Music through NewPipeExtractor); home, library and lyrics are samples. Modules marked *planned* do not exist yet.
+> Status: Phase B, slice 2. Search, artist/album/playlist pages, radio and streams are live (YouTube Music through NewPipeExtractor); home, library and lyrics are samples. Modules marked *planned* do not exist yet.
 
 ## Goals
 
@@ -15,21 +15,21 @@ This document describes how Sitara is put together: the module map, how data mov
 
 | Module | Kind | Responsibility |
 | --- | --- | --- |
-| `:app` | Android application | Activity, navigation host, app shell (glass tab bar, mini player dock), dependency wiring |
+| `:app` | Android application | Activity, app shell (glass tab bar, mini player dock, detail back stack of typed `DetailRoute`s), dependency wiring |
 | `:core:model` | Pure Kotlin | Domain types: `Track`, `Album`, `Artist`, `Playlist`, `Queue`, `LyricsLine`, `LyricsWord` |
 | `:core:common` | Pure Kotlin | Result types, coroutine dispatchers, time and formatting helpers |
 | `:core:data` | Android library | Repositories over `MusicSource`, DataStore-backed settings |
 | `:core:player` | Android library | `PlaybackService` (Media3 session + ExoPlayer), `PlaybackEngine`, `PlayerController` facade, queue engine, controller/stream policies, crossfade curves, LUFS gain, sleep timer |
 | `:core:designsystem` | Android library | Theme, colour roles, artwork palette mapping, `SitaraMotion`, glass surfaces, typography, icons, shared components |
-| `:source:api` | Pure Kotlin | Contracts: `MusicSource`, `StreamResolver`, `LyricsProvider`, `HealthCheck` |
+| `:source:api` | Pure Kotlin | Contracts: `SearchSource`, `MusicSource`, `BrowseSource` (artist, album, playlist pages), `RadioSource`, `StreamResolver`, `LyricsProvider`, `HealthCheck` |
 | `:source:fake` | Pure Kotlin | Deterministic sample catalogue with generated gradient covers, used by the app in Phase A and by every test |
 | `:source:lyrics` | Pure Kotlin | LRC and enhanced (word-timed) LRC parser; lyric providers plug in here |
 | `:feature:home` | Android library | Home feed: shelves, quick picks |
 | `:feature:search` | Android library | Search field, suggestions, results; debounced search states with loading, error and retry |
-| `:feature:library` | Android library | Playlists, albums, artists, liked songs |
+| `:feature:library` | Android library | Library grid/list, and the artist, album and playlist detail pages with loading, error and empty states |
 | `:feature:player` | Android library | Mini player, full player sheet, scrubber, Up next / Lyrics pager, karaoke lyrics |
 | `:feature:settings` | Android library | Theme mode, reduced motion, playback preferences |
-| `:source:youtube` | Pure Kotlin (JVM) | YouTube Music song search, YouTube link parsing and audio stream resolution on NewPipeExtractor, with an OkHttp downloader ([ADR 0004](adr/0004-youtube-source-newpipeextractor.md)); browse is planned |
+| `:source:youtube` | Pure Kotlin (JVM) | YouTube Music search (songs, albums, artists, playlists), artist/album/playlist pages, radio from related songs, YouTube link parsing and audio stream resolution on NewPipeExtractor, with an OkHttp downloader ([ADR 0004](adr/0004-youtube-source-newpipeextractor.md)) |
 | `:source:local` | *planned, Phase B* | MediaStore and folder-based local files |
 
 ## Dependency graph
@@ -81,7 +81,7 @@ graph TD
 Rules enforced in review:
 
 - `:core:model`, `:core:common`, `:source:api`, `:source:fake`, `:source:lyrics` and `:source:youtube` stay free of Android dependencies.
-- Only `:app` chooses concrete sources. Search uses `YouTubeMusicSource`; home, library and lyrics use the fake source; streams go through `FallbackStreamResolver(sample, YouTube)`.
+- Only `:app` chooses concrete sources. Search uses `YouTubeMusicSource`; detail pages and radio ask the sample source first (it answers null for ids it does not own), then YouTube; home, library and lyrics use the fake source; streams go through `FallbackStreamResolver(sample, YouTube)`.
 - UI modules depend on `:core:designsystem` for every colour, shape, spring and duration. Hard-coded values in feature code are a review comment.
 
 ## Data flow

@@ -6,6 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+Phase B, slice 2: real detail pages.
+
+### Added
+
+- Artist pages from YouTube Music: name, top songs (the artist's own songs, as YouTube Music song search ranks them) and an albums-and-singles shelf from the channel's Releases tab.
+- Album and playlist pages from YouTube Music, with the full track list and durations; long playlists load up to 500 songs.
+- Search filters: Songs, Albums, Artists and Playlists. Each result opens its page.
+- Play all and Shuffle on albums, playlists and artist top songs; tapping a song plays from that song.
+- Tap an album's artist, or the artist in Now Playing, to open the artist.
+- Start radio on the Up next page, and a queue about to run out carries on with related songs (songs only, nothing already queued).
+- Detail pages show loading, error with "Try again", and empty states; Back returns page by page, and the pages survive the app being closed in the background.
+
+### Changed
+
+- Sample albums, artists and playlists open the same pages as real ones.
+- YouTube Music gives no release year, so real albums show "Album" without one.
+
 ## [0.2.0] - 2026-10-20
 
 Phase B, first release: real music from YouTube Music.

@@ -14,11 +14,11 @@ Goal: an original app with its own design and logo (not a reskin), shipped as a 
 - fix1 source review complete: N1/6 completion synchronization, N2 atomic lookup and 5 resolver cancellation fixes retained with regression coverage; interrupt-status assertion added. Item 16 is superseded by the current sheet, covered by Back/drag and screenshot cases. Review copy and REPORT_fix1.md ready. All execution and acceptance remain pending in CI.
 - v0.1.0 RELEASED.
 - b1 (Phase B slice 1, real music) DONE on main: live YouTube Music song search + playback via :source:youtube (NewPipeExtractor v0.26.5); search states with retry; home, library, lyrics and covers still sample and labelled. Report: docs/reports/REPORT_b1.md.
-- b2 (Phase B slice 2, real detail pages) IN PROGRESS, target v0.3.0 (owner tags): source side pushed and tested (artist pages, album/playlist pages with paging, Songs/Albums/Artists/Playlists search filters, radio selection, engine shuffle/append). Next: app routes, pages, chips, Play all/Shuffle/Start radio wiring, screenshots, docs, REPORT_b2.md.
-- b1a DONE on main: YouTube/YouTube Music/youtu.be links (paste into Search, VIEW + SEND intents, autoplay), live smoke test job (search finds x7kGuhlXmFI; player request bot-checked on CI runners). CHANGELOG [0.2.0] + versionName 0.2.0 ready for the owner to tag.
+- b2 (Phase B slice 2, real detail pages) on main, target v0.3.0 (owner tags): artist/album/playlist pages from YouTube Music, Songs/Albums/Artists/Playlists search chips, Play all/Shuffle/row taps, Start radio + auto-radio, typed DetailRoute back stack. Report: docs/reports/REPORT_b2.md.
+- b1a DONE on main: YouTube/YouTube Music/youtu.be links (paste into Search, VIEW + SEND intents, autoplay), live smoke test job (search finds x7kGuhlXmFI; player request bot-checked on CI runners). Tagged and released as v0.2.0.
 
 ## Next step
-Owner, before tagging v0.2.0: release-build check (R8 rules untested) and on-device acceptance: search "Niye Jabe Ki Xefer", paste and share https://music.youtube.com/watch?v=x7kGuhlXmFI; all must play. Next slice: bot-check message + PoToken provider, image loader for artwork, real home feed and album/artist browse, LRCLIB lyrics.
+Owner, before tagging v0.3.0: release-build check and on-device pass of the b2 checklist in REPORT_b2.md (artist search, album shelf, play all/shuffle/row, Now Playing artist link, radio, offline retry). Next slice: image loader for artwork, bot-check message + PoToken provider, real home feed, LRCLIB lyrics.
 
 ## Session log
 2026-10-17 22:21Z Codex / GPT-6 Astra: recorded original design and ui1 plan; next foundations and tests.
@@ -35,3 +35,4 @@ Owner, before tagging v0.2.0: release-build check (R8 rules untested) and on-dev
 2026-10-20 07:37Z Claude Code / Opus 5.5: b1 shipped (6 commits b29996d..e144854 + docs), CI green through 39387647017 (docs + report); next device + release-build check, then artwork/browse/lyrics.
 2026-10-20 07:45Z Claude Code / Opus 5.5: resumed after memory guard; nothing lost, recorded final CI run in report; b1 complete.
 2026-10-20 08:08Z Claude Code / Opus 5.5: b1a shipped (links, intents, smoke job, 0.2.0 docs); CI green; next owner device + release check, then tag.
+2026-10-20 08:50Z Claude Code / Opus 5.5: b2 shipped (1d57d6b..bb5578a + docs): detail pages, search filters, play all/shuffle, radio; CI, Device screens, Secret scan green; next owner device check and v0.3.0 tag.

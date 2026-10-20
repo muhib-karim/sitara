@@ -27,9 +27,10 @@
 ---
 
 > [!NOTE]
-> Sitara is an early preview, now in **Phase B**. In `0.2.0` (on `main`; the release follows once it is tagged),
-> **Search finds real songs on YouTube Music and plays them** through NewPipeExtractor, and YouTube Music, YouTube and
-> youtu.be links open in Sitara, whether pasted into Search or shared from another app. Home, Library and lyrics still
+> Sitara is an early preview, now in **Phase B**. Since `0.2.0`, **Search finds real songs on YouTube Music and plays
+> them** through NewPipeExtractor, and YouTube Music, YouTube and youtu.be links open in Sitara, whether pasted into
+> Search or shared from another app. On `main` (next release `0.3.0`), Search also finds albums, artists and
+> playlists, each with its own page, and Up next can start a radio of related songs. Home, Library and lyrics still
 > use the built-in sample catalogue, and the app labels them as samples. Covers are generated gradients for now.
 > Releases are on the [Releases](https://github.com/muhib-karim/sitara/releases) page.
 
@@ -77,7 +78,9 @@ Planned, not built yet: *Sitara Sync* (end-to-end encrypted sync through storage
 | **Source** | Live YouTube Music song search with loading, empty, error and retry states (NewPipeExtractor) | 🧪 |
 | | Playback of search results: best audio-only stream (opus or m4a), with the sample resolver as fallback | 🧪 |
 | | Links: paste a YouTube Music, YouTube or youtu.be link into Search, or share it to Sitara, to play that song. Tapping a link opens Sitara once it is allowed under Android's "Open by default" settings | 🧪 |
-| | Real home feed and browse, album and artist pages, artwork images, health checks | Phase B |
+| | Search filters (songs, albums, artists, playlists) and artist, album and playlist pages with Play all and Shuffle | 🧪 |
+| | Radio: Start radio from Up next, and a queue about to run out continues with related songs | 🧪 |
+| | Real home feed, artwork images, health checks | Phase B |
 | | Downloads, local files, synced lyrics, history, playlists, import, backup and restore | Phase B |
 | | Gapless, crossfade 0 to 12 s, skip silence, speed and pitch, equaliser | Phase B |
 | **Accounts** | Account library sync, scrobbling, widgets, Android Auto, Cast | Phase C |
