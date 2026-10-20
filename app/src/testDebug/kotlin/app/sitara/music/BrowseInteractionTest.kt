@@ -448,10 +448,9 @@ class BrowseInteractionTest {
         compose.onNodeWithTag("settings-content").performScrollToIndex(3)
         compose.onNodeWithText("Reduced motion").performClick()
         assertEquals(false, updated?.reducedMotion)
-        listOf("Loudness normalisation", "Crossfade", "Coming in a future update").forEach { label ->
-            assertThrows(AssertionError::class.java) {
-                compose.onNodeWithTag("settings-content").performScrollToNode(hasText(label))
-            }
+        // Normalisation and crossfade work now (soundSettingsSetNormalisationAndCrossfade); placeholders stay out.
+        assertThrows(AssertionError::class.java) {
+            compose.onNodeWithTag("settings-content").performScrollToNode(hasText("Coming in a future update", substring = true))
         }
     }
 
