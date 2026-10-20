@@ -1,6 +1,7 @@
 package app.sitara.music.core.designsystem
 
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -9,6 +10,8 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -42,18 +45,24 @@ fun LargeTitle(title: String, modifier: Modifier = Modifier) {
     )
 }
 
-/** A 64 dp-tall track row: cover, title, artist. The whole row is one 48 dp+ target. */
+/**
+ * A 64 dp-tall track row: cover, title, artist. The whole row is one 48 dp+ target. With [onMore], a long press and,
+ * when [moreButton] is on, a trailing button open the song's actions.
+ */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun TrackRow(
     track: Track,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(horizontal = 20.dp, vertical = 8.dp),
+    onMore: (() -> Unit)? = null,
+    moreButton: Boolean = true,
     trailing: (@Composable () -> Unit)? = null,
 ) {
     Row(
         modifier
-            .clickable(role = Role.Button, onClick = onClick)
+            .combinedClickable(role = Role.Button, onClick = onClick, onLongClickLabel = onMore?.let { "More options" }, onLongClick = onMore)
             .semantics(mergeDescendants = true) { contentDescription = "${track.title} by ${track.artist}" }
             .padding(contentPadding),
         verticalAlignment = Alignment.CenterVertically,
@@ -66,5 +75,10 @@ fun TrackRow(
             Text(track.artist, style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         trailing?.invoke()
+        if (onMore != null && moreButton) {
+            IconButton(onClick = onMore) {
+                Icon(SitaraIcons.More, "More options for ${track.title}", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+        }
     }
 }

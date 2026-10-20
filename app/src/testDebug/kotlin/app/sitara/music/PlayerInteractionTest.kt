@@ -22,6 +22,8 @@ import androidx.compose.ui.test.swipeUp
 import app.sitara.music.core.model.DarkMode
 import app.sitara.music.core.model.SearchFilter
 import app.sitara.music.core.model.SitaraSettings
+import app.sitara.music.core.model.Track
+import app.sitara.music.feature.library.LibraryState
 import app.sitara.music.feature.player.PlayerActions
 import app.sitara.music.feature.player.PlayerUiState
 import app.sitara.music.feature.search.SearchState
@@ -43,7 +45,13 @@ class PlayerInteractionTest {
     @get:Rule val compose = createComposeRule()
     private lateinit var backDispatcher: OnBackPressedDispatcher
 
-    private fun render(expanded: Boolean = false, page: Int = 0, actions: PlayerActions = PlayerActions.None, durationMs: Long = 100_000) {
+    private fun render(
+        expanded: Boolean = false,
+        page: Int = 0,
+        actions: PlayerActions = PlayerActions.None,
+        durationMs: Long = 100_000,
+        upNext: List<Track> = emptyList(),
+    ) {
         val source = FakeMusicSource()
         val track = SampleCatalog.tracks.first()
         val home = runBlocking { source.home() }
@@ -54,11 +62,12 @@ class PlayerInteractionTest {
             SitaraShell(
                 settings = SitaraSettings(darkMode = DarkMode.DARK, reducedMotion = true),
                 home = home,
-                library = library,
+                sampleLibrary = library,
+                library = LibraryState.Loading,
                 query = "",
                 searchFilter = SearchFilter.SONGS,
                 search = SearchState.Idle,
-                player = PlayerUiState(track = track, durationMs = durationMs, lyrics = lyrics, positionMs = 15_300),
+                player = PlayerUiState(track = track, durationMs = durationMs, lyrics = lyrics, positionMs = 15_300, upNext = upNext),
                 actions = actions,
                 details = SampleDetailPages(source),
                 onQueryChange = {},
@@ -188,5 +197,30 @@ class PlayerInteractionTest {
         assertEquals(line.startMs, seek)
         compose.onNodeWithContentDescription("Play").performClick()
         assertEquals(1, plays)
+    }
+
+    @Test
+    fun nowPlayingLikesTheSongAndOpensThePlaylistPicker() {
+        var likes = 0
+        render(expanded = true, actions = object : PlayerActions by PlayerActions.None {
+            override fun toggleLike() { likes++ }
+        })
+        compose.onNodeWithContentDescription("Like").performClick()
+        assertEquals(1, likes)
+        compose.onNodeWithContentDescription("Add to playlist").performClick()
+        compose.onNodeWithText("No playlists yet. Name one above and this song starts it.").assertIsDisplayed()
+    }
+
+    @Test
+    fun upNextRemovesAndReordersSongs() {
+        val calls = mutableListOf<String>()
+        val upNext = SampleCatalog.tracks.drop(1).take(3)
+        render(expanded = true, page = 2, upNext = upNext, actions = object : PlayerActions by PlayerActions.None {
+            override fun removeUpNext(index: Int) { calls += "remove $index" }
+            override fun moveUpNext(from: Int, to: Int) { calls += "move $from $to" }
+        })
+        compose.onNodeWithContentDescription("Remove ${upNext[1].title} from the queue").performClick()
+        compose.onNodeWithContentDescription("${upNext[0].title} by ${upNext[0].artist}").performCustomAction("Move down")
+        assertEquals(listOf("remove 1", "move 0 1"), calls)
     }
 }

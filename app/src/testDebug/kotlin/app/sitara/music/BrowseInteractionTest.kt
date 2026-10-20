@@ -13,28 +13,39 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isDialog
 import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.junit4.StateRestorationTester
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithText
+import androidx.compose.ui.test.onFirst
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.performScrollToNode
+import androidx.compose.ui.test.performTextInput
+import androidx.compose.ui.test.performTextReplacement
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeLeft
 import androidx.compose.ui.unit.Density
+import app.sitara.music.core.model.Album
 import app.sitara.music.core.model.DarkMode
-import app.sitara.music.core.model.Library
+import app.sitara.music.core.model.PlaylistSummary
 import app.sitara.music.core.model.SearchFilter
 import app.sitara.music.core.model.SearchResults
 import app.sitara.music.core.model.SitaraSettings
 import app.sitara.music.core.model.ThemeMode
 import app.sitara.music.core.model.Track
 import app.sitara.music.feature.library.DetailState
+import app.sitara.music.feature.library.LibraryActions
+import app.sitara.music.feature.library.LibraryState
+import app.sitara.music.feature.library.SavedIds
+import app.sitara.music.feature.library.SavedLibrary
 import app.sitara.music.feature.player.PlayerActions
 import app.sitara.music.feature.player.PlayerUiState
 import app.sitara.music.feature.search.SearchState
@@ -66,7 +77,10 @@ class BrowseInteractionTest {
         onPlay: (List<Track>, Int) -> Unit = { _, _ -> },
         onQuery: (String) -> Unit = {},
         onSettings: (SitaraSettings) -> Unit = {},
-        libraryState: Library = library,
+        saved: LibraryState = LibraryState.Ready(sampleSavedLibrary(library)),
+        savedIds: SavedIds = SavedIds(),
+        libraryActions: LibraryActions = LibraryActions.None,
+        actions: PlayerActions = PlayerActions.None,
         initialQuery: String = "",
         search: SearchState = SearchState.Idle,
         onRetrySearch: () -> Unit = {},
@@ -82,67 +96,122 @@ class BrowseInteractionTest {
             var filter by remember { mutableStateOf(SearchFilter.SONGS) }
             CompositionLocalProvider(LocalDensity provides Density(LocalDensity.current.density, fontScale)) {
                 SitaraShell(
-                    settings, home, libraryState, query, filter, search,
-                    PlayerUiState(track = SampleCatalog.tracks.first()), PlayerActions.None, details,
+                    settings, home, library, saved, query, filter, search,
+                    PlayerUiState(track = SampleCatalog.tracks.first()), actions, details,
                     onQueryChange = { query = it; onQuery(it) }, onSearchFilterChange = { filter = it; onFilter(it) },
                     onRetrySearch = onRetrySearch, onPlay = onPlay, onShuffle = onShuffle,
                     onSettingsChange = { settings = it; onSettings(it) }, initialTab = tab, initialDetail = initialDetail,
+                    savedIds = savedIds, playlists = (saved as? LibraryState.Ready)?.library?.playlists.orEmpty(), libraryActions = libraryActions,
                 )
             }
         }
         return restoration
     }
 
-    @Test fun libraryLayoutSurvivesFilterChangesAndRestoration() {
-        val restoration = render(Tab.LIBRARY)
-        compose.onNodeWithTag("library-grid").assertExists()
-        compose.onNodeWithContentDescription("Show list").performClick()
-        compose.onNodeWithTag("library-list").assertExists()
-        compose.onNodeWithText("Albums").performClick()
-        restoration.emulateSavedInstanceStateRestore()
-        compose.onNodeWithTag("library-list").assertExists()
-        compose.onNodeWithText("Albums").assertIsSelected()
-        compose.onNode(hasText("Home") and hasAnyAncestor(hasTestTag("playback-dock"))).performClick()
-        compose.onNode(hasText("Library") and hasAnyAncestor(hasTestTag("playback-dock"))).performClick()
-        compose.onNodeWithTag("library-list").assertExists()
-        compose.onNodeWithText("Albums").assertIsSelected()
-        compose.onNodeWithContentDescription("Show grid").performClick()
-        compose.onNodeWithTag("library-grid").assertExists()
-    }
-
-    @Test fun likedTileOpensSongsAndPlaysTheChosenTrack() {
-        var queue = emptyList<Track>()
-        var index = -1
-        render(Tab.LIBRARY, onPlay = { tracks, selected -> queue = tracks; index = selected })
-        compose.onNodeWithContentDescription("Open liked songs").performClick()
-        compose.onNodeWithContentDescription("Show list").performClick()
-        val track = library.likedTracks.first()
-        compose.onNodeWithContentDescription("${track.title} by ${track.artist}").performClick()
-        assertEquals(library.likedTracks, queue)
-        assertEquals(0, index)
-    }
-
-    @Test fun emptyPlaylistHasNoPlaybackActionInEitherLayout() {
-        val empty = library.playlists.first().copy(tracks = emptyList())
-        render(Tab.LIBRARY, libraryState = library.copy(playlists = listOf(empty)))
-        compose.onNodeWithText(empty.title).assertIsNotEnabled()
-        compose.onNodeWithContentDescription("Show list").performClick()
-        compose.onNodeWithText(empty.title).assertIsNotEnabled()
-    }
-
-    @Test fun albumAndArtistEntriesOpenHeadersAndPlayTheirOwnTracks() {
+    @Test fun libraryOpensLikedSongsPlaylistsAndAlbums() {
         var queue = emptyList<Track>()
         render(Tab.LIBRARY, onPlay = { tracks, _ -> queue = tracks })
-        compose.onNodeWithText("Albums").performClick()
-        compose.onNodeWithText(library.albums.first().title).performClick()
-        compose.onNodeWithText("Play all").performClick()
-        assertEquals(library.albums.first().tracks, queue)
+        compose.onNodeWithText("Liked songs").performClick()
+        val liked = library.likedTracks.first()
+        compose.onNodeWithContentDescription("${liked.title} by ${liked.artist}").performClick()
+        assertEquals(library.likedTracks, queue)
         compose.onNodeWithContentDescription("Back").performClick()
-        compose.onNodeWithText("Artists").performClick()
-        compose.onNode(hasText(library.artists.first().name) and hasAnyAncestor(hasTestTag("library-grid"))).performClick()
+
+        compose.onAllNodesWithText(library.playlists.first().title).onFirst().performClick()
+        compose.onNodeWithText("Your playlist").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Back").performClick()
+
+        val album = library.albums.first()
+        compose.onNodeWithTag("library-content").performScrollToNode(hasText(album.title))
+        compose.onNodeWithText(album.title).performClick()
         compose.onNodeWithText("Play all").performClick()
-        assertTrue(queue.isNotEmpty())
-        assertTrue(queue.all { it.artist == library.artists.first().name })
+        assertEquals(album.tracks, queue)
+    }
+
+    @Test fun emptyLibraryExplainsHowToFillEachSection() {
+        render(Tab.LIBRARY, saved = LibraryState.Ready(SavedLibrary(emptyList(), emptyList(), emptyList(), emptyList(), emptyList())))
+        compose.onNodeWithText("0 songs").assertIsDisplayed()
+        listOf(
+            "Make a playlist to keep songs in your own order.",
+            "Songs you play show up here.",
+            "Save an album from its page to keep it here.",
+            "Save an artist from their page to keep them here.",
+        ).forEach { compose.onNodeWithTag("library-content").performScrollToNode(hasText(it)) }
+    }
+
+    @Test fun newPlaylistIsNamedBeforeItIsCreated() {
+        val created = mutableListOf<String>()
+        render(Tab.LIBRARY, libraryActions = object : LibraryActions by LibraryActions.None {
+            override fun createPlaylist(name: String, first: Track?) { created += name }
+        })
+        compose.onNodeWithText("New playlist").performClick()
+        compose.onNodeWithText("Create").assertIsNotEnabled()
+        compose.onNode(hasSetTextAction()).performTextInput("  Road trip ")
+        compose.onNodeWithText("Create").performClick()
+        assertEquals(listOf("Road trip"), created)
+    }
+
+    @Test fun songMenuQueuesAndAddsToAPlaylist() {
+        val queued = mutableListOf<Track>()
+        val added = mutableListOf<Pair<PlaylistSummary, Track>>()
+        val playlist = library.playlists.first()
+        render(
+            initialDetail = DetailRoute.Playlist(playlist.id),
+            actions = object : PlayerActions by PlayerActions.None {
+                override fun addToQueue(track: Track) { queued += track }
+            },
+            libraryActions = object : LibraryActions by LibraryActions.None {
+                override fun addToPlaylist(playlist: PlaylistSummary, track: Track) { added += playlist to track }
+            },
+        )
+        val track = playlist.tracks.first()
+        compose.onNodeWithContentDescription("More options for ${track.title}").performClick()
+        compose.onNodeWithText("Add to queue").performClick()
+        assertEquals(listOf(track), queued)
+
+        compose.onNodeWithContentDescription("More options for ${track.title}").performClick()
+        compose.onNodeWithText("Add to playlist").performClick()
+        val target = sampleSavedLibrary(library).playlists[1]
+        compose.onNode(hasText(target.name) and hasAnyAncestor(hasTestTag("playlist-picker"))).performClick()
+        assertEquals(listOf(target to track), added)
+    }
+
+    @Test fun albumSaveButtonShowsAndTogglesItsLibraryState() {
+        val album = library.albums.first()
+        val saves = mutableListOf<Boolean>()
+        render(
+            initialDetail = DetailRoute.Album(album.id),
+            savedIds = SavedIds(albums = setOf(album.id)),
+            libraryActions = object : LibraryActions by LibraryActions.None {
+                override fun setSaved(album: Album, saved: Boolean) { saves += saved }
+            },
+        )
+        compose.onNodeWithText("Saved").performClick()
+        assertEquals(listOf(false), saves)
+    }
+
+    @Test fun ownPlaylistReordersRemovesRenamesAndDeletes() {
+        val calls = mutableListOf<String>()
+        val (first, second) = library.playlists.first().tracks
+        render(
+            initialDetail = DetailRoute.UserPlaylist(1),
+            libraryActions = object : LibraryActions by LibraryActions.None {
+                override fun movePlaylistEntry(id: Long, from: Int, to: Int) { calls += "move $id $from $to" }
+                override fun removePlaylistEntry(id: Long, trackId: String) { calls += "remove $id $trackId" }
+                override fun renamePlaylist(id: Long, name: String) { calls += "rename $id $name" }
+                override fun deletePlaylist(id: Long) { calls += "delete $id" }
+            },
+        )
+        compose.onNodeWithContentDescription("${first.title} by ${first.artist}").performCustomAction("Move down")
+        compose.onNodeWithContentDescription("Remove ${second.title} from this playlist").performClick()
+        compose.onNodeWithText("Rename").performClick()
+        compose.onNode(hasSetTextAction()).performTextReplacement("Evening")
+        compose.onNodeWithText("Save").performClick()
+        compose.onNodeWithText("Delete").performClick()
+        compose.onNode(hasText("Delete") and hasAnyAncestor(isDialog())).performClick()
+
+        assertEquals(listOf("move 1 0 1", "remove 1 ${second.id}", "rename 1 Evening", "delete 1"), calls)
+        compose.onNodeWithTag("home-content").assertExists()
     }
 
     @Test fun detailBackStackSurvivesRestorationAndUnwindsInOrder() {
@@ -156,7 +225,7 @@ class BrowseInteractionTest {
         compose.onNodeWithText("Play all").assertIsDisplayed()
         compose.onNodeWithText(album.title).assertIsDisplayed()
         compose.onNodeWithContentDescription("Back").performClick()
-        compose.onNodeWithTag("library-grid").assertExists()
+        compose.onNodeWithTag("library-content").assertExists()
     }
 
     @Test fun playlistPagePlaysFromATappedRowAndShuffles() {

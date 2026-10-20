@@ -25,6 +25,9 @@ import androidx.compose.ui.unit.dp
 import app.sitara.music.core.model.Album
 import app.sitara.music.core.model.Artwork
 
+/** Cover for a collection with no songs yet: a quiet dusk gradient. */
+val EmptyCollectionArtwork = Artwork(listOf(0xFF34303F.toInt(), 0xFF17151D.toInt()))
+
 /** "Artist · 2021", or just the artist when the source gives no year. */
 val Album.byline: String get() = listOfNotNull(artist, year?.toString()).joinToString(" · ")
 

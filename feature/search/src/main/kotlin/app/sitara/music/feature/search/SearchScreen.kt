@@ -63,7 +63,7 @@ import app.sitara.music.core.model.SearchFilter
 import app.sitara.music.core.model.SearchResults
 import app.sitara.music.core.model.Track
 
-private enum class BrowseCategory(val label: String) { ALBUMS("Albums"), ARTISTS("Artists"), PLAYLISTS("Playlists"), LIKED("Liked songs") }
+private enum class BrowseCategory(val label: String) { ALBUMS("Albums"), ARTISTS("Artists"), PLAYLISTS("Playlists") }
 
 @Composable
 fun SearchScreen(
@@ -79,6 +79,7 @@ fun SearchScreen(
     onAlbum: (Album) -> Unit,
     onArtist: (Artist) -> Unit,
     onPlaylist: (Playlist) -> Unit,
+    onTrackMenu: (Track) -> Unit,
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(),
 ) {
@@ -95,6 +96,7 @@ fun SearchScreen(
                         BrowseCategory.entries.chunked(2).forEach { pair ->
                             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                                 pair.forEach { value -> CategoryTile(value, categoryCount(value, library), Modifier.weight(1f)) { category = value } }
+                                if (pair.size == 1) Spacer(Modifier.weight(1f))
                             }
                         }
                     }
@@ -122,7 +124,7 @@ fun SearchScreen(
                         SectionHeader(selected.label)
                     }
                 }
-                browseItems(selected, library, onPlay, onAlbum, onArtist, onPlaylist)
+                browseItems(selected, library, onAlbum, onArtist, onPlaylist)
             }
         } else {
             item(key = "filters") {
@@ -135,7 +137,7 @@ fun SearchScreen(
             }
             val current = query.trim()
             when {
-                state is SearchState.Loaded && state.query == current && state.filter == filter -> searchResults(state.results, filter, onPlay, onAlbum, onArtist, onPlaylist)
+                state is SearchState.Loaded && state.query == current && state.filter == filter -> searchResults(state.results, filter, onPlay, onAlbum, onArtist, onPlaylist, onTrackMenu)
                 state is SearchState.Failed && state.query == current && state.filter == filter -> item(key = "failed") {
                     Column(Modifier.padding(SitaraSpacing.Gutter), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                         Text(
@@ -158,6 +160,7 @@ private fun LazyListScope.searchResults(
     onAlbum: (Album) -> Unit,
     onArtist: (Artist) -> Unit,
     onPlaylist: (Playlist) -> Unit,
+    onTrackMenu: (Track) -> Unit,
 ) {
     if (results.isEmpty) {
         item(key = "no-results") { SearchMessage("No ${filter.label.lowercase()} found for “${results.query}”.") }
@@ -166,7 +169,7 @@ private fun LazyListScope.searchResults(
     if (results.tracks.isNotEmpty()) {
         item(key = "songs-title") { SectionHeader("Songs", subtitle = if (results.tracks.size == 1) "1 result" else "${results.tracks.size} results", modifier = Modifier.padding(top = 20.dp)) }
         itemsIndexed(results.tracks, key = { _, track -> "song-${track.id}" }) { index, track ->
-            TrackRow(track, { onPlay(results.tracks, index) })
+            TrackRow(track, { onPlay(results.tracks, index) }, onMore = { onTrackMenu(track) })
         }
     }
     if (results.albums.isNotEmpty()) {
@@ -193,13 +196,11 @@ private fun categoryCount(category: BrowseCategory, library: Library): Int = whe
     BrowseCategory.ALBUMS -> library.albums.size
     BrowseCategory.ARTISTS -> library.artists.size
     BrowseCategory.PLAYLISTS -> library.playlists.size
-    BrowseCategory.LIKED -> library.likedTracks.size
 }
 
 private fun LazyListScope.browseItems(
     category: BrowseCategory,
     library: Library,
-    onPlay: (List<Track>, Int) -> Unit,
     onAlbum: (Album) -> Unit,
     onArtist: (Artist) -> Unit,
     onPlaylist: (Playlist) -> Unit,
@@ -217,9 +218,6 @@ private fun LazyListScope.browseItems(
         BrowseCategory.PLAYLISTS -> items(library.playlists, key = { "playlist-${it.id}" }) { playlist ->
             CollectionRow(playlist.title, "${playlist.tracks.size} songs", playlist.artwork, { onPlaylist(playlist) }, Modifier.padding(horizontal = SitaraSpacing.Gutter))
         }
-        BrowseCategory.LIKED -> itemsIndexed(library.likedTracks, key = { _, track -> "liked-${track.id}" }) { index, track ->
-            TrackRow(track, { onPlay(library.likedTracks, index) })
-        }
     }
 }
 
@@ -236,7 +234,6 @@ private fun CategoryTile(category: BrowseCategory, count: Int, modifier: Modifie
                 BrowseCategory.ALBUMS -> SitaraIcons.Grid
                 BrowseCategory.ARTISTS -> SitaraIcons.Star
                 BrowseCategory.PLAYLISTS -> SitaraIcons.Library
-                BrowseCategory.LIKED -> SitaraIcons.Heart
             },
             null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(24.dp),
         )

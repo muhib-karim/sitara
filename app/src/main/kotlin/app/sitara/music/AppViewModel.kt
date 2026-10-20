@@ -1,13 +1,17 @@
 package app.sitara.music
 
+import android.widget.Toast
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import app.sitara.music.core.common.formatDuration
+import app.sitara.music.core.model.Album
+import app.sitara.music.core.model.Artist
 import app.sitara.music.core.model.Library
 import app.sitara.music.core.model.Lyrics
+import app.sitara.music.core.model.PlaylistSummary
 import app.sitara.music.core.model.SearchFilter
 import app.sitara.music.core.model.Shelf
 import app.sitara.music.core.model.SitaraSettings
@@ -15,6 +19,10 @@ import app.sitara.music.core.model.Track
 import app.sitara.music.core.player.QueueState
 import app.sitara.music.core.player.SleepTimerState
 import app.sitara.music.feature.library.DetailState
+import app.sitara.music.feature.library.LibraryActions
+import app.sitara.music.feature.library.LibraryState
+import app.sitara.music.feature.library.SavedIds
+import app.sitara.music.feature.library.SavedLibrary
 import app.sitara.music.feature.player.PlayerActions
 import app.sitara.music.feature.player.PlayerUiState
 import app.sitara.music.feature.player.RadioStatus
@@ -29,6 +37,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -44,11 +53,13 @@ import kotlinx.coroutines.launch
 class AppViewModel(private val app: SitaraApplication) :
     ViewModel(),
     PlayerActions,
+    LibraryActions,
     DetailPages {
     private val player = app.player
 
     val home = MutableStateFlow<List<Shelf>>(emptyList())
-    val library = MutableStateFlow(Library(emptyList(), emptyList(), emptyList(), emptyList()))
+    /** The sample catalogue Search offers to browse. */
+    val sampleLibrary = MutableStateFlow(Library(emptyList(), emptyList(), emptyList(), emptyList()))
     val query = MutableStateFlow("")
     val searchFilter = MutableStateFlow(SearchFilter.SONGS)
     private val searchRetries = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
@@ -67,11 +78,26 @@ class AppViewModel(private val app: SitaraApplication) :
 
     private val radio = MutableStateFlow(RadioStatus.READY)
 
+    val savedIds: StateFlow<SavedIds> = combine(app.library.likedSongs.ids, app.library.saved.albumIds, app.library.saved.artistIds, ::SavedIds)
+        .stateIn(viewModelScope, SharingStarted.Eagerly, SavedIds())
+
+    val library: StateFlow<LibraryState> = combine(
+        app.library.likedSongs.tracks, app.library.history.recent(RECENT_SHELF), app.library.playlists.all, app.library.saved.albums, app.library.saved.artists,
+    ) { liked, recent, playlists, albums, artists -> LibraryState.Ready(SavedLibrary(liked, recent, playlists, albums, artists)) }
+        .catch<LibraryState> { emit(LibraryState.Failed) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), LibraryState.Loading)
+
+    val playlists: StateFlow<List<PlaylistSummary>> = app.library.playlists.all.catch { emit(emptyList()) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
     // Opened pages, so going back or rotating does not load them again; a screen keeps its page's flow, so none is dropped.
     // shortcut: kept for the life of the view model; evict pages that are off the back stack if sessions browse hundreds.
     private val pages = mutableMapOf<DetailRoute, MutableStateFlow<DetailState>>()
 
-    val playerState: StateFlow<PlayerUiState> = combine(player.state, lyrics, player.sleepTimerState, radio) { s, l, timer, radioStatus ->
+    // The listener's own pages follow the store live; they hold no network state to retry.
+    private val ownPages = mutableMapOf<DetailRoute, StateFlow<DetailState>>()
+
+    val playerState: StateFlow<PlayerUiState> = combine(player.state, lyrics, player.sleepTimerState, radio, savedIds) { s, l, timer, radioStatus, saved ->
         PlayerUiState(
             track = s.queue.current,
             isPlaying = s.isPlaying,
@@ -87,6 +113,7 @@ class AppViewModel(private val app: SitaraApplication) :
                 is SleepTimerState.Counting -> formatDuration(timer.remainingMs)
             },
             radio = radioStatus,
+            liked = s.queue.current?.id in saved.tracks,
         )
     }.stateIn(viewModelScope, SharingStarted.Eagerly, PlayerUiState())
 
@@ -94,7 +121,7 @@ class AppViewModel(private val app: SitaraApplication) :
         player.connect()
         viewModelScope.launch {
             home.value = app.sampleSource.home()
-            library.value = app.sampleSource.library()
+            sampleLibrary.value = app.sampleSource.library()
         }
         viewModelScope.launch { search.collect { playSharedSongIfResolved(it) } }
         val queue = player.state.map { it.queue }
@@ -103,7 +130,16 @@ class AppViewModel(private val app: SitaraApplication) :
         viewModelScope.launch { queue.filter { it.runningOut }.distinctUntilChangedBy { it.currentEntry?.uid }.collectLatest(::extendWithRadio) }
     }
 
-    override fun state(route: DetailRoute): StateFlow<DetailState> = pages.getOrPut(route) { MutableStateFlow<DetailState>(DetailState.Loading).also { load(route, it) } }
+    override fun state(route: DetailRoute): StateFlow<DetailState> = when (route) {
+        DetailRoute.LikedSongs -> ownPages.getOrPut(route) { app.library.likedSongs.tracks.map { DetailState.LikedReady(it) }.ownPage() }
+        is DetailRoute.UserPlaylist -> ownPages.getOrPut(route) {
+            app.library.playlists.playlist(route.id).map { it?.let(DetailState::UserPlaylistReady) ?: DetailState.Gone }.ownPage()
+        }
+        else -> pages.getOrPut(route) { MutableStateFlow<DetailState>(DetailState.Loading).also { load(route, it) } }
+    }
+
+    private fun Flow<DetailState>.ownPage(): StateFlow<DetailState> =
+        catch { emit(DetailState.Failed) }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), DetailState.Loading)
 
     override fun retry(route: DetailRoute) {
         pages[route]?.let { load(route, it) }
@@ -117,6 +153,7 @@ class AppViewModel(private val app: SitaraApplication) :
                     is DetailRoute.Artist -> DetailState.ArtistReady(browse { artist(route.id) })
                     is DetailRoute.Album -> DetailState.AlbumReady(browse { album(route.id) })
                     is DetailRoute.Playlist -> DetailState.PlaylistReady(browse { playlist(route.id) })
+                    DetailRoute.LikedSongs, is DetailRoute.UserPlaylist -> error("Own pages are not loaded from a catalogue")
                 }
             } catch (e: CancellationException) {
                 throw e
@@ -184,6 +221,43 @@ class AppViewModel(private val app: SitaraApplication) :
     override fun toggleShuffle() = player.toggleShuffle()
     override fun cycleRepeat() = player.cycleRepeat()
     override fun playQueueIndex(upNextIndex: Int) = player.playUpNext(upNextIndex)
+    override fun moveUpNext(from: Int, to: Int) = player.moveUpNext(from, to)
+    override fun removeUpNext(index: Int) = player.removeUpNext(index)
+
+    // With nothing queued both start playing at once, which needs no message.
+    override fun playNext(track: Track) {
+        if (player.state.value.queue.current != null) toast("Playing next")
+        player.playNext(listOf(track))
+    }
+
+    override fun addToQueue(track: Track) {
+        if (player.state.value.queue.current != null) toast("Added to queue")
+        player.addToQueue(listOf(track))
+    }
+
+    override fun toggleLike() {
+        val track = player.state.value.queue.current ?: return
+        setLiked(track, track.id !in savedIds.value.tracks)
+    }
+
+    override fun setLiked(track: Track, liked: Boolean) = app.writeLibrary { app.library.likedSongs.setLiked(track, liked) }
+    override fun setSaved(album: Album, saved: Boolean) = app.writeLibrary { app.library.saved.setSaved(album, saved) }
+    override fun setSaved(artist: Artist, saved: Boolean) = app.writeLibrary { app.library.saved.setSaved(artist, saved) }
+    override fun renamePlaylist(id: Long, name: String) = app.writeLibrary { app.library.playlists.rename(id, name) }
+    override fun deletePlaylist(id: Long) = app.writeLibrary { app.library.playlists.delete(id) }
+    override fun movePlaylistEntry(id: Long, from: Int, to: Int) = app.writeLibrary { app.library.playlists.move(id, from, to) }
+    override fun removePlaylistEntry(id: Long, trackId: String) = app.writeLibrary { app.library.playlists.remove(id, trackId) }
+
+    override fun createPlaylist(name: String, first: Track?) = app.writeLibrary {
+        val id = app.library.playlists.create(name)
+        if (first != null && app.library.playlists.add(id, first)) toast("Added to $name")
+    }
+
+    override fun addToPlaylist(playlist: PlaylistSummary, track: Track) = app.writeLibrary {
+        toast(if (app.library.playlists.add(playlist.id, track)) "Added to ${playlist.name}" else "Already in ${playlist.name}")
+    }
+
+    private fun toast(text: String) = Toast.makeText(app, text, Toast.LENGTH_SHORT).show()
 
     /** Off -> 15 min -> 30 min -> end of track -> off. */
     override fun cycleSleepTimer() {
@@ -200,6 +274,8 @@ class AppViewModel(private val app: SitaraApplication) :
     }
 
     companion object {
+        private const val RECENT_SHELF = 20
+
         fun factory(app: SitaraApplication): ViewModelProvider.Factory = viewModelFactory { initializer { AppViewModel(app) } }
     }
 }

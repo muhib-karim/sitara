@@ -58,6 +58,7 @@ import app.sitara.music.core.designsystem.SitaraIcons
 import app.sitara.music.core.designsystem.SitaraMotion
 import app.sitara.music.core.designsystem.SitaraRadius
 import app.sitara.music.core.designsystem.SitaraSpacing
+import app.sitara.music.core.model.Track
 import kotlin.math.abs
 
 /** One dock, one artwork element: expansion carries the cover into the listening stage. */
@@ -73,6 +74,7 @@ fun PlayerSheet(
     navigation: @Composable () -> Unit = {},
     onDockHeightChanged: (Dp) -> Unit = {},
     onArtist: (artistId: String) -> Unit = {},
+    onAddToPlaylist: (Track) -> Unit = {},
 ) {
     var expanded by rememberSaveable { mutableStateOf(initiallyExpanded) }
     val reduced = LocalReducedMotion.current
@@ -104,6 +106,7 @@ fun PlayerSheet(
                 FullPlayer(
                     state, actions, onCollapse = { expanded = false }, initialPage = initialPage, artworkModifier = coverModifier,
                     onArtist = { expanded = false; onArtist(it) },
+                    onAddToPlaylist = { onAddToPlaylist(track) },
                 )
             } else {
                 Box(Modifier.fillMaxSize()) {

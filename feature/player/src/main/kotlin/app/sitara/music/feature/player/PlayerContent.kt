@@ -3,7 +3,6 @@ package app.sitara.music.feature.player
 import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -27,19 +26,25 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.minimumInteractiveComponentSize
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.BlurredEdgeTreatment
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -56,14 +61,26 @@ import app.sitara.music.core.designsystem.SitaraColors
 import app.sitara.music.core.designsystem.SitaraIcons
 import app.sitara.music.core.designsystem.SitaraRadius
 import app.sitara.music.core.designsystem.TrackRow
+import app.sitara.music.core.designsystem.dragHandle
+import app.sitara.music.core.designsystem.rememberReorderState
+import app.sitara.music.core.designsystem.reorderableRow
 import app.sitara.music.core.designsystem.sitaraColorScheme
 import app.sitara.music.core.model.ThemeMode
+import app.sitara.music.core.model.Track
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
 import kotlinx.coroutines.launch
 
 @Composable
-internal fun FullPlayer(state: PlayerUiState, actions: PlayerActions, onCollapse: () -> Unit, initialPage: Int, artworkModifier: Modifier, onArtist: (String) -> Unit) {
+internal fun FullPlayer(
+    state: PlayerUiState,
+    actions: PlayerActions,
+    onCollapse: () -> Unit,
+    initialPage: Int,
+    artworkModifier: Modifier,
+    onArtist: (String) -> Unit,
+    onAddToPlaylist: () -> Unit,
+) {
     val track = state.track ?: return
     val reduced = LocalReducedMotion.current
     val wash = LocalArtworkWash.current
@@ -99,7 +116,7 @@ internal fun FullPlayer(state: PlayerUiState, actions: PlayerActions, onCollapse
                     }
                     HorizontalPager(pager, Modifier.weight(1f), userScrollEnabled = true) { page ->
                         when (page) {
-                            0 -> PlayingPage(state, actions, artworkModifier, onQueue = { selectPage(2) }, onArtist = onArtist)
+                            0 -> PlayingPage(state, actions, artworkModifier, onQueue = { selectPage(2) }, onArtist = onArtist, onAddToPlaylist = onAddToPlaylist)
                             1 -> LyricsPanel(state, actions)
                             else -> Column(Modifier.fillMaxSize()) {
                                 Row(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -110,11 +127,7 @@ internal fun FullPlayer(state: PlayerUiState, actions: PlayerActions, onCollapse
                                 if (state.upNext.isEmpty()) {
                                     Text("You're at the end of the queue", color = SitaraColors.StageSecondary, modifier = Modifier.padding(24.dp).weight(1f))
                                 } else {
-                                    LazyColumn(Modifier.weight(1f)) {
-                                        itemsIndexed(state.upNext, key = { index, item -> "$index-${item.id}" }, contentType = { _, _ -> "queue track" }) { index, item ->
-                                            TrackRow(item, onClick = { actions.playQueueIndex(index) })
-                                        }
-                                    }
+                                    UpNextList(state.upNext, actions, Modifier.weight(1f))
                                 }
                                 PlayerControls(state, actions, Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
                             }
@@ -127,7 +140,17 @@ internal fun FullPlayer(state: PlayerUiState, actions: PlayerActions, onCollapse
 }
 
 @Composable
-private fun PlayingPage(state: PlayerUiState, actions: PlayerActions, artworkModifier: Modifier, onQueue: () -> Unit, onArtist: (String) -> Unit) {
+private fun PlayingPage(
+    state: PlayerUiState,
+    actions: PlayerActions,
+    artworkModifier: Modifier,
+    onQueue: () -> Unit,
+    onArtist: (String) -> Unit,
+    onAddToPlaylist: () -> Unit,
+) {
+    val heading: @Composable () -> Unit = {
+        TrackHeading(state, onQueue = onQueue, onArtist = onArtist, onLike = actions::toggleLike, onAddToPlaylist = onAddToPlaylist)
+    }
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val stageHeight = maxHeight
         val landscape = maxWidth > stageHeight
@@ -135,7 +158,7 @@ private fun PlayingPage(state: PlayerUiState, actions: PlayerActions, artworkMod
             Row(Modifier.fillMaxSize().padding(horizontal = 24.dp), verticalAlignment = Alignment.CenterVertically) {
                 ArtworkStage(state, artworkModifier, Modifier.weight(1f).fillMaxSize())
                 Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(start = 24.dp, bottom = 12.dp)) {
-                    TrackHeading(state, onQueue = onQueue, onArtist = onArtist)
+                    heading()
                     PlayerControls(state, actions)
                 }
             }
@@ -144,7 +167,7 @@ private fun PlayingPage(state: PlayerUiState, actions: PlayerActions, artworkMod
                 // Reserve room for transport while keeping the sleeve prominent on tall phones.
                 ArtworkStage(state, artworkModifier, Modifier.fillMaxWidth().height((stageHeight - 240.dp).coerceIn(180.dp, 440.dp)))
                 Spacer(Modifier.height(24.dp))
-                TrackHeading(state, onQueue = onQueue, onArtist = onArtist)
+                heading()
                 Spacer(Modifier.height(12.dp))
                 PlayerControls(state, actions)
             }
@@ -171,7 +194,15 @@ private fun ArtworkStage(state: PlayerUiState, artworkModifier: Modifier, modifi
 }
 
 @Composable
-private fun TrackHeading(state: PlayerUiState, modifier: Modifier = Modifier, compact: Boolean = false, onQueue: (() -> Unit)? = null, onArtist: ((String) -> Unit)? = null) {
+private fun TrackHeading(
+    state: PlayerUiState,
+    modifier: Modifier = Modifier,
+    compact: Boolean = false,
+    onQueue: (() -> Unit)? = null,
+    onArtist: ((String) -> Unit)? = null,
+    onLike: (() -> Unit)? = null,
+    onAddToPlaylist: (() -> Unit)? = null,
+) {
     val track = state.track ?: return
     Row(modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         if (compact) {
@@ -188,6 +219,15 @@ private fun TrackHeading(state: PlayerUiState, modifier: Modifier = Modifier, co
             }
             Text(track.artist, color = SitaraColors.StageSecondary, style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = link)
         }
+        if (onLike != null) {
+            GlassIconButton(
+                if (state.liked) SitaraIcons.HeartFilled else SitaraIcons.Heart,
+                if (state.liked) "Remove from liked songs" else "Like",
+                onLike,
+                tint = if (state.liked) SitaraColors.Saffron else SitaraColors.StageContent,
+            )
+        }
+        if (onAddToPlaylist != null) GlassIconButton(SitaraIcons.Add, "Add to playlist", onAddToPlaylist)
         if (onQueue != null) GlassIconButton(SitaraIcons.Queue, "Open queue", onQueue)
     }
 }
@@ -208,6 +248,30 @@ private fun LyricsPanel(state: PlayerUiState, actions: PlayerActions) {
                 TrackHeading(state, Modifier.padding(horizontal = 24.dp, vertical = 12.dp), compact = true)
                 LyricsPage(state.lyrics, state.positionMs, SitaraColors.StageContent, actions::seekTo, Modifier.weight(1f))
                 PlayerControls(state, actions, Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
+            }
+        }
+    }
+}
+
+/** Up next with drag to reorder and remove; shows a moved song in its new place before the queue confirms it. */
+@Composable
+private fun UpNextList(upNext: List<Track>, actions: PlayerActions, modifier: Modifier) {
+    val reorder = rememberReorderState()
+    var order by remember(upNext) { mutableStateOf(upNext) }
+    val move = { from: Int, to: Int ->
+        order = order.toMutableList().apply { add(to, removeAt(from)) }
+        actions.moveUpNext(from, to)
+    }
+    LazyColumn(modifier.testTag("up-next")) {
+        itemsIndexed(order, key = { index, item -> "$index-${item.id}" }, contentType = { _, _ -> "queue track" }) { index, item ->
+            TrackRow(item, onClick = { actions.playQueueIndex(index) }, modifier = Modifier.reorderableRow(reorder, index, order.size, move)) {
+                IconButton(onClick = { actions.removeUpNext(index) }) {
+                    Icon(SitaraIcons.Close, "Remove ${item.title} from the queue", tint = SitaraColors.StageSecondary)
+                }
+                Icon(
+                    SitaraIcons.DragHandle, null, tint = SitaraColors.StageSecondary,
+                    modifier = Modifier.size(48.dp).dragHandle(reorder, index, order.size, move).padding(12.dp),
+                )
             }
         }
     }

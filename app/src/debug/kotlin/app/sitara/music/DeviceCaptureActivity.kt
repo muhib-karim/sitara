@@ -22,6 +22,7 @@ import app.sitara.music.core.model.SearchFilter
 import app.sitara.music.core.model.SearchResults
 import app.sitara.music.core.model.Shelf
 import app.sitara.music.core.model.SitaraSettings
+import app.sitara.music.feature.library.LibraryState
 import app.sitara.music.feature.search.SearchState
 import app.sitara.music.source.fake.FakeMusicSource
 import app.sitara.music.source.fake.SampleCatalog
@@ -57,7 +58,8 @@ private fun CaptureScreen(screen: String, dark: Boolean, reduced: Boolean) {
         SitaraShell(
             settings = settings,
             home = ready.home,
-            library = ready.library,
+            sampleLibrary = ready.library,
+            library = LibraryState.Ready(sampleSavedLibrary(ready.library)),
             query = query,
             searchFilter = filter,
             search = SearchState.Loaded(results.query.trim(), results, filter),

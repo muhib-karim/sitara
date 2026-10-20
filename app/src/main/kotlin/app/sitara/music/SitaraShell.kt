@@ -50,13 +50,20 @@ import app.sitara.music.core.designsystem.SitaraTheme
 import app.sitara.music.core.model.Album
 import app.sitara.music.core.model.Artist
 import app.sitara.music.core.model.Library
+import app.sitara.music.core.model.PlaylistSummary
 import app.sitara.music.core.model.SearchFilter
 import app.sitara.music.core.model.Shelf
 import app.sitara.music.core.model.SitaraSettings
 import app.sitara.music.core.model.Track
 import app.sitara.music.feature.home.HomeScreen
+import app.sitara.music.feature.library.AddToPlaylist
 import app.sitara.music.feature.library.DetailScreen
+import app.sitara.music.feature.library.LibraryActions
 import app.sitara.music.feature.library.LibraryScreen
+import app.sitara.music.feature.library.LibraryState
+import app.sitara.music.feature.library.SavedIds
+import app.sitara.music.feature.library.SitaraSheet
+import app.sitara.music.feature.library.SongActions
 import app.sitara.music.feature.player.PlayerActions
 import app.sitara.music.feature.player.PlayerSheet
 import app.sitara.music.feature.player.PlayerUiState
@@ -80,19 +87,26 @@ fun SitaraRoot(vm: AppViewModel, systemReducedMotion: Boolean) {
     val settings by vm.settings.collectAsState()
     val player by vm.playerState.collectAsState()
     val home by vm.home.collectAsState()
+    val sampleLibrary by vm.sampleLibrary.collectAsState()
     val library by vm.library.collectAsState()
+    val savedIds by vm.savedIds.collectAsState()
+    val playlists by vm.playlists.collectAsState()
     val query by vm.query.collectAsState()
     val searchFilter by vm.searchFilter.collectAsState()
     val search by vm.search.collectAsState()
     SitaraShell(
         settings = settings.let { if (systemReducedMotion) it.copy(reducedMotion = true) else it },
         home = home,
+        sampleLibrary = sampleLibrary,
         library = library,
+        savedIds = savedIds,
+        playlists = playlists,
         query = query,
         searchFilter = searchFilter,
         search = search,
         player = player,
         actions = vm,
+        libraryActions = vm,
         details = vm,
         onQueryChange = { vm.query.value = it },
         onSearchFilterChange = { vm.searchFilter.value = it },
@@ -109,7 +123,8 @@ fun SitaraRoot(vm: AppViewModel, systemReducedMotion: Boolean) {
 fun SitaraShell(
     settings: SitaraSettings,
     home: List<Shelf>,
-    library: Library,
+    sampleLibrary: Library,
+    library: LibraryState,
     query: String,
     searchFilter: SearchFilter,
     search: SearchState,
@@ -129,10 +144,16 @@ fun SitaraShell(
     playerPage: Int = 0,
     greetingText: String = greeting(),
     tabRequests: Flow<Tab> = emptyFlow(),
+    savedIds: SavedIds = SavedIds(),
+    playlists: List<PlaylistSummary> = emptyList(),
+    libraryActions: LibraryActions = LibraryActions.None,
 ) {
     var tab by rememberSaveable { mutableStateOf(if (initialSettingsOpen) Tab.SETTINGS else initialTab) }
     var detailStack by rememberSaveable(stateSaver = DetailStackSaver) { mutableStateOf(listOfNotNull(initialDetail)) }
     val browseState = rememberSaveableStateHolder()
+    var menuTrack by remember { mutableStateOf<Track?>(null) }
+    var playlistTrack by remember { mutableStateOf<Track?>(null) }
+    val openMenu: (Track) -> Unit = { menuTrack = it }
     val open: (DetailRoute) -> Unit = { detailStack = detailStack + it }
     val closeDetails: () -> Unit = { detailStack = emptyList() }
     LaunchedEffect(tabRequests) {
@@ -163,29 +184,35 @@ fun SitaraShell(
                     if (route != null) {
                         val state by remember(details, route) { details.state(route) }.collectAsState()
                         DetailScreen(
-                            state, settings,
+                            state, settings, savedIds, libraryActions,
                             onBack = { detailStack = detailStack.dropLast(1) },
                             onRetry = { details.retry(route) },
                             onPlay = onPlay,
                             onShuffle = onShuffle,
                             onArtist = { open(DetailRoute.Artist(it)) },
                             onAlbum = { open(DetailRoute.Album(it)) },
+                            onTrackMenu = openMenu,
                             contentPadding = contentPadding,
                         )
                     } else {
                         when (tab) {
                             Tab.HOME -> HomeScreen(
-                                greetingText, home, onPlay, openAlbum, contentPadding = contentPadding,
+                                greetingText, home, onPlay, openAlbum, openMenu, contentPadding = contentPadding,
                                 note = "These shelves are built-in sample music. Search finds real songs, albums, artists and playlists.",
                             )
                             Tab.SEARCH -> SearchScreen(
                                 query, onQueryChange, searchFilter, onSearchFilterChange, search, onRetrySearch,
-                                listOf("Lo-fi beats", "Jazz piano", "Classical focus"), onPlay, library,
-                                openAlbum, openArtist, { open(DetailRoute.Playlist(it.id)) }, contentPadding = contentPadding,
+                                listOf("Lo-fi beats", "Jazz piano", "Classical focus"), onPlay, sampleLibrary,
+                                openAlbum, openArtist, { open(DetailRoute.Playlist(it.id)) }, openMenu, contentPadding = contentPadding,
                             )
                             Tab.LIBRARY -> LibraryScreen(
-                                library, onPlay, openAlbum, openArtist, contentPadding = contentPadding,
-                                note = "A built-in sample library. Saving your own music is not available yet.",
+                                library, onPlay,
+                                onLikedSongs = { open(DetailRoute.LikedSongs) },
+                                onPlaylist = { open(DetailRoute.UserPlaylist(it.id)) },
+                                onAlbum = openAlbum,
+                                onArtist = openArtist,
+                                onNewPlaylist = { libraryActions.createPlaylist(it, null) },
+                                contentPadding = contentPadding,
                             )
                             Tab.SETTINGS -> SettingsScreen(settings, onSettingsChange, onBack = { tab = Tab.HOME }, contentPadding = contentPadding)
                         }
@@ -204,7 +231,29 @@ fun SitaraShell(
                 navigation = { FloatingNav(tab, onSelect = { closeDetails(); tab = it }) },
                 onDockHeightChanged = { measuredDockHeight = it },
                 onArtist = { open(DetailRoute.Artist(it)) },
+                onAddToPlaylist = { playlistTrack = it },
             )
+            menuTrack?.let { track ->
+                SitaraSheet(onDismiss = { menuTrack = null }) { close ->
+                    val liked = track.id in savedIds.tracks
+                    SongActions(
+                        track, liked,
+                        onToggleLike = { close { libraryActions.setLiked(track, !liked) } },
+                        onPlayNext = { close { actions.playNext(track) } },
+                        onAddToQueue = { close { actions.addToQueue(track) } },
+                        onAddToPlaylist = { close { playlistTrack = track } },
+                    )
+                }
+            }
+            playlistTrack?.let { track ->
+                SitaraSheet(onDismiss = { playlistTrack = null }) { close ->
+                    AddToPlaylist(
+                        track, playlists,
+                        onPick = { close { libraryActions.addToPlaylist(it, track) } },
+                        onCreate = { close { libraryActions.createPlaylist(it, track) } },
+                    )
+                }
+            }
         }
     }
 }

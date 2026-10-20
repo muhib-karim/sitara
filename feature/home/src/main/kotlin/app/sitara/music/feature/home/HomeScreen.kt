@@ -48,6 +48,7 @@ fun HomeScreen(
     shelves: List<Shelf>,
     onPlay: (tracks: List<Track>, index: Int) -> Unit,
     onAlbum: (Album) -> Unit,
+    onTrackMenu: (Track) -> Unit,
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(),
     listState: LazyListState = rememberLazyListState(),
@@ -84,7 +85,7 @@ fun HomeScreen(
             }
             item(key = "r-${shelf.id}") {
                 when {
-                    shelf.id == "quick" && shelf.tracks.isNotEmpty() -> key(selectedMood) { QuickPicks(shelf.tracks, onPlay) }
+                    shelf.id == "quick" && shelf.tracks.isNotEmpty() -> key(selectedMood) { QuickPicks(shelf.tracks, onPlay, onTrackMenu) }
                     else -> ArtworkRail(shelf, onPlay, onAlbum)
                 }
             }
@@ -93,7 +94,7 @@ fun HomeScreen(
 }
 
 @Composable
-private fun QuickPicks(tracks: List<Track>, onPlay: (List<Track>, Int) -> Unit) {
+private fun QuickPicks(tracks: List<Track>, onPlay: (List<Track>, Int) -> Unit, onTrackMenu: (Track) -> Unit) {
     val pages = remember(tracks) { quickPickPages(tracks) }
     val pager = rememberPagerState { pages.size }
     BoxWithConstraints(Modifier.fillMaxWidth()) {
@@ -110,6 +111,9 @@ private fun QuickPicks(tracks: List<Track>, onPlay: (List<Track>, Int) -> Unit) 
                                     onClick = { onPlay(tracks, page * 4 + row * columns + column) },
                                     modifier = Modifier.weight(1f),
                                     contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp),
+                                    // Two columns leave no room for the button; a long press opens the same menu.
+                                    onMore = { onTrackMenu(track) },
+                                    moreButton = columns == 1,
                                 )
                             }
                             if (pair.size < columns) Spacer(Modifier.weight(1f))

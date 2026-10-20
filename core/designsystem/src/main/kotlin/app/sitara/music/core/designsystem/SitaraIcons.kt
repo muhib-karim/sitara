@@ -108,11 +108,24 @@ object SitaraIcons {
             }
         }
     }
-    val Heart = icon("heart", filled = false) {
+    private val heart: PathBuilder.() -> Unit = {
         moveTo(12f, 20f); curveTo(8f, 17f, 3f, 13f, 3f, 8f)
         curveTo(3f, 3f, 9f, 2f, 12f, 7f); curveTo(15f, 2f, 21f, 3f, 21f, 8f)
         curveTo(21f, 13f, 16f, 17f, 12f, 20f); close()
     }
+    val Heart = icon("heart", filled = false, block = heart)
+    val HeartFilled = icon("heart_filled", block = heart)
+    val More = icon("more") {
+        for (y in listOf(5f, 12f, 19f)) {
+            moveTo(12f, y - 1.75f); arcTo(1.75f, 1.75f, 0f, true, true, 12f, y + 1.75f); arcTo(1.75f, 1.75f, 0f, true, true, 12f, y - 1.75f); close()
+        }
+    }
+    val DragHandle = icon("drag_handle", filled = false) {
+        for (y in listOf(9f, 15f)) {
+            moveTo(5f, y); lineTo(19f, y)
+        }
+    }
+    val Add = icon("add", filled = false) { moveTo(12f, 5f); lineTo(12f, 19f); moveTo(5f, 12f); lineTo(19f, 12f) }
     val Timer = icon("timer", filled = false) {
         moveTo(19f, 13f)
         arcTo(7f, 7f, 0f, true, true, 5f, 13f)

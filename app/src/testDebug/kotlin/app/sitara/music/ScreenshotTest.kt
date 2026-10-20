@@ -1,10 +1,12 @@
 package app.sitara.music
 
+import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Box
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.test.hasAnyAncestor
-import androidx.compose.ui.test.hasTestTag
-import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
@@ -16,6 +18,7 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeLeft
 import androidx.compose.ui.test.swipeUp
 import androidx.compose.ui.unit.Density
+import app.sitara.music.core.designsystem.SitaraTheme
 import app.sitara.music.core.model.DarkMode
 import app.sitara.music.core.model.Library
 import app.sitara.music.core.model.Lyrics
@@ -23,7 +26,12 @@ import app.sitara.music.core.model.SearchFilter
 import app.sitara.music.core.model.SearchResults
 import app.sitara.music.core.model.SitaraSettings
 import app.sitara.music.core.model.ThemeMode
+import app.sitara.music.core.model.UserPlaylist
+import app.sitara.music.feature.library.AddToPlaylist
 import app.sitara.music.feature.library.DetailState
+import app.sitara.music.feature.library.LibraryState
+import app.sitara.music.feature.library.SavedLibrary
+import app.sitara.music.feature.library.SongActions
 import app.sitara.music.feature.player.PlayerActions
 import app.sitara.music.feature.player.PlayerUiState
 import app.sitara.music.feature.search.SearchState
@@ -82,6 +90,8 @@ class ScreenshotTest {
         search: SearchState = SearchState.Loaded(query.trim(), allKinds(query)),
         filter: SearchFilter = SearchFilter.SONGS,
         detail: DetailState? = null,
+        route: DetailRoute? = null,
+        saved: LibraryState = LibraryState.Ready(sampleSavedLibrary(library)),
         beforeCapture: () -> Unit = {},
     ) {
         val settings = SitaraSettings(themeMode = mode, darkMode = if (dark) DarkMode.DARK else DarkMode.LIGHT, reducedMotion = reduced)
@@ -90,7 +100,8 @@ class ScreenshotTest {
                 SitaraShell(
                     settings = settings,
                     home = home,
-                    library = library,
+                    sampleLibrary = library,
+                    library = saved,
                     query = query,
                     searchFilter = filter,
                     search = search,
@@ -104,7 +115,7 @@ class ScreenshotTest {
                     onShuffle = {},
                     onSettingsChange = {},
                     initialTab = tab,
-                    initialDetail = detail?.let { DetailRoute.Album("fixture") },
+                    initialDetail = route ?: detail?.let { DetailRoute.Album("fixture") },
                     initialSettingsOpen = settingsOpen,
                     playerExpanded = expanded,
                     playerPage = page,
@@ -188,30 +199,33 @@ class ScreenshotTest {
         compose.onNodeWithTag("home-content").performScrollToIndex(3 + home.size * 2 - 1)
     }
 
-    @Test fun libraryListDark() = shot("library_list", dark = true, tab = Tab.LIBRARY) {
-        compose.onNodeWithContentDescription("Show list").performClick()
-    }
+    @Test fun libraryEmpty() = shot("library_empty", dark = true, tab = Tab.LIBRARY, saved = LibraryState.Ready(SavedLibrary(emptyList(), emptyList(), emptyList(), emptyList(), emptyList())))
 
-    @Test fun libraryListLight() = shot("library_list", dark = false, tab = Tab.LIBRARY) {
-        compose.onNodeWithContentDescription("Show list").performClick()
-    }
+    @Test fun libraryLoading() = shot("library_loading", dark = true, tab = Tab.LIBRARY, saved = LibraryState.Loading)
 
-    @Test fun likedSongsGrid() = shot("library_liked", dark = true, tab = Tab.LIBRARY) {
-        compose.onNodeWithContentDescription("Open liked songs").performClick()
-    }
+    @Test fun albumDark() = shot("album", dark = true, tab = Tab.LIBRARY, route = DetailRoute.Album(library.albums.first().id))
+    @Test fun albumLight() = shot("album", dark = false, tab = Tab.LIBRARY, route = DetailRoute.Album(library.albums.first().id))
+    @Test fun artistDark() = shot("artist", dark = true, tab = Tab.LIBRARY, route = DetailRoute.Artist(library.artists.first().id))
+    @Test fun artistLight() = shot("artist", dark = false, tab = Tab.LIBRARY, route = DetailRoute.Artist(library.artists.first().id))
 
-    @Test fun albumDark() = albumShot(true)
-    @Test fun albumLight() = albumShot(false)
-    private fun albumShot(dark: Boolean) = shot("album", dark, tab = Tab.LIBRARY) {
-        compose.onNodeWithText("Albums").performClick()
-        compose.onNodeWithText(library.albums.first().title).performClick()
-    }
+    @Test fun likedPage() = shot("liked_page", dark = true, tab = Tab.LIBRARY, detail = DetailState.LikedReady(Fixtures.playlist.tracks))
+    @Test fun likedEmpty() = shot("liked_empty", dark = true, tab = Tab.LIBRARY, detail = DetailState.LikedReady(emptyList()))
+    @Test fun userPlaylistDark() = shot("user_playlist", dark = true, tab = Tab.LIBRARY, detail = DetailState.UserPlaylistReady(UserPlaylist(1, "Late night", Fixtures.playlist.tracks)))
+    @Test fun userPlaylistLight() = shot("user_playlist", dark = false, tab = Tab.LIBRARY, detail = DetailState.UserPlaylistReady(UserPlaylist(1, "Late night", Fixtures.playlist.tracks)))
+    @Test fun upNext() = shot("up_next", dark = true, expanded = true, page = 2)
+    @Test fun playerLiked() = shot("player_liked", dark = true, expanded = true, playerState = playing.copy(liked = true))
 
-    @Test fun artistDark() = artistShot(true)
-    @Test fun artistLight() = artistShot(false)
-    private fun artistShot(dark: Boolean) = shot("artist", dark, tab = Tab.LIBRARY) {
-        compose.onNodeWithText("Artists").performClick()
-        compose.onNode(hasText(library.artists.first().name) and hasAnyAncestor(hasTestTag("library-grid"))).performClick()
+    @Test fun songActionsSheet() = sheet("song_actions") { SongActions(Fixtures.playlist.tracks.first(), liked = true, {}, {}, {}, {}) }
+    @Test fun addToPlaylistSheet() = sheet("add_to_playlist") { AddToPlaylist(Fixtures.playlist.tracks.first(), sampleSavedLibrary(library).playlists, {}, {}) }
+
+    // Sheets open in a dialog window; their content is captured on the sheet's own surface colour.
+    private fun sheet(name: String, content: @Composable () -> Unit) {
+        compose.setContent {
+            SitaraTheme(ThemeMode.ARTWORK, DarkMode.DARK, reducedMotion = true) {
+                Box(Modifier.background(MaterialTheme.colorScheme.surfaceContainerLow)) { content() }
+            }
+        }
+        compose.onRoot().captureRoboImage("src/test/screenshots/${name}_dark.png")
     }
 
     @Test fun searchBrowseDark() = shot("search_browse", dark = true, tab = Tab.SEARCH)

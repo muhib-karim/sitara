@@ -16,6 +16,8 @@ data class PlayerUiState(
     val lyrics: Lyrics = Lyrics.Empty,
     val sleepTimerLabel: String? = null,
     val radio: RadioStatus = RadioStatus.READY,
+    /** Whether the current track is in Liked songs. */
+    val liked: Boolean = false,
 )
 
 /** Whether "Start radio" can extend the queue from the current song right now. */
@@ -34,6 +36,18 @@ interface PlayerActions {
     /** Queues songs related to the current one after the last entry. */
     fun startRadio()
 
+    /** Likes the current track, or unlikes it. */
+    fun toggleLike()
+
+    fun playNext(track: Track)
+
+    fun addToQueue(track: Track)
+
+    /** Positions count from the first song in Up next. */
+    fun moveUpNext(from: Int, to: Int)
+
+    fun removeUpNext(index: Int)
+
     object None : PlayerActions {
         override fun togglePlay() = Unit
         override fun next() = Unit
@@ -44,5 +58,10 @@ interface PlayerActions {
         override fun playQueueIndex(upNextIndex: Int) = Unit
         override fun cycleSleepTimer() = Unit
         override fun startRadio() = Unit
+        override fun toggleLike() = Unit
+        override fun playNext(track: Track) = Unit
+        override fun addToQueue(track: Track) = Unit
+        override fun moveUpNext(from: Int, to: Int) = Unit
+        override fun removeUpNext(index: Int) = Unit
     }
 }

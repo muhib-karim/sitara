@@ -50,6 +50,19 @@ internal class DemoPlayer(private var original: List<Track>, lyrics: Lyrics) : P
     }
     // Every sample song is already in the demo queue, so there is nothing left to suggest.
     override fun startRadio() { state = state.copy(radio = RadioStatus.UNAVAILABLE) }
+    override fun toggleLike() { state = state.copy(liked = !state.liked) }
+    override fun playNext(track: Track) = editQueue { add(index + 1, track) }
+    override fun addToQueue(track: Track) = editQueue { add(track) }
+    override fun moveUpNext(from: Int, to: Int) {
+        if (from in state.upNext.indices && to in state.upNext.indices) editQueue { add(index + 1 + to, removeAt(index + 1 + from)) }
+    }
+    override fun removeUpNext(index: Int) {
+        if (index in state.upNext.indices) editQueue { removeAt(this@DemoPlayer.index + 1 + index) }
+    }
+    private fun editQueue(change: MutableList<Track>.() -> Unit) {
+        queue = queue.toMutableList().apply(change)
+        state = state.copy(upNext = queue.drop(index + 1))
+    }
     fun play(tracks: List<Track>, start: Int) {
         if (tracks.isEmpty()) return
         original = tracks
