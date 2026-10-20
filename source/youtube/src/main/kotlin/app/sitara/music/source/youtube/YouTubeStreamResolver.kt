@@ -9,10 +9,6 @@ import kotlinx.coroutines.runInterruptible
 import org.schabi.newpipe.extractor.ServiceList
 import org.schabi.newpipe.extractor.stream.StreamInfo
 
-private val VIDEO_ID = Regex("[A-Za-z0-9_-]{11}")
-
-internal fun isVideoId(id: String): Boolean = VIDEO_ID.matches(id)
-
 /** Resolves YouTube tracks (id = video id) to their best audio-only stream. Errors propagate to the fallback chain. */
 class YouTubeStreamResolver : StreamResolver {
     override val id: String = "youtube"

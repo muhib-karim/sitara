@@ -4,7 +4,6 @@ import app.sitara.music.core.model.Artwork
 import app.sitara.music.core.model.Track
 import org.schabi.newpipe.extractor.stream.StreamInfoItem
 
-private val VIDEO_ID_PARAM = Regex("[?&]v=([A-Za-z0-9_-]{11})(?:&|$)")
 private val THUMBNAIL_SIZE = Regex("=w\\d+-h\\d+")
 
 // Gradient pairs for the generated cover shown until a thumbnail can be drawn; picked by video id so a song keeps its colours.
@@ -22,7 +21,7 @@ private val COVER_COLORS = listOf(
  * The extractor's song items carry no album, so [Track.album] stays empty.
  */
 internal fun StreamInfoItem.toTrack(): Track? {
-    val videoId = VIDEO_ID_PARAM.find(url)?.groupValues?.get(1) ?: return null
+    val videoId = videoIdFromLink(url) ?: return null
     val thumbnail = thumbnails.maxByOrNull { it.height.toLong() * it.width }?.url?.replace(THUMBNAIL_SIZE, "=w544-h544")
     return Track(
         id = videoId,

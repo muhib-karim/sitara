@@ -1,9 +1,7 @@
 package app.sitara.music.source.youtube
 
 import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNull
-import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.schabi.newpipe.extractor.MediaFormat
 import org.schabi.newpipe.extractor.stream.AudioStream
@@ -101,14 +99,5 @@ class AudioStreamSelectionTest {
     @Test
     fun `a malformed expire parameter is ignored`() {
         assertNull(selectAudioStream(listOf(audio("https://a.example/a?expire=soon", MediaFormat.M4A, 128)))!!.expiresAtMs)
-    }
-
-    @Test
-    fun `video ids are exactly eleven url-safe characters`() {
-        assertTrue(isVideoId("dQw4w9WgXcQ"))
-        assertTrue(isVideoId("a-b_C1d2E3f"))
-        assertFalse(isVideoId("tr-01"))
-        assertFalse(isVideoId("dQw4w9WgXcQ&list=x"))
-        assertFalse(isVideoId("dQw4w9WgXc/"))
     }
 }
