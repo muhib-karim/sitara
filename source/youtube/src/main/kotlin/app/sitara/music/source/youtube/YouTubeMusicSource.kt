@@ -7,14 +7,19 @@ import kotlinx.coroutines.runInterruptible
 import org.schabi.newpipe.extractor.ServiceList
 import org.schabi.newpipe.extractor.search.SearchInfo
 import org.schabi.newpipe.extractor.services.youtube.linkHandler.YoutubeSearchQueryHandlerFactory.MUSIC_SONGS
+import org.schabi.newpipe.extractor.stream.StreamInfo
 import org.schabi.newpipe.extractor.stream.StreamInfoItem
 
-/** Song search on YouTube Music. Browse and library stay with the sample source for now. */
+/** Song search on YouTube Music; a pasted video link resolves to that one song. Browse and library stay with the sample source for now. */
 class YouTubeMusicSource : SearchSource {
     override suspend fun search(query: String): SearchResults {
         val q = query.trim()
         if (q.isEmpty()) return SearchResults.empty(query)
         val service = ServiceList.YouTube
+        videoIdFromLink(q)?.let { videoId ->
+            val info = runInterruptible(Dispatchers.IO) { StreamInfo.getInfo(service, "https://www.youtube.com/watch?v=$videoId") }
+            return SearchResults(q, listOf(info.toTrack()), emptyList(), emptyList())
+        }
         val info = runInterruptible(Dispatchers.IO) { SearchInfo.getInfo(service, service.searchQHFactory.fromQuery(q, listOf(MUSIC_SONGS), "")) }
         // The extractor collects parse failures instead of throwing; with no songs at all that is an error, not "nothing found".
         if (info.relatedItems.isEmpty()) info.errors.firstOrNull()?.let { throw it }

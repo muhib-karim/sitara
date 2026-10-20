@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 import org.schabi.newpipe.extractor.Image
 import org.schabi.newpipe.extractor.Image.ResolutionLevel
+import org.schabi.newpipe.extractor.stream.StreamInfo
 import org.schabi.newpipe.extractor.stream.StreamInfoItem
 import org.schabi.newpipe.extractor.stream.StreamType
 
@@ -82,5 +83,25 @@ class SongMappingTest {
     fun `an item without a video id is dropped`() {
         assertNull(song(url = "https://music.youtube.com/browse/MPREb_abc").toTrack())
         assertNull(song(url = "https://music.youtube.com/watch?ov=dQw4w9WgXcQ").toTrack())
+    }
+
+    @Test
+    fun `a linked video maps to a track without the topic channel suffix`() {
+        val info = StreamInfo(0, "https://www.youtube.com/watch?v=x7kGuhlXmFI", "https://youtu.be/x7kGuhlXmFI", StreamType.VIDEO_STREAM, "x7kGuhlXmFI", "Niye Jabe Ki", 0).apply {
+            uploaderName = "Xefer - Topic"
+            duration = 201
+            thumbnails = listOf(
+                Image("https://i.ytimg.com/vi/x7kGuhlXmFI/hqdefault.jpg", 360, 480, ResolutionLevel.MEDIUM),
+                Image("https://i.ytimg.com/vi/x7kGuhlXmFI/maxresdefault.jpg", 720, 1280, ResolutionLevel.HIGH),
+            )
+        }
+
+        val track = info.toTrack()
+
+        assertEquals("x7kGuhlXmFI", track.id)
+        assertEquals("Niye Jabe Ki", track.title)
+        assertEquals("Xefer", track.artist)
+        assertEquals(201_000L, track.durationMs)
+        assertEquals("https://i.ytimg.com/vi/x7kGuhlXmFI/maxresdefault.jpg", track.artwork.imageUrl)
     }
 }

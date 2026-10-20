@@ -2,6 +2,8 @@ package app.sitara.music.source.youtube
 
 import app.sitara.music.core.model.Artwork
 import app.sitara.music.core.model.Track
+import org.schabi.newpipe.extractor.Image
+import org.schabi.newpipe.extractor.stream.StreamInfo
 import org.schabi.newpipe.extractor.stream.StreamInfoItem
 
 private val THUMBNAIL_SIZE = Regex("=w\\d+-h\\d+")
@@ -22,13 +24,21 @@ private val COVER_COLORS = listOf(
  */
 internal fun StreamInfoItem.toTrack(): Track? {
     val videoId = videoIdFromLink(url) ?: return null
-    val thumbnail = thumbnails.maxByOrNull { it.height.toLong() * it.width }?.url?.replace(THUMBNAIL_SIZE, "=w544-h544")
-    return Track(
-        id = videoId,
-        title = name,
-        artist = uploaderName.orEmpty(),
-        album = "",
-        durationMs = duration.coerceAtLeast(0) * 1_000,
-        artwork = Artwork(COVER_COLORS[Math.floorMod(videoId.hashCode(), COVER_COLORS.size)], thumbnail),
-    )
+    return youTubeTrack(videoId, name, uploaderName, duration, thumbnails)
 }
+
+/** The video behind a pasted or shared link as a [Track]. */
+internal fun StreamInfo.toTrack(): Track = youTubeTrack(id, name, uploaderName, duration, thumbnails)
+
+private fun youTubeTrack(videoId: String, title: String, uploader: String?, seconds: Long, thumbnails: List<Image>) = Track(
+    id = videoId,
+    title = title,
+    // Auto-generated artist channels are named "<artist> - Topic".
+    artist = uploader.orEmpty().removeSuffix(" - Topic"),
+    album = "",
+    durationMs = seconds.coerceAtLeast(0) * 1_000,
+    artwork = Artwork(
+        COVER_COLORS[Math.floorMod(videoId.hashCode(), COVER_COLORS.size)],
+        thumbnails.maxByOrNull { it.height.toLong() * it.width }?.url?.replace(THUMBNAIL_SIZE, "=w544-h544"),
+    ),
+)
