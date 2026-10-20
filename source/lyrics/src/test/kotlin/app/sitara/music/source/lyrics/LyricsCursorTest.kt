@@ -25,6 +25,16 @@ class LyricsCursorTest {
     }
 
     @Test
+    fun `at one and a half times speed each line starts on its media time, sooner by the clock`() {
+        // The player reports media time, which runs 1.5 ms per clock ms at 1.5x; the screen samples it every 250 ms.
+        val samples = (0L..6_000L step 250).map { clockMs -> clockMs to clockMs * 3 / 2 }
+        val shownAt = lyrics.lines.indices.map { line ->
+            samples.first { (_, mediaMs) -> LyricsCursor.activeLineIndex(lyrics.lines, mediaMs) == line }.first
+        }
+        assertEquals(listOf(750L, 2_000L, 4_000L), shownAt, "lines at 1 s, 3 s and 6 s of the song")
+    }
+
+    @Test
     fun `reports word progress inside a line`() {
         val line = lyrics.lines[0]
         assertEquals(0f, LyricsCursor.wordProgress(line.words[0], 1_000))

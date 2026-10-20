@@ -141,6 +141,7 @@ class AppViewModel(private val app: SitaraApplication) :
             },
             radio = radioStatus,
             liked = s.queue.current?.id in saved.tracks,
+            tuning = s.tuning,
         )
     }.stateIn(viewModelScope, SharingStarted.Eagerly, PlayerUiState())
 
@@ -272,6 +273,9 @@ class AppViewModel(private val app: SitaraApplication) :
     override fun toggleShuffle() = player.toggleShuffle()
     override fun cycleRepeat() = player.cycleRepeat()
     override fun playQueueIndex(upNextIndex: Int) = player.playUpNext(upNextIndex)
+    override fun setSpeed(speed: Float) = player.setSpeed(speed)
+    override fun setPitch(semitones: Int) = player.setPitch(semitones)
+    override fun resetTuning() = player.resetTuning()
     override fun moveUpNext(from: Int, to: Int) = player.moveUpNext(from, to)
     override fun removeUpNext(index: Int) = player.removeUpNext(index)
 

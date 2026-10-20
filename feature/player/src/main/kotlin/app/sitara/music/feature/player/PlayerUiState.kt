@@ -1,6 +1,7 @@
 package app.sitara.music.feature.player
 
 import app.sitara.music.core.model.Lyrics
+import app.sitara.music.core.model.PlaybackTuning
 import app.sitara.music.core.model.RepeatMode
 import app.sitara.music.core.model.Track
 
@@ -18,6 +19,8 @@ data class PlayerUiState(
     val radio: RadioStatus = RadioStatus.READY,
     /** Whether the current track is in Liked songs. */
     val liked: Boolean = false,
+    /** Speed and pitch for this session. */
+    val tuning: PlaybackTuning = PlaybackTuning(),
 )
 
 /** The current song's lyrics, looked up when it starts. */
@@ -44,6 +47,15 @@ interface PlayerActions {
     fun cycleRepeat()
     fun playQueueIndex(upNextIndex: Int)
     fun cycleSleepTimer()
+
+    /** 0.5 to 2; snapped to steps of 0.05. */
+    fun setSpeed(speed: Float)
+
+    /** Semitones from the original key, within ±6. */
+    fun setPitch(semitones: Int)
+
+    /** Back to normal speed and the original key. */
+    fun resetTuning()
 
     /** Queues songs related to the current one after the last entry. */
     fun startRadio()
@@ -72,6 +84,9 @@ interface PlayerActions {
         override fun cycleRepeat() = Unit
         override fun playQueueIndex(upNextIndex: Int) = Unit
         override fun cycleSleepTimer() = Unit
+        override fun setSpeed(speed: Float) = Unit
+        override fun setPitch(semitones: Int) = Unit
+        override fun resetTuning() = Unit
         override fun startRadio() = Unit
         override fun toggleLike() = Unit
         override fun playNext(track: Track) = Unit

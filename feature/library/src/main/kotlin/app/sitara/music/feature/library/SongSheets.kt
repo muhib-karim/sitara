@@ -13,17 +13,13 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -43,7 +39,6 @@ import app.sitara.music.core.designsystem.SitaraSpacing
 import app.sitara.music.core.model.DownloadState
 import app.sitara.music.core.model.PlaylistSummary
 import app.sitara.music.core.model.Track
-import kotlinx.coroutines.launch
 
 /** What can be done with one song: like it, queue it, put it in a playlist, or download it ([download] is where its download stands). */
 @Composable
@@ -94,20 +89,6 @@ fun AddToPlaylist(track: Track, playlists: List<PlaylistSummary>, onPick: (Playl
                     )
                 }
             }
-        }
-    }
-}
-
-/** A modal sheet whose [content] gets a `close` that runs an action, then slides the sheet away. */
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun SitaraSheet(onDismiss: () -> Unit, content: @Composable (close: (action: () -> Unit) -> Unit) -> Unit) {
-    val state = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    val scope = rememberCoroutineScope()
-    ModalBottomSheet(onDismissRequest = onDismiss, sheetState = state) {
-        content { action ->
-            action()
-            scope.launch { state.hide() }.invokeOnCompletion { onDismiss() }
         }
     }
 }

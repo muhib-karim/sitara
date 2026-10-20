@@ -114,6 +114,7 @@ internal class Crossfader(
         stop()
         armedFor = item
         onTailPrepare()
+        tail.playbackParameters = main.playbackParameters
         tail.setMediaItem(item, fadeAtMs)
         tail.volume = 0f
         tail.prepare()
@@ -167,7 +168,8 @@ internal class Crossfader(
             handedTo = next
             main.seekTo(main.nextMediaItemIndex, 0)
             // A tail that stalls or fails stops moving; the fade still ends on time with the next song at full volume.
-            val endBy = SystemClock.elapsedRealtime() + window + FADE_GRACE_MS
+            // The window is song time, so at half speed it takes twice as long on the clock.
+            val endBy = SystemClock.elapsedRealtime() + (window / tail.playbackParameters.speed).toLong() + FADE_GRACE_MS
             while (true) {
                 val (out, incoming) = Crossfade.gains(Crossfade.progress(tail.currentPosition, durationMs, window))
                 tail.volume = out

@@ -1,6 +1,7 @@
 package app.sitara.music.core.player
 
 import app.sitara.music.core.model.Artwork
+import app.sitara.music.core.model.PlaybackTuning
 import app.sitara.music.core.model.RepeatMode
 import app.sitara.music.core.model.SavedQueue
 import app.sitara.music.core.model.Track
@@ -108,6 +109,24 @@ class PlaybackEngineTest {
     }
 
     private fun List<String>.distinctConsecutive() = filterIndexed { i, id -> i == 0 || this[i - 1] != id }
+
+    @Test
+    fun `speed and pitch go to the player and last through a new queue until reset`() = runTest {
+        val engine = engine()
+        engine.play(five, 0)
+        engine.setSpeed(1.5f)
+        engine.setPitch(-2)
+        assertEquals(PlaybackTuning(speed = 1.5f, semitones = -2), port.tuning)
+
+        engine.play(five.take(2), 1)
+        assertEquals(PlaybackTuning(speed = 1.5f, semitones = -2), engine.state.value.tuning)
+
+        engine.setSpeed(9f)
+        assertEquals("clamped to double speed", 2f, port.tuning.speed)
+        engine.resetTuning()
+        assertEquals(PlaybackTuning(), port.tuning)
+        assertEquals(PlaybackTuning(), engine.state.value.tuning)
+    }
 
     @Test
     fun `the whole queue is handed to the player`() = runTest {

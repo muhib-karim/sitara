@@ -5,9 +5,11 @@ import androidx.core.net.toUri
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
+import androidx.media3.common.PlaybackParameters
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
+import app.sitara.music.core.model.PlaybackTuning
 import app.sitara.music.core.model.RepeatMode
 import app.sitara.music.core.model.Track
 
@@ -76,6 +78,10 @@ class Media3PlayerPort(private val player: ExoPlayer) : PlayerPort {
 
     override fun setPauseAtEndOfItem(enabled: Boolean) {
         player.pauseAtEndOfMediaItems = enabled
+    }
+
+    override fun setTuning(tuning: PlaybackTuning) {
+        player.playbackParameters = PlaybackParameters(tuning.speed, tuning.pitch)
     }
 
     private fun remember(entries: List<QueueEntry>) {

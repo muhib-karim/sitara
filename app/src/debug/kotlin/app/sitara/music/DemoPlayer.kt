@@ -4,6 +4,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import app.sitara.music.core.model.Lyrics
+import app.sitara.music.core.model.PlaybackTuning
 import app.sitara.music.core.model.RepeatMode
 import app.sitara.music.core.model.Track
 import app.sitara.music.feature.player.LyricsState
@@ -49,6 +50,9 @@ internal class DemoPlayer(private var original: List<Track>, lyrics: Lyrics) : P
     override fun cycleSleepTimer() {
         state = state.copy(sleepTimerLabel = if (state.sleepTimerLabel == null) "15:00" else null)
     }
+    override fun setSpeed(speed: Float) { state = state.copy(tuning = state.tuning.withSpeed(speed)) }
+    override fun setPitch(semitones: Int) { state = state.copy(tuning = state.tuning.withSemitones(semitones)) }
+    override fun resetTuning() { state = state.copy(tuning = PlaybackTuning()) }
     // Every sample song is already in the demo queue, so there is nothing left to suggest.
     override fun startRadio() { state = state.copy(radio = RadioStatus.UNAVAILABLE) }
     override fun toggleLike() { state = state.copy(liked = !state.liked) }

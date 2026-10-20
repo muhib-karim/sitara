@@ -37,6 +37,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -87,6 +88,7 @@ internal fun FullPlayer(
     val reduced = LocalReducedMotion.current
     val wash = LocalArtworkWash.current
     val pager = rememberPagerState(initialPage = initialPage.coerceIn(0, 2)) { 3 }
+    var tuningOpen by rememberSaveable { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val backdrop = rememberHazeState()
     fun selectPage(page: Int) {
@@ -119,6 +121,7 @@ internal fun FullPlayer(
                                 }
                             }
                         }
+                        TuningButton(state.tuning) { tuningOpen = true }
                         GlassIconButton(SitaraIcons.Timer, state.sleepTimerLabel?.let { "Sleep timer $it" } ?: "Sleep timer off", actions::cycleSleepTimer)
                     }
                     HorizontalPager(pager, Modifier.weight(1f), userScrollEnabled = true) { page ->
@@ -142,6 +145,7 @@ internal fun FullPlayer(
                     }
                 }
             }
+            if (tuningOpen) TuningSheet(state.tuning, actions) { tuningOpen = false }
         }
     }
 }

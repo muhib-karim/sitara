@@ -1,5 +1,6 @@
 package app.sitara.music.core.player
 
+import app.sitara.music.core.model.PlaybackTuning
 import app.sitara.music.core.model.RepeatMode
 
 /** In-memory player: holds the playlist the engine hands it and records what was asked of it. */
@@ -9,6 +10,7 @@ class FakePlayerPort : PlayerPort {
     var playing: Boolean = false
     var repeat: RepeatMode = RepeatMode.OFF
     var pauseAtEnd: Boolean = false
+    var tuning: PlaybackTuning = PlaybackTuning()
     var setQueueCalls = 0
     var reorderCalls = 0
     override var positionMs: Long = 0
@@ -73,5 +75,9 @@ class FakePlayerPort : PlayerPort {
 
     override fun setPauseAtEndOfItem(enabled: Boolean) {
         pauseAtEnd = enabled
+    }
+
+    override fun setTuning(tuning: PlaybackTuning) {
+        this.tuning = tuning
     }
 }

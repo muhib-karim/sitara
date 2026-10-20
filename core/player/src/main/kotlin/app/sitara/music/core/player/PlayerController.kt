@@ -96,6 +96,12 @@ class PlayerController(
 
     fun playUpNext(upNextIndex: Int) = gate.run { it.playUpNext(upNextIndex) }
 
+    fun setSpeed(speed: Float) = gate.run { it.setSpeed(speed) }
+
+    fun setPitch(semitones: Int) = gate.run { it.setPitch(semitones) }
+
+    fun resetTuning() = gate.run { it.resetTuning() }
+
     fun startSleepTimer(minutes: Int) = gate.run { it.startSleepTimer(minutes) }
 
     fun sleepAtEndOfTrack() = gate.run { it.sleepAtEndOfTrack() }

@@ -1,5 +1,6 @@
 package app.sitara.music.core.player
 
+import app.sitara.music.core.model.PlaybackTuning
 import app.sitara.music.core.model.RepeatMode
 
 /**
@@ -41,4 +42,7 @@ interface PlayerPort {
 
     /** Pause when the current item finishes instead of moving to the next one. */
     fun setPauseAtEndOfItem(enabled: Boolean)
+
+    /** Speed and pitch; they apply to every item until changed. */
+    fun setTuning(tuning: PlaybackTuning)
 }

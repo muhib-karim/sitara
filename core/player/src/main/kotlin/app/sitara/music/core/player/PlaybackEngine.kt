@@ -1,5 +1,6 @@
 package app.sitara.music.core.player
 
+import app.sitara.music.core.model.PlaybackTuning
 import app.sitara.music.core.model.RepeatMode
 import app.sitara.music.core.model.SavedQueue
 import app.sitara.music.core.model.Track
@@ -16,6 +17,7 @@ data class PlaybackSnapshot(
     val isPlaying: Boolean = false,
     val positionMs: Long = 0,
     val durationMs: Long = 0,
+    val tuning: PlaybackTuning = PlaybackTuning(),
 )
 
 /**
@@ -165,6 +167,13 @@ class PlaybackEngine(
         port.setRepeatMode(mode)
     }
 
+    /** Speed and pitch hold for the session: through new queues, until reset or the service stops. */
+    fun setSpeed(speed: Float) = tune(_state.value.tuning.withSpeed(speed))
+
+    fun setPitch(semitones: Int) = tune(_state.value.tuning.withSemitones(semitones))
+
+    fun resetTuning() = tune(PlaybackTuning())
+
     fun startSleepTimer(minutes: Int) {
         port.setPauseAtEndOfItem(false)
         sleepTimer.start(minutes)
@@ -238,6 +247,11 @@ class PlaybackEngine(
             port.play()
         }
         refresh()
+    }
+
+    private fun tune(tuning: PlaybackTuning) {
+        _state.update { it.copy(tuning = tuning) }
+        port.setTuning(tuning)
     }
 
     private fun publish(next: QueueState) {

@@ -4,6 +4,7 @@ import androidx.activity.OnBackPressedDispatcher
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsDisplayed
@@ -23,6 +24,7 @@ import androidx.compose.ui.test.swipe
 import androidx.compose.ui.test.swipeLeft
 import androidx.compose.ui.test.swipeUp
 import app.sitara.music.core.model.DarkMode
+import app.sitara.music.core.model.PlaybackTuning
 import app.sitara.music.core.model.SearchFilter
 import app.sitara.music.core.model.SitaraSettings
 import app.sitara.music.core.model.Track
@@ -57,6 +59,7 @@ class PlayerInteractionTest {
         durationMs: Long = 100_000,
         upNext: List<Track> = emptyList(),
         lyricsState: LyricsState? = null,
+        tuning: PlaybackTuning = PlaybackTuning(),
     ) {
         val source = FakeMusicSource()
         val track = SampleCatalog.tracks.first()
@@ -70,7 +73,7 @@ class PlayerInteractionTest {
                 query = "",
                 searchFilter = SearchFilter.SONGS,
                 search = SearchState.Idle,
-                player = PlayerUiState(track = track, durationMs = durationMs, lyrics = lyricsState ?: LyricsState.Found(lyrics), positionMs = 15_300, upNext = upNext),
+                player = PlayerUiState(track = track, durationMs = durationMs, lyrics = lyricsState ?: LyricsState.Found(lyrics), positionMs = 15_300, upNext = upNext, tuning = tuning),
                 actions = actions,
                 details = SampleDetailPages(source),
                 onQueryChange = {},
@@ -212,6 +215,31 @@ class PlayerInteractionTest {
         compose.onNodeWithText("Lyrics didn’t load. Check your connection, then try again.").assertIsDisplayed()
         compose.onNodeWithText("Try again").performClick()
         assertEquals(1, retries)
+    }
+
+    @Test
+    fun speedAndPitchSheetSetsBoth() {
+        val calls = mutableListOf<String>()
+        render(expanded = true, actions = object : PlayerActions by PlayerActions.None {
+            override fun setSpeed(speed: Float) { calls += "speed $speed" }
+            override fun setPitch(semitones: Int) { calls += "pitch $semitones" }
+        })
+        compose.onNodeWithContentDescription("Speed and pitch").performClick()
+        compose.onNodeWithText("Reset").assertDoesNotExist()
+        compose.onNodeWithText("1.5×").performClick()
+        compose.onNodeWithContentDescription("Pitch").performSemanticsAction(SemanticsActions.SetProgress) { it(2f) }
+        assertEquals(listOf("speed 1.5", "pitch 2"), calls)
+    }
+
+    @Test
+    fun changedSpeedShowsInTheTopBarAndResets() {
+        var resets = 0
+        render(expanded = true, tuning = PlaybackTuning(speed = 1.25f, semitones = -1), actions = object : PlayerActions by PlayerActions.None {
+            override fun resetTuning() { resets++ }
+        })
+        compose.onNode(hasContentDescription("Speed and pitch") and SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "1.25×, −1 semitone")).performClick()
+        compose.onNodeWithText("Reset").performClick()
+        assertEquals(1, resets)
     }
 
     @Test
