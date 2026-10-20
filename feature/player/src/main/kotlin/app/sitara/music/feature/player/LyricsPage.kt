@@ -2,6 +2,7 @@ package app.sitara.music.feature.player
 
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.DragInteraction
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
@@ -17,7 +18,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.drawWithContent
@@ -50,7 +55,8 @@ private val PlainStyle = TextStyle(fontFamily = Inter, fontSize = 22.sp, lineHei
 private const val LINE_CONTENT_TYPE = "lyric"
 
 /**
- * Synced lyrics: the active line stays white and in focus, the list follows it, and tapping a line seeks.
+ * Synced lyrics: the active line stays white and in focus and the list follows it; tapping a line seeks. Scrolling by
+ * hand stops the following until "Back to current line" resumes it.
  * Plain lyrics have no timing, so they are shown as static text with no highlight, scrolling or seeking.
  * Both end with a credit to where they came from.
  */
@@ -117,8 +123,13 @@ private fun SyncedLyrics(lyrics: Lyrics, positionMs: Long, contentColor: Color, 
     val active = LyricsCursor.activeLineIndex(lyrics, positionMs)
     val listState = rememberLazyListState()
     val reduced = LocalReducedMotion.current
-    LaunchedEffect(lyrics, active, reduced) {
-        if (active >= 0) {
+    // A hand scroll means the listener is reading elsewhere: stop following until they ask to come back.
+    var following by remember(lyrics) { mutableStateOf(true) }
+    LaunchedEffect(listState) {
+        listState.interactionSource.interactions.collect { if (it is DragInteraction.Start) following = false }
+    }
+    LaunchedEffect(lyrics, active, reduced, following) {
+        if (following && active >= 0) {
             // Await measurement, then keep enough preceding context above the active line.
             val viewport = snapshotFlow { listState.layoutInfo.viewportSize.height }.first { it > 0 }
             val offset = -(viewport * 0.35f).toInt()
@@ -154,6 +165,9 @@ private fun SyncedLyrics(lyrics: Lyrics, positionMs: Long, contentColor: Color, 
                 }
             }
             item(contentType = "credit") { SourceCredit(lyrics.source, contentColor) }
+        }
+        if (!following) {
+            PillButton("Back to current line", { following = true }, Modifier.align(Alignment.BottomCenter).padding(bottom = 24.dp))
         }
     }
 }
