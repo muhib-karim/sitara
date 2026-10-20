@@ -89,6 +89,7 @@ internal fun FullPlayer(
     val wash = LocalArtworkWash.current
     val pager = rememberPagerState(initialPage = initialPage.coerceIn(0, 2)) { 3 }
     var tuningOpen by rememberSaveable { mutableStateOf(false) }
+    var sleepTimerOpen by rememberSaveable { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val backdrop = rememberHazeState()
     fun selectPage(page: Int) {
@@ -122,7 +123,7 @@ internal fun FullPlayer(
                             }
                         }
                         TuningButton(state.tuning) { tuningOpen = true }
-                        GlassIconButton(SitaraIcons.Timer, state.sleepTimerLabel?.let { "Sleep timer $it" } ?: "Sleep timer off", actions::cycleSleepTimer)
+                        SleepTimerButton(state.sleepTimer) { sleepTimerOpen = true }
                     }
                     HorizontalPager(pager, Modifier.weight(1f), userScrollEnabled = true) { page ->
                         when (page) {
@@ -146,6 +147,7 @@ internal fun FullPlayer(
                 }
             }
             if (tuningOpen) TuningSheet(state.tuning, actions) { tuningOpen = false }
+            if (sleepTimerOpen) SleepTimerSheet(state.sleepTimer, actions) { sleepTimerOpen = false }
         }
     }
 }

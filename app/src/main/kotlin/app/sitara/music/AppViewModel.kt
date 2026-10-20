@@ -6,7 +6,6 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
-import app.sitara.music.core.common.formatDuration
 import app.sitara.music.core.model.Album
 import app.sitara.music.core.model.Artist
 import app.sitara.music.core.model.PlaylistSummary
@@ -29,6 +28,7 @@ import app.sitara.music.feature.player.LyricsState
 import app.sitara.music.feature.player.PlayerActions
 import app.sitara.music.feature.player.PlayerUiState
 import app.sitara.music.feature.player.RadioStatus
+import app.sitara.music.feature.player.SleepTimerStatus
 import app.sitara.music.feature.search.SearchState
 import app.sitara.music.feature.search.searchStates
 import app.sitara.music.source.api.BrowseSource
@@ -134,10 +134,10 @@ class AppViewModel(private val app: SitaraApplication) :
             shuffled = s.queue.shuffled,
             repeatMode = s.queue.repeatMode,
             lyrics = l,
-            sleepTimerLabel = when (timer) {
-                SleepTimerState.Off -> null
-                SleepTimerState.EndOfTrack -> "end of track"
-                is SleepTimerState.Counting -> formatDuration(timer.remainingMs)
+            sleepTimer = when (timer) {
+                SleepTimerState.Off -> SleepTimerStatus.Off
+                SleepTimerState.EndOfTrack -> SleepTimerStatus.EndOfTrack
+                is SleepTimerState.Counting -> SleepTimerStatus.Counting(timer.remainingMs)
             },
             radio = radioStatus,
             liked = s.queue.current?.id in saved.tracks,
@@ -326,14 +326,10 @@ class AppViewModel(private val app: SitaraApplication) :
 
     private fun toast(text: String) = Toast.makeText(app, text, Toast.LENGTH_SHORT).show()
 
-    /** Off -> 15 min -> 30 min -> end of track -> off. */
-    override fun cycleSleepTimer() {
-        when (val s = player.sleepTimerState.value) {
-            SleepTimerState.Off -> player.startSleepTimer(15)
-            is SleepTimerState.Counting -> if (s.remainingMs > 15 * 60_000) player.sleepAtEndOfTrack() else player.startSleepTimer(30)
-            SleepTimerState.EndOfTrack -> player.cancelSleepTimer()
-        }
-    }
+    override fun startSleepTimer(minutes: Int) = player.startSleepTimer(minutes)
+    override fun extendSleepTimer(minutes: Int) = player.extendSleepTimer(minutes)
+    override fun sleepAtEndOfTrack() = player.sleepAtEndOfTrack()
+    override fun cancelSleepTimer() = player.cancelSleepTimer()
 
     /** Drops the UI's binding only; the service keeps playing, advancing and timing. */
     override fun onCleared() {

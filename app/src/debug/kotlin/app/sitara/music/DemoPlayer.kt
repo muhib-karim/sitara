@@ -11,6 +11,7 @@ import app.sitara.music.feature.player.LyricsState
 import app.sitara.music.feature.player.PlayerActions
 import app.sitara.music.feature.player.PlayerUiState
 import app.sitara.music.feature.player.RadioStatus
+import app.sitara.music.feature.player.SleepTimerStatus
 
 /** Debug capture fixture: a frozen clock and local queue, with no service or network connection. */
 internal class DemoPlayer(private var original: List<Track>, lyrics: Lyrics) : PlayerActions {
@@ -47,9 +48,13 @@ internal class DemoPlayer(private var original: List<Track>, lyrics: Lyrics) : P
     override fun playQueueIndex(upNextIndex: Int) {
         if (upNextIndex in state.upNext.indices) select(index + 1 + upNextIndex)
     }
-    override fun cycleSleepTimer() {
-        state = state.copy(sleepTimerLabel = if (state.sleepTimerLabel == null) "15:00" else null)
+    // The demo clock is frozen, so a timer shows its full length and never runs out.
+    override fun startSleepTimer(minutes: Int) { state = state.copy(sleepTimer = SleepTimerStatus.Counting(minutes * 60_000L)) }
+    override fun extendSleepTimer(minutes: Int) {
+        (state.sleepTimer as? SleepTimerStatus.Counting)?.let { state = state.copy(sleepTimer = SleepTimerStatus.Counting(it.remainingMs + minutes * 60_000L)) }
     }
+    override fun sleepAtEndOfTrack() { state = state.copy(sleepTimer = SleepTimerStatus.EndOfTrack) }
+    override fun cancelSleepTimer() { state = state.copy(sleepTimer = SleepTimerStatus.Off) }
     override fun setSpeed(speed: Float) { state = state.copy(tuning = state.tuning.withSpeed(speed)) }
     override fun setPitch(semitones: Int) { state = state.copy(tuning = state.tuning.withSemitones(semitones)) }
     override fun resetTuning() { state = state.copy(tuning = PlaybackTuning()) }

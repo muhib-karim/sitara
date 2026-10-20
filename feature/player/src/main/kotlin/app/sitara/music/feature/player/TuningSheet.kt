@@ -72,50 +72,53 @@ internal fun TuningButton(tuning: PlaybackTuning, onClick: () -> Unit) {
     }
 }
 
-/** Speed (0.5x to 2x) and pitch (±6 semitones) for this session, with presets and a reset. */
-@OptIn(ExperimentalLayoutApi::class)
 @Composable
 internal fun TuningSheet(tuning: PlaybackTuning, actions: PlayerActions, onDismiss: () -> Unit) {
-    SitaraSheet(onDismiss) { _ ->
-        Column(Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = SitaraSpacing.Gutter).padding(bottom = 16.dp)) {
-            Row(Modifier.fillMaxWidth().heightIn(min = SitaraSpacing.TouchTarget), verticalAlignment = Alignment.CenterVertically) {
-                Text("Speed and pitch", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
-                if (!tuning.isDefault) PillButton("Reset", actions::resetTuning, primary = false)
-            }
-            SliderHeading("Speed", speedLabel(tuning.speed))
-            Slider(
-                value = tuning.speed,
-                onValueChange = actions::setSpeed,
-                valueRange = PlaybackTuning.MIN_SPEED..PlaybackTuning.MAX_SPEED,
-                steps = ((PlaybackTuning.MAX_SPEED - PlaybackTuning.MIN_SPEED) * PlaybackTuning.SPEED_STEPS_PER_UNIT).roundToInt() - 1,
-                colors = accentSlider(),
-                modifier = Modifier.semantics {
-                    contentDescription = "Speed"
-                    stateDescription = speedLabel(tuning.speed)
-                },
-            )
-            FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                SpeedPresets.forEach { preset -> ChoicePill(speedLabel(preset), selected = tuning.speed == preset) { actions.setSpeed(preset) } }
-            }
-            SliderHeading("Pitch", pitchLabel(tuning.semitones), Modifier.padding(top = 20.dp))
-            Slider(
-                value = tuning.semitones.toFloat(),
-                onValueChange = { actions.setPitch(it.roundToInt()) },
-                valueRange = -PlaybackTuning.MAX_SEMITONES.toFloat()..PlaybackTuning.MAX_SEMITONES.toFloat(),
-                steps = 2 * PlaybackTuning.MAX_SEMITONES - 1,
-                colors = accentSlider(),
-                modifier = Modifier.semantics {
-                    contentDescription = "Pitch"
-                    stateDescription = pitchLabel(tuning.semitones)
-                },
-            )
-            Text(
-                "Pitch changes the key without changing the speed. Both last until playback stops; lyrics keep time at any speed.",
-                style = MaterialTheme.typography.bodySmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                modifier = Modifier.padding(top = 8.dp),
-            )
+    SitaraSheet(onDismiss) { _ -> SpeedAndPitch(tuning, actions) }
+}
+
+/** Speed (0.5x to 2x) and pitch (±6 semitones) for this session, with presets and a reset; the content of [TuningSheet]. */
+@OptIn(ExperimentalLayoutApi::class)
+@Composable
+fun SpeedAndPitch(tuning: PlaybackTuning, actions: PlayerActions) {
+    Column(Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = SitaraSpacing.Gutter).padding(bottom = 16.dp)) {
+        Row(Modifier.fillMaxWidth().heightIn(min = SitaraSpacing.TouchTarget), verticalAlignment = Alignment.CenterVertically) {
+            Text("Speed and pitch", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
+            if (!tuning.isDefault) PillButton("Reset", actions::resetTuning, primary = false)
         }
+        SliderHeading("Speed", speedLabel(tuning.speed))
+        Slider(
+            value = tuning.speed,
+            onValueChange = actions::setSpeed,
+            valueRange = PlaybackTuning.MIN_SPEED..PlaybackTuning.MAX_SPEED,
+            steps = ((PlaybackTuning.MAX_SPEED - PlaybackTuning.MIN_SPEED) * PlaybackTuning.SPEED_STEPS_PER_UNIT).roundToInt() - 1,
+            colors = accentSlider(),
+            modifier = Modifier.semantics {
+                contentDescription = "Speed"
+                stateDescription = speedLabel(tuning.speed)
+            },
+        )
+        FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            SpeedPresets.forEach { preset -> ChoicePill(speedLabel(preset), selected = tuning.speed == preset) { actions.setSpeed(preset) } }
+        }
+        SliderHeading("Pitch", pitchLabel(tuning.semitones), Modifier.padding(top = 20.dp))
+        Slider(
+            value = tuning.semitones.toFloat(),
+            onValueChange = { actions.setPitch(it.roundToInt()) },
+            valueRange = -PlaybackTuning.MAX_SEMITONES.toFloat()..PlaybackTuning.MAX_SEMITONES.toFloat(),
+            steps = 2 * PlaybackTuning.MAX_SEMITONES - 1,
+            colors = accentSlider(),
+            modifier = Modifier.semantics {
+                contentDescription = "Pitch"
+                stateDescription = pitchLabel(tuning.semitones)
+            },
+        )
+        Text(
+            "Pitch changes the key without changing the speed. Both last until playback stops; lyrics keep time at any speed.",
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.padding(top = 8.dp),
+        )
     }
 }
 

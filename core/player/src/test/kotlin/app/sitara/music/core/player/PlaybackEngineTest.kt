@@ -259,6 +259,20 @@ class PlaybackEngineTest {
     }
 
     @Test
+    fun `an extended sleep timer pauses later`() = runTest {
+        val engine = engine()
+        engine.play(five, 0)
+        engine.startSleepTimer(minutes = 1)
+        engine.extendSleepTimer(minutes = 5)
+        advanceTimeBy(60_001)
+        runCurrent()
+        assertTrue(port.playing)
+        advanceTimeBy(5 * 60_000L)
+        runCurrent()
+        assertFalse(port.playing)
+    }
+
+    @Test
     fun `end-of-track sleep asks the player to pause at the item end`() = runTest {
         val engine = engine()
         engine.play(five, 0)

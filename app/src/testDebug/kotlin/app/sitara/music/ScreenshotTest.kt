@@ -22,6 +22,7 @@ import app.sitara.music.core.designsystem.SitaraTheme
 import app.sitara.music.core.model.DarkMode
 import app.sitara.music.core.model.DownloadState
 import app.sitara.music.core.model.Library
+import app.sitara.music.core.model.PlaybackTuning
 import app.sitara.music.core.model.SearchFilter
 import app.sitara.music.core.model.SearchResults
 import app.sitara.music.core.model.SitaraSettings
@@ -39,6 +40,9 @@ import app.sitara.music.feature.library.SongActions
 import app.sitara.music.feature.player.LyricsState
 import app.sitara.music.feature.player.PlayerActions
 import app.sitara.music.feature.player.PlayerUiState
+import app.sitara.music.feature.player.SleepTimerOptions
+import app.sitara.music.feature.player.SleepTimerStatus
+import app.sitara.music.feature.player.SpeedAndPitch
 import app.sitara.music.feature.search.SearchState
 import app.sitara.music.source.fake.FakeMusicSource
 import app.sitara.music.source.fake.SampleCatalog
@@ -250,6 +254,12 @@ class ScreenshotTest {
     @Test fun playerLiked() = shot("player_liked", dark = true, expanded = true, playerState = playing.copy(liked = true))
 
     @Test fun songActionsSheet() = sheet("song_actions") { SongActions(Fixtures.playlist.tracks.first(), liked = true, download = null, {}, {}, {}, {}, {}, {}) }
+    @Test fun speedAndPitchSheet() = sheet("speed_pitch") { SpeedAndPitch(PlaybackTuning(speed = 1.25f, semitones = -2), PlayerActions.None) }
+    @Test fun sleepTimerSheet() = sheet("sleep_timer") { SleepTimerOptions(SleepTimerStatus.Counting(754_000), PlayerActions.None) { it() } }
+    @Test fun playerTimerAndSpeedSet() = shot(
+        "player_timer_speed", dark = true, expanded = true,
+        playerState = playing.copy(sleepTimer = SleepTimerStatus.Counting(754_000), tuning = PlaybackTuning(speed = 1.5f)),
+    )
     @Test fun songActionsDownloaded() = sheet("song_actions_downloaded") {
         SongActions(Fixtures.playlist.tracks.first(), liked = false, download = DownloadState.DOWNLOADED, {}, {}, {}, {}, {}, {})
     }

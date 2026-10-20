@@ -15,7 +15,7 @@ data class PlayerUiState(
     val shuffled: Boolean = false,
     val repeatMode: RepeatMode = RepeatMode.OFF,
     val lyrics: LyricsState = LyricsState.NotFound,
-    val sleepTimerLabel: String? = null,
+    val sleepTimer: SleepTimerStatus = SleepTimerStatus.Off,
     val radio: RadioStatus = RadioStatus.READY,
     /** Whether the current track is in Liked songs. */
     val liked: Boolean = false,
@@ -46,7 +46,14 @@ interface PlayerActions {
     fun toggleShuffle()
     fun cycleRepeat()
     fun playQueueIndex(upNextIndex: Int)
-    fun cycleSleepTimer()
+    fun startSleepTimer(minutes: Int)
+
+    /** Adds minutes to a running timer. */
+    fun extendSleepTimer(minutes: Int)
+
+    fun sleepAtEndOfTrack()
+
+    fun cancelSleepTimer()
 
     /** 0.5 to 2; snapped to steps of 0.05. */
     fun setSpeed(speed: Float)
@@ -83,7 +90,10 @@ interface PlayerActions {
         override fun toggleShuffle() = Unit
         override fun cycleRepeat() = Unit
         override fun playQueueIndex(upNextIndex: Int) = Unit
-        override fun cycleSleepTimer() = Unit
+        override fun startSleepTimer(minutes: Int) = Unit
+        override fun extendSleepTimer(minutes: Int) = Unit
+        override fun sleepAtEndOfTrack() = Unit
+        override fun cancelSleepTimer() = Unit
         override fun setSpeed(speed: Float) = Unit
         override fun setPitch(semitones: Int) = Unit
         override fun resetTuning() = Unit

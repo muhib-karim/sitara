@@ -33,6 +33,7 @@ import app.sitara.music.feature.library.LibraryState
 import app.sitara.music.feature.player.LyricsState
 import app.sitara.music.feature.player.PlayerActions
 import app.sitara.music.feature.player.PlayerUiState
+import app.sitara.music.feature.player.SleepTimerStatus
 import app.sitara.music.feature.search.SearchState
 import app.sitara.music.source.fake.FakeMusicSource
 import app.sitara.music.source.fake.SampleCatalog
@@ -60,6 +61,7 @@ class PlayerInteractionTest {
         upNext: List<Track> = emptyList(),
         lyricsState: LyricsState? = null,
         tuning: PlaybackTuning = PlaybackTuning(),
+        sleepTimer: SleepTimerStatus = SleepTimerStatus.Off,
     ) {
         val source = FakeMusicSource()
         val track = SampleCatalog.tracks.first()
@@ -73,7 +75,7 @@ class PlayerInteractionTest {
                 query = "",
                 searchFilter = SearchFilter.SONGS,
                 search = SearchState.Idle,
-                player = PlayerUiState(track = track, durationMs = durationMs, lyrics = lyricsState ?: LyricsState.Found(lyrics), positionMs = 15_300, upNext = upNext, tuning = tuning),
+                player = PlayerUiState(track = track, durationMs = durationMs, lyrics = lyricsState ?: LyricsState.Found(lyrics), positionMs = 15_300, upNext = upNext, tuning = tuning, sleepTimer = sleepTimer),
                 actions = actions,
                 details = SampleDetailPages(source),
                 onQueryChange = {},
@@ -240,6 +242,45 @@ class PlayerInteractionTest {
         compose.onNode(hasContentDescription("Speed and pitch") and SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "1.25×, −1 semitone")).performClick()
         compose.onNodeWithText("Reset").performClick()
         assertEquals(1, resets)
+    }
+
+    @Test
+    fun sleepTimerSheetStartsPresetsCustomMinutesAndEndOfSong() {
+        val calls = mutableListOf<String>()
+        val actions = object : PlayerActions by PlayerActions.None {
+            override fun startSleepTimer(minutes: Int) { calls += "start $minutes" }
+            override fun sleepAtEndOfTrack() { calls += "end of song" }
+        }
+        render(expanded = true, actions = actions)
+        compose.onNode(hasContentDescription("Sleep timer") and SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "Off")).performClick()
+        compose.onNodeWithText("Turn off").assertDoesNotExist()
+        compose.onNodeWithText("30 min").performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithContentDescription("Sleep timer").performClick()
+        compose.onNodeWithContentDescription("One minute more").performClick()
+        compose.onNodeWithContentDescription("One minute more").performClick()
+        compose.onNodeWithText("Start 22 min timer").performClick()
+        compose.waitForIdle()
+
+        compose.onNodeWithContentDescription("Sleep timer").performClick()
+        compose.onNodeWithText("End of this song").performClick()
+        assertEquals(listOf("start 30", "start 22", "end of song"), calls)
+    }
+
+    @Test
+    fun runningSleepTimerExtendsAndTurnsOff() {
+        val calls = mutableListOf<String>()
+        render(expanded = true, sleepTimer = SleepTimerStatus.Counting(10 * 60_000L), actions = object : PlayerActions by PlayerActions.None {
+            override fun extendSleepTimer(minutes: Int) { calls += "extend $minutes" }
+            override fun cancelSleepTimer() { calls += "off" }
+        })
+        compose.onNodeWithContentDescription("Sleep timer").performClick()
+        compose.onNodeWithText("Pauses in 10:00").assertIsDisplayed()
+        compose.onNodeWithText("+5 min").performClick()
+        compose.onNodeWithText("+15 min").performClick()
+        compose.onNodeWithText("Turn off").performClick()
+        assertEquals(listOf("extend 5", "extend 15", "off"), calls)
     }
 
     @Test

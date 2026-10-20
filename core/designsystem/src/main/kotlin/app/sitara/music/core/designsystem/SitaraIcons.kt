@@ -126,6 +126,7 @@ object SitaraIcons {
         }
     }
     val Add = icon("add", filled = false) { moveTo(12f, 5f); lineTo(12f, 19f); moveTo(5f, 12f); lineTo(19f, 12f) }
+    val Minus = icon("minus", filled = false) { moveTo(5f, 12f); lineTo(19f, 12f) }
     val Timer = icon("timer", filled = false) {
         moveTo(19f, 13f)
         arcTo(7f, 7f, 0f, true, true, 5f, 13f)

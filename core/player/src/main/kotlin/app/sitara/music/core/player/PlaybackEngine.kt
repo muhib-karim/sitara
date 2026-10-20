@@ -180,6 +180,8 @@ class PlaybackEngine(
         prepareFollowing()
     }
 
+    fun extendSleepTimer(minutes: Int) = sleepTimer.extend(minutes)
+
     fun sleepAtEndOfTrack() {
         sleepTimer.startEndOfTrack()
         port.setPauseAtEndOfItem(true)

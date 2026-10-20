@@ -52,6 +52,76 @@ class SleepTimerTest {
     }
 
     @Test
+    fun `a custom number of minutes expires exactly then`() = runTest {
+        var fired = 0
+        val timer = SleepTimer(backgroundScope, timeSource = virtualTime()) { fired++ }
+        timer.start(minutes = 37)
+        advanceTimeBy(37 * 60_000L - 1)
+        runCurrent()
+        assertEquals(0, fired)
+        advanceTimeBy(1)
+        runCurrent()
+        assertEquals(1, fired)
+    }
+
+    @Test
+    fun `extending while counting moves the expiry by that much`() = runTest {
+        var fired = 0
+        val timer = SleepTimer(backgroundScope, timeSource = virtualTime()) { fired++ }
+        timer.start(minutes = 1)
+        advanceTimeBy(30_000)
+        timer.extend(minutes = 5)
+        assertEquals(SleepTimerState.Counting(330_000), timer.state.value)
+        timer.extend(minutes = 15)
+        assertEquals(SleepTimerState.Counting(1_230_000), timer.state.value)
+
+        advanceTimeBy(1_230_000 - 1)
+        runCurrent()
+        assertEquals(0, fired)
+        advanceTimeBy(1)
+        runCurrent()
+        assertEquals(1, fired)
+        assertEquals(SleepTimerState.Off, timer.state.value)
+    }
+
+    @Test
+    fun `extending in the last second still counts on`() = runTest {
+        var fired = 0
+        val timer = SleepTimer(backgroundScope, timeSource = virtualTime()) { fired++ }
+        timer.start(minutes = 1)
+        advanceTimeBy(59_500)
+        runCurrent()
+        timer.extend(minutes = 5)
+        advanceTimeBy(1_000)
+        runCurrent()
+        assertEquals(0, fired)
+        assertEquals("the next whole-second tick reads the new deadline", SleepTimerState.Counting(300_000), timer.state.value)
+    }
+
+    @Test
+    fun `there is nothing to extend when no countdown runs`() = runTest {
+        val timer = SleepTimer(backgroundScope, timeSource = virtualTime()) {}
+        timer.extend(minutes = 5)
+        assertEquals(SleepTimerState.Off, timer.state.value)
+        timer.startEndOfTrack()
+        timer.extend(minutes = 5)
+        assertEquals(SleepTimerState.EndOfTrack, timer.state.value)
+    }
+
+    @Test
+    fun `cancel after an extension never fires`() = runTest {
+        var fired = 0
+        val timer = SleepTimer(backgroundScope, timeSource = virtualTime()) { fired++ }
+        timer.start(minutes = 1)
+        timer.extend(minutes = 5)
+        timer.cancel()
+        timer.extend(minutes = 5)
+        advanceTimeBy(60 * 60_000L)
+        assertEquals(SleepTimerState.Off, timer.state.value)
+        assertEquals(0, fired)
+    }
+
+    @Test
     fun `end of track waits for the track to finish`() = runTest {
         var fired = 0
         val timer = SleepTimer(backgroundScope, timeSource = virtualTime()) { fired++ }

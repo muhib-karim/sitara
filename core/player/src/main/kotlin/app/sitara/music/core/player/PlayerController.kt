@@ -104,6 +104,8 @@ class PlayerController(
 
     fun startSleepTimer(minutes: Int) = gate.run { it.startSleepTimer(minutes) }
 
+    fun extendSleepTimer(minutes: Int) = gate.run { it.extendSleepTimer(minutes) }
+
     fun sleepAtEndOfTrack() = gate.run { it.sleepAtEndOfTrack() }
 
     fun cancelSleepTimer() = gate.run { it.cancelSleepTimer() }
