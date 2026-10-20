@@ -12,12 +12,11 @@ import kotlin.math.sin
 import kotlin.math.sinh
 
 /**
- * The built-in 10-band equaliser: one peaking biquad per band (RBJ cookbook, an octave wide) and a preamp. Gains glide at
- * [SLEW_DB_PER_S], the filters re-designed every [CHUNK_FRAMES] frames and the preamp ramped per sample, so moving a
- * slider never clicks. Headroom is the listener's (the presets carry a preamp that cancels their largest boost); a peak
- * limiter with instant attack keeps every sample under [CEILING], so a boost squashes a loud master rather than
- * clipping it. Flat settings, once the gains have glided back, pass audio through untouched. [process] runs on the
- * playback thread; [settings] may be set from any thread.
+ * The built-in 10-band equaliser: one peaking biquad per band (RBJ cookbook, an octave wide) after a preamp. Gains glide at [SLEW_DB_PER_S], the filters re-designed every [CHUNK_FRAMES] frames
+ * and the preamp ramped per sample, so moving a slider never clicks. Headroom is the listener's (the presets carry a
+ * preamp that cancels their largest boost); a peak limiter with instant attack keeps every sample under [CEILING], so a
+ * boost squashes a loud master rather than clipping it. Flat settings, once the gains have glided back,
+ * pass audio through untouched. [process] runs on the playback thread; [settings] may be set from any thread.
  */
 class Equaliser {
     @Volatile var settings = EqualiserSettings()
@@ -25,7 +24,12 @@ class Equaliser {
     private var sampleRate = 0
     private var channels = 0
     private val gainDb = DoubleArray(BANDS)
-    private var preampDb = 0.0
+
+    // A band runs until it is back at 0 dB and its memory has caught up with its input, so dropping it changes nothing.
+    private val running = BooleanArray(BANDS)
+
+    // The preamp, as it glides.
+    private var levelDb = 0.0
 
     // b0, b1, b2, a1, a2 per band, normalised by a0.
     private val coefficients = DoubleArray(BANDS * 5)
@@ -37,7 +41,7 @@ class Equaliser {
     private var limiterRelease = 1.0
 
     /** Audio passes through unchanged. */
-    val isUnity: Boolean get() = settings.isFlat && preampDb == 0.0 && limiterGain == 1.0 && gainDb.all { it == 0.0 }
+    val isUnity: Boolean get() = settings.isFlat && levelDb == 0.0 && limiterGain == 1.0 && running.none { it }
 
     /** Forgets recent audio, for a seek or a new stream. */
     fun reset() {
@@ -58,19 +62,24 @@ class Equaliser {
             for (band in 0 until BANDS) {
                 // A band at or past the highest frequency the stream carries cannot be designed; it stays flat.
                 val wanted = if (target.enabled && EqualiserSettings.BAND_CENTRES_HZ[band] < MAX_CENTRE_OF_RATE * sampleRate) target.bandsDb[band].toDouble() else 0.0
-                if (gainDb[band] == wanted) continue
-                gainDb[band] = approach(gainDb[band], wanted, step)
-                if (gainDb[band] == 0.0) memory.fill(0.0, band * channels * 4, (band + 1) * channels * 4) else design(band)
+                if (gainDb[band] != wanted) {
+                    gainDb[band] = approach(gainDb[band], wanted, step)
+                    design(band)
+                    running[band] = true
+                } else if (wanted == 0.0 && running[band] && caughtUp(band)) {
+                    running[band] = false
+                    memory.fill(0.0, band * channels * 4, (band + 1) * channels * 4)
+                }
             }
-            val preampFrom = dbToGain(preampDb)
-            preampDb = approach(preampDb, if (target.enabled) target.preampDb.toDouble() else 0.0, step)
-            val preampTo = dbToGain(preampDb)
+            val levelFrom = dbToGain(levelDb)
+            levelDb = approach(levelDb, if (target.enabled) target.preampDb.toDouble() else 0.0, step)
+            val levelTo = dbToGain(levelDb)
             for (f in start until end) {
-                val preamp = preampFrom + (preampTo - preampFrom) * (f - start + 1) / (end - start)
+                val level = levelFrom + (levelTo - levelFrom) * (f - start + 1) / (end - start)
                 var peak = 0.0
                 for (c in 0 until channels) {
-                    var x = samples[f * channels + c] * preamp
-                    for (band in 0 until BANDS) if (gainDb[band] != 0.0) x = filter(band, c, x)
+                    var x = samples[f * channels + c] * level
+                    for (band in 0 until BANDS) if (running[band]) x = filter(band, c, x)
                     frame[c] = x
                     peak = max(peak, abs(x))
                 }
@@ -89,7 +98,13 @@ class Equaliser {
         frame = DoubleArray(channels)
         limiterGain = 1.0
         limiterRelease = 10.0.pow(LIMITER_RELEASE_DB_PER_S / 20 / sampleRate)
-        for (band in 0 until BANDS) if (gainDb[band] != 0.0) design(band)
+        for (band in 0 until BANDS) if (running[band]) design(band)
+    }
+
+    // At 0 dB a band's output equals its input once its last outputs equal its last inputs.
+    private fun caughtUp(band: Int): Boolean = (band * channels until (band + 1) * channels).all { slot ->
+        val m = slot * 4
+        abs(memory[m] - memory[m + 2]) + abs(memory[m + 1] - memory[m + 3]) < CAUGHT_UP
     }
 
     private fun design(band: Int) {
@@ -129,6 +144,7 @@ class Equaliser {
         const val LIMITER_RELEASE_DB_PER_S = 40.0
         const val CEILING = 0.99
         const val MAX_CENTRE_OF_RATE = 0.45
+        const val CAUGHT_UP = 1e-7
 
         // An octave between the -3 dB points of a full-height band.
         val Q = 1 / (2 * sinh(ln(2.0) / 2))
