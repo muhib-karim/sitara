@@ -32,7 +32,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -162,6 +168,12 @@ private fun LazyListScope.searchResults(
 @Composable
 private fun SearchField(query: String, onQueryChange: (String) -> Unit) {
     val focus = LocalFocusManager.current
+    val keyboard = LocalSoftwareKeyboardController.current
+    // Searching closes the keyboard, from its search key or a hardware Enter, so nothing of it stays over the dock.
+    val finishTyping = {
+        keyboard?.hide()
+        focus.clearFocus()
+    }
     Row(
         Modifier.padding(horizontal = SitaraSpacing.Gutter).fillMaxWidth().defaultMinSize(minHeight = 56.dp)
             .clip(CircleShape).background(MaterialTheme.colorScheme.surfaceContainerHigh).padding(start = 16.dp, end = 4.dp),
@@ -174,8 +186,13 @@ private fun SearchField(query: String, onQueryChange: (String) -> Unit) {
             textStyle = MaterialTheme.typography.bodyLarge.copy(color = MaterialTheme.colorScheme.onSurface),
             cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
-            keyboardActions = KeyboardActions(onSearch = { focus.clearFocus() }),
-            modifier = Modifier.weight(1f).padding(vertical = 16.dp).semantics { contentDescription = "Search" },
+            keyboardActions = KeyboardActions(onSearch = { finishTyping() }),
+            modifier = Modifier.weight(1f).padding(vertical = 16.dp).semantics { contentDescription = "Search" }
+                .onPreviewKeyEvent { event ->
+                    val enter = event.key == Key.Enter || event.key == Key.NumPadEnter
+                    if (enter && event.type == KeyEventType.KeyUp) finishTyping()
+                    enter
+                },
             decorationBox = { input ->
                 Box {
                     if (query.isEmpty()) Text("Songs, albums, artists", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyLarge)
