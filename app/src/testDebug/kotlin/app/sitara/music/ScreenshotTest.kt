@@ -244,7 +244,11 @@ class ScreenshotTest {
     }
     @Test fun albumPageDownloads() = shot(
         "album_page_downloads", dark = true, tab = Tab.SEARCH, detail = DetailState.AlbumReady(Fixtures.album),
-        savedIds = SavedIds(downloads = Fixtures.downloadStates), downloads = Fixtures.downloads,
+        // Downloaded songs at the top, above the dock, so their badges show; one still missing keeps Download all.
+        savedIds = SavedIds(
+            downloads = Fixtures.album.tracks.take(3).zip(listOf(DownloadState.DOWNLOADED, DownloadState.DOWNLOADED, DownloadState.DOWNLOADING))
+                .associate { (track, state) -> track.id to state },
+        ),
     )
     @Test fun addToPlaylistSheet() = sheet("add_to_playlist") { AddToPlaylist(Fixtures.playlist.tracks.first(), sampleSavedLibrary(library).playlists, {}, {}) }
 
