@@ -173,7 +173,7 @@ sequenceDiagram
   the download cache, keyed by the `sitara://track/<id>` URI, with the resolving data source as its upstream. A
   downloaded song is read from the device and never resolved; any other song streams and is not written to the
   cache. See [Downloads](#downloads).
-- **Normalisation** (`LoudnessLeveller`, run by `LevellingAudioProcessor` in ExoPlayer's audio sink). NewPipeExtractor
+- **Normalisation** (`LoudnessLeveller`, run by `SoundAudioProcessor` in ExoPlayer's audio sink). NewPipeExtractor
   does not pass on YouTube's loudness values (`ResolvedStream.loudnessLufs` stays empty), so the level is measured as
   it plays: the gated (above −50 dBFS) RMS level over about 3 s, unweighted, as an approximation of LUFS; gain toward
   the target (−14 LUFS by default), at most +6 dB and at most −15 dB, moving no faster than 3 dB/s down and 1 dB/s up,

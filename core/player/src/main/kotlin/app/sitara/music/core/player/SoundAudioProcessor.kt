@@ -8,9 +8,12 @@ import androidx.media3.common.util.UnstableApi
 import java.nio.ByteBuffer
 import kotlin.math.roundToInt
 
-/** Runs [leveller] in ExoPlayer's audio pipeline, on 16-bit or float PCM; other encodings pass by untouched. */
+/**
+ * Sitara's sound in ExoPlayer's audio pipeline: [leveller] evens out loudness, then [equaliser] shapes it. Runs on
+ * 16-bit or float PCM; other encodings pass by untouched.
+ */
 @OptIn(UnstableApi::class)
-class LevellingAudioProcessor(private val leveller: LoudnessLeveller) : BaseAudioProcessor() {
+class SoundAudioProcessor(private val leveller: LoudnessLeveller, private val equaliser: Equaliser) : BaseAudioProcessor() {
     private var samples = FloatArray(0)
 
     override fun onConfigure(inputAudioFormat: AudioProcessor.AudioFormat): AudioProcessor.AudioFormat = when (inputAudioFormat.encoding) {
@@ -18,11 +21,14 @@ class LevellingAudioProcessor(private val leveller: LoudnessLeveller) : BaseAudi
         else -> AudioProcessor.AudioFormat.NOT_SET
     }
 
+    // A seek or a new stream: the equaliser's filters must not ring with audio from before it.
+    override fun onFlush(streamMetadata: AudioProcessor.StreamMetadata) = equaliser.reset()
+
     override fun queueInput(inputBuffer: ByteBuffer) {
         val size = inputBuffer.remaining()
         if (size == 0) return
         val output = replaceOutputBuffer(size)
-        if (leveller.isUnity) {
+        if (leveller.isUnity && equaliser.isUnity) {
             output.put(inputBuffer).flip()
             return
         }
@@ -31,6 +37,7 @@ class LevellingAudioProcessor(private val leveller: LoudnessLeveller) : BaseAudi
         if (samples.size < count) samples = FloatArray(count)
         for (i in 0 until count) samples[i] = if (isFloat) inputBuffer.getFloat() else inputBuffer.getShort() / 32_768f
         leveller.process(samples, count, inputAudioFormat.channelCount, inputAudioFormat.sampleRate)
+        equaliser.process(samples, count, inputAudioFormat.channelCount, inputAudioFormat.sampleRate)
         for (i in 0 until count) {
             if (isFloat) output.putFloat(samples[i]) else output.putShort((samples[i] * 32_768f).roundToInt().coerceIn(-32_768, 32_767).toShort())
         }

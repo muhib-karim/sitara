@@ -48,9 +48,11 @@ class PlaybackService : MediaSessionService() {
     private var engine: PlaybackEngine? = null
     private lateinit var dependencies: PlaybackDependencies
 
-    // The tail player has its own leveller, started from the main one's level at each fade.
+    // The tail player has its own leveller and equaliser, the leveller started from the main one's level at each fade.
     internal val leveller = LoudnessLeveller()
     private val tailLeveller = LoudnessLeveller()
+    internal val equaliser = Equaliser()
+    private val tailEqualiser = Equaliser()
     internal lateinit var crossfader: Crossfader
     internal lateinit var player: ExoPlayer
     internal lateinit var tail: ExoPlayer
@@ -71,7 +73,7 @@ class PlaybackService : MediaSessionService() {
         val music = AudioAttributes.Builder().setUsage(C.USAGE_MEDIA).setContentType(C.AUDIO_CONTENT_TYPE_MUSIC).build()
         player = ExoPlayer.Builder(this)
             .setMediaSourceFactory(mediaSources)
-            .setRenderersFactory(LevellingRenderersFactory(this, leveller))
+            .setRenderersFactory(SoundRenderersFactory(this, leveller, equaliser))
             .setAudioAttributes(
                 music,
                 // handleAudioFocus
@@ -82,7 +84,7 @@ class PlaybackService : MediaSessionService() {
         // Plays only the end of a song during a crossfade; the main player holds audio focus for both.
         tail = ExoPlayer.Builder(this)
             .setMediaSourceFactory(mediaSources)
-            .setRenderersFactory(LevellingRenderersFactory(this, tailLeveller))
+            .setRenderersFactory(SoundRenderersFactory(this, tailLeveller, tailEqualiser))
             .setAudioAttributes(
                 music,
                 // handleAudioFocus
@@ -157,13 +159,13 @@ class PlaybackService : MediaSessionService() {
         super.onDestroy()
     }
 
-    /** ExoPlayer's renderers with [leveller] in the audio pipeline. */
-    private class LevellingRenderersFactory(context: Context, private val leveller: LoudnessLeveller) : DefaultRenderersFactory(context) {
+    /** ExoPlayer's renderers with [leveller] and [equaliser] in the audio pipeline. */
+    private class SoundRenderersFactory(context: Context, private val leveller: LoudnessLeveller, private val equaliser: Equaliser) : DefaultRenderersFactory(context) {
         override fun buildAudioSink(context: Context, enableFloatOutput: Boolean, enableAudioOutputPlaybackParams: Boolean): AudioSink =
             DefaultAudioSink.Builder(context)
                 .setEnableFloatOutput(enableFloatOutput)
                 .setEnableAudioOutputPlaybackParameters(enableAudioOutputPlaybackParams)
-                .setAudioProcessors(arrayOf(LevellingAudioProcessor(leveller)))
+                .setAudioProcessors(arrayOf(SoundAudioProcessor(leveller, equaliser)))
                 .build()
     }
 
