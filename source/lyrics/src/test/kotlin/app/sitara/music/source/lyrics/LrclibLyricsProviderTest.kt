@@ -88,6 +88,31 @@ class LrclibLyricsProviderTest {
     }
 
     @Test
+    fun `asks with the cleaned title first, then with the title as uploaded`() = runTest {
+        val video = song.copy(title = "Paper Lanterns (feat. Kite) (Official Video)", artist = "Orchid Lane - Topic")
+
+        assertNull(provider.lyrics(video))
+
+        assertEquals(
+            listOf(
+                "/api/get" to "Paper Lanterns", "/api/search" to "Paper Lanterns",
+                "/api/get" to video.title, "/api/search" to video.title,
+            ),
+            sent.map { it.url.encodedPath to it.url.queryParameter("track_name") },
+        )
+        assertEquals(listOf("Orchid Lane", "Orchid Lane", video.artist, video.artist), sent.map { it.url.queryParameter("artist_name") })
+    }
+
+    @Test
+    fun `lyrics found with the cleaned title need no second lookup`() = runTest {
+        answers["/api/get"] = 200 to json(null, "Paper lanterns")
+
+        provider.lyrics(song.copy(title = "Paper Lanterns (Official Video)"))
+
+        assertEquals(listOf("Paper Lanterns"), sent.map { it.url.queryParameter("track_name") })
+    }
+
+    @Test
     fun `a search with nothing of the same length finds nothing`() = runTest {
         answers["/api/search"] = 200 to "[" + json("[00:01.00]Other song", null, duration = 320.0) + "]"
 

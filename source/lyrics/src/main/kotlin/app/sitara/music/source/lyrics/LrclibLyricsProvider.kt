@@ -37,7 +37,8 @@ fun lrclibLyrics(cache: LyricsCache): LyricsProvider =
 
 /**
  * Synced or plain lyrics from LRCLIB (https://lrclib.net, free, no key). Asks for the exact song first, then
- * searches and keeps a result of the same length, preferring synced lyrics. Answers are cached by song id: found
+ * searches and keeps a result of the same length, preferring synced lyrics; all with the cleaned-up title
+ * ([lyricsQuery]) first, then with the title as uploaded. Answers are cached by song id: found
  * lyrics for good, "nothing found" for a week. Returns null when there are no lyrics; throws [IOException] when
  * LRCLIB cannot be reached or answers with an error, which is not cached.
  */
@@ -74,19 +75,22 @@ class LrclibLyricsProvider(
         }
     }
 
+    // The title as uploaded is the fallback for when the clean-up took too much.
     private suspend fun lookUp(track: Track, now: Long): CachedLyrics {
-        val query = lyricsQuery(track)
-        val seconds = track.durationMs / 1_000.0
+        val match = listOf(lyricsQuery(track), LyricsQuery(track.title, track.artist)).distinct().firstNotNullOfOrNull { find(it, track.durationMs) }
+        return CachedLyrics(match?.text("syncedLyrics"), match?.text("plainLyrics"), now)
+    }
+
+    private suspend fun find(query: LyricsQuery, durationMs: Long): JsonObject? {
         val exact = get("api/get") {
             addQueryParameter("track_name", query.title)
             addQueryParameter("artist_name", query.artist)
-            if (track.durationMs > 0) addQueryParameter("duration", (track.durationMs / 1_000).toString())
+            if (durationMs > 0) addQueryParameter("duration", (durationMs / 1_000).toString())
         }?.let { JsonParser.`object`().from(it) }
-        val match = exact ?: get("api/search") {
+        return exact ?: get("api/search") {
             addQueryParameter("track_name", query.title)
             addQueryParameter("artist_name", query.artist)
-        }?.let { body -> bestMatch(JsonParser.array().from(body).filterIsInstance<JsonObject>(), seconds.takeIf { track.durationMs > 0 }) }
-        return CachedLyrics(match?.text("syncedLyrics"), match?.text("plainLyrics"), now)
+        }?.let { body -> bestMatch(JsonParser.array().from(body).filterIsInstance<JsonObject>(), (durationMs / 1_000.0).takeIf { durationMs > 0 }) }
     }
 
     /** The body of a successful call, null for 404 (no such song); any other failure throws. */
