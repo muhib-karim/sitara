@@ -13,7 +13,6 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
-import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.performScrollToKey
 import androidx.compose.ui.test.performTouchInput
@@ -345,7 +344,8 @@ class ScreenshotTest {
     @Test fun equaliserLight() = shot("equaliser", dark = false, settingsOpen = true, equaliser = rock) { openEqualiser() }
     @Test fun equaliserEnd() = shot("equaliser_end", dark = true, settingsOpen = true, equaliser = rock) {
         openEqualiser()
-        compose.onNodeWithText("Reset").performScrollTo()
+        // Scrolled right to the end, where the page's bottom padding lifts Reset clear of the dock.
+        compose.onNodeWithTag("equaliser-content").performTouchInput { repeat(3) { swipeUp() } }
     }
     @Test fun equaliserCustomWithPhoneOption() = sheet("equaliser_custom") { EqualiserPanel(rock.withBand(0, 9), systemEqualiser = true, onChange = {}, onOpenSystemEqualiser = {}) }
     @Test fun equaliserPhone() = sheet("equaliser_phone") { EqualiserPanel(rock.copy(useSystem = true), systemEqualiser = true, onChange = {}, onOpenSystemEqualiser = {}) }
