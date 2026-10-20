@@ -20,8 +20,14 @@ interface PlayerPort {
     /** Same entries in a new order; the playing entry keeps playing without a reload. */
     fun reorder(entries: List<QueueEntry>, index: Int)
 
-    /** Adds [entries] after the last item; the playing item is untouched. */
-    fun append(entries: List<QueueEntry>)
+    /** Adds [entries] before position [index]; the playing item keeps playing. */
+    fun insert(index: Int, entries: List<QueueEntry>)
+
+    /** Moves one item; the playing item keeps playing. */
+    fun move(from: Int, to: Int)
+
+    /** Removes an item other than the playing one. */
+    fun remove(index: Int)
 
     fun seekToItem(index: Int, positionMs: Long)
 

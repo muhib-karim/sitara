@@ -74,14 +74,14 @@ class Media3PlayerPortTest {
     }
 
     @Test
-    fun `appended tracks are known before the player can load them`() {
+    fun `inserted tracks are known before the player can load them`() {
         port.setQueue(entries, 0, play = false)
         val added = listOf(QueueEntry(3, Track("t3", "Song 3", "Artist", "Album", 1_000, Artwork(listOf(0)))))
-        every { player.addMediaItems(any<List<MediaItem>>()) } answers { assertLoaderSees(entries + added) }
+        every { player.addMediaItems(any(), any<List<MediaItem>>()) } answers { assertLoaderSees(entries + added) }
 
-        port.append(added)
+        port.insert(1, added)
 
-        verify { player.addMediaItems(match<List<MediaItem>> { items -> items.map { it.mediaId } == listOf("3") }) }
+        verify { player.addMediaItems(1, match<List<MediaItem>> { items -> items.map { it.mediaId } == listOf("3") }) }
         assertLoaderSees(entries + added)
     }
 

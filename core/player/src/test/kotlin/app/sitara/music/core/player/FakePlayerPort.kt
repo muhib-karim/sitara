@@ -30,8 +30,24 @@ class FakePlayerPort : PlayerPort {
         this.index = index
     }
 
-    override fun append(entries: List<QueueEntry>) {
-        this.entries += entries
+    override fun insert(index: Int, entries: List<QueueEntry>) {
+        this.entries = this.entries.take(index) + entries + this.entries.drop(index)
+        if (this.index >= index) this.index += entries.size
+    }
+
+    override fun move(from: Int, to: Int) {
+        entries = entries.toMutableList().apply { add(to, removeAt(from)) }
+        index = when {
+            index == from -> to
+            from < index && to >= index -> index - 1
+            from > index && to <= index -> index + 1
+            else -> index
+        }
+    }
+
+    override fun remove(index: Int) {
+        entries = entries.toMutableList().apply { removeAt(index) }
+        if (index < this.index) this.index--
     }
 
     override fun seekToItem(index: Int, positionMs: Long) {

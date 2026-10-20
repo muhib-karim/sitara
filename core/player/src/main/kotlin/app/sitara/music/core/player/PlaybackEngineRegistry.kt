@@ -1,5 +1,6 @@
 package app.sitara.music.core.player
 
+import app.sitara.music.core.model.Track
 import app.sitara.music.source.api.StreamResolver
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -25,4 +26,7 @@ object PlaybackEngineRegistry {
 /** Implemented by the Application so the service can reach app-level dependencies without a DI framework. */
 interface PlaybackDependencies {
     val streamResolver: StreamResolver
+
+    /** A queued song started playing; called on the main thread, so implementations hand slow work off. */
+    fun onTrackStarted(track: Track)
 }

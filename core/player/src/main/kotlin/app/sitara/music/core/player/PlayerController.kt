@@ -74,6 +74,14 @@ class PlayerController(
 
     fun append(tracks: List<Track>) = gate.run { it.append(tracks) }
 
+    fun addToQueue(tracks: List<Track>) = gate.run { it.addToQueue(tracks) }
+
+    fun playNext(tracks: List<Track>) = gate.run { it.playNext(tracks) }
+
+    fun moveUpNext(from: Int, to: Int) = gate.run { it.moveUpNext(from, to) }
+
+    fun removeUpNext(index: Int) = gate.run { it.removeUpNext(index) }
+
     fun togglePlay() = gate.run { it.togglePlay() }
 
     fun next() = gate.run { it.next() }

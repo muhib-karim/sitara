@@ -29,6 +29,7 @@ class PlaybackEngine(
     private val port: PlayerPort,
     scope: CoroutineScope,
     timeSource: TimeSource,
+    private val onTrackStarted: (Track) -> Unit = {},
 ) {
     private val _state = MutableStateFlow(PlaybackSnapshot())
     val state: StateFlow<PlaybackSnapshot> = _state.asStateFlow()
@@ -37,6 +38,9 @@ class PlaybackEngine(
     val sleepTimerState: StateFlow<SleepTimerState> = sleepTimer.state
 
     private val queue: QueueState get() = _state.value.queue
+
+    // The entry whose start was last reported; cleared when that same entry starts over.
+    private var startedUid: Long? = null
 
     fun play(tracks: List<Track>, index: Int) {
         val next = queue.setQueue(tracks, index)
@@ -58,7 +62,36 @@ class PlaybackEngine(
         if (tracks.isEmpty() || q.currentEntry == null) return
         val next = tracks.fold(q) { acc, track -> acc.add(track) }.copy(ended = q.ended)
         publish(next)
-        port.append(next.entries.takeLast(tracks.size))
+        port.insert(q.entries.size, next.entries.takeLast(tracks.size))
+    }
+
+    /** Queues [tracks] after the last entry, or plays them when nothing is queued. */
+    fun addToQueue(tracks: List<Track>) = if (queue.currentEntry == null) play(tracks, 0) else append(tracks)
+
+    /** Queues [tracks] right after the current entry, or plays them when nothing is queued. */
+    fun playNext(tracks: List<Track>) {
+        val q = queue
+        if (q.currentEntry == null) return play(tracks, 0)
+        if (tracks.isEmpty()) return
+        val next = q.playNext(tracks)
+        publish(next)
+        port.insert(q.currentIndex + 1, next.entries.subList(q.currentIndex + 1, q.currentIndex + 1 + tracks.size))
+    }
+
+    fun moveUpNext(from: Int, to: Int) {
+        val q = queue
+        val next = q.moveUpNext(from, to)
+        if (next === q) return
+        publish(next)
+        port.move(q.currentIndex + 1 + from, q.currentIndex + 1 + to)
+    }
+
+    fun removeUpNext(index: Int) {
+        val q = queue
+        val next = q.removeUpNext(index)
+        if (next === q) return
+        publish(next)
+        port.remove(q.currentIndex + 1 + index)
     }
 
     fun togglePlay() {
@@ -66,6 +99,7 @@ class PlaybackEngine(
         if (q.currentEntry == null) return
         when {
             q.ended -> {
+                startedUid = null
                 publish(q.copy(ended = false))
                 port.seekToItem(q.currentIndex, 0)
                 port.play()
@@ -128,6 +162,7 @@ class PlaybackEngine(
 
     /** The player moved to another entry by itself (auto-advance or a system control). */
     fun onItemTransition(uid: Long) {
+        if (uid == startedUid) startedUid = null // repeat-one, or a one-song repeat-all
         publish(queue.select(uid))
         refresh()
     }
@@ -144,7 +179,7 @@ class PlaybackEngine(
         refresh()
     }
 
-    /** Pulls position, duration and play state from the player. */
+    /** Pulls position, duration and play state from the player, and reports an entry that just started playing. */
     fun refresh() {
         _state.update {
             it.copy(
@@ -152,6 +187,11 @@ class PlaybackEngine(
                 positionMs = port.positionMs.coerceAtLeast(0),
                 durationMs = port.durationMs.takeIf { d -> d > 0 } ?: (it.queue.current?.durationMs ?: 0),
             )
+        }
+        val entry = queue.currentEntry
+        if (port.isPlaying && entry != null && entry.uid != startedUid) {
+            startedUid = entry.uid
+            onTrackStarted(entry.track)
         }
     }
 

@@ -66,6 +66,15 @@ data class QueueState(
         return copy(entries = list, originalOrder = original, ended = false, nextUid = nextUid + 1)
     }
 
+    /** Inserts [tracks] right after the current entry, in their order; a finished queue stays finished. */
+    fun playNext(tracks: List<Track>): QueueState = tracks.asReversed().fold(this) { q, track -> q.addNext(track) }.copy(ended = ended)
+
+    /** Moves within Up next, where 0 is the entry after the current one. */
+    fun moveUpNext(from: Int, to: Int): QueueState =
+        if (from < 0 || to < 0 || from >= upNext.size || to >= upNext.size) this else move(currentIndex + 1 + from, currentIndex + 1 + to)
+
+    fun removeUpNext(index: Int): QueueState = if (index !in upNext.indices) this else remove(currentIndex + 1 + index)
+
     fun move(from: Int, to: Int): QueueState {
         if (from !in entries.indices || to !in entries.indices || from == to) return this
         val list = entries.toMutableList()

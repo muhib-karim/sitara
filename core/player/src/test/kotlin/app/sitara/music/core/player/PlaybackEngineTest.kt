@@ -21,6 +21,7 @@ class PlaybackEngineTest {
     private fun t(n: Int) = Track("t$n", "Song $n", "Artist", "Album", 1000, Artwork(listOf(0)))
     private val five = (1..5).map(::t)
     private val port = FakePlayerPort()
+    private val started = mutableListOf<String>()
 
     private fun TestScope.engine() = PlaybackEngine(
         port = port,
@@ -28,6 +29,7 @@ class PlaybackEngineTest {
         timeSource = object : AbstractLongTimeSource(DurationUnit.MILLISECONDS) {
             override fun read(): Long = testScheduler.currentTime
         },
+        onTrackStarted = { started += it.id },
     )
 
     @Test
@@ -79,6 +81,74 @@ class PlaybackEngineTest {
         engine.append(listOf(t(6)))
         assertEquals(emptyList<Track>(), engine.state.value.queue.items)
         assertEquals(emptyList<QueueEntry>(), port.entries)
+    }
+
+    @Test
+    fun `play next and add to queue insert into the player without reloading`() = runTest {
+        val engine = engine()
+        engine.play(five.take(3), 0)
+        engine.playNext(listOf(t(8), t(9)))
+        engine.addToQueue(listOf(t(7)))
+
+        val ids = listOf("t1", "t8", "t9", "t2", "t3", "t7")
+        assertEquals(ids, engine.state.value.queue.items.map { it.id })
+        assertEquals(ids, port.entries.map { it.track.id })
+        assertEquals(engine.state.value.queue.entries.map { it.uid }, port.entries.map { it.uid })
+        assertEquals(1, port.setQueueCalls)
+    }
+
+    @Test
+    fun `add to queue starts playback when nothing is queued`() = runTest {
+        val engine = engine()
+        engine.addToQueue(listOf(t(7)))
+        assertEquals("t7", engine.state.value.queue.current?.id)
+        assertTrue(port.playing)
+    }
+
+    @Test
+    fun `play next starts playback from the first song when nothing is queued`() = runTest {
+        val engine = engine()
+        engine.playNext(listOf(t(8), t(9)))
+        assertEquals(listOf("t8", "t9"), port.entries.map { it.track.id })
+        assertEquals("t8", engine.state.value.queue.current?.id)
+    }
+
+    @Test
+    fun `moving and removing up next are mirrored into the player`() = runTest {
+        val engine = engine()
+        engine.play(five, 0)
+        engine.moveUpNext(0, 2)
+        engine.removeUpNext(0)
+
+        val ids = listOf("t1", "t4", "t2", "t5")
+        assertEquals(ids, engine.state.value.queue.items.map { it.id })
+        assertEquals(ids, port.entries.map { it.track.id })
+        assertEquals(0, port.index)
+        assertEquals(1, port.setQueueCalls)
+    }
+
+    @Test
+    fun `a song is recorded once when it actually starts playing`() = runTest {
+        val engine = engine()
+        engine.play(five, 0)
+        port.playing = false
+        engine.refresh()
+        assertEquals(emptyList<String>(), started)
+
+        port.playing = true
+        engine.refresh()
+        engine.refresh()
+        engine.onItemTransition(port.entries[1].uid)
+        assertEquals(listOf("t1", "t2"), started)
+    }
+
+    @Test
+    fun `a repeat of the same entry counts as another play`() = runTest {
+        val engine = engine()
+        engine.play(five, 0)
+        engine.refresh()
+        engine.onItemTransition(port.entries[0].uid)
+        assertEquals(listOf("t1", "t1"), started)
     }
 
     @Test

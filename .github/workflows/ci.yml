@@ -75,6 +75,11 @@ jobs:
           name: sitara-room-schema
           path: core/data/schemas
           if-no-files-found: ignore
+      - name: Room schema is committed
+        # A schema change needs a version bump, a migration and its exported JSON in the same commit.
+        run: |
+          changes=$(git status --porcelain -- core/data/schemas)
+          if [ -n "$changes" ]; then echo "Room schema differs from the committed one:"; echo "$changes"; exit 1; fi
       - name: Screenshot tests
         # Compares against the committed baselines in app/src/test/screenshots and fails on any mismatch.
         # Refresh baselines with the "Record screenshots" workflow, review them, then commit.

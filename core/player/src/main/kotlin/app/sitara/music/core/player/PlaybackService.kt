@@ -35,7 +35,8 @@ class PlaybackService : MediaSessionService() {
 
     override fun onCreate() {
         super.onCreate()
-        val resolver = (application as PlaybackDependencies).streamResolver
+        val dependencies = application as PlaybackDependencies
+        val resolver = dependencies.streamResolver
         lateinit var port: Media3PlayerPort
         val dataSource = ResolvingDataSource.Factory(DefaultDataSource.Factory(this), StreamUriResolver(resolver) { port.track(it) })
         val player = ExoPlayer.Builder(this)
@@ -51,7 +52,7 @@ class PlaybackService : MediaSessionService() {
             .setHandleAudioBecomingNoisy(true)
             .build()
         port = Media3PlayerPort(player)
-        val engine = PlaybackEngine(port, scope, ElapsedRealtimeTimeSource)
+        val engine = PlaybackEngine(port, scope, ElapsedRealtimeTimeSource, dependencies::onTrackStarted)
         player.addListener(EngineListener(engine))
         this.engine = engine
         session = MediaSession.Builder(this, player).setCallback(ConnectionPolicyCallback()).build()

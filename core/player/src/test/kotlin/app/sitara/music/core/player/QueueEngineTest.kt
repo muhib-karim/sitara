@@ -28,6 +28,39 @@ class QueueEngineTest {
     }
 
     @Test
+    fun `play next inserts songs after the current one in their order`() {
+        val q = QueueState().setQueue(five, 1).playNext(listOf(t(8), t(9)))
+        assertEquals(listOf("t1", "t2", "t8", "t9", "t3", "t4", "t5"), q.items.map { it.id })
+        assertEquals("t2", q.current?.id)
+    }
+
+    @Test
+    fun `songs played next while shuffled stay next after unshuffle`() {
+        val q = QueueState().setQueue(five, 0).toggleShuffle(Random(3)).playNext(listOf(t(8), t(9))).toggleShuffle()
+        assertEquals(listOf("t1", "t8", "t9", "t2", "t3", "t4", "t5"), q.items.map { it.id })
+    }
+
+    @Test
+    fun `up next positions count from the song after the current one`() {
+        val moved = QueueState().setQueue(five, 1).moveUpNext(0, 2)
+        assertEquals(listOf("t1", "t2", "t4", "t5", "t3"), moved.items.map { it.id })
+        assertEquals("t2", moved.current?.id)
+
+        val removed = moved.removeUpNext(1)
+        assertEquals(listOf("t1", "t2", "t4", "t3"), removed.items.map { it.id })
+        assertEquals("t2", removed.current?.id)
+    }
+
+    @Test
+    fun `up next edits outside up next change nothing`() {
+        val q = QueueState().setQueue(five, 1)
+        assertEquals(q, q.moveUpNext(-1, 0))
+        assertEquals(q, q.moveUpNext(0, 3))
+        assertEquals(q, q.removeUpNext(-1))
+        assertEquals(q, q.removeUpNext(3))
+    }
+
+    @Test
     fun `the queue is running out on its last two entries unless it repeats`() {
         assertFalse(QueueState().runningOut)
         assertFalse(QueueState().setQueue(five, 2).runningOut)
