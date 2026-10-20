@@ -31,8 +31,9 @@
 > albums, artists and playlists, or paste or share a YouTube link; play through a background service with a queue you
 > can edit, radio and a sleep timer; keep liked songs, playlists and saved albums on the device; see what is trending
 > on YouTube Charts; sing along with synced lyrics from LRCLIB; download songs to play offline, with loudness levelling
-> and crossfade (`0.6.0`). On `main` for `0.7.0`, Phase C has begun: real covers throughout the app, a player coloured by
-> the cover, and lyrics you can scroll freely. Releases are on the [Releases](https://github.com/muhib-karim/sitara/releases) page.
+> and crossfade (`0.6.0`). Phase C brought real covers, a player coloured by the cover and freely scrolled lyrics
+> (`0.7.0`); on `main` for `0.8.0`: gapless joins, speed and pitch, skip silence, and a sleep timer of any length that
+> you can extend. Releases are on the [Releases](https://github.com/muhib-karim/sitara/releases) page.
 
 ## Screenshots
 
@@ -40,7 +41,7 @@
 
 | Home | Player | Lyrics | Downloads | Sound |
 | :---: | :---: | :---: | :---: | :---: |
-| <img src="docs/screenshots/home_dark.png" alt="Home with the trending chart, recently played and jump back in" width="160"> | <img src="docs/screenshots/player_dark.png" alt="Full player with artwork, slim scrubber and controls" width="160"> | <img src="docs/screenshots/lyrics_dark.png" alt="Synced karaoke lyrics with the LRCLIB credit" width="160"> | <img src="docs/screenshots/downloads_dark.png" alt="Library downloads with progress, waiting for Wi-Fi, failed and downloaded songs" width="160"> | <img src="docs/screenshots/sound_dark.png" alt="Sound settings with normalise loudness and the crossfade slider" width="160"> |
+| <img src="docs/screenshots/home_dark.png" alt="Home with the trending chart, recently played and jump back in" width="160"> | <img src="docs/screenshots/player_dark.png" alt="Full player with artwork, slim scrubber, controls, and the speed and sleep timer buttons" width="160"> | <img src="docs/screenshots/lyrics_dark.png" alt="Synced karaoke lyrics with the LRCLIB credit" width="160"> | <img src="docs/screenshots/downloads_dark.png" alt="Library downloads with progress, waiting for Wi-Fi, failed and downloaded songs" width="160"> | <img src="docs/screenshots/sound_dark.png" alt="Sound settings with normalise loudness, skip silence and the crossfade slider" width="160"> |
 
 <sub>Recorded by the Record screenshots workflow (Roborazzi on Robolectric) from hand-built fixtures shaped like a listener's library; release builds contain no sample data. Light versions and more screens live in docs/screenshots.</sub>
 
@@ -80,11 +81,14 @@ Planned, not built yet: *Sitara Sync* (end-to-end encrypted sync through storage
 | | Artwork backdrop, scrubber, Playing / Lyrics / Up next pager | ✅ |
 | | Queue: unique entries, shuffle with order restore, repeat off / all / one | ✅ |
 | | Play next and Add to queue from any song; reorder and remove in Up next | 🧪 |
-| | Sleep timer (minutes or end of track) on a monotonic clock | ✅ |
+| | Sleep timer from a sheet: 15 min to 1 h presets, any number of minutes up to 3 h, or the end of this song; +5 or +15 min while it counts; on a monotonic clock | ✅ |
+| | Speed 0.5× to 2× and pitch ±6 semitones, set independently from a compact control in Now Playing, for the session; lyrics keep time at any speed | 🧪 |
 | | Background playback service: the whole queue is a Media3 playlist; notification and lock screen show title, artist and cover with previous, next and seek; audio focus, pause when headphones disconnect, headset and Bluetooth buttons; keeps playing when the app is swiped away | 🧪 |
 | | The queue, current song and position are saved and come back after the app is closed or killed; a headset play button resumes them | 🧪 |
 | **Sound** | Normalise loudness (on by default): gentle levelling toward −14 LUFS, at most +6 dB, peaks kept under −1 dBFS | 🧪 |
+| | Gapless: the next song's stream is looked up while the current one plays, so songs join without inserted silence | 🧪 |
 | | Crossfade, Off or 1 to 12 s; songs from one album stay gapless | 🧪 |
+| | Skip silence (off by default) | 🧪 |
 | **Lyrics** | Synced lyrics from LRCLIB that follow the song and seek on tap; scrolling by hand pauses following until "Back to current line"; plain lyrics when nothing is synced; "No lyrics found" otherwise; cached on the device | 🧪 |
 | | LRC and enhanced LRC parsing (offsets, repeated timestamps, word timing) | ✅ |
 | **Settings** | Theme: dynamic, artwork or AMOLED black; light / dark; reduced motion | ✅ |
@@ -94,7 +98,7 @@ Planned, not built yet: *Sitara Sync* (end-to-end encrypted sync through storage
 | | Artist, album and playlist pages with Play all and Shuffle | 🧪 |
 | | Radio: Start radio from Up next, and a queue about to run out continues with related songs | 🧪 |
 | **Later** | Resolver health checks, local files, import, backup and restore | Not started |
-| | Skip silence, speed and pitch, equaliser | Not started |
+| | Equaliser | Not started |
 | **Accounts** | Account library sync, scrobbling, widgets, Android Auto, Cast | Phase C |
 | | Sitara Sync, LAN remote control, smart offline | Phase C |
 | **Premium** | Animated canvas, automix, lyric translation and transliteration, Wear OS remote, TV layout | Phase D |
@@ -107,7 +111,7 @@ Planned, not built yet: *Sitara Sync* (end-to-end encrypted sync through storage
 - **Links.** Paste a `music.youtube.com`, `youtube.com/watch` or `youtu.be` link into Search, or share one to Sitara from another app; the song plays as soon as it resolves. Only the video id is read from the link.
 - **Lyrics.** For the playing song Sitara asks [LRCLIB](https://lrclib.net) by title, artist and length (then a search), prefers synced lyrics, and keeps what it finds on the device. Requests carry only the app's name and repository URL.
 - **Downloads.** A download stores the song's audio in an app-private cache through Media3's download manager, resolving a fresh stream URL whenever it starts or resumes. The player always looks in that cache first, so a downloaded song plays with no connection. Downloads wait for Wi-Fi unless you turn off "Download on Wi-Fi only".
-- **Sound.** Loudness levelling runs inside the audio pipeline and adjusts gain slowly as a song plays. Crossfade hands the end of a song to a second player while the next one starts; the main player keeps the queue, so skipping, editing Up next and restoring after a restart behave as usual.
+- **Sound.** Loudness levelling runs inside the audio pipeline and adjusts gain slowly as a song plays. Crossfade hands the end of a song to a second player while the next one starts; the main player keeps the queue, so skipping, editing Up next and restoring after a restart behave as usual. While a song plays, the stream of the song that follows it is looked up ahead, so the player has it ready at the join (and a skip to it starts at once). Speed and pitch are applied by the player for as long as playback runs; skip silence is Media3's silence-skipping step in the same audio chain.
 
 ## Known limits
 
@@ -115,6 +119,8 @@ Planned, not built yet: *Sitara Sync* (end-to-end encrypted sync through storage
 - YouTube may answer with a bot check on some networks (it does on cloud servers); search and pages still load, but songs may not play there. Downloads need the same streams.
 - YouTube passes on no loudness values through NewPipeExtractor, so levelling measures the sound as it plays rather than knowing a song's loudness in advance; the first seconds of a song can be a little louder or softer.
 - Crossfade overlaps by switching to a second player; the hand-over may be audible on some devices.
+- Gapless joins rely on the player trimming each format's encoder padding; how YouTube's opus and m4a streams join on real albums has not been checked on a phone yet.
+- Speed and pitch reset when playback stops and the service ends; they are not saved.
 - Covers are cached on the device, and the cache can drop old covers when storage runs low; a downloaded song played offline then shows its generated cover instead.
 - An unofficial client can break when YouTube changes; fixes land in `:source:youtube`.
 

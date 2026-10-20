@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+Phase C, slice 2: sound I.
+
+### Added
+
+- Gapless playback: while a song plays, the stream of the song that follows it in the queue (after shuffle, edits and repeat) is looked up ahead, so the player has it ready and songs join without inserted silence. A skip to that song starts at once. Downloaded songs need no lookup.
+- Playback speed from 0.5× to 2× and pitch from −6 to +6 semitones, set independently in a sheet from the speed button in Now Playing, with presets and Reset. They last until playback stops. Lyrics keep time at any speed.
+- Skip silence in Settings → Sound, off by default.
+- Sleep timer: any number of minutes up to 3 hours besides the presets, and +5 or +15 minutes while it counts.
+
+### Changed
+
+- The sleep timer button opens a sheet (presets, custom minutes, end of this song, time left, extend and Turn off) instead of cycling through 15 min, 30 min and end of track. It takes the accent colour while a timer is set.
+
 ## [0.7.0] - 2026-10-20
 
 Phase C, slice 1: real artwork and a player that looks like the music.

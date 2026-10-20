@@ -2,7 +2,7 @@
 
 How Sitara compares with the four apps it is measured against, updated with every release. Competitor columns come from their public documentation and release notes; **Y** = has it, **~** = partial or depends on version or setup, **—** = not offered, **?** = not documented. A Sitara entry says the release that shipped it, or the Phase C slice planned for it ([PHASE_C_PLAN.md](PHASE_C_PLAN.md)).
 
-Last updated: v0.7.0 (c1, on `main`; the owner tags).
+Last updated: v0.8.0 (c2, on `main`; the owner tags).
 
 | Capability | BitChord | Metrolist | Meld | ReVanced | Sitara |
 |---|:---:|:---:|:---:|:---:|---|
@@ -21,10 +21,10 @@ Last updated: v0.7.0 (c1, on `main`; the owner tags).
 | Crossfade | Y | Y | Y | — | v0.6.0 |
 | Real artwork in the app, artwork-coloured player | Y | ~ | ~ | Y | v0.7.0; lock screen and notification since v0.5.0 |
 | Lyrics manual scroll with return to current line | ? | ? | ? | ? | v0.7.0 |
-| Gapless playback | Y | ~ | ~ | ? | c2 (since v0.6.0, crossfade keeps same-album songs gapless; not yet checked on a phone) |
-| Speed and independent pitch | Y/— | Y/Y | Y/Y | ? | c2 |
-| Skip silence | Y | Y | Y | — | c2 |
-| Sleep timer with custom time | Y | Y | Y | Y | c2 (presets since v0.1.0) |
+| Gapless playback | Y | ~ | ~ | ? | v0.8.0 (next stream looked up ahead; not yet checked on a phone) |
+| Speed and independent pitch | Y/— | Y/Y | Y/Y | ? | v0.8.0 (0.5× to 2×, ±6 semitones) |
+| Skip silence | Y | Y | Y | — | v0.8.0 |
+| Sleep timer with custom time | Y | Y | Y | Y | v0.8.0 (any minutes up to 3 h, extend, end of song; presets since v0.1.0) |
 | Equaliser (built-in or system) | Y | Y | Y | system | c3 |
 | Local audio files | Y | — | — | ~ | c4 |
 | Downloads exported as tagged files with lyrics | — | ? | ? | — | c5 |
