@@ -66,4 +66,3 @@ enum class EqualiserPreset(val label: String, val bandsDb: List<Int>) {
 
     val preampDb: Int get() = -maxOf(0, bandsDb.max())
 }
-

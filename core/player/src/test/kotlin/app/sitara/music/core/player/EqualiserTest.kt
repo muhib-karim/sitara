@@ -40,8 +40,10 @@ class EqualiserTest {
 
     private fun maxStep(samples: FloatArray, channels: Int, fromFrame: Int, toFrame: Int): Double {
         var step = 0.0
-        for (frame in fromFrame + 1 until toFrame) for (c in 0 until channels) {
-            step = max(step, abs(samples[frame * channels + c] - samples[(frame - 1) * channels + c]).toDouble())
+        for (frame in fromFrame + 1 until toFrame) {
+            for (c in 0 until channels) {
+                step = max(step, abs(samples[frame * channels + c] - samples[(frame - 1) * channels + c]).toDouble())
+            }
         }
         return step
     }
@@ -59,14 +61,20 @@ class EqualiserTest {
 
     @Test
     fun `a single band measures its gain at its centre, mono and stereo, 44_1 and 48 kHz`() {
-        for (rate in listOf(44_100, 48_000)) for (channels in listOf(1, 2)) for (band in 0 until EqualiserSettings.BAND_COUNT) for (db in listOf(12, -12, 5)) {
-            val hz = EqualiserSettings.BAND_CENTRES_HZ[band]
-            val input = sine(hz, 0.05, rate, channels, seconds = 1.0)
-            val equaliser = Equaliser().apply { settings = EqualiserSettings(enabled = true, bandsDb = bands(band, db)) }
-            val out = equaliser.run(input.copyOf(), rate, channels)
-            val settled = input.size / 2
-            val measured = 20 * log10(rms(out, settled) / rms(input, settled))
-            assertEquals("$hz Hz at $rate Hz, $channels ch, $db dB", db.toDouble(), measured, 0.5)
+        for (rate in listOf(44_100, 48_000)) {
+            for (channels in listOf(1, 2)) {
+                for (band in 0 until EqualiserSettings.BAND_COUNT) {
+                    for (db in listOf(12, -12, 5)) {
+                        val hz = EqualiserSettings.BAND_CENTRES_HZ[band]
+                        val input = sine(hz, 0.05, rate, channels, seconds = 1.0)
+                        val equaliser = Equaliser().apply { settings = EqualiserSettings(enabled = true, bandsDb = bands(band, db)) }
+                        val out = equaliser.run(input.copyOf(), rate, channels)
+                        val settled = input.size / 2
+                        val measured = 20 * log10(rms(out, settled) / rms(input, settled))
+                        assertEquals("$hz Hz at $rate Hz, $channels ch, $db dB", db.toDouble(), measured, 0.5)
+                    }
+                }
+            }
         }
     }
 
@@ -90,14 +98,16 @@ class EqualiserTest {
     @Test
     fun `boosts and preamp at full never take a full-scale sweep or noise past the ceiling`() {
         val loudest = EqualiserSettings(enabled = true, bandsDb = List(EqualiserSettings.BAND_COUNT) { 12 }, preampDb = 12)
-        for (rate in listOf(44_100, 48_000)) for (channels in listOf(1, 2)) {
-            val steps = 40
-            val sweep = (0 until steps).map { step -> sine(20.0 * 1_000.0.pow(step / (steps - 1.0)), 0.99, rate, channels, seconds = 0.05) }
-            val noise = Random(3).let { r -> FloatArray(rate * channels / 2) { r.nextFloat() * 2 - 1 } }
-            val equaliser = Equaliser().apply { settings = loudest }
-            val out = equaliser.run((sweep + listOf(noise)).reduce(FloatArray::plus), rate, channels)
-            val peak = out.maxOf { abs(it) }
-            assertTrue("peak $peak at $rate Hz, $channels ch", peak <= 1f)
+        for (rate in listOf(44_100, 48_000)) {
+            for (channels in listOf(1, 2)) {
+                val steps = 40
+                val sweep = (0 until steps).map { step -> sine(20.0 * 1_000.0.pow(step / (steps - 1.0)), 0.99, rate, channels, seconds = 0.05) }
+                val noise = Random(3).let { r -> FloatArray(rate * channels / 2) { r.nextFloat() * 2 - 1 } }
+                val equaliser = Equaliser().apply { settings = loudest }
+                val out = equaliser.run((sweep + listOf(noise)).reduce(FloatArray::plus), rate, channels)
+                val peak = out.maxOf { abs(it) }
+                assertTrue("peak $peak at $rate Hz, $channels ch", peak <= 1f)
+            }
         }
     }
 
