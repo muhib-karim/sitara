@@ -2,12 +2,12 @@
 
 Phases follow SPEC section 4. Each phase ends with CI green on `main` and a tagged build.
 
-## Status (2026-10-17)
+## Status (2026-10-20)
 
 | Phase | Scope | Status |
 |---|---|---|
 | A | Shell, design system, fake source, player UI, Media3 playback service, tests, CI, docs | Code complete; CI compiles and tests it; review findings fixed ([response](review/PHASE_A_REVIEW_RESPONSE.md)); on-device check pending |
-| B | Real source (NewPipeExtractor), downloads, local files, LRCLIB lyrics, crossfade/normalise processors, Hilt, Room | Not started |
+| B | Real source (NewPipeExtractor), downloads, local files, LRCLIB lyrics, crossfade/normalise processors, Hilt, Room | Slice 1 done: live YouTube Music search and playback ([ADR 0004](adr/0004-youtube-source-newpipeextractor.md), [report](reports/REPORT_b1.md)); home, library and lyrics still sample |
 | C | Accounts, scrobbling, widgets, Android Auto, Cast, Replay, remote control | Not started |
 | D | Canvas, automix, translation/transliteration, Wear OS, TV | Not started |
 
@@ -51,4 +51,4 @@ Details: [`plan/PHASE_A_FIX_PLAN.md`](plan/PHASE_A_FIX_PLAN.md).
 1. Device check on a 120 Hz phone: sheet spring feel, swipe gestures, audio focus, notification and Bluetooth controls, sleep timer with the screen off.
 2. Second cross-model review of the fix set, then tag `v0.1.0` (owner).
 3. Enable GitHub Pages (Settings, Pages, source "GitHub Actions") so `pages.yml` can deploy the site.
-4. Phase B: NewPipeExtractor `StreamResolver`, health checks, LRCLIB `LyricsProvider`, audio processors for normalisation and crossfade, Hilt, Room.
+4. Phase B, next slices: artwork images (an image loader), real home feed and album/artist browse, LRCLIB `LyricsProvider`, resolver health checks, audio processors for normalisation and crossfade, Hilt, Room.

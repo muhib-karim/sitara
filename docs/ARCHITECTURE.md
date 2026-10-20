@@ -2,7 +2,7 @@
 
 This document describes how Sitara is put together: the module map, how data moves from a music source to the screen, how playback is wired to Media3, how the stream source stays reliable, and how the code is tested and shipped.
 
-> Status: Phase A (`v0.1.0-dev`). Modules marked *planned* do not exist yet.
+> Status: Phase B, slice 1. Search and streams are live (YouTube Music through NewPipeExtractor); home, library and lyrics are samples. Modules marked *planned* do not exist yet.
 
 ## Goals
 
@@ -25,11 +25,11 @@ This document describes how Sitara is put together: the module map, how data mov
 | `:source:fake` | Pure Kotlin | Deterministic sample catalogue with generated gradient covers, used by the app in Phase A and by every test |
 | `:source:lyrics` | Pure Kotlin | LRC and enhanced (word-timed) LRC parser; lyric providers plug in here |
 | `:feature:home` | Android library | Home feed: shelves, quick picks |
-| `:feature:search` | Android library | Search field, suggestions, results |
+| `:feature:search` | Android library | Search field, suggestions, results; debounced search states with loading, error and retry |
 | `:feature:library` | Android library | Playlists, albums, artists, liked songs |
 | `:feature:player` | Android library | Mini player, full player sheet, scrubber, Up next / Lyrics pager, karaoke lyrics |
 | `:feature:settings` | Android library | Theme mode, reduced motion, playback preferences |
-| `:source:youtube` | *planned, Phase B* | Search, browse and stream resolution for the real catalogue |
+| `:source:youtube` | Pure Kotlin (JVM) | YouTube Music song search and audio stream resolution on NewPipeExtractor, with an OkHttp downloader ([ADR 0004](adr/0004-youtube-source-newpipeextractor.md)); browse is planned |
 | `:source:local` | *planned, Phase B* | MediaStore and folder-based local files |
 
 ## Dependency graph
@@ -60,10 +60,11 @@ graph TD
         api[":source:api"]
         fake[":source:fake"]
         lyrics[":source:lyrics"]
+        youtube[":source:youtube"]
     end
 
     app --> home & search & library & fplayer & settings
-    app --> cplayer & data & fake & common
+    app --> cplayer & data & fake & youtube & common
     home & search & library & fplayer & settings --> designsystem
     home & search & library & fplayer & settings --> model
     fplayer --> lyrics
@@ -72,14 +73,15 @@ graph TD
     data --> model
     designsystem --> model
     fake --> api & lyrics
+    youtube --> api
     lyrics --> api
     api --> model
 ```
 
 Rules enforced in review:
 
-- `:core:model`, `:core:common`, `:source:api`, `:source:fake` and `:source:lyrics` stay free of Android dependencies.
-- Only `:app` chooses a concrete `MusicSource`. In Phase A that is the fake source; in Phase B it becomes the real source with the fake still available for tests and demo mode.
+- `:core:model`, `:core:common`, `:source:api`, `:source:fake`, `:source:lyrics` and `:source:youtube` stay free of Android dependencies.
+- Only `:app` chooses concrete sources. Search uses `YouTubeMusicSource`; home, library and lyrics use the fake source; streams go through `FallbackStreamResolver(sample, YouTube)`.
 - UI modules depend on `:core:designsystem` for every colour, shape, spring and duration. Hard-coded values in feature code are a review comment.
 
 ## Data flow
@@ -169,7 +171,7 @@ flowchart TD
 
 | Layer | Tools | What is covered |
 | --- | --- | --- |
-| Pure logic | JUnit 4/5, Turbine, coroutine test time | Queue engine (unique entries, shuffle restore, repeat), playback engine against a fake player (queue hand-off, transitions, end-of-queue restart, sleep timer), command gate, controller and stream policies, crossfade and LUFS maths, LRC and enhanced LRC parsing, karaoke sweep, sheet geometry, palette to theme mapping, settings codec, fake source |
+| Pure logic | JUnit 4/5, Turbine, coroutine test time | Queue engine (unique entries, shuffle restore, repeat), playback engine against a fake player (queue hand-off, transitions, end-of-queue restart, sleep timer), command gate, controller and stream policies, crossfade and LUFS maths, LRC and enhanced LRC parsing, karaoke sweep, sheet geometry, palette to theme mapping, settings codec, fake source, YouTube song mapping, audio stream selection, OkHttp downloader request/response mapping (interceptor, no network), search states |
 | Screenshots | Roborazzi on Robolectric (debug variant) | Home, search, library, player, lyrics and settings in light and dark; CI fails on any pixel mismatch against the committed baselines in `app/src/test/screenshots` |
 
 Principles:

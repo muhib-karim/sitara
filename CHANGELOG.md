@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+Phase B, slice 1: real music.
+
+### Added
+
+- Live song search on YouTube Music through NewPipeExtractor v0.26.5 (new `:source:youtube` module, OkHttp downloader).
+- Search results play through the existing player and queue together; the best audio-only stream (opus or m4a, https) is picked per song.
+- Search shows loading, empty and error states, with a "Try again" action.
+
+### Changed
+
+- Home and Library say that they show built-in sample music; search suggestions are now genre searches.
+- Sample lyrics appear only on sample songs, never on real ones.
+
 ## [0.1.0] - 2026-10-18
 
 Phase A: foundation, plus the first UI redesign.

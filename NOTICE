@@ -5,5 +5,10 @@ Inter font software: Copyright 2016 The Inter Project Authors
 Bundled static optical-size instances preserve the source metadata.
 Full licence: docs/brand/OFL.txt and the APK asset Inter-OFL.txt.
 
+NewPipeExtractor: Copyright NewPipe e.V. and contributors
+(https://github.com/TeamNewPipe/NewPipeExtractor). GPL-3.0-or-later.
+Used unmodified as a library (v0.26.5, via JitPack) for YouTube Music
+search and stream extraction in the :source:youtube module.
+
 BitChord, Metrolist and Meld are quality references only. No source or
 assets from these applications are included in this change.

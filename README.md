@@ -27,8 +27,10 @@
 ---
 
 > [!NOTE]
-> Sitara is in **Phase A** (`v0.1.0-dev`), an early preview. The app shell, design system and player run against a built-in
-> sample catalogue with royalty-free demo streams; the real streaming source lands in Phase B. `v0.1.0` is the first preview release; the signed APK is on the [Releases](https://github.com/muhib-karim/sitara/releases) page.
+> Sitara is an early preview, now in **Phase B**. On `main`, **Search finds real songs on YouTube Music and plays them**
+> through NewPipeExtractor (not yet in a release). Home, Library and lyrics still use the built-in sample catalogue, and
+> the app labels them as samples. Covers are generated gradients for now. `v0.1.0` (sample catalogue only) is on the
+> [Releases](https://github.com/muhib-karim/sitara/releases) page.
 
 ## Screenshots
 
@@ -61,7 +63,7 @@ Planned, not built yet: *Sitara Sync* (end-to-end encrypted sync through storage
 | Area | Feature | Status |
 | --- | --- | :---: |
 | **Shell** | Unified glass dock with four destinations and edge-to-edge layout | Pending CI |
-| | Home, Search and Library on a sample source with generated gradient covers | ✅ |
+| | Home and Library on the built-in sample catalogue, labelled as samples, with generated gradient covers | ✅ |
 | **Player** | Mini player in the navigation dock: swipe up to open, sideways to skip | Pending CI |
 | | Shared artwork transition, white play disc and custom timeline | Pending CI |
 | | Artwork backdrop, scrubber, Playing / Lyrics / Up next pager | Pending CI |
@@ -71,7 +73,9 @@ Planned, not built yet: *Sitara Sync* (end-to-end encrypted sync through storage
 | **Lyrics** | LRC and enhanced LRC parsing, line focus and seek, plain lyrics as static text | Pending CI |
 | **Settings** | Theme: dynamic, artwork or AMOLED black; light / dark; reduced motion | ✅ |
 | | Loudness normalisation and crossfade (maths tested, not yet in the audio path; shown disabled) | 🚧 |
-| **Source** | Real search and browse, stream resolution, health checks and fallback | Phase B |
+| **Source** | Live YouTube Music song search with loading, empty, error and retry states (NewPipeExtractor) | 🧪 |
+| | Playback of search results: best audio-only stream (opus or m4a), with the sample resolver as fallback | 🧪 |
+| | Real home feed and browse, album and artist pages, artwork images, health checks | Phase B |
 | | Downloads, local files, synced lyrics, history, playlists, import, backup and restore | Phase B |
 | | Gapless, crossfade 0 to 12 s, skip silence, speed and pitch, equaliser | Phase B |
 | **Accounts** | Account library sync, scrobbling, widgets, Android Auto, Cast | Phase C |
@@ -108,15 +112,17 @@ graph TD
         api[":source:api"]
         fake[":source:fake"]
         lyrics[":source:lyrics"]
+        youtube[":source:youtube"]
     end
 
     app --> home & search & library & player & settings
-    app --> coreplayer & data & fake & common
+    app --> coreplayer & data & fake & youtube & common
     home & search & library & player & settings --> designsystem
     settings --> data
     player --> lyrics
     coreplayer --> api
     fake --> api & lyrics
+    youtube --> api
     lyrics --> api
     data --> model
     api --> model
@@ -125,7 +131,7 @@ graph TD
 
 More detail, including data flow and the CI pipeline, is in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md). The motion, colour and type system is documented in [docs/DESIGN.md](docs/DESIGN.md).
 
-**Stack:** Kotlin 2.4 · Jetpack Compose 1.12 + Material 3 · Media3 1.10 (ExoPlayer, MediaSessionService) · Haze glass blur · DataStore · JUnit 4/5, Turbine · Roborazzi on Robolectric.
+**Stack:** Kotlin 2.4 · Jetpack Compose 1.12 + Material 3 · Media3 1.10 (ExoPlayer, MediaSessionService) · Haze glass blur · DataStore · NewPipeExtractor + OkHttp · JUnit 4/5, Turbine · Roborazzi on Robolectric.
 
 ## Install
 
