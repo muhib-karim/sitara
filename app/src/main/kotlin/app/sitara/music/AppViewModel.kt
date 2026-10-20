@@ -44,7 +44,7 @@ class AppViewModel(private val app: SitaraApplication) : ViewModel(), PlayerActi
 
     /** Tabs the shell should switch to, buffered until the UI collects them. */
     val requestedTabs: Flow<Tab> = tabRequests.receiveAsFlow()
-    val search: StateFlow<SearchState> = searchStates(query, searchRetries, debounceMs = 300, search = app.search::search)
+    val search: StateFlow<SearchState> = searchStates(query, searchRetries, debounceMs = 300, search = { app.search.search(it) })
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SearchState.Idle)
     val settings: StateFlow<SitaraSettings> = app.settings.settings.stateIn(viewModelScope, SharingStarted.Eagerly, SitaraSettings())
 

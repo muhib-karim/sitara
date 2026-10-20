@@ -33,6 +33,7 @@ object SampleCatalog {
             album = album,
             durationMs = seconds * 1_000L,
             artwork = art(*argb),
+            artistId = artist.id,
         )
     }
 
@@ -73,7 +74,7 @@ object SampleCatalog {
                 track("Neon Transit", artists[4], "Signal / Noise", 356, 0xFF8B7CFF, 0xFF1E1B4B),
             ),
         ),
-    )
+    ).map { album -> album.copy(artistId = artists.single { it.name == album.artist }.id) }
 
     val tracks: List<Track> = albums.flatMap { it.tracks }
 

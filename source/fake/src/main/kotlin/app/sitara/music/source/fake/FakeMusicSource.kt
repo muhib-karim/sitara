@@ -1,10 +1,15 @@
 package app.sitara.music.source.fake
 
+import app.sitara.music.core.model.Album
+import app.sitara.music.core.model.ArtistPage
 import app.sitara.music.core.model.Library
 import app.sitara.music.core.model.Lyrics
+import app.sitara.music.core.model.Playlist
+import app.sitara.music.core.model.SearchFilter
 import app.sitara.music.core.model.SearchResults
 import app.sitara.music.core.model.Shelf
 import app.sitara.music.core.model.Track
+import app.sitara.music.source.api.BrowseSource
 import app.sitara.music.source.api.HealthCheck
 import app.sitara.music.source.api.HealthReport
 import app.sitara.music.source.api.HealthStatus
@@ -18,7 +23,7 @@ import kotlinx.coroutines.delay
 /** An offline source backed by [SampleCatalog]; it powers Phase A, previews and tests. */
 class FakeMusicSource(
     private val latencyMs: Long = 0,
-) : MusicSource, StreamResolver, LyricsProvider, HealthCheck {
+) : MusicSource, BrowseSource, StreamResolver, LyricsProvider, HealthCheck {
     override val id: String = "fake"
 
     override suspend fun home(): List<Shelf> {
@@ -32,17 +37,27 @@ class FakeMusicSource(
         )
     }
 
-    override suspend fun search(query: String): SearchResults {
+    override suspend fun search(query: String, filter: SearchFilter): SearchResults {
         simulateLatency()
         val q = query.trim()
-        if (q.isEmpty()) return SearchResults.empty(query)
-        return SearchResults(
-            query = query,
-            tracks = SampleCatalog.tracks.filter { it.title.contains(q, true) || it.artist.contains(q, true) || it.album.contains(q, true) },
-            albums = SampleCatalog.albums.filter { it.title.contains(q, true) || it.artist.contains(q, true) },
-            artists = SampleCatalog.artists.filter { it.name.contains(q, true) },
-        )
+        val empty = SearchResults.empty(query)
+        if (q.isEmpty()) return empty
+        return when (filter) {
+            SearchFilter.SONGS -> empty.copy(tracks = SampleCatalog.tracks.filter { it.title.contains(q, true) || it.artist.contains(q, true) || it.album.contains(q, true) })
+            SearchFilter.ALBUMS -> empty.copy(albums = SampleCatalog.albums.filter { it.title.contains(q, true) || it.artist.contains(q, true) })
+            SearchFilter.ARTISTS -> empty.copy(artists = SampleCatalog.artists.filter { it.name.contains(q, true) })
+            SearchFilter.PLAYLISTS -> empty.copy(playlists = SampleCatalog.playlists.filter { it.title.contains(q, true) })
+        }
     }
+
+    override suspend fun artist(id: String): ArtistPage? {
+        val artist = SampleCatalog.artists.find { it.id == id } ?: return null
+        return ArtistPage(artist, bannerUrl = null, SampleCatalog.tracks.filter { it.artistId == id }, SampleCatalog.albums.filter { it.artistId == id })
+    }
+
+    override suspend fun album(id: String): Album? = SampleCatalog.albums.find { it.id == id }
+
+    override suspend fun playlist(id: String): Playlist? = SampleCatalog.playlists.find { it.id == id }
 
     override suspend fun library(): Library {
         simulateLatency()

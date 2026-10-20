@@ -1,5 +1,6 @@
 package app.sitara.music.source.fake
 
+import app.sitara.music.core.model.SearchFilter
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
@@ -22,6 +23,27 @@ class FakeMusicSourceTest {
         assertEquals(3, source.search("LUMEN").tracks.size)
         assertTrue(source.search("   ").isEmpty)
         assertTrue(source.search("zzzz").isEmpty)
+    }
+
+    @Test
+    fun `search returns only the kind the filter asks for`() = runTest {
+        val albums = source.search("lumen", SearchFilter.ALBUMS)
+        assertEquals(listOf("Afterglow Atlas"), albums.albums.map { it.title })
+        assertTrue(albums.tracks.isEmpty())
+        assertEquals(listOf("Lumen Drift"), source.search("lumen", SearchFilter.ARTISTS).artists.map { it.name })
+        assertEquals(listOf("Night Drive"), source.search("night", SearchFilter.PLAYLISTS).playlists.map { it.title })
+    }
+
+    @Test
+    fun `sample pages open by id and unknown ids are left to other catalogues`() = runTest {
+        val page = source.artist("ar-lumen")!!
+        assertEquals(3, page.topSongs.size)
+        assertEquals(listOf("al-afterglow"), page.releases.map { it.id })
+        assertEquals("ar-lumen", source.album("al-afterglow")!!.artistId)
+        assertEquals("Night Drive", source.playlist("pl-night")!!.title)
+        assertNull(source.artist("UCabcdefghijklmnopqrstuv"))
+        assertNull(source.album("OLAK5uy_album"))
+        assertNull(source.playlist("PLmix"))
     }
 
     @Test

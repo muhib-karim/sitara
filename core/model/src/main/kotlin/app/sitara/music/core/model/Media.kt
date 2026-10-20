@@ -58,6 +58,8 @@ data class Playlist(
     val artwork: Artwork,
     val tracks: List<Track>,
     val moods: Set<ListeningMood> = emptySet(),
+    /** Who made the playlist, when the source says. */
+    val curator: String = "",
 )
 
 /** A titled horizontal row on the home screen. */
@@ -70,13 +72,17 @@ data class Shelf(
     val playlists: List<Playlist> = emptyList(),
 )
 
+/** What a search looks for. */
+enum class SearchFilter(val label: String) { SONGS("Songs"), ALBUMS("Albums"), ARTISTS("Artists"), PLAYLISTS("Playlists") }
+
 data class SearchResults(
     val query: String,
     val tracks: List<Track>,
     val albums: List<Album>,
     val artists: List<Artist>,
+    val playlists: List<Playlist> = emptyList(),
 ) {
-    val isEmpty: Boolean get() = tracks.isEmpty() && albums.isEmpty() && artists.isEmpty()
+    val isEmpty: Boolean get() = tracks.isEmpty() && albums.isEmpty() && artists.isEmpty() && playlists.isEmpty()
 
     companion object {
         fun empty(query: String = "") = SearchResults(query, emptyList(), emptyList(), emptyList())

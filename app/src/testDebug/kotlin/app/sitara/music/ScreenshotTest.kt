@@ -19,6 +19,7 @@ import androidx.compose.ui.unit.Density
 import app.sitara.music.core.model.DarkMode
 import app.sitara.music.core.model.Library
 import app.sitara.music.core.model.Lyrics
+import app.sitara.music.core.model.SearchFilter
 import app.sitara.music.core.model.SitaraSettings
 import app.sitara.music.core.model.ThemeMode
 import app.sitara.music.feature.player.PlayerActions
@@ -56,6 +57,12 @@ class ScreenshotTest {
         lyrics = runBlocking { source.lyrics(track)!! },
     )
 
+    // The sample catalogue answers each filter on its own; merged, every result group shows at once.
+    private fun allKinds(query: String) = runBlocking {
+        SearchFilter.entries.map { source.search(query, it) }
+            .reduce { all, more -> all.copy(tracks = all.tracks + more.tracks, albums = all.albums + more.albums, artists = all.artists + more.artists) }
+    }
+
     private fun shot(
         name: String,
         dark: Boolean,
@@ -68,7 +75,7 @@ class ScreenshotTest {
         reduced: Boolean = true,
         fontScale: Float = 1f,
         playerState: PlayerUiState = playing,
-        search: SearchState = SearchState.Loaded(query.trim(), runBlocking { source.search(query) }),
+        search: SearchState = SearchState.Loaded(query.trim(), allKinds(query)),
         beforeCapture: () -> Unit = {},
     ) {
         val settings = SitaraSettings(themeMode = mode, darkMode = if (dark) DarkMode.DARK else DarkMode.LIGHT, reducedMotion = reduced)

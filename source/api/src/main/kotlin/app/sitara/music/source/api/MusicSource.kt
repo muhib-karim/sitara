@@ -1,20 +1,27 @@
 package app.sitara.music.source.api
 
+import app.sitara.music.core.model.Album
 import app.sitara.music.core.model.ArtistPage
 import app.sitara.music.core.model.Library
 import app.sitara.music.core.model.Lyrics
+import app.sitara.music.core.model.Playlist
+import app.sitara.music.core.model.SearchFilter
 import app.sitara.music.core.model.SearchResults
 import app.sitara.music.core.model.Shelf
 import app.sitara.music.core.model.Track
 
 /** Catalogue search on its own, for sources that do not offer browse or a library yet. */
 interface SearchSource {
-    suspend fun search(query: String): SearchResults
+    suspend fun search(query: String, filter: SearchFilter = SearchFilter.SONGS): SearchResults
 }
 
 /** Detail pages. Each call returns null when [id] does not belong to this catalogue, so catalogues can be tried in turn. */
 interface BrowseSource {
     suspend fun artist(id: String): ArtistPage?
+
+    suspend fun album(id: String): Album?
+
+    suspend fun playlist(id: String): Playlist?
 }
 
 /** Catalogue access: everything the browse screens need. */
