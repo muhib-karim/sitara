@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+Phase B, slice 5: offline listening and sound. This completes Phase B.
+
+### Added
+
+- Downloads: Download a song from its menu, or a whole album or playlist (yours, liked songs, or one from YouTube Music) with Download all. Downloaded songs play with no connection; songs that are not downloaded stream as before. A downloaded badge marks them on album and playlist pages.
+- A Downloads section at the end of the Library lists every download with its progress, "Waiting for Wi-Fi" or "Failed", and lets you cancel, delete, retry, or play the downloads in order. Downloads carry on in the background with a progress notification after the app is closed.
+- Settings, Downloads: "Download on Wi-Fi only" (on by default), storage used, and Remove all downloads (it asks first).
+- Normalise loudness (on by default): songs play at a similar volume. YouTube's own loudness values are not available through NewPipeExtractor, so Sitara levels the sound gently as it plays: at most 6 dB louder, never past −1 dBFS peaks, never in sudden jumps. Off leaves the sound untouched.
+- Crossfade (Off, or 1 to 12 seconds): the end of a song overlaps the start of the next. Songs from the same album, a song on repeat, and the song an end-of-song sleep timer stops after still play without a gap. Pausing, seeking, skipping or a phone call ends a fade at once.
+
+### Changed
+
+- Settings gain Sound and Downloads groups.
+
 ## [0.5.0] - 2026-10-20
 
 Phase B, slice 4: a real Home, playback that survives restarts, and lyrics.

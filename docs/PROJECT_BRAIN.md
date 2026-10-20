@@ -19,10 +19,10 @@ Goal: an original app with its own design and logo (not a reskin), shipped as a 
 - b4 (Phase B slice 4) DONE on main (CI, Device screens, Secret scan green at 360a64f), target v0.5.0 (owner tags): Home = YouTube Charts trending (ChartsSource, NewPipe trending_music kiosk) + Recently played / Jump back in / From your likes from Room; sample catalogue debug/test-only; Room v2 (saved queue, lyrics cache); queue restored after process death, saved on change/pause/15 s/destroy; onPlaybackResumption + MediaButtonReceiver; covers in system controls; LRCLIB lyrics (get -> search, cached, LyricsState with Try again). Report: docs/reports/REPORT_b4.md.
 - b1a DONE on main: YouTube/YouTube Music/youtu.be links (paste into Search, VIEW + SEND intents, autoplay), live smoke test job (search finds x7kGuhlXmFI; player request bot-checked on CI runners). Tagged and released as v0.2.0.
 
-- b5 (Phase B slice 5, target v0.6.0) IN PROGRESS: downloads/offline pushed (14dfd28; unit tests green, screenshots stale as expected); sound pushed (LoudnessLeveller processor, Crossfader tail player); next record baselines, docs, REPORT_b5.
+- b5 (Phase B slice 5) DONE on main, target v0.6.0 (owner tags), completes Phase B: downloads/offline (Media3 DownloadManager + SimpleCache keyed by sitara://track/<id>, read-only cache in playback, foreground download service, Wi-Fi only), loudness levelling (own gated-RMS audio processor; NewPipe exposes no loudness), crossfade (tail ExoPlayer, albums gapless), Settings Sound/Downloads, baselines, README/docs. Report: docs/reports/REPORT_b5.md.
 
 ## Next step
-Owner, before tagging v0.5.0: on-device pass of the checklist in REPORT_b4.md (chart, shelves, lyrics, lock screen and notification, focus and noisy, swipe away, restore after force-stop, headset resume, release build under R8). Next slice: image loader for in-app artwork, bot-check message + PoToken provider.
+Owner, before tagging v0.6.0: on-device pass of the checklist in REPORT_b5.md (downloads on Wi-Fi and mobile, airplane-mode playback, notification, Remove all, levelling, crossfade hand-over and album gapless, restore, release build under R8). Next: image loader for in-app artwork, bot-check message + PoToken provider, then Phase C.
 
 ## Session log
 2026-10-17 22:21Z Codex / GPT-6 Astra: recorded original design and ui1 plan; next foundations and tests.
@@ -43,3 +43,4 @@ Owner, before tagging v0.5.0: on-device pass of the checklist in REPORT_b4.md (c
 2026-10-20 09:40Z Claude Code / Opus 5.5: b3 store, queue ops, history and library UI pushed (7c7f058..f07d348); next record baselines, docs, REPORT_b3, CI green.
 2026-10-20 10:05Z Claude Code / Opus 5.5: b3 shipped (7c7f058..08d9f88 + docs); CI 39402430963, Device screens 39402430844 (re-run), Secret scan green; next owner device check and v0.4.0 tag.
 2026-10-20 12:05Z Claude Code / Opus 5.5: b4 shipped (0fd6d61..360a64f + docs): real Home, queue kept across restarts + headset resume, LRCLIB lyrics; next owner device check and v0.5.0 tag.
+2026-10-20 13:00Z Claude Code / Opus 5.5: b5 shipped (14dfd28..f0634b0 + docs): downloads/offline, loudness levelling, crossfade, baselines, README/PLAN/ARCHITECTURE for finished Phase B; next owner device check and v0.6.0 tag.

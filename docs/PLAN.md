@@ -7,7 +7,7 @@ Phases follow SPEC section 4. Each phase ends with CI green on `main` and a tagg
 | Phase | Scope | Status |
 |---|---|---|
 | A | Shell, design system, fake source, player UI, Media3 playback service, tests, CI, docs | Code complete; CI compiles and tests it; review findings fixed ([response](review/PHASE_A_REVIEW_RESPONSE.md)); on-device check pending |
-| B | Real source (NewPipeExtractor), downloads, local files, LRCLIB lyrics, crossfade/normalise processors, Hilt, Room | Slice 1 released as 0.2.0: live YouTube Music search and playback, YouTube links pasted, opened or shared ([ADR 0004](adr/0004-youtube-source-newpipeextractor.md), [report](reports/REPORT_b1.md)). Slice 2 released as 0.3.0: artist, album and playlist pages, search filters, Play all / Shuffle, radio ([report](reports/REPORT_b2.md)). Slice 3 released as 0.4.0: Room library (liked songs, history, saved albums and artists, playlists), song menus, editable Up next ([report](reports/REPORT_b3.md)). Slice 4 on `main` (for 0.5.0): Home from YouTube Charts and the library, LRCLIB synced lyrics with a Room cache, the queue kept across restarts and resumed from media buttons, covers in system controls, no sample data in the app ([report](reports/REPORT_b4.md)) |
+| B | Real source (NewPipeExtractor), downloads, LRCLIB lyrics, crossfade/normalise processors, Room | **Complete.** Slice 1 released as 0.2.0: live YouTube Music search and playback, YouTube links pasted, opened or shared ([ADR 0004](adr/0004-youtube-source-newpipeextractor.md), [report](reports/REPORT_b1.md)). Slice 2 released as 0.3.0: artist, album and playlist pages, search filters, Play all / Shuffle, radio ([report](reports/REPORT_b2.md)). Slice 3 released as 0.4.0: Room library (liked songs, history, saved albums and artists, playlists), song menus, editable Up next ([report](reports/REPORT_b3.md)). Slice 4 released as 0.5.0: Home from YouTube Charts and the library, LRCLIB synced lyrics, the queue kept across restarts ([report](reports/REPORT_b4.md)). Slice 5 on `main` (for 0.6.0): downloads and offline play, loudness levelling, crossfade ([report](reports/REPORT_b5.md)). Carried over, not built: local files (MediaStore), import and backup, artwork images in the app, resolver health checks and the source health screen, Hilt |
 | C | Accounts, scrobbling, widgets, Android Auto, Cast, Replay, remote control | Not started |
 | D | Canvas, automix, translation/transliteration, Wear OS, TV | Not started |
 
@@ -48,7 +48,7 @@ Details: [`plan/PHASE_A_FIX_PLAN.md`](plan/PHASE_A_FIX_PLAN.md).
 - ktlint runs as the CLI in CI with a relaxed `.editorconfig`; detekt is deferred.
 
 ## Next steps
-1. Device check on a 120 Hz phone: sheet spring feel, swipe gestures, audio focus, notification and Bluetooth controls, sleep timer with the screen off.
-2. Second cross-model review of the fix set, then tag `v0.1.0` (owner).
-3. Enable GitHub Pages (Settings, Pages, source "GitHub Actions") so `pages.yml` can deploy the site.
-4. Phase B, next slices: artwork images in the app (an image loader), bot-check message and PoToken provider, resolver health checks, audio processors for normalisation and crossfade, Hilt.
+1. Owner: on-device pass of the checklist in [REPORT_b5](reports/REPORT_b5.md), then tag `v0.6.0`.
+2. Carried over from Phase B: artwork images in the app (an image loader), a bot-check message and PoToken provider, resolver health checks, local files, import and backup.
+3. Phase C: accounts, scrobbling, widgets, Android Auto, Cast.
+4. Still open from Phase A: a device check of the sheet spring and gestures on a 120 Hz phone, and enabling GitHub Pages (Settings, Pages, source "GitHub Actions") so `pages.yml` can deploy the site.

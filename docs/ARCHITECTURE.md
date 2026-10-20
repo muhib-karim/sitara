@@ -2,7 +2,7 @@
 
 This document describes how Sitara is put together: the module map, how data moves from a music source to the screen, how playback is wired to Media3, how the stream source stays reliable, and how the code is tested and shipped.
 
-> Status: Phase B, slice 4. Home's trending chart, search, artist/album/playlist pages, radio and streams are live (YouTube through NewPipeExtractor); lyrics come from LRCLIB; the library, the play queue and fetched lyrics are stored on the device with Room. The app contains no sample data; the sample catalogue is a test and debug fixture. Modules marked *planned* do not exist yet.
+> Status: Phase B complete (slice 5). Home's trending chart, search, artist/album/playlist pages, radio and streams are live (YouTube through NewPipeExtractor); lyrics come from LRCLIB; the library, the play queue and fetched lyrics are stored on the device with Room; downloaded songs live in a Media3 cache and play offline; playback levels loudness and can crossfade. The app contains no sample data; the sample catalogue is a test and debug fixture. Modules marked *planned* do not exist yet.
 
 ## Goals
 
@@ -18,17 +18,17 @@ This document describes how Sitara is put together: the module map, how data mov
 | `:app` | Android application | Activity, app shell (glass tab bar, mini player dock, detail back stack of typed `DetailRoute`s), dependency wiring |
 | `:core:model` | Pure Kotlin | Domain types: `Track`, `Album`, `Artist`, `Playlist`, `Queue`, `LyricsLine`, `LyricsWord` |
 | `:core:common` | Pure Kotlin | Result types, coroutine dispatchers, time and formatting helpers |
-| `:core:data` | Android library | DataStore-backed settings; the on-device store (`LibraryStore`): repositories for liked songs, play history, saved albums and artists, playlists, the saved play queue and the lyrics cache, implemented with Room, whose schema is exported to `core/data/schemas` |
-| `:core:player` | Android library | `PlaybackService` (Media3 session + ExoPlayer), `PlaybackEngine`, `PlayerController` facade, queue engine and its save/restore, controller/stream policies, crossfade curves, LUFS gain, sleep timer |
+| `:core:data` | Android library | DataStore-backed settings (theme, motion, sound, Wi-Fi-only downloads); the on-device store (`LibraryStore`): repositories for liked songs, play history, saved albums and artists, playlists, the saved play queue and the lyrics cache, implemented with Room, whose schema is exported to `core/data/schemas` |
+| `:core:player` | Android library | `PlaybackService` (Media3 session + ExoPlayer), `PlaybackEngine`, `PlayerController` facade, queue engine and its save/restore, controller/stream policies, sleep timer; `SongDownloads` and `SitaraDownloadService` (Media3 downloads); `LoudnessLeveller` in a Media3 audio processor; `Crossfader` and its timing rules |
 | `:core:designsystem` | Android library | Theme, colour roles, artwork palette mapping, `SitaraMotion`, glass surfaces, typography, icons, shared components |
 | `:source:api` | Pure Kotlin | Contracts: `SearchSource`, `ChartsSource`, `MusicSource`, `BrowseSource` (artist, album, playlist pages), `RadioSource`, `StreamResolver`, `LyricsProvider`, `HealthCheck` |
 | `:source:fake` | Pure Kotlin | Deterministic sample catalogue with generated gradient covers: a fixture for tests, screenshots and the debug capture screen (`debugImplementation` only, never in a release build) |
 | `:source:lyrics` | Pure Kotlin (JVM) | LRC and enhanced (word-timed) LRC parser; `LrclibLyricsProvider` (LRCLIB over OkHttp, cached through a `LyricsCache`) and the title clean-up for lyric searches |
 | `:feature:home` | Android library | Home: the trending chart (loading, error, retry) and shelves from the library: Recently played, Jump back in, From your likes |
 | `:feature:search` | Android library | Search field, suggestions, results; debounced search states with loading, error and retry |
-| `:feature:library` | Android library | Library grid/list, and the artist, album and playlist detail pages with loading, error and empty states |
+| `:feature:library` | Android library | Library (liked songs, playlists, shelves, Downloads with progress, cancel, delete and retry), song menus, and the artist, album and playlist detail pages with loading, error and empty states, Download all and downloaded badges |
 | `:feature:player` | Android library | Mini player, full player sheet, scrubber, Up next / Lyrics pager, karaoke lyrics |
-| `:feature:settings` | Android library | Theme mode, reduced motion, playback preferences |
+| `:feature:settings` | Android library | Theme, reduced motion, Sound (normalise loudness, crossfade), Downloads (Wi-Fi only, storage used, Remove all) |
 | `:source:youtube` | Pure Kotlin (JVM) | YouTube Music search (songs, albums, artists, playlists), artist/album/playlist pages, radio from related songs, the YouTube Charts trending list (NewPipe's `trending_music` kiosk), YouTube link parsing and audio stream resolution on NewPipeExtractor, with an OkHttp downloader ([ADR 0004](adr/0004-youtube-source-newpipeextractor.md)) |
 | `:source:local` | *planned, Phase B* | MediaStore and folder-based local files |
 
@@ -156,11 +156,58 @@ sequenceDiagram
   The service keeps running when the app is swiped away while music plays, and stops if it is paused or empty.
 - **The sleep timer** counts minutes on `elapsedRealtime` (monotonic), or pauses at the end of the current item using
   ExoPlayer's pause-at-end.
-- **Crossfade** and **normalisation** are pure functions (fade curves; gain toward −14 LUFS, capped by the true
-  peak). They are tested but **not yet applied to playback**: the settings are disabled in the UI until a Media3
-  `AudioProcessor` chain lands in Phase B.
+- **Downloaded songs play from the download cache.** The player's data source is a read-only `CacheDataSource` over
+  the download cache, keyed by the `sitara://track/<id>` URI, with the resolving data source as its upstream. A
+  downloaded song is read from the device and never resolved; any other song streams and is not written to the
+  cache. See [Downloads](#downloads).
+- **Normalisation** (`LoudnessLeveller`, run by `LevellingAudioProcessor` in ExoPlayer's audio sink). NewPipeExtractor
+  does not pass on YouTube's loudness values (`ResolvedStream.loudnessLufs` stays empty), so the level is measured as
+  it plays: the gated (above −50 dBFS) RMS level over about 3 s, unweighted, as an approximation of LUFS; gain toward
+  the target (−14 LUFS by default), at most +6 dB and at most −15 dB, moving no faster than 3 dB/s down and 1 dB/s up,
+  ramped across each buffer, and a boost never lifts a peak past −1 dBFS. Off, audio passes through bit-exact.
+  16-bit and float PCM are levelled; other encodings pass by.
+- **Crossfade** (`Crossfader`, timing rules in `Crossfade`). Ten seconds before the last N seconds of a song, a second
+  ExoPlayer (the tail, without audio focus) loads that song at the fade point, and a `PlayerMessage` fires when the
+  main player reaches it. The tail starts; once its output runs, both play the same audio for 80 ms while the main
+  player's volume goes to zero; then the main player seeks to the next item and the two fade with equal-power curves,
+  timed by the tail's own position. The main player keeps the session, the queue, the engine's state and the saved
+  position, so system controls, Up next edits, persistence and restore work exactly as without crossfade. Songs from
+  the same album (gapless), repeat one, an end-of-song sleep stop, the end of the queue and songs shorter than two
+  fades do not fade. Pausing, seeking, skipping, any other item change, an interruption (a call) or a settings change
+  stops the tail and restores full volume; a tail that is not ready in time, stalls or fails falls back to the normal
+  gapless change or ends the fade on time. The tail's leveller starts from the main player's level.
 - **Lyrics** are parsed into timed lines and words, keeping the original text and syllables. The UI derives the active
   line and the karaoke character sweep from the position; unsynced lyrics are shown as static text.
+
+### Downloads
+
+```mermaid
+flowchart LR
+    ui["Song menu / Download all"] --> vm["AppViewModel<br/>(skips done or running)"]
+    vm --> sd["SongDownloads"]
+    sd -->|"DownloadRequest(id, sitara://track/id,<br/>song details as data)"| svc["SitaraDownloadService<br/>(foreground, dataSync)"]
+    svc --> dm["Media3 DownloadManager<br/>(Wi-Fi only = unmetered requirement)"]
+    dm --> rs["StreamUriResolver<br/>(fresh URL per start or resume)"] --> net["YouTube stream"]
+    dm --> cache[("SimpleCache<br/>files/downloads")]
+    player["PlaybackService player<br/>(read-only CacheDataSource)"] --> cache
+    sd -->|"StateFlow&lt;List&lt;SongDownload&gt;&gt;"| vm
+```
+
+- A download is Media3's `DownloadRequest` with the song id as its id and `sitara://track/<id>` as its URI, the same
+  URI the player loads, so both use the same cache key. The download's data source resolves the stream with the same
+  `StreamUriResolver` (it reads the song from the request's data), so a resumed download gets a fresh signed URL.
+- The song's details (title, artist, album, length, cover colours and URL, artist id) are encoded into the request's
+  data (`DownloadedTrack`, a versioned binary format; unreadable entries are skipped), so the Downloads list needs
+  neither the network nor a Room migration.
+- `SongDownloads` mirrors Media3's download index into a `StateFlow` of `SongDownload`s (newest first), polling
+  progress once a second only while something downloads, and maps Media3 states to `DownloadState`: waiting, waiting
+  for Wi-Fi, waiting for a connection, downloading (percent), downloaded, failed.
+- `SitaraDownloadService` is a Media3 `DownloadService` in the foreground with a progress notification, so downloads
+  finish after the app closes. It has no scheduler: while a download waits for Wi-Fi the service stays in the
+  foreground (Android 12 and later allow nothing else). Opening the app resumes downloads left over from a killed
+  process.
+- "Wi-Fi only" (on by default) sets the manager's requirement to an unmetered network; off, any network.
+  "Remove all downloads" removes every download and its cached data. Storage used is the sum of downloaded bytes.
 
 ### Lyrics
 
@@ -192,7 +239,7 @@ flowchart TD
     req["resolve(trackId)"] --> chain["ResolverChain"]
     chain --> r1["Primary resolver"]
     chain --> r2["Secondary resolver"]
-    chain --> r3["Local cache / downloads"]
+    chain --> r3["Further resolvers"]
     hc["HealthCheck (periodic + on failure)"] -.scores.-> chain
     chain --> out["StreamInfo or typed error"]
     chain --> dash["Source health dashboard"]
@@ -208,10 +255,10 @@ flowchart TD
 
 | Layer | Tools | What is covered |
 | --- | --- | --- |
-| Pure logic | JUnit 4/5, Turbine, coroutine test time | Queue engine (unique entries, shuffle restore, repeat), playback engine against a fake player (queue hand-off, transitions, end-of-queue restart, sleep timer, restore, save triggers), saved queue round trip (shuffle order, broken data), Home feed shelves, LRCLIB lookups against an interceptor (exact, search fallback, best match, cache freshness, errors, User-Agent), lyric title clean-up, an LRCLIB-shaped LRC fixture (offset, repeated timestamps, blank break), command gate, controller and stream policies, crossfade and LUFS maths, LRC and enhanced LRC parsing, karaoke sweep, sheet geometry, palette to theme mapping, settings codec, fake source, YouTube song mapping, audio stream selection, OkHttp downloader request/response mapping (interceptor, no network), search states |
+| Pure logic | JUnit 4/5, Turbine, coroutine test time | Queue engine (unique entries, shuffle restore, repeat), playback engine against a fake player (queue hand-off, transitions, end-of-queue restart, sleep timer, restore, save triggers), saved queue round trip (shuffle order, broken data), Home feed shelves, download state mapping and the downloaded-song codec, Download all selection, byte formatting, loudness levelling (target, boost cap, gate, slew, peak ceiling, bit-exact when off), crossfade rules and curve, LRCLIB lookups against an interceptor (exact, search fallback, best match, cache freshness, errors, User-Agent), lyric title clean-up, an LRCLIB-shaped LRC fixture (offset, repeated timestamps, blank break), command gate, controller and stream policies, crossfade and LUFS maths, LRC and enhanced LRC parsing, karaoke sweep, sheet geometry, palette to theme mapping, settings codec, fake source, YouTube song mapping, audio stream selection, OkHttp downloader request/response mapping (interceptor, no network), search states |
 | Library store | Robolectric, in-memory Room | Liked songs, capped history and its last-play order, saved albums and artists, playlist order, duplicates, renumbering, rename, delete cascading to entries, name validation, song details surviving storage; saved queue (repeats, shuffle order, replace, clear, position-only saves) and the lyrics cache |
-| Playback service | Robolectric | The real `PlaybackService` restores a saved queue paused at its song, position and repeat mode, and saves it on destroy; media item titles and covers are covered by `Media3PlayerPortTest` |
-| Screenshots | Roborazzi on Robolectric (debug variant) | Home, search, library, player, lyrics and settings in light and dark; CI fails on any pixel mismatch against the committed baselines in `app/src/test/screenshots` |
+| Playback service | Robolectric | The real `PlaybackService` restores a saved queue paused at its song, position and repeat mode, and saves it on destroy; normalisation and crossfade follow setting changes while it runs; media item titles and covers are covered by `Media3PlayerPortTest` |
+| Screenshots | Roborazzi on Robolectric (debug variant) | Home, search, library (with Downloads), album page with downloaded badges, player, lyrics, song menus and settings (Sound, Downloads) in light and dark; CI fails on any pixel mismatch against the committed baselines in `app/src/test/screenshots` |
 
 Principles:
 
@@ -219,7 +266,8 @@ Principles:
 - The fake source is deterministic (stable ids, titles and generated covers), so screenshots are stable across runs.
 - A bug fix starts with a failing test.
 - Screenshot diffs are reviewed like code. An intentional UI change re-records the baselines with `screenshots.yml`, and they are reviewed and committed with that change.
-- Not covered by automated tests yet: real stream playback, the player's audio attributes, audio focus and noisy-output behaviour on hardware, the notification's look, playback resumption from a media button, and gesture feel. Those need an on-device check.
+- Not covered by automated tests yet: real downloads and offline playback, how levelling and the crossfade hand-over
+  sound, real stream playback, the player's audio attributes, audio focus and noisy-output behaviour on hardware, the notification's look, playback resumption from a media button, and gesture feel. Those need an on-device check.
 
 ## CI pipeline
 
