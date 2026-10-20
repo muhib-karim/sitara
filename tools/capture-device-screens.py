@@ -128,23 +128,32 @@ def save(name, hierarchy):
 def main():
     OUTPUT.mkdir(parents=True, exist_ok=True)
     timeout = 90  # the first launch also waits out a cold emulator
+    buttons = False
     try:
-        for theme in ("dark", "light"):
-            for screen, expected in SCREENS.items():
-                hierarchy = launch_and_wait(screen, expected, theme == "dark", timeout)
-                timeout = 30
-                time.sleep(1)
-                if screen == "search":
-                    hierarchy = type_then_close_keyboard(screen, hierarchy, lambda: save(f"search_typing_{theme}", hierarchy))
-                if screen == "settings":
-                    hierarchy = scroll_to_end(screen)
-                save(f"{screen}_{theme}", hierarchy)
-                if screen == "settings":
-                    root = ET.fromstring(hierarchy)
-                    row, dock = bounds(root, "Storage used"), bounds(root, "Open player")
-                    print(f"settings {theme}: last row {row}, mini player {dock}")
-                    if row is None or dock is None or hidden_under_dock(row, dock):
-                        raise RuntimeError(f"The last Settings row is not clear of the mini player ({theme})")
+        passes = [(theme, screen, "") for theme in ("dark", "light") for screen in SCREENS]
+        # Three-button navigation draws its own bar, where the system may add a contrast scrim.
+        passes += [(theme, screen, "_buttons") for theme in ("dark", "light") for screen in ("settings", "search") if screen in SCREENS]
+        for theme, screen, nav in passes:
+            if nav and not buttons:
+                adb("shell", "cmd", "overlay", "enable-exclusive", "--category", "com.android.internal.systemui.navbar.threebutton")
+                time.sleep(3)
+                buttons = True
+            name = f"{screen}{nav}_{theme}"
+            expected = SCREENS[screen]
+            hierarchy = launch_and_wait(screen, expected, theme == "dark", timeout)
+            timeout = 30
+            time.sleep(1)
+            if screen == "search":
+                hierarchy = type_then_close_keyboard(screen, hierarchy, lambda: save(f"search_typing{nav}_{theme}", hierarchy))
+            if screen == "settings":
+                hierarchy = scroll_to_end(screen)
+            save(name, hierarchy)
+            if screen == "settings":
+                root = ET.fromstring(hierarchy)
+                row, dock = bounds(root, "Storage used"), bounds(root, "Open player")
+                print(f"{name}: last row {row}, mini player {dock}")
+                if row is None or dock is None or hidden_under_dock(row, dock):
+                    raise RuntimeError(f"The last Settings row is not clear of the mini player ({name})")
     finally:
         # Raw bytes: logcat can carry non-UTF-8 output from any process, which must not fail a finished capture.
         (OUTPUT / "logcat.txt").write_bytes(adb("logcat", "-d", "-v", "brief", binary=True))
