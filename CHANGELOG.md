@@ -6,6 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+Phase B, slice 3: your own library, stored on the device.
+
+### Added
+
+- Like songs from the player or from any song's menu (the ⋮ button, or a long press on the row). Liked songs have their own page with Play all and Shuffle.
+- Save albums and artists from their pages.
+- Playlists of your own: create one from the Library or inline while adding a song, then rename it, delete it, reorder songs by dragging (or with TalkBack's Move up and Move down) and remove songs.
+- Add to playlist from any song's menu and from the player.
+- Play next and Add to queue from any song's menu. Up next can be reordered by dragging, and songs removed from it.
+- Recently played: songs are recorded when they actually start playing (the latest 500 plays are kept).
+- The Library tab now shows only what you saved: Liked songs, Playlists, Recently played, Albums and Artists, each with its own empty state.
+
+### Changed
+
+- The library is stored on the device with Room. The database schema is exported and committed, and CI fails if it changes without being committed.
+- Search's sample browse no longer lists sample liked songs.
+
 ## [0.3.0] - 2026-10-20
 
 Phase B, slice 2: real detail pages.

@@ -7,7 +7,7 @@ Phases follow SPEC section 4. Each phase ends with CI green on `main` and a tagg
 | Phase | Scope | Status |
 |---|---|---|
 | A | Shell, design system, fake source, player UI, Media3 playback service, tests, CI, docs | Code complete; CI compiles and tests it; review findings fixed ([response](review/PHASE_A_REVIEW_RESPONSE.md)); on-device check pending |
-| B | Real source (NewPipeExtractor), downloads, local files, LRCLIB lyrics, crossfade/normalise processors, Hilt, Room | Slice 1 released as 0.2.0: live YouTube Music search and playback, YouTube links pasted, opened or shared ([ADR 0004](adr/0004-youtube-source-newpipeextractor.md), [report](reports/REPORT_b1.md)). Slice 2 on `main` (for 0.3.0): artist, album and playlist pages, search filters, Play all / Shuffle, radio ([report](reports/REPORT_b2.md)); home, library and lyrics still sample |
+| B | Real source (NewPipeExtractor), downloads, local files, LRCLIB lyrics, crossfade/normalise processors, Hilt, Room | Slice 1 released as 0.2.0: live YouTube Music search and playback, YouTube links pasted, opened or shared ([ADR 0004](adr/0004-youtube-source-newpipeextractor.md), [report](reports/REPORT_b1.md)). Slice 2 released as 0.3.0: artist, album and playlist pages, search filters, Play all / Shuffle, radio ([report](reports/REPORT_b2.md)). Slice 3 on `main` (for 0.4.0): Room library (liked songs, history, saved albums and artists, playlists), song menus, editable Up next ([report](reports/REPORT_b3.md)); home and lyrics still sample |
 | C | Accounts, scrobbling, widgets, Android Auto, Cast, Replay, remote control | Not started |
 | D | Canvas, automix, translation/transliteration, Wear OS, TV | Not started |
 
@@ -41,7 +41,7 @@ Details: [`plan/PHASE_A_FIX_PLAN.md`](plan/PHASE_A_FIX_PLAN.md).
 | A18 | README, ARCHITECTURE, DESIGN, CONTRIBUTING, COC, SECURITY, CHANGELOG, templates, Pages site | review | done |
 
 ## Simplifications taken in Phase A (recorded on purpose)
-- **No Hilt yet**: dependencies are wired by hand in `SitaraApplication` (ADR 0001). Hilt + KSP land with Room in Phase B.
+- **No Hilt yet**: dependencies are wired by hand in `SitaraApplication` (ADR 0001). Room and KSP landed in slice 3 without Hilt; `LibraryStore` keeps Room inside `:core:data`.
 - **No Navigation library**: tabs are plain state, and detail pages are a saveable back stack of typed `DetailRoute`s (slice 2). That covers back, process death and per-page scroll state without a new dependency; Navigation 3 stays an option if pages need animated transitions or deep links.
 - `:feature:lyrics` and `:feature:replay` from SPEC are folded into `:feature:player` / deferred to Phase C.
 - JUnit 5 for pure-Kotlin modules, JUnit 4 for Android modules (Robolectric/Roborazzi need JUnit 4).
@@ -51,4 +51,4 @@ Details: [`plan/PHASE_A_FIX_PLAN.md`](plan/PHASE_A_FIX_PLAN.md).
 1. Device check on a 120 Hz phone: sheet spring feel, swipe gestures, audio focus, notification and Bluetooth controls, sleep timer with the screen off.
 2. Second cross-model review of the fix set, then tag `v0.1.0` (owner).
 3. Enable GitHub Pages (Settings, Pages, source "GitHub Actions") so `pages.yml` can deploy the site.
-4. Phase B, next slices: artwork images (an image loader), real home feed, LRCLIB `LyricsProvider`, bot-check message and PoToken provider, resolver health checks, audio processors for normalisation and crossfade, Hilt, Room.
+4. Phase B, next slices: artwork images (an image loader), real home feed, LRCLIB `LyricsProvider`, bot-check message and PoToken provider, resolver health checks, audio processors for normalisation and crossfade, Hilt.

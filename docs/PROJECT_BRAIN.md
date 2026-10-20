@@ -15,11 +15,11 @@ Goal: an original app with its own design and logo (not a reskin), shipped as a 
 - v0.1.0 RELEASED.
 - b1 (Phase B slice 1, real music) DONE on main: live YouTube Music song search + playback via :source:youtube (NewPipeExtractor v0.26.5); search states with retry; home, library, lyrics and covers still sample and labelled. Report: docs/reports/REPORT_b1.md.
 - b2 (Phase B slice 2, real detail pages) on main, target v0.3.0 (owner tags): artist/album/playlist pages from YouTube Music, Songs/Albums/Artists/Playlists search chips, Play all/Shuffle/row taps, Start radio + auto-radio, typed DetailRoute back stack. Report: docs/reports/REPORT_b2.md.
-- b3 (Phase B slice 3, saved library) IN PROGRESS, target v0.4.0 (owner tags): Room store in :core:data behind LibraryStore (liked, capped history, saved albums/artists, playlists; schema committed, CI drift check) DONE; queue ops + play history DONE; UI (song menu, like/save, playlist picker and pages, editable Up next, Room-only Library) next, then baselines and docs.
+- b3 (Phase B slice 3, saved library) DONE on main, target v0.4.0 (owner tags): Room store in :core:data behind LibraryStore (liked, capped history, saved albums/artists, playlists; schema committed, CI drift check), queue ops + play history, song menus, like/save, playlist sheets and pages, editable Up next, Room-only Library; baselines 08d9f88. Report: docs/reports/REPORT_b3.md.
 - b1a DONE on main: YouTube/YouTube Music/youtu.be links (paste into Search, VIEW + SEND intents, autoplay), live smoke test job (search finds x7kGuhlXmFI; player request bot-checked on CI runners). Tagged and released as v0.2.0.
 
 ## Next step
-b3: push the library UI commit, record screenshot baselines through screenshots.yml, then CHANGELOG/README/PLAN/ARCHITECTURE and docs/reports/REPORT_b3.md. After b3: image loader for artwork, bot-check message + PoToken provider, real home feed, LRCLIB lyrics.
+Owner, before tagging v0.4.0: on-device pass of the checklist in REPORT_b3.md (likes, saves, playlists, Up next, history, restart, release build with Room under R8). Next slice: image loader for artwork, bot-check message + PoToken provider, real home feed, LRCLIB lyrics.
 
 ## Session log
 2026-10-17 22:21Z Codex / GPT-6 Astra: recorded original design and ui1 plan; next foundations and tests.
@@ -37,3 +37,5 @@ b3: push the library UI commit, record screenshot baselines through screenshots.
 2026-10-20 07:45Z Claude Code / Opus 5.5: resumed after memory guard; nothing lost, recorded final CI run in report; b1 complete.
 2026-10-20 08:08Z Claude Code / Opus 5.5: b1a shipped (links, intents, smoke job, 0.2.0 docs); CI green; next owner device + release check, then tag.
 2026-10-20 08:50Z Claude Code / Opus 5.5: b2 shipped (1d57d6b..bb5578a + docs): detail pages, search filters, play all/shuffle, radio; CI, Device screens, Secret scan green; next owner device check and v0.3.0 tag.
+2026-10-20 09:40Z Claude Code / Opus 5.5: b3 store, queue ops, history and library UI pushed (7c7f058..f07d348); next record baselines, docs, REPORT_b3, CI green.
+2026-10-20 10:05Z Claude Code / Opus 5.5: b3 shipped (7c7f058..08d9f88 + docs); CI 39402430963, Device screens 39402430844 (re-run), Secret scan green; next owner device check and v0.4.0 tag.

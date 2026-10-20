@@ -2,7 +2,7 @@
 
 This document describes how Sitara is put together: the module map, how data moves from a music source to the screen, how playback is wired to Media3, how the stream source stays reliable, and how the code is tested and shipped.
 
-> Status: Phase B, slice 2. Search, artist/album/playlist pages, radio and streams are live (YouTube Music through NewPipeExtractor); home, library and lyrics are samples. Modules marked *planned* do not exist yet.
+> Status: Phase B, slice 3. Search, artist/album/playlist pages, radio and streams are live (YouTube Music through NewPipeExtractor); the library is stored on the device with Room; home and lyrics are samples. Modules marked *planned* do not exist yet.
 
 ## Goals
 
@@ -18,7 +18,7 @@ This document describes how Sitara is put together: the module map, how data mov
 | `:app` | Android application | Activity, app shell (glass tab bar, mini player dock, detail back stack of typed `DetailRoute`s), dependency wiring |
 | `:core:model` | Pure Kotlin | Domain types: `Track`, `Album`, `Artist`, `Playlist`, `Queue`, `LyricsLine`, `LyricsWord` |
 | `:core:common` | Pure Kotlin | Result types, coroutine dispatchers, time and formatting helpers |
-| `:core:data` | Android library | Repositories over `MusicSource`, DataStore-backed settings |
+| `:core:data` | Android library | DataStore-backed settings; the on-device library (`LibraryStore`): repositories for liked songs, play history, saved albums and artists and playlists, implemented with Room, whose schema is exported to `core/data/schemas` |
 | `:core:player` | Android library | `PlaybackService` (Media3 session + ExoPlayer), `PlaybackEngine`, `PlayerController` facade, queue engine, controller/stream policies, crossfade curves, LUFS gain, sleep timer |
 | `:core:designsystem` | Android library | Theme, colour roles, artwork palette mapping, `SitaraMotion`, glass surfaces, typography, icons, shared components |
 | `:source:api` | Pure Kotlin | Contracts: `SearchSource`, `MusicSource`, `BrowseSource` (artist, album, playlist pages), `RadioSource`, `StreamResolver`, `LyricsProvider`, `HealthCheck` |
@@ -81,7 +81,7 @@ graph TD
 Rules enforced in review:
 
 - `:core:model`, `:core:common`, `:source:api`, `:source:fake`, `:source:lyrics` and `:source:youtube` stay free of Android dependencies.
-- Only `:app` chooses concrete sources. Search uses `YouTubeMusicSource`; detail pages and radio ask the sample source first (it answers null for ids it does not own), then YouTube; home, library and lyrics use the fake source; streams go through `FallbackStreamResolver(sample, YouTube)`.
+- Only `:app` chooses concrete sources. Search uses `YouTubeMusicSource`; detail pages and radio ask the sample source first (it answers null for ids it does not own), then YouTube; home and lyrics use the fake source; the Library tab reads only `LibraryStore`; streams go through `FallbackStreamResolver(sample, YouTube)`.
 - UI modules depend on `:core:designsystem` for every colour, shape, spring and duration. Hard-coded values in feature code are a review comment.
 
 ## Data flow
@@ -97,6 +97,8 @@ flowchart LR
     pc -->|buffered until ready| eng["PlaybackEngine<br/>(in PlaybackService)"]
     eng -->|StateFlow&lt;PlaybackSnapshot&gt;| vm
     ds["DataStore settings<br/>(:core:data)"] -->|Flow| vm
+    lib["LibraryStore (Room)<br/>(:core:data)"] -->|Flow| vm
+    eng -->|song started| lib
 ```
 
 1. **Source.** A `MusicSource` exposes suspending calls and flows for home shelves, search, albums, playlists and track metadata, returning `:core:model` types.
@@ -172,6 +174,7 @@ flowchart TD
 | Layer | Tools | What is covered |
 | --- | --- | --- |
 | Pure logic | JUnit 4/5, Turbine, coroutine test time | Queue engine (unique entries, shuffle restore, repeat), playback engine against a fake player (queue hand-off, transitions, end-of-queue restart, sleep timer), command gate, controller and stream policies, crossfade and LUFS maths, LRC and enhanced LRC parsing, karaoke sweep, sheet geometry, palette to theme mapping, settings codec, fake source, YouTube song mapping, audio stream selection, OkHttp downloader request/response mapping (interceptor, no network), search states |
+| Library store | Robolectric, in-memory Room | Liked songs, capped history and its last-play order, saved albums and artists, playlist order, duplicates, renumbering, rename, delete cascading to entries, name validation, song details surviving storage |
 | Screenshots | Roborazzi on Robolectric (debug variant) | Home, search, library, player, lyrics and settings in light and dark; CI fails on any pixel mismatch against the committed baselines in `app/src/test/screenshots` |
 
 Principles:

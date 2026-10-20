@@ -29,9 +29,11 @@
 > [!NOTE]
 > Sitara is an early preview, now in **Phase B**. Since `0.2.0`, **Search finds real songs on YouTube Music and plays
 > them** through NewPipeExtractor, and YouTube Music, YouTube and youtu.be links open in Sitara, whether pasted into
-> Search or shared from another app. On `main` (next release `0.3.0`), Search also finds albums, artists and
-> playlists, each with its own page, and Up next can start a radio of related songs. Home, Library and lyrics still
-> use the built-in sample catalogue, and the app labels them as samples. Covers are generated gradients for now.
+> Search or shared from another app. Since `0.3.0`, Search also finds albums, artists and playlists, each with its own
+> page, and Up next can start a radio of related songs. On `main` (next release `0.4.0`), the Library is your own,
+> stored on the device: liked songs, playlists, recently played, saved albums and artists, plus an editable queue.
+> Home and lyrics still use the built-in sample catalogue, and the app labels them as samples. Covers are generated
+> gradients for now.
 > Releases are on the [Releases](https://github.com/muhib-karim/sitara/releases) page.
 
 ## Screenshots
@@ -40,7 +42,7 @@
 
 | Home | Library | Player | Lyrics |
 | :---: | :---: | :---: | :---: |
-| <img src="docs/screenshots/home_dark.png" alt="Home with quick picks, new releases and mixes" width="200"> | <img src="docs/screenshots/library_dark.png" alt="Library with playlists in grid view" width="200"> | <img src="docs/screenshots/player_dark.png" alt="Full player with artwork, slim scrubber and controls" width="200"> | <img src="docs/screenshots/lyrics_dark.png" alt="Synced karaoke lyrics" width="200"> |
+| <img src="docs/screenshots/home_dark.png" alt="Home with quick picks, new releases and mixes" width="200"> | <img src="docs/screenshots/library_dark.png" alt="Library with liked songs, playlists and recently played" width="200"> | <img src="docs/screenshots/player_dark.png" alt="Full player with artwork, slim scrubber and controls" width="200"> | <img src="docs/screenshots/lyrics_dark.png" alt="Synced karaoke lyrics" width="200"> |
 
 <sub>Captured on an Android emulator by the Device screens workflow on every push to main. Light theme captures live in docs/screenshots.</sub>
 
@@ -65,11 +67,14 @@ Planned, not built yet: *Sitara Sync* (end-to-end encrypted sync through storage
 | Area | Feature | Status |
 | --- | --- | :---: |
 | **Shell** | Unified glass dock with four destinations and edge-to-edge layout | Pending CI |
-| | Home and Library on the built-in sample catalogue, labelled as samples, with generated gradient covers | ✅ |
+| | Home on the built-in sample catalogue, labelled as samples, with generated gradient covers | ✅ |
+| **Library** | Liked songs, saved albums and artists, recently played (latest 500 plays), stored on the device (Room) | 🧪 |
+| | Your own playlists: create, rename, delete, drag to reorder, remove songs; Add to playlist from any song or the player | 🧪 |
 | **Player** | Mini player in the navigation dock: swipe up to open, sideways to skip | Pending CI |
 | | Shared artwork transition, white play disc and custom timeline | Pending CI |
 | | Artwork backdrop, scrubber, Playing / Lyrics / Up next pager | Pending CI |
 | | Queue: unique entries, shuffle with order restore, repeat off / all / one | ✅ |
+| | Play next and Add to queue from any song; reorder and remove in Up next | 🧪 |
 | | Sleep timer (minutes or end of track) on a monotonic clock | ✅ |
 | | Background playback service: the whole queue is a Media3 playlist, system controls skip | 🧪 |
 | **Lyrics** | LRC and enhanced LRC parsing, line focus and seek, plain lyrics as static text | Pending CI |
@@ -81,7 +86,7 @@ Planned, not built yet: *Sitara Sync* (end-to-end encrypted sync through storage
 | | Search filters (songs, albums, artists, playlists) and artist, album and playlist pages with Play all and Shuffle | 🧪 |
 | | Radio: Start radio from Up next, and a queue about to run out continues with related songs | 🧪 |
 | | Real home feed, artwork images, health checks | Phase B |
-| | Downloads, local files, synced lyrics, history, playlists, import, backup and restore | Phase B |
+| | Downloads, local files, synced lyrics, import, backup and restore | Phase B |
 | | Gapless, crossfade 0 to 12 s, skip silence, speed and pitch, equaliser | Phase B |
 | **Accounts** | Account library sync, scrobbling, widgets, Android Auto, Cast | Phase C |
 | | Sitara Sync, LAN remote control, smart offline | Phase C |
