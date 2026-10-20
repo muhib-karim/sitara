@@ -4,7 +4,7 @@
 Independent GPL-3.0 Android music player; Kotlin, Compose and Media3. Module map: docs/ARCHITECTURE.md.
 
 ## Constraints
-Original code and visual identity. References are technique studies only. No local Gradle, lint, builds, tests or screenshot recording. No push in this session. No new runtime dependencies unless essential. Preserve CI screenshot comparison and recording workflows.
+Original code and visual identity. References are technique studies only. No local Gradle, lint, builds, tests or screenshot recording. Push only via the owner's gated push script. No new runtime dependencies unless essential. Preserve CI screenshot comparison and recording workflows.
 
 ## Status
 Goal: an original app with its own design and logo (not a reskin), shipped as a signed v0.1.0 release with real screenshots.
@@ -12,10 +12,11 @@ Goal: an original app with its own design and logo (not a reskin), shipped as a 
 - fix: player compile errors from ui1 fixed (BoxWithConstraints scope, Slider colours API); CI acceptance pending.
 - ui2 source review complete; CI acceptance pending: Home mood collections and paged picks; Library grid/list and detail navigation; Search browse/results; functional-only Settings; approved ui1 split-star retained; slim seek drawing and measured dock clearance. Reuse ui1 components and tokens.
 - fix1 source review complete: N1/6 completion synchronization, N2 atomic lookup and 5 resolver cancellation fixes retained with regression coverage; interrupt-status assertion added. Item 16 is superseded by the current sheet, covered by Back/drag and screenshot cases. Review copy and REPORT_fix1.md ready. All execution and acceptance remain pending in CI.
-- v0.1.0: tag + release.yml, logo and 3-4 device screenshots in README and release notes.
+- v0.1.0 RELEASED.
+- b1 (Phase B slice 1, real music) IN PROGRESS: :source:youtube on NewPipeExtractor v0.26.5 (JitPack, exclusiveContent), OkHttp downloader, desugaring. Next: stream resolver, YT Music search, search UI states, docs.
 
 ## Next step
-Handoff: docs/reports/REPORT_fix1.md. When separately authorized, secret-scan and push; CI must compile, run unit tests, ktlint, Roborazzi verification and assembly. Review existing visual differences and verify real service/system controls on a device. No local execution, commits, pushes, tags or baseline changes in this pass.
+b1 goals 2-6 in order (resolver, search mapper, search UI + wiring, baselines, docs), each committed, pushed and CI-checked; then docs/reports/REPORT_b1.md.
 
 ## Session log
 2026-10-17 22:21Z Codex / GPT-6 Astra: recorded original design and ui1 plan; next foundations and tests.

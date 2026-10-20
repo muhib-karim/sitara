@@ -42,6 +42,8 @@ android {
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
+        // NewPipeExtractor calls Java 9+ APIs (List.of, Map.of) that Android only has from API 30.
+        isCoreLibraryDesugaringEnabled = true
     }
 
     buildFeatures { compose = true }
@@ -62,6 +64,7 @@ dependencies {
     implementation(project(":source:api"))
     implementation(project(":source:fake"))
     implementation(project(":source:lyrics"))
+    implementation(project(":source:youtube"))
     implementation(project(":feature:home"))
     implementation(project(":feature:search"))
     implementation(project(":feature:library"))
@@ -78,6 +81,7 @@ dependencies {
     implementation(libs.compose.animation)
     implementation(libs.compose.material3)
     implementation(libs.haze)
+    coreLibraryDesugaring(libs.desugar.jdk.libs)
     debugImplementation(libs.compose.ui.tooling)
     debugImplementation(libs.compose.ui.test.manifest)
 

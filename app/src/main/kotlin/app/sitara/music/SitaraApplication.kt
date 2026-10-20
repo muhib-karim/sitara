@@ -6,6 +6,7 @@ import app.sitara.music.core.player.PlaybackDependencies
 import app.sitara.music.core.player.PlayerController
 import app.sitara.music.source.api.StreamResolver
 import app.sitara.music.source.fake.FakeMusicSource
+import app.sitara.music.source.youtube.installNewPipe
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -19,4 +20,9 @@ class SitaraApplication :
     val settings by lazy { SettingsRepository(this) }
     override val streamResolver: StreamResolver get() = source
     val player by lazy { PlayerController(this, appScope) }
+
+    override fun onCreate() {
+        super.onCreate()
+        installNewPipe()
+    }
 }
