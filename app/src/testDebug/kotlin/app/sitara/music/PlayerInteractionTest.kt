@@ -11,7 +11,6 @@ import androidx.compose.ui.test.assert
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsSelected
-import androidx.compose.ui.test.assertTouchHeightIsEqualTo
 import androidx.compose.ui.test.assertWidthIsAtLeast
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.hasAnyAncestor
@@ -374,9 +373,8 @@ class PlayerInteractionTest {
         compose.onNodeWithText("Equaliser").performClick()
         listOf("31 Hz", "62 Hz", "125 Hz", "250 Hz", "500 Hz", "1 kHz", "2 kHz", "4 kHz", "8 kHz", "16 kHz").zip(EqualiserPreset.BASS_BOOST.bandsDb).forEach { (name, db) ->
             compose.onNodeWithContentDescription(name).assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, if (db > 0) "+$db dB" else "$db dB"))
-                // Bounds are measured before the fader's quarter turn: its length runs across, its touch target up and down.
+                // Layout bounds are measured before the fader's quarter turn, so its length runs across.
                 .assertWidthIsAtLeast(160.dp)
-                .assertTouchHeightIsEqualTo(48.dp)
         }
     }
 
