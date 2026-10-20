@@ -52,7 +52,7 @@ class PlaybackService : MediaSessionService() {
     internal val leveller = LoudnessLeveller()
     private val tailLeveller = LoudnessLeveller()
     internal val equaliser = Equaliser()
-    private val tailEqualiser = Equaliser()
+    internal val tailEqualiser = Equaliser()
     internal lateinit var crossfader: Crossfader
     internal lateinit var player: ExoPlayer
     internal lateinit var tail: ExoPlayer
@@ -113,6 +113,9 @@ class PlaybackService : MediaSessionService() {
                     it.enabled = settings.normalisation
                     it.targetLufs = settings.targetLufs
                 }
+                // Each glides to the new bands while playing.
+                equaliser.settings = settings.equaliser
+                tailEqualiser.settings = settings.equaliser
                 crossfader.windowMs = settings.crossfadeSeconds * 1_000L
                 // Turns the silence-skipping processor in each player's audio chain on or off.
                 player.skipSilenceEnabled = settings.skipSilence

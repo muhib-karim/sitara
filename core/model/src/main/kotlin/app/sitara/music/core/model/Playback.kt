@@ -21,6 +21,7 @@ data class SitaraSettings(
     val downloadOnWifiOnly: Boolean = true,
     /** The player skips silent stretches (Media3 silence skipping in the audio chain). */
     val skipSilence: Boolean = false,
+    val equaliser: EqualiserSettings = EqualiserSettings(),
 ) {
     init {
         require(crossfadeSeconds in 0..MAX_CROSSFADE_SECONDS) { "crossfade out of range: $crossfadeSeconds" }

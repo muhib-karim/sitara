@@ -9,6 +9,8 @@ import androidx.media3.datasource.cache.Cache
 import androidx.media3.datasource.cache.NoOpCacheEvictor
 import androidx.media3.datasource.cache.SimpleCache
 import app.sitara.music.core.model.Artwork
+import app.sitara.music.core.model.EqualiserPreset
+import app.sitara.music.core.model.EqualiserSettings
 import app.sitara.music.core.model.RepeatMode
 import app.sitara.music.core.model.SavedQueue
 import app.sitara.music.core.model.SitaraSettings
@@ -101,6 +103,27 @@ class PlaybackServiceTest {
         assertTrue("normalisation on by default", service.leveller.enabled)
         assertFalse("skip silence off by default", service.player.skipSilenceEnabled)
         assertFalse(service.tail.skipSilenceEnabled)
+
+        controller.destroy()
+    }
+
+    @Test
+    fun `the equaliser in both players follows the settings while the service runs`() {
+        val app = RuntimeEnvironment.getApplication() as TestApp
+        val rock = EqualiserSettings().withPreset(EqualiserPreset.ROCK)
+        app.playbackSettings.value = SitaraSettings(equaliser = rock)
+
+        val controller = Robolectric.buildService(PlaybackService::class.java).create()
+        shadowOf(Looper.getMainLooper()).idle()
+        val service = controller.get()
+        assertEquals(rock, service.equaliser.settings)
+        assertEquals(rock, service.tailEqualiser.settings)
+
+        val custom = rock.withBand(0, -3)
+        app.playbackSettings.value = SitaraSettings(equaliser = custom)
+        shadowOf(Looper.getMainLooper()).idle()
+        assertEquals(custom, service.equaliser.settings)
+        assertEquals(custom, service.tailEqualiser.settings)
 
         controller.destroy()
     }
