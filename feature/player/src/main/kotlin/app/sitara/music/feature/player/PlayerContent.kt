@@ -50,7 +50,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import app.sitara.music.core.designsystem.ArtworkBackdrop
 import app.sitara.music.core.designsystem.ArtworkImage
-import app.sitara.music.core.designsystem.ArtworkPalette
+import app.sitara.music.core.designsystem.ArtworkTheme
 import app.sitara.music.core.designsystem.GlassIconButton
 import app.sitara.music.core.designsystem.GlassSurface
 import app.sitara.music.core.designsystem.LocalArtworkWash
@@ -61,7 +61,9 @@ import app.sitara.music.core.designsystem.SitaraColors
 import app.sitara.music.core.designsystem.SitaraIcons
 import app.sitara.music.core.designsystem.SitaraRadius
 import app.sitara.music.core.designsystem.TrackRow
+import app.sitara.music.core.designsystem.animateArtworkColor
 import app.sitara.music.core.designsystem.dragHandle
+import app.sitara.music.core.designsystem.rememberArtworkTheme
 import app.sitara.music.core.designsystem.rememberReorderState
 import app.sitara.music.core.designsystem.reorderableRow
 import app.sitara.music.core.designsystem.sitaraColorScheme
@@ -90,10 +92,15 @@ internal fun FullPlayer(
     fun selectPage(page: Int) {
         scope.launch { if (reduced) pager.scrollToPage(page) else pager.animateScrollToPage(page) }
     }
-    MaterialTheme(colorScheme = sitaraColorScheme(if (wash) ThemeMode.ARTWORK else ThemeMode.AMOLED, dark = true)) {
+    val theme = rememberArtworkTheme(track.artwork)
+    val stage = sitaraColorScheme(if (wash) ThemeMode.ARTWORK else ThemeMode.AMOLED, dark = true)
+    // The artwork theme's accent passes AA against the stage, so controls and highlights take it as primary.
+    val accent = animateArtworkColor(theme.accent, "stage accent")
+    val onAccent = animateArtworkColor(theme.onAccent, "stage on accent")
+    MaterialTheme(colorScheme = if (wash) stage.copy(primary = accent, onPrimary = onAccent) else stage) {
         CompositionLocalProvider(LocalGlassHaze provides backdrop) {
             Box(Modifier.fillMaxSize()) {
-                ArtworkBackdrop(track.artwork, Modifier.fillMaxSize().hazeSource(backdrop))
+                ArtworkBackdrop(track.artwork, Modifier.fillMaxSize().hazeSource(backdrop), theme)
                 Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
                     Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                         GlassIconButton(SitaraIcons.ChevronDown, "Collapse player", onCollapse)
@@ -116,7 +123,7 @@ internal fun FullPlayer(
                     }
                     HorizontalPager(pager, Modifier.weight(1f), userScrollEnabled = true) { page ->
                         when (page) {
-                            0 -> PlayingPage(state, actions, artworkModifier, onQueue = { selectPage(2) }, onArtist = onArtist, onAddToPlaylist = onAddToPlaylist)
+                            0 -> PlayingPage(state, theme, actions, artworkModifier, onQueue = { selectPage(2) }, onArtist = onArtist, onAddToPlaylist = onAddToPlaylist)
                             1 -> LyricsPanel(state, actions)
                             else -> Column(Modifier.fillMaxSize()) {
                                 Row(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -142,6 +149,7 @@ internal fun FullPlayer(
 @Composable
 private fun PlayingPage(
     state: PlayerUiState,
+    theme: ArtworkTheme,
     actions: PlayerActions,
     artworkModifier: Modifier,
     onQueue: () -> Unit,
@@ -156,7 +164,7 @@ private fun PlayingPage(
         val landscape = maxWidth > stageHeight
         if (landscape) {
             Row(Modifier.fillMaxSize().padding(horizontal = 24.dp), verticalAlignment = Alignment.CenterVertically) {
-                ArtworkStage(state, artworkModifier, Modifier.weight(1f).fillMaxSize())
+                ArtworkStage(state, theme, artworkModifier, Modifier.weight(1f).fillMaxSize())
                 Column(Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(start = 24.dp, bottom = 12.dp)) {
                     heading()
                     PlayerControls(state, actions)
@@ -165,7 +173,7 @@ private fun PlayingPage(
         } else {
             Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 24.dp, vertical = 16.dp)) {
                 // Reserve room for transport while keeping the sleeve prominent on tall phones.
-                ArtworkStage(state, artworkModifier, Modifier.fillMaxWidth().height((stageHeight - 240.dp).coerceIn(180.dp, 440.dp)))
+                ArtworkStage(state, theme, artworkModifier, Modifier.fillMaxWidth().height((stageHeight - 240.dp).coerceIn(180.dp, 440.dp)))
                 Spacer(Modifier.height(24.dp))
                 heading()
                 Spacer(Modifier.height(12.dp))
@@ -176,11 +184,11 @@ private fun PlayingPage(
 }
 
 @Composable
-private fun ArtworkStage(state: PlayerUiState, artworkModifier: Modifier, modifier: Modifier) {
+private fun ArtworkStage(state: PlayerUiState, theme: ArtworkTheme, artworkModifier: Modifier, modifier: Modifier) {
     val track = state.track ?: return
     val reduced = LocalReducedMotion.current
     val wash = LocalArtworkWash.current
-    val tint = remember(track.artwork) { Color(ArtworkPalette.themeFrom(track.artwork.colors, true).accent) }
+    val tint = animateArtworkColor(theme.accent, "sleeve glow")
     BoxWithConstraints(modifier, contentAlignment = Alignment.Center) {
         val side = minOf(maxWidth, maxHeight, 420.dp)
         if (wash && !reduced && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
@@ -224,7 +232,7 @@ private fun TrackHeading(
                 if (state.liked) SitaraIcons.HeartFilled else SitaraIcons.Heart,
                 if (state.liked) "Remove from liked songs" else "Like",
                 onLike,
-                tint = if (state.liked) SitaraColors.Saffron else SitaraColors.StageContent,
+                tint = if (state.liked) MaterialTheme.colorScheme.primary else SitaraColors.StageContent,
             )
         }
         if (onAddToPlaylist != null) GlassIconButton(SitaraIcons.Add, "Add to playlist", onAddToPlaylist)

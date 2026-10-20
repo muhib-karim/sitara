@@ -7,7 +7,6 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.BlurredEdgeTreatment
 import androidx.compose.ui.draw.blur
@@ -25,22 +24,20 @@ object ArtworkScrim {
     const val InactiveLyric = 0.68f
 }
 
-/** Static artwork layers crossfade only when the track changes; blur radius never animates. */
+/**
+ * The listening stage behind [artwork]: a wash in the cover's colours, the cover itself blurred on top where blur is
+ * available, and a scrim that keeps text readable. The blurred cover crossfades between tracks; blur radius never animates.
+ */
 @Composable
-fun ArtworkBackdrop(artwork: Artwork, modifier: Modifier = Modifier) {
+fun ArtworkBackdrop(artwork: Artwork, modifier: Modifier = Modifier, theme: ArtworkTheme = rememberArtworkTheme(artwork)) {
     val reduced = LocalReducedMotion.current
     val wash = LocalArtworkWash.current
     Box(modifier.background(SitaraColors.Stage)) {
         if (wash) {
-            Crossfade(
-                targetState = artwork,
-                animationSpec = SitaraMotion.orReduced(reduced, SitaraMotion.fade(SitaraMotion.FADE_LONG_MS)),
-                label = "artwork wash",
-            ) { cover ->
-                val palette = remember(cover) { ArtworkPalette.themeFrom(cover.colors, true) }
-                val blurred = !reduced && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
-                Box(Modifier.fillMaxSize().background(Color(palette.backdropTop))) {
-                    if (blurred) {
+            val blurred = !reduced && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+            Box(Modifier.fillMaxSize().background(animateArtworkColor(theme.backdropTop, "backdrop wash"))) {
+                if (blurred) {
+                    Crossfade(targetState = artwork, animationSpec = SitaraMotion.fade(SitaraMotion.FADE_LONG_MS), label = "artwork wash") { cover ->
                         ArtworkImage(
                             cover,
                             Modifier.fillMaxWidth().graphicsLayer { scaleX = 1.4f; scaleY = 1.4f }
@@ -48,17 +45,17 @@ fun ArtworkBackdrop(artwork: Artwork, modifier: Modifier = Modifier) {
                             cornerRadius = 0.dp,
                         )
                     }
-                    Box(
-                        Modifier.fillMaxSize().drawWithCache {
-                            val scrim = Brush.verticalGradient(
-                                0f to Color.Black.copy(alpha = if (blurred) ArtworkScrim.Top else 0.40f),
-                                0.45f to Color.Black.copy(alpha = if (blurred) ArtworkScrim.Middle else 0.55f),
-                                1f to Color.Black.copy(alpha = ArtworkScrim.Bottom),
-                            )
-                            onDrawBehind { drawRect(scrim) }
-                        },
-                    )
                 }
+                Box(
+                    Modifier.fillMaxSize().drawWithCache {
+                        val scrim = Brush.verticalGradient(
+                            0f to Color.Black.copy(alpha = if (blurred) ArtworkScrim.Top else 0.40f),
+                            0.45f to Color.Black.copy(alpha = if (blurred) ArtworkScrim.Middle else 0.55f),
+                            1f to Color.Black.copy(alpha = ArtworkScrim.Bottom),
+                        )
+                        onDrawBehind { drawRect(scrim) }
+                    },
+                )
             }
         }
     }

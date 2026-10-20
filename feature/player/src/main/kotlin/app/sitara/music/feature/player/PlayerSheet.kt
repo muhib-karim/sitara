@@ -30,7 +30,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -50,7 +49,6 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import app.sitara.music.core.designsystem.ArtworkImage
-import app.sitara.music.core.designsystem.ArtworkPalette
 import app.sitara.music.core.designsystem.GlassSurface
 import app.sitara.music.core.designsystem.LocalArtworkWash
 import app.sitara.music.core.designsystem.LocalReducedMotion
@@ -58,6 +56,8 @@ import app.sitara.music.core.designsystem.SitaraIcons
 import app.sitara.music.core.designsystem.SitaraMotion
 import app.sitara.music.core.designsystem.SitaraRadius
 import app.sitara.music.core.designsystem.SitaraSpacing
+import app.sitara.music.core.designsystem.animateArtworkColor
+import app.sitara.music.core.designsystem.rememberArtworkTheme
 import app.sitara.music.core.model.Track
 import kotlin.math.abs
 
@@ -121,7 +121,7 @@ fun PlayerSheet(
                         ) {
                             if (track != null) {
                                 val wash = LocalArtworkWash.current
-                                val tint = remember(track.artwork) { Color(ArtworkPalette.themeFrom(track.artwork.colors, true).accent) }
+                                val tint = animateArtworkColor(rememberArtworkTheme(track.artwork).accent, "mini player tint")
                                 MiniPlayer(
                                     state,
                                     actions,

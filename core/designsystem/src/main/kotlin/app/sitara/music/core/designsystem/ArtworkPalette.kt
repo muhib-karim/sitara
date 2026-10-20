@@ -1,5 +1,6 @@
 package app.sitara.music.core.designsystem
 
+import app.sitara.music.core.model.Artwork
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
@@ -30,20 +31,24 @@ object ArtworkPalette {
         // Near-greys stay neutral instead of picking up an arbitrary hue.
         val s = if (chroma(seed) < 0.08f) 0f else rawS.coerceIn(0.25f, 0.60f)
         val accentS = if (s == 0f) 0f else s.coerceIn(0.45f, 0.9f)
+        val top = if (dark) fromHsl(h, (s * 0.7f).coerceAtMost(0.6f), 0.26f) else fromHsl(h, (s * 0.6f).coerceAtMost(0.55f), 0.86f)
+        val bottom = if (dark) fromHsl(h, (s * 0.5f).coerceAtMost(0.4f), 0.07f) else fromHsl(h, (s * 0.3f).coerceAtMost(0.3f), 0.96f)
         var accentL = if (dark) 0.68f else 0.42f
         var accent = fromHsl(h, accentS, accentL)
         var onAccent = bestOn(accent)
-        // Mid-luminance hues can miss AA against both text colours; walk lightness until they pass.
-        while (contrast(accent, onAccent) < 4.5 && accentL in 0.05f..0.95f) {
+        // The accent is drawn as text on the backdrop and under text of its own. Mid-luminance hues (blues, greys)
+        // miss AA on one or the other, so walk lightness away from the backdrop until both pass; the far end always does.
+        while ((contrast(accent, onAccent) < 4.5 || contrast(accent, top) < 4.5) && accentL in 0.05f..0.95f) {
             accentL += if (dark) 0.03f else -0.03f
             accent = fromHsl(h, accentS, accentL)
             onAccent = bestOn(accent)
         }
-        val top = if (dark) fromHsl(h, (s * 0.7f).coerceAtMost(0.6f), 0.26f) else fromHsl(h, (s * 0.6f).coerceAtMost(0.55f), 0.86f)
-        val bottom = if (dark) fromHsl(h, (s * 0.5f).coerceAtMost(0.4f), 0.07f) else fromHsl(h, (s * 0.3f).coerceAtMost(0.3f), 0.96f)
         val content = if (dark) WHITE else NEAR_BLACK
         return ArtworkTheme(accent, onAccent, top, bottom, content)
     }
+
+    /** The listening stage's theme: from the cover's palette [swatches] once loaded, else (no cover, offline, failed) from the artwork's own colours. */
+    fun stageTheme(artwork: Artwork, swatches: List<Int>?): ArtworkTheme = themeFrom(swatches?.takeIf { it.isNotEmpty() } ?: artwork.colors, dark = true)
 
     private fun chroma(color: Int): Float {
         val r = (color shr 16) and 0xFF

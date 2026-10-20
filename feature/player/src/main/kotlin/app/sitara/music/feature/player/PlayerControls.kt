@@ -50,7 +50,7 @@ internal fun PlayerControls(state: PlayerUiState, actions: PlayerActions, modifi
         Scrubber(state, actions)
         Row(Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 8.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = actions::toggleShuffle, modifier = Modifier.semantics { stateDescription = if (state.shuffled) "On" else "Off" }) {
-                Icon(SitaraIcons.Shuffle, "Shuffle", tint = if (state.shuffled) SitaraColors.Saffron else SitaraColors.StageSecondary)
+                Icon(SitaraIcons.Shuffle, "Shuffle", tint = if (state.shuffled) MaterialTheme.colorScheme.primary else SitaraColors.StageSecondary)
             }
             IconButton(onClick = actions::previous, modifier = Modifier.size(48.dp)) {
                 Icon(SitaraIcons.Previous, "Previous track", tint = Color.White, modifier = Modifier.size(28.dp))
@@ -67,8 +67,8 @@ internal fun PlayerControls(state: PlayerUiState, actions: PlayerActions, modifi
             }
             IconButton(onClick = actions::cycleRepeat, modifier = Modifier.semantics { stateDescription = state.repeatMode.name.lowercase() }) {
                 Box(contentAlignment = Alignment.Center) {
-                    Icon(SitaraIcons.Repeat, "Repeat", tint = if (state.repeatMode == RepeatMode.OFF) SitaraColors.StageSecondary else SitaraColors.Saffron)
-                    if (state.repeatMode == RepeatMode.ONE) Text("1", style = MaterialTheme.typography.labelSmall, color = SitaraColors.Saffron)
+                    Icon(SitaraIcons.Repeat, "Repeat", tint = if (state.repeatMode == RepeatMode.OFF) SitaraColors.StageSecondary else MaterialTheme.colorScheme.primary)
+                    if (state.repeatMode == RepeatMode.ONE) Text("1", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
                 }
             }
         }
@@ -86,6 +86,7 @@ private fun Scrubber(state: PlayerUiState, actions: PlayerActions) {
         else -> 0f
     }
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+    val played = MaterialTheme.colorScheme.primary
     Box(Modifier.fillMaxWidth().height(48.dp)) {
         Canvas(Modifier.fillMaxSize()) {
             // Keep the tiny visual handle inside the generous native seek target.
@@ -95,8 +96,8 @@ private fun Scrubber(state: PlayerUiState, actions: PlayerActions) {
             val center = size.height / 2f
             val thumb = start + (end - start) * value
             drawLine(Color.White.copy(alpha = 0.30f), Offset(start, center), Offset(end, center), 3.dp.toPx(), StrokeCap.Round)
-            if (value > 0f) drawLine(SitaraColors.Saffron, Offset(start, center), Offset(thumb, center), 3.dp.toPx(), StrokeCap.Round)
-            if (duration > 0) drawCircle(SitaraColors.Saffron, (if (dragging) 6.dp else 5.dp).toPx(), Offset(thumb, center))
+            if (value > 0f) drawLine(played, Offset(start, center), Offset(thumb, center), 3.dp.toPx(), StrokeCap.Round)
+            if (duration > 0) drawCircle(played, (if (dragging) 6.dp else 5.dp).toPx(), Offset(thumb, center))
         }
         // Use the stable overload for touch, keyboard, RTL and accessibility behavior.
         // Transparent colours keep the semantics visible to TalkBack (layer alpha=0 would not).
