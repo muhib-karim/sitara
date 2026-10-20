@@ -239,14 +239,14 @@ private fun LyricsPanel(state: PlayerUiState, actions: PlayerActions) {
             Row(Modifier.fillMaxSize().padding(horizontal = 24.dp)) {
                 Column(Modifier.weight(1f)) {
                     TrackHeading(state, Modifier.padding(vertical = 8.dp), compact = true)
-                    LyricsPage(state.lyrics, state.positionMs, SitaraColors.StageContent, actions::seekTo, Modifier.weight(1f))
+                    LyricsPage(state.lyrics, state.positionMs, SitaraColors.StageContent, actions::seekTo, actions::retryLyrics, Modifier.weight(1f))
                 }
                 PlayerControls(state, actions, Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(start = 24.dp, top = 12.dp))
             }
         } else {
             Column(Modifier.fillMaxSize()) {
                 TrackHeading(state, Modifier.padding(horizontal = 24.dp, vertical = 12.dp), compact = true)
-                LyricsPage(state.lyrics, state.positionMs, SitaraColors.StageContent, actions::seekTo, Modifier.weight(1f))
+                LyricsPage(state.lyrics, state.positionMs, SitaraColors.StageContent, actions::seekTo, actions::retryLyrics, Modifier.weight(1f))
                 PlayerControls(state, actions, Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
             }
         }

@@ -68,4 +68,19 @@ class LrcParserTest {
         val lyrics = LrcParser.parse("[xx:yy]bad\n[00:03.00]good")
         assertEquals(listOf("good"), lyrics.lines.map { it.text })
     }
+
+    @Test
+    fun `parses an LRCLIB file with a negative offset, a repeated chorus and an instrumental break`() {
+        val text = checkNotNull(javaClass.getResource("/lrclib-synced.lrc")).readText()
+
+        val lyrics = LrcParser.parse(text, trackDurationMs = 214_000)
+
+        assertTrue(lyrics.synced)
+        // offset -250 makes every line 250 ms later; the chorus line plays twice, in time order.
+        assertEquals(listOf(12_350L, 17_100L, 21_250L, 24_550L, 80_650L, 85_150L), lyrics.lines.map { it.startMs })
+        assertEquals("Carry me home, carry me home", lyrics.lines[1].text)
+        assertEquals("Carry me home, carry me home", lyrics.lines[4].text)
+        assertEquals("", lyrics.lines[2].text)
+        assertEquals(214_000, lyrics.lines.last().endMs)
+    }
 }

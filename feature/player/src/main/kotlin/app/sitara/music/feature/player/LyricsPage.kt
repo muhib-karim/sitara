@@ -4,6 +4,7 @@ import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -37,6 +38,7 @@ import app.sitara.music.core.designsystem.ArtworkScrim
 import app.sitara.music.core.designsystem.Inter
 import app.sitara.music.core.designsystem.LocalReducedMotion
 import app.sitara.music.core.designsystem.LyricStyle
+import app.sitara.music.core.designsystem.PillButton
 import app.sitara.music.core.designsystem.SitaraMotion
 import app.sitara.music.core.model.Lyrics
 import app.sitara.music.source.lyrics.LyricsCursor
@@ -48,24 +50,48 @@ private val PlainStyle = TextStyle(fontFamily = Inter, fontSize = 22.sp, lineHei
 private const val LINE_CONTENT_TYPE = "lyric"
 
 /**
- * Synced lyrics: the active line stays white and in focus; tapping a line seeks.
+ * Synced lyrics: the active line stays white and in focus, the list follows it, and tapping a line seeks.
  * Plain lyrics have no timing, so they are shown as static text with no highlight, scrolling or seeking.
+ * Both end with a credit to where they came from.
  */
 @Composable
 fun LyricsPage(
-    lyrics: Lyrics,
+    state: LyricsState,
     positionMs: Long,
     contentColor: Color,
     onSeek: (Long) -> Unit,
+    onRetry: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    when {
-        lyrics.lines.isEmpty() -> Box(modifier.fillMaxSize().padding(32.dp)) {
-            Text("No lyrics for this song yet", color = contentColor.copy(alpha = 0.7f))
+    when (state) {
+        LyricsState.Loading -> LyricsMessage("Looking for lyrics…", contentColor, modifier)
+        LyricsState.NotFound -> LyricsMessage("No lyrics found", contentColor, modifier)
+        LyricsState.Failed -> LyricsMessage("Lyrics didn’t load. Check your connection, then try again.", contentColor, modifier) {
+            PillButton("Try again", onRetry, Modifier.padding(top = 16.dp))
         }
-        lyrics.synced -> SyncedLyrics(lyrics, positionMs, contentColor, onSeek, modifier)
-        else -> PlainLyrics(lyrics, contentColor, modifier)
+        is LyricsState.Found ->
+            if (state.lyrics.synced) SyncedLyrics(state.lyrics, positionMs, contentColor, onSeek, modifier) else PlainLyrics(state.lyrics, contentColor, modifier)
     }
+}
+
+@Composable
+private fun LyricsMessage(text: String, contentColor: Color, modifier: Modifier, action: @Composable () -> Unit = {}) {
+    Column(modifier.fillMaxSize().padding(32.dp)) {
+        Text(text, color = contentColor.copy(alpha = 0.7f))
+        action()
+    }
+}
+
+/** "Lyrics from LRCLIB", under the last line. */
+@Composable
+private fun SourceCredit(source: String?, contentColor: Color) {
+    if (source == null) return
+    Text(
+        "Lyrics from $source",
+        style = MaterialTheme.typography.labelLarge,
+        color = contentColor.copy(alpha = 0.6f),
+        modifier = Modifier.padding(horizontal = 28.dp, vertical = 16.dp),
+    )
 }
 
 @Composable
@@ -82,6 +108,7 @@ private fun PlainLyrics(lyrics: Lyrics, contentColor: Color, modifier: Modifier)
         itemsIndexed(lyrics.lines, key = { i, _ -> i }, contentType = { _, _ -> LINE_CONTENT_TYPE }) { _, line ->
             Text(line.text, style = PlainStyle, color = contentColor, modifier = Modifier.padding(horizontal = 28.dp, vertical = 6.dp))
         }
+        item(contentType = "credit") { SourceCredit(lyrics.source, contentColor) }
     }
 }
 
@@ -126,6 +153,7 @@ private fun SyncedLyrics(lyrics: Lyrics, positionMs: Long, contentColor: Color, 
                     Text(line.text, style = LineStyle, color = contentColor)
                 }
             }
+            item(contentType = "credit") { SourceCredit(lyrics.source, contentColor) }
         }
     }
 }

@@ -6,6 +6,7 @@ import androidx.compose.runtime.setValue
 import app.sitara.music.core.model.Lyrics
 import app.sitara.music.core.model.RepeatMode
 import app.sitara.music.core.model.Track
+import app.sitara.music.feature.player.LyricsState
 import app.sitara.music.feature.player.PlayerActions
 import app.sitara.music.feature.player.PlayerUiState
 import app.sitara.music.feature.player.RadioStatus
@@ -21,7 +22,7 @@ internal class DemoPlayer(private var original: List<Track>, lyrics: Lyrics) : P
             positionMs = 15_300,
             isPlaying = true,
             upNext = original.drop(1),
-            lyrics = lyrics,
+            lyrics = LyricsState.Found(lyrics),
         ),
     )
         private set
@@ -59,6 +60,9 @@ internal class DemoPlayer(private var original: List<Track>, lyrics: Lyrics) : P
     override fun removeUpNext(index: Int) {
         if (index in state.upNext.indices) editQueue { removeAt(this@DemoPlayer.index + 1 + index) }
     }
+    // The demo's lyrics are built in, so they never fail.
+    override fun retryLyrics() = Unit
+
     private fun editQueue(change: MutableList<Track>.() -> Unit) {
         queue = queue.toMutableList().apply(change)
         state = state.copy(upNext = queue.drop(index + 1))

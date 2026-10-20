@@ -23,6 +23,7 @@ import app.sitara.music.feature.library.LibraryActions
 import app.sitara.music.feature.library.LibraryState
 import app.sitara.music.feature.library.SavedIds
 import app.sitara.music.feature.library.SavedLibrary
+import app.sitara.music.feature.player.LyricsState
 import app.sitara.music.feature.player.PlayerActions
 import app.sitara.music.feature.player.PlayerUiState
 import app.sitara.music.feature.player.RadioStatus
@@ -42,9 +43,13 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChangedBy
 import kotlinx.coroutines.flow.filter
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.flow.transformLatest
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -69,6 +74,22 @@ class AppViewModel(private val app: SitaraApplication) :
     val settings: StateFlow<SitaraSettings> = app.settings.settings.stateIn(viewModelScope, SharingStarted.Eagerly, SitaraSettings())
 
     private val radio = MutableStateFlow(RadioStatus.READY)
+
+    private val lyricsRetries = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+
+    // Looked up when a song starts; a retry looks up the same song again.
+    private val lyrics: StateFlow<LyricsState> = player.state.map { it.queue.current }.distinctUntilChangedBy { it?.id }
+        .flatMapLatest<Track?, LyricsState> { track ->
+            if (track == null) {
+                flowOf(LyricsState.NotFound)
+            } else {
+                lyricsRetries.onStart { emit(Unit) }.transformLatest {
+                    emit(LyricsState.Loading)
+                    emit(lookUpLyrics(track))
+                }
+            }
+        }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, LyricsState.NotFound)
 
     val savedIds: StateFlow<SavedIds> = combine(app.library.likedSongs.ids, app.library.saved.albumIds, app.library.saved.artistIds, ::SavedIds)
         .stateIn(viewModelScope, SharingStarted.Eagerly, SavedIds())
@@ -97,7 +118,7 @@ class AppViewModel(private val app: SitaraApplication) :
     // The listener's own pages follow the store live; they hold no network state to retry.
     private val ownPages = mutableMapOf<DetailRoute, StateFlow<DetailState>>()
 
-    val playerState: StateFlow<PlayerUiState> = combine(player.state, player.sleepTimerState, radio, savedIds) { s, timer, radioStatus, saved ->
+    val playerState: StateFlow<PlayerUiState> = combine(player.state, lyrics, player.sleepTimerState, radio, savedIds) { s, l, timer, radioStatus, saved ->
         PlayerUiState(
             track = s.queue.current,
             isPlaying = s.isPlaying,
@@ -106,6 +127,7 @@ class AppViewModel(private val app: SitaraApplication) :
             upNext = s.queue.upNext,
             shuffled = s.queue.shuffled,
             repeatMode = s.queue.repeatMode,
+            lyrics = l,
             sleepTimerLabel = when (timer) {
                 SleepTimerState.Off -> null
                 SleepTimerState.EndOfTrack -> "end of track"
@@ -176,6 +198,18 @@ class AppViewModel(private val app: SitaraApplication) :
                 TrendingState.Failed
             }
         }
+    }
+
+    private suspend fun lookUpLyrics(track: Track): LyricsState = try {
+        app.lyrics.lyrics(track)?.let(LyricsState::Found) ?: LyricsState.NotFound
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        LyricsState.Failed
+    }
+
+    override fun retryLyrics() {
+        if (lyrics.value == LyricsState.Failed) lyricsRetries.tryEmit(Unit)
     }
 
     override fun startRadio() {

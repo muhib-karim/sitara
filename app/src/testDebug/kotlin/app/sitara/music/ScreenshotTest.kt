@@ -19,7 +19,6 @@ import androidx.compose.ui.unit.Density
 import app.sitara.music.core.designsystem.SitaraTheme
 import app.sitara.music.core.model.DarkMode
 import app.sitara.music.core.model.Library
-import app.sitara.music.core.model.Lyrics
 import app.sitara.music.core.model.SearchFilter
 import app.sitara.music.core.model.SearchResults
 import app.sitara.music.core.model.SitaraSettings
@@ -32,6 +31,7 @@ import app.sitara.music.feature.library.DetailState
 import app.sitara.music.feature.library.LibraryState
 import app.sitara.music.feature.library.SavedLibrary
 import app.sitara.music.feature.library.SongActions
+import app.sitara.music.feature.player.LyricsState
 import app.sitara.music.feature.player.PlayerActions
 import app.sitara.music.feature.player.PlayerUiState
 import app.sitara.music.feature.search.SearchState
@@ -60,13 +60,14 @@ class ScreenshotTest {
     private val library: Library = runBlocking { source.library() }
     private val home = sampleHomeFeed(runBlocking { source.trending() }, sampleSavedLibrary(library))
     private val track = SampleCatalog.tracks.first()
+    private val sampleLyrics = runBlocking { source.lyrics(track)!! }
     private val playing = PlayerUiState(
         track = track,
         isPlaying = true,
         positionMs = 15_300,
         durationMs = track.durationMs,
         upNext = SampleCatalog.tracks.drop(1),
-        lyrics = runBlocking { source.lyrics(track)!! },
+        lyrics = LyricsState.Found(sampleLyrics.copy(source = "LRCLIB")),
     )
 
     // The sample catalogue answers each filter on its own; merged, every result group shows at once.
@@ -142,9 +143,13 @@ class ScreenshotTest {
 
     @Test fun lyricsLastLine() = shot("lyrics_last_line", dark = true, expanded = true, page = 1, playerState = playing.copy(positionMs = 40_000))
 
-    @Test fun lyricsPlain() = shot("lyrics_plain", dark = true, expanded = true, page = 1, playerState = playing.copy(lyrics = playing.lyrics.copy(synced = false)))
+    @Test fun lyricsPlain() = shot("lyrics_plain", dark = true, expanded = true, page = 1, playerState = playing.copy(lyrics = LyricsState.Found(sampleLyrics.copy(synced = false, source = "LRCLIB"))))
 
-    @Test fun lyricsEmpty() = shot("lyrics_empty", dark = true, expanded = true, page = 1, playerState = playing.copy(lyrics = Lyrics.Empty))
+    @Test fun lyricsEmpty() = shot("lyrics_empty", dark = true, expanded = true, page = 1, playerState = playing.copy(lyrics = LyricsState.NotFound))
+
+    @Test fun lyricsLoading() = shot("lyrics_loading", dark = true, expanded = true, page = 1, playerState = playing.copy(lyrics = LyricsState.Loading))
+
+    @Test fun lyricsFailed() = shot("lyrics_failed", dark = true, expanded = true, page = 1, playerState = playing.copy(lyrics = LyricsState.Failed))
 
     @Test fun miniPlayerLargeText() = shot("mini_large_text", dark = true, fontScale = 2f)
 

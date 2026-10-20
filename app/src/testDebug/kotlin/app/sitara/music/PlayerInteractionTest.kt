@@ -28,6 +28,7 @@ import app.sitara.music.core.model.SitaraSettings
 import app.sitara.music.core.model.Track
 import app.sitara.music.feature.home.HomeFeed
 import app.sitara.music.feature.library.LibraryState
+import app.sitara.music.feature.player.LyricsState
 import app.sitara.music.feature.player.PlayerActions
 import app.sitara.music.feature.player.PlayerUiState
 import app.sitara.music.feature.search.SearchState
@@ -55,6 +56,7 @@ class PlayerInteractionTest {
         actions: PlayerActions = PlayerActions.None,
         durationMs: Long = 100_000,
         upNext: List<Track> = emptyList(),
+        lyricsState: LyricsState? = null,
     ) {
         val source = FakeMusicSource()
         val track = SampleCatalog.tracks.first()
@@ -68,7 +70,7 @@ class PlayerInteractionTest {
                 query = "",
                 searchFilter = SearchFilter.SONGS,
                 search = SearchState.Idle,
-                player = PlayerUiState(track = track, durationMs = durationMs, lyrics = lyrics, positionMs = 15_300, upNext = upNext),
+                player = PlayerUiState(track = track, durationMs = durationMs, lyrics = lyricsState ?: LyricsState.Found(lyrics), positionMs = 15_300, upNext = upNext),
                 actions = actions,
                 details = SampleDetailPages(source),
                 onQueryChange = {},
@@ -199,6 +201,17 @@ class PlayerInteractionTest {
         assertEquals(line.startMs, seek)
         compose.onNodeWithContentDescription("Play").performClick()
         assertEquals(1, plays)
+    }
+
+    @Test
+    fun failedLyricsOfferTryAgain() {
+        var retries = 0
+        render(expanded = true, page = 1, lyricsState = LyricsState.Failed, actions = object : PlayerActions by PlayerActions.None {
+            override fun retryLyrics() { retries++ }
+        })
+        compose.onNodeWithText("Lyrics didn’t load. Check your connection, then try again.").assertIsDisplayed()
+        compose.onNodeWithText("Try again").performClick()
+        assertEquals(1, retries)
     }
 
     @Test

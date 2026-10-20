@@ -4,11 +4,15 @@ import android.app.Application
 import android.util.Log
 import app.sitara.music.core.data.SettingsRepository
 import app.sitara.music.core.data.library.LibraryStore
+import app.sitara.music.core.model.CachedLyrics
 import app.sitara.music.core.model.SavedQueue
 import app.sitara.music.core.model.Track
 import app.sitara.music.core.player.PlaybackDependencies
 import app.sitara.music.core.player.PlayerController
+import app.sitara.music.source.api.LyricsProvider
 import app.sitara.music.source.api.StreamResolver
+import app.sitara.music.source.lyrics.LyricsCache
+import app.sitara.music.source.lyrics.lrclibLyrics
 import app.sitara.music.source.youtube.YouTubeMusicSource
 import app.sitara.music.source.youtube.YouTubeStreamResolver
 import app.sitara.music.source.youtube.installNewPipe
@@ -20,7 +24,7 @@ import kotlinx.coroutines.launch
 
 /**
  * Dependencies are wired by hand (see ADR 0001). Home's chart, search, detail pages, radio and streams come from
- * YouTube; the library is stored on the device.
+ * YouTube, lyrics from LRCLIB; the library, the play queue and fetched lyrics are stored on the device.
  */
 class SitaraApplication :
     Application(),
@@ -29,6 +33,15 @@ class SitaraApplication :
     val youtube by lazy { YouTubeMusicSource() }
     val settings by lazy { SettingsRepository(this) }
     val library by lazy { LibraryStore(this) }
+    val lyrics: LyricsProvider by lazy {
+        lrclibLyrics(
+            object : LyricsCache {
+                override suspend fun get(trackId: String) = library.lyrics.get(trackId)
+
+                override suspend fun put(trackId: String, lyrics: CachedLyrics) = library.lyrics.put(trackId, lyrics)
+            },
+        )
+    }
 
     override val streamResolver: StreamResolver by lazy { YouTubeStreamResolver() }
     val player by lazy { PlayerController(this, appScope) }

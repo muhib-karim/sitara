@@ -13,12 +13,24 @@ data class PlayerUiState(
     val upNext: List<Track> = emptyList(),
     val shuffled: Boolean = false,
     val repeatMode: RepeatMode = RepeatMode.OFF,
-    val lyrics: Lyrics = Lyrics.Empty,
+    val lyrics: LyricsState = LyricsState.NotFound,
     val sleepTimerLabel: String? = null,
     val radio: RadioStatus = RadioStatus.READY,
     /** Whether the current track is in Liked songs. */
     val liked: Boolean = false,
 )
+
+/** The current song's lyrics, looked up when it starts. */
+sealed interface LyricsState {
+    data object Loading : LyricsState
+
+    data class Found(val lyrics: Lyrics) : LyricsState
+
+    data object NotFound : LyricsState
+
+    /** The lookup failed (no connection, the lyrics service busy); it can be tried again. */
+    data object Failed : LyricsState
+}
 
 /** Whether "Start radio" can extend the queue from the current song right now. */
 enum class RadioStatus { READY, LOADING, UNAVAILABLE }
@@ -48,6 +60,9 @@ interface PlayerActions {
 
     fun removeUpNext(index: Int)
 
+    /** Looks up the current song's lyrics again after a failure. */
+    fun retryLyrics()
+
     object None : PlayerActions {
         override fun togglePlay() = Unit
         override fun next() = Unit
@@ -63,5 +78,6 @@ interface PlayerActions {
         override fun addToQueue(track: Track) = Unit
         override fun moveUpNext(from: Int, to: Int) = Unit
         override fun removeUpNext(index: Int) = Unit
+        override fun retryLyrics() = Unit
     }
 }

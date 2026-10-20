@@ -19,6 +19,10 @@ tasks.test {
 
 dependencies {
     api(project(":source:api"))
+    implementation(libs.okhttp)
+    // NewPipeExtractor's JSON parser, already in the app, so LRCLIB adds no runtime dependency.
+    implementation(libs.nanojson)
+    testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(platform(libs.junit5.bom))
     testImplementation(libs.junit5.jupiter)
     testRuntimeOnly(libs.junit5.launcher)
