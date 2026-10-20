@@ -92,17 +92,37 @@ class ArtworkPaletteTest {
     }
 
     @Test
-    fun `the stage takes its colours from the cover palette once it has loaded`() {
+    fun `the stage takes its colours from the cover once it has loaded`() {
         val artwork = Artwork(listOf(indigo), imageUrl = "https://lh3.googleusercontent.com/c=w544-h544")
-        assertEquals(ArtworkPalette.themeFrom(listOf(gold, grey), dark = true), ArtworkPalette.stageTheme(artwork, listOf(gold, grey)))
+        val cover = CoverColors(listOf(gold, grey), brightest = gold)
+        assertEquals(ArtworkPalette.themeFrom(listOf(gold, grey), dark = true), ArtworkPalette.coverTheme(artwork, cover, dark = true))
+        assertEquals(ArtworkPalette.themeFrom(listOf(gold, grey), dark = false), ArtworkPalette.coverTheme(artwork, cover, dark = false))
     }
 
     @Test
     fun `a cover that cannot load keeps the artwork's own colours`() {
         val artwork = Artwork(listOf(indigo, gold), imageUrl = "https://lh3.googleusercontent.com/c=w544-h544")
         val fallback = ArtworkPalette.themeFrom(listOf(indigo, gold), dark = true)
-        assertEquals(fallback, ArtworkPalette.stageTheme(artwork, null))
-        assertEquals(fallback, ArtworkPalette.stageTheme(artwork, emptyList()))
+        assertEquals(fallback, ArtworkPalette.coverTheme(artwork, null, dark = true))
+        assertEquals(fallback, ArtworkPalette.coverTheme(artwork, CoverColors(emptyList(), brightest = gold), dark = true))
+    }
+
+    @Test
+    fun `the accent takes the vibrant swatch's hue while the wash keeps the dominant one`() {
+        val teal = 0xFF2E6F73.toInt()
+        val red = 0xFFE0303A.toInt()
+        for (dark in listOf(true, false)) {
+            val theme = ArtworkPalette.themeFrom(listOf(teal, red), dark)
+            assertEquals(ArtworkPalette.toHsl(teal).first, ArtworkPalette.toHsl(theme.backdropTop).first, 3f)
+            assertEquals(ArtworkPalette.toHsl(red).first, ArtworkPalette.toHsl(theme.accent).first, 3f)
+        }
+    }
+
+    @Test
+    fun `a grey second swatch leaves the accent on the cover's own hue`() {
+        val teal = 0xFF2E6F73.toInt()
+        val theme = ArtworkPalette.themeFrom(listOf(teal, grey), dark = true)
+        assertEquals(ArtworkPalette.toHsl(teal).first, ArtworkPalette.toHsl(theme.accent).first, 3f)
     }
 
     @Test

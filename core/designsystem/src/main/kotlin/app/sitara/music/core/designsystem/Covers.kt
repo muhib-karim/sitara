@@ -8,6 +8,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.produceState
 import androidx.compose.runtime.remember
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.platform.LocalContext
 import androidx.palette.graphics.Palette
 import app.sitara.music.core.model.Artwork
@@ -54,36 +56,57 @@ internal fun coverRequest(context: Context, artwork: Artwork, crossfade: Boolean
 
 private const val PALETTE_PX = 128
 
-/** The cover's palette swatches, most common first; null when there is no cover or it cannot load. */
-private suspend fun coverSwatches(context: Context, artwork: Artwork): List<Int>? {
+// Where blur is unavailable the backdrop stretches a copy this small, and bilinear scaling does the blurring.
+private const val THUMBNAIL_PX = 12
+
+// About a 72 dp blur's reach across a phone: no blurred pixel comes out brighter than the brightest cell.
+private const val BRIGHTNESS_GRID = 8
+
+/** What one read of a cover gives the stage: its colours, and a tiny copy to stretch where blur is unavailable. */
+class CoverLook(val colors: CoverColors, val thumbnail: ImageBitmap)
+
+internal fun coverColorsOf(bitmap: Bitmap): CoverColors {
+    val grid = Bitmap.createScaledBitmap(bitmap, BRIGHTNESS_GRID, BRIGHTNESS_GRID, true)
+    val cells = IntArray(BRIGHTNESS_GRID * BRIGHTNESS_GRID).also { grid.getPixels(it, 0, BRIGHTNESS_GRID, 0, 0, BRIGHTNESS_GRID, BRIGHTNESS_GRID) }
+    val brightest = cells.maxBy { ArtworkPalette.relativeLuminance(it) } or OPAQUE
+    val palette = Palette.from(bitmap).generate()
+    // The palette filters out near-white and near-black, so an all-white or all-black cover has no swatches at all.
+    val dominant = palette.dominantSwatch ?: return CoverColors(listOf(brightest), brightest)
+    val accent = palette.vibrantSwatch ?: palette.darkVibrantSwatch ?: palette.lightVibrantSwatch ?: palette.mutedSwatch ?: dominant
+    return CoverColors(listOf(dominant.rgb, accent.rgb), brightest)
+}
+
+private const val OPAQUE = 0xFF000000.toInt()
+
+private val coverLooks = LruCache<Artwork, CoverLook>(32)
+
+/** [artwork]'s look, or null when there is no cover or it cannot load. */
+private suspend fun loadCoverLook(context: Context, artwork: Artwork): CoverLook? {
+    coverLooks[artwork]?.let { return it }
     val request = coverRequest(context, artwork, crossfade = false)?.newBuilder()?.size(PALETTE_PX)?.allowHardware(false)?.build() ?: return null
     val loader = SingletonImageLoader.get(context)
     val result = loader.execute(request) as? SuccessResult ?: return null
     // Where the loader decodes: off the main thread in the app, inline in screenshot tests.
     return withContext(loader.defaults.decoderCoroutineContext) {
-        Palette.from(result.image.toBitmap()).generate().swatches.sortedByDescending { it.population }.map { it.rgb }
-    }
+        val bitmap = result.image.toBitmap()
+        CoverLook(coverColorsOf(bitmap), Bitmap.createScaledBitmap(bitmap, THUMBNAIL_PX, THUMBNAIL_PX, true).asImageBitmap())
+    }.also { coverLooks.put(artwork, it) }
 }
-
-// Themes already worked out, so opening the player or revisiting a page starts in the right colours instead of fading in.
-private val stageThemes = LruCache<Artwork, ArtworkTheme>(32)
 
 /**
- * The listening stage's colours for [artwork]: from the cover's palette once it has loaded, from the artwork's own
- * colours before that or when it cannot load. The previous track's colours hold until the next are known, so the
- * stage changes colour once per track.
+ * [artwork]'s look once its cover has loaded, null when it cannot (offline, no cover). Looks already read are there on the
+ * first frame; otherwise the previous track's look holds until the next is known, so the stage changes colour once per track.
  */
 @Composable
-fun rememberArtworkTheme(artwork: Artwork): ArtworkTheme {
+fun rememberCoverLook(artwork: Artwork): CoverLook? {
     val context = LocalContext.current
-    val initial = remember { stageThemes[artwork] ?: ArtworkPalette.stageTheme(artwork, null) }
-    return produceState(initial, artwork) {
-        value = stageThemes[artwork] ?: coverSwatches(context, artwork).let { swatches ->
-            // Only a loaded cover is final; after a failure (offline) the next visit tries again.
-            ArtworkPalette.stageTheme(artwork, swatches).also { if (swatches != null) stageThemes.put(artwork, it) }
-        }
-    }.value
+    return produceState(coverLooks[artwork], artwork) { value = loadCoverLook(context, artwork) }.value
 }
+
+/** [artwork]'s colours for a [dark] or light surface, from its cover once loaded, from the artwork's own colours before that. */
+@Composable
+fun rememberArtworkTheme(artwork: Artwork, dark: Boolean = true, look: CoverLook? = rememberCoverLook(artwork)): ArtworkTheme =
+    remember(artwork, look, dark) { ArtworkPalette.coverTheme(artwork, look?.colors, dark) }
 
 /** Moves to [argb] with a long fade between tracks, or at once under reduced motion. */
 @Composable
