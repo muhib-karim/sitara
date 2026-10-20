@@ -18,10 +18,10 @@ import androidx.compose.ui.test.swipe
 import androidx.compose.ui.test.swipeLeft
 import androidx.compose.ui.test.swipeUp
 import app.sitara.music.core.model.DarkMode
-import app.sitara.music.core.model.SearchResults
 import app.sitara.music.core.model.SitaraSettings
 import app.sitara.music.feature.player.PlayerActions
 import app.sitara.music.feature.player.PlayerUiState
+import app.sitara.music.feature.search.SearchState
 import app.sitara.music.source.fake.FakeMusicSource
 import app.sitara.music.source.fake.SampleCatalog
 import kotlinx.coroutines.runBlocking
@@ -45,7 +45,7 @@ class PlayerInteractionTest {
         val track = SampleCatalog.tracks.first()
         val home = runBlocking { source.home() }
         val library = runBlocking { source.library() }
-        val lyrics = runBlocking { source.lyrics(track) }
+        val lyrics = runBlocking { source.lyrics(track)!! }
         compose.setContent {
             backDispatcher = checkNotNull(LocalOnBackPressedDispatcherOwner.current).onBackPressedDispatcher
             SitaraShell(
@@ -53,10 +53,11 @@ class PlayerInteractionTest {
                 home = home,
                 library = library,
                 query = "",
-                results = SearchResults.empty(),
+                search = SearchState.Idle,
                 player = PlayerUiState(track = track, durationMs = durationMs, lyrics = lyrics, positionMs = 15_300),
                 actions = actions,
                 onQueryChange = {},
+                onRetrySearch = {},
                 onPlay = { _, _ -> },
                 onSettingsChange = {},
                 playerExpanded = expanded,
@@ -157,7 +158,7 @@ class PlayerInteractionTest {
             override fun seekTo(positionMs: Long) { seek = positionMs }
             override fun togglePlay() { plays++ }
         })
-        val line = runBlocking { FakeMusicSource().lyrics(SampleCatalog.tracks.first()) }.lines.last { it.startMs <= 15_300 }
+        val line = runBlocking { FakeMusicSource().lyrics(SampleCatalog.tracks.first())!! }.lines.last { it.startMs <= 15_300 }
         compose.onNodeWithText(line.text).performClick()
         assertEquals(line.startMs, seek)
         compose.onNodeWithContentDescription("Play").performClick()

@@ -60,6 +60,7 @@ import app.sitara.music.feature.player.PlayerActions
 import app.sitara.music.feature.player.PlayerSheet
 import app.sitara.music.feature.player.PlayerUiState
 import app.sitara.music.feature.search.SearchScreen
+import app.sitara.music.feature.search.SearchState
 import app.sitara.music.feature.settings.SettingsScreen
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
@@ -78,16 +79,17 @@ fun SitaraRoot(vm: AppViewModel, systemReducedMotion: Boolean) {
     val home by vm.home.collectAsState()
     val library by vm.library.collectAsState()
     val query by vm.query.collectAsState()
-    val results by vm.results.collectAsState()
+    val search by vm.search.collectAsState()
     SitaraShell(
         settings = settings.let { if (systemReducedMotion) it.copy(reducedMotion = true) else it },
         home = home,
         library = library,
         query = query,
-        results = results,
+        search = search,
         player = player,
         actions = vm,
         onQueryChange = { vm.query.value = it },
+        onRetrySearch = vm::retrySearch,
         onPlay = vm::play,
         onSettingsChange = vm::updateSettings,
     )
@@ -100,10 +102,11 @@ fun SitaraShell(
     home: List<Shelf>,
     library: Library,
     query: String,
-    results: SearchResults,
+    search: SearchState,
     player: PlayerUiState,
     actions: PlayerActions,
     onQueryChange: (String) -> Unit,
+    onRetrySearch: () -> Unit,
     onPlay: (List<Track>, Int) -> Unit,
     onSettingsChange: (SitaraSettings) -> Unit,
     initialTab: Tab = Tab.HOME,
@@ -116,6 +119,7 @@ fun SitaraShell(
     var albumId by rememberSaveable { mutableStateOf<String?>(null) }
     var artistId by rememberSaveable { mutableStateOf<String?>(null) }
     val browseState = rememberSaveableStateHolder()
+    val results = (search as? SearchState.Loaded)?.results ?: SearchResults.empty()
     val albums = remember(home, library.albums, results.albums) {
         (library.albums + home.flatMap { it.albums } + results.albums).distinctBy { it.id }
     }
@@ -156,12 +160,18 @@ fun SitaraShell(
                         album != null -> AlbumScreen(album, settings, onPlay, closeDetail, contentPadding)
                         artist != null -> ArtistScreen(artist, tracks.filter { it.artist == artist.name }, settings, onPlay, closeDetail, contentPadding)
                         else -> when (tab) {
-                            Tab.HOME -> HomeScreen(greetingText, home, onPlay, openAlbum, contentPadding = contentPadding)
+                            Tab.HOME -> HomeScreen(
+                                greetingText, home, onPlay, openAlbum, contentPadding = contentPadding,
+                                note = "These shelves are built-in sample music. Search finds and plays real songs.",
+                            )
                             Tab.SEARCH -> SearchScreen(
-                                query, onQueryChange, results, listOf("Lumen Drift", "Night Bus Static", "Gold Hour"),
+                                query, onQueryChange, search, onRetrySearch, listOf("Lo-fi beats", "Jazz piano", "Classical focus"),
                                 onPlay, library, openAlbum, openArtist, contentPadding = contentPadding,
                             )
-                            Tab.LIBRARY -> LibraryScreen(library, onPlay, openAlbum, openArtist, contentPadding = contentPadding)
+                            Tab.LIBRARY -> LibraryScreen(
+                                library, onPlay, openAlbum, openArtist, contentPadding = contentPadding,
+                                note = "A built-in sample library. Saving your own music is not available yet.",
+                            )
                             Tab.SETTINGS -> SettingsScreen(settings, onSettingsChange, onBack = { tab = Tab.HOME }, contentPadding = contentPadding)
                         }
                     }

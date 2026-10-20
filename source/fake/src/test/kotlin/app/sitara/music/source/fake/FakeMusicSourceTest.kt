@@ -2,6 +2,7 @@ package app.sitara.music.source.fake
 
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Test
 
@@ -32,8 +33,13 @@ class FakeMusicSourceTest {
 
     @Test
     fun `sample lyrics are word synced`() = runTest {
-        val lyrics = source.lyrics(SampleCatalog.tracks.first())
+        val lyrics = source.lyrics(SampleCatalog.tracks.first())!!
         assertTrue(lyrics.synced)
         assertTrue(lyrics.lines.all { it.isWordSynced })
+    }
+
+    @Test
+    fun `tracks outside the sample catalogue get no sample lyrics`() = runTest {
+        assertNull(source.lyrics(SampleCatalog.tracks.first().copy(id = "dQw4w9WgXcQ", title = "A real song")))
     }
 }

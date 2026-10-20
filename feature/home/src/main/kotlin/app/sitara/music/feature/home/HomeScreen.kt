@@ -50,6 +50,7 @@ fun HomeScreen(
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(),
     listState: LazyListState = rememberLazyListState(),
+    note: String? = null,
 ) {
     var mood by rememberSaveable { mutableStateOf<ListeningMood?>(null) }
     val available = remember(shelves) { shelves.flatMap { it.playlists }.flatMap { it.moods }.toSet() }
@@ -57,6 +58,14 @@ fun HomeScreen(
     val visible = remember(shelves, selectedMood) { shelvesForMood(shelves, selectedMood) }
     LazyColumn(modifier.fillMaxSize().testTag("home-content"), state = listState, contentPadding = contentPadding) {
         item(key = "title") { LargeTitle(greeting) }
+        if (note != null) {
+            item(key = "note") {
+                Text(
+                    note, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = SitaraSpacing.Gutter),
+                )
+            }
+        }
         item(key = "moods") {
             LazyRow(contentPadding = PaddingValues(horizontal = SitaraSpacing.Gutter, vertical = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 item { SelectionPill("For you", selectedMood == null, { mood = null }) }

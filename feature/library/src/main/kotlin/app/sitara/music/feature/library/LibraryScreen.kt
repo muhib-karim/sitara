@@ -60,6 +60,7 @@ fun LibraryScreen(
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(),
     initialFilter: LibraryFilter = LibraryFilter.PLAYLISTS,
+    note: String? = null,
 ) {
     var filter by rememberSaveable { mutableStateOf(initialFilter) }
     var layout by rememberSaveable { mutableStateOf(LibraryLayout.GRID) }
@@ -77,6 +78,14 @@ fun LibraryScreen(
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         item(key = "title", span = { GridItemSpan(maxLineSpan) }) { LargeTitle("Library") }
+        if (note != null) {
+            item(key = "note", span = { GridItemSpan(maxLineSpan) }) {
+                Text(
+                    note, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = SitaraSpacing.Gutter),
+                )
+            }
+        }
         item(key = "filters", span = { GridItemSpan(maxLineSpan) }) {
             LazyRow(contentPadding = PaddingValues(horizontal = SitaraSpacing.Gutter), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 items(LibraryFilter.entries.size) { index ->

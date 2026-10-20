@@ -23,6 +23,7 @@ import app.sitara.music.core.model.SitaraSettings
 import app.sitara.music.core.model.ThemeMode
 import app.sitara.music.feature.player.PlayerActions
 import app.sitara.music.feature.player.PlayerUiState
+import app.sitara.music.feature.search.SearchState
 import app.sitara.music.source.fake.FakeMusicSource
 import app.sitara.music.source.fake.SampleCatalog
 import com.github.takahirom.roborazzi.captureRoboImage
@@ -52,7 +53,7 @@ class ScreenshotTest {
         positionMs = 15_300,
         durationMs = track.durationMs,
         upNext = SampleCatalog.tracks.drop(1),
-        lyrics = runBlocking { source.lyrics(track) },
+        lyrics = runBlocking { source.lyrics(track)!! },
     )
 
     private fun shot(
@@ -67,10 +68,10 @@ class ScreenshotTest {
         reduced: Boolean = true,
         fontScale: Float = 1f,
         playerState: PlayerUiState = playing,
+        search: SearchState = SearchState.Loaded(query.trim(), runBlocking { source.search(query) }),
         beforeCapture: () -> Unit = {},
     ) {
         val settings = SitaraSettings(themeMode = mode, darkMode = if (dark) DarkMode.DARK else DarkMode.LIGHT, reducedMotion = reduced)
-        val searchResults = runBlocking { source.search(query) }
         compose.setContent {
             CompositionLocalProvider(LocalDensity provides Density(LocalDensity.current.density, fontScale)) {
                 SitaraShell(
@@ -78,10 +79,11 @@ class ScreenshotTest {
                     home = home,
                     library = library,
                     query = query,
-                    results = searchResults,
+                    search = search,
                     player = playerState,
                     actions = PlayerActions.None,
                     onQueryChange = {},
+                    onRetrySearch = {},
                     onPlay = { _, _ -> },
                     onSettingsChange = {},
                     initialTab = tab,
@@ -165,7 +167,7 @@ class ScreenshotTest {
     }
 
     @Test fun homeBottomLargeText() = shot("home_bottom_large_text", dark = true, fontScale = 2f) {
-        compose.onNodeWithTag("home-content").performScrollToIndex(2 + home.size * 2 - 1)
+        compose.onNodeWithTag("home-content").performScrollToIndex(3 + home.size * 2 - 1)
     }
 
     @Test fun libraryListDark() = shot("library_list", dark = true, tab = Tab.LIBRARY) {
@@ -196,6 +198,7 @@ class ScreenshotTest {
 
     @Test fun searchBrowseDark() = shot("search_browse", dark = true, tab = Tab.SEARCH)
     @Test fun searchBrowseLight() = shot("search_browse", dark = false, tab = Tab.SEARCH)
+    @Test fun searchFailed() = shot("search_failed", dark = true, tab = Tab.SEARCH, query = "lofi", search = SearchState.Failed("lofi"))
     @Test fun searchGrouped() = shot("search_grouped", dark = true, tab = Tab.SEARCH, query = "Lumen Drift")
 
     @Test fun settingsMotion() = shot("settings_motion", dark = true, settingsOpen = true) {

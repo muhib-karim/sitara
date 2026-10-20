@@ -31,6 +31,7 @@ import app.sitara.music.core.model.ThemeMode
 import app.sitara.music.core.model.Track
 import app.sitara.music.feature.player.PlayerActions
 import app.sitara.music.feature.player.PlayerUiState
+import app.sitara.music.feature.search.SearchState
 import app.sitara.music.source.fake.FakeMusicSource
 import app.sitara.music.source.fake.SampleCatalog
 import kotlinx.coroutines.runBlocking
@@ -58,16 +59,19 @@ class BrowseInteractionTest {
         onQuery: (String) -> Unit = {},
         onSettings: (SitaraSettings) -> Unit = {},
         libraryState: Library = library,
+        initialQuery: String = "",
+        search: SearchState = SearchState.Idle,
+        onRetrySearch: () -> Unit = {},
     ): StateRestorationTester {
         val restoration = StateRestorationTester(compose)
         restoration.setContent {
             var settings by remember { mutableStateOf(SitaraSettings(darkMode = DarkMode.DARK, reducedMotion = true)) }
-            var query by remember { mutableStateOf("") }
+            var query by remember { mutableStateOf(initialQuery) }
             CompositionLocalProvider(LocalDensity provides Density(LocalDensity.current.density, fontScale)) {
                 SitaraShell(
-                    settings, home, libraryState, query, SearchResults.empty(query),
+                    settings, home, libraryState, query, search,
                     PlayerUiState(track = SampleCatalog.tracks.first()), PlayerActions.None,
-                    onQueryChange = { query = it; onQuery(it) }, onPlay = onPlay,
+                    onQueryChange = { query = it; onQuery(it) }, onRetrySearch = onRetrySearch, onPlay = onPlay,
                     onSettingsChange = { settings = it; onSettings(it) }, initialTab = tab,
                 )
             }
@@ -147,10 +151,22 @@ class BrowseInteractionTest {
         compose.onNodeWithContentDescription("Back to browse").performClick()
         compose.onNodeWithContentDescription("All browse categories").performClick()
         compose.onNodeWithTag("search-content").performScrollToIndex(4)
-        compose.onNodeWithText("Night Bus Static").performClick()
-        assertEquals("Night Bus Static", query)
+        compose.onNodeWithText("Jazz piano").performClick()
+        assertEquals("Jazz piano", query)
         compose.onNodeWithContentDescription("Clear search").performClick()
         assertEquals("", query)
+    }
+
+    @Test fun failedSearchOffersRetry() {
+        var retries = 0
+        render(Tab.SEARCH, initialQuery = "lofi", search = SearchState.Failed("lofi"), onRetrySearch = { retries++ })
+        compose.onNodeWithText("Try again").performClick()
+        assertEquals(1, retries)
+    }
+
+    @Test fun staleResultsShowSearchingForTheNewQuery() {
+        render(Tab.SEARCH, initialQuery = "jazz", search = SearchState.Loaded("lo", SearchResults.empty("lo")))
+        compose.onNodeWithText("Searching…").assertIsDisplayed()
     }
 
     @Test fun settingsOnlyExposeImplementedControls() {
@@ -186,8 +202,8 @@ class BrowseInteractionTest {
 
     @Test fun lastHomeRailScrollsAboveTheDockAtLargeText() {
         render(fontScale = 2f)
-        // Header, moods, and two items per populated shelf (heading + content).
-        compose.onNodeWithTag("home-content").performScrollToIndex(2 + home.size * 2 - 1)
+        // Header, sample note, moods, and two items per populated shelf (heading + content).
+        compose.onNodeWithTag("home-content").performScrollToIndex(3 + home.size * 2 - 1)
         val rail = compose.onNodeWithTag("rail-${home.last().id}").fetchSemanticsNode().boundsInRoot
         val dock = compose.onNodeWithTag("playback-dock").fetchSemanticsNode().boundsInRoot
         assertTrue("The final rail must clear the entire playback dock", rail.bottom <= dock.top)

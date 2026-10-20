@@ -45,6 +45,7 @@ import androidx.compose.ui.unit.dp
 import app.sitara.music.core.designsystem.CollectionRow
 import app.sitara.music.core.designsystem.GlassIconButton
 import app.sitara.music.core.designsystem.LargeTitle
+import app.sitara.music.core.designsystem.PillButton
 import app.sitara.music.core.designsystem.SectionHeader
 import app.sitara.music.core.designsystem.SitaraIcons
 import app.sitara.music.core.designsystem.SitaraRadius
@@ -62,7 +63,8 @@ private enum class BrowseCategory(val label: String) { ALBUMS("Albums"), ARTISTS
 fun SearchScreen(
     query: String,
     onQueryChange: (String) -> Unit,
-    results: SearchResults,
+    state: SearchState,
+    onRetry: () -> Unit,
     suggestions: List<String>,
     onPlay: (tracks: List<Track>, index: Int) -> Unit,
     library: Library,
@@ -78,7 +80,7 @@ fun SearchScreen(
         if (query.isBlank()) {
             val selected = category
             if (selected == null) {
-                item(key = "browse-title") { SectionHeader("Browse your music", modifier = Modifier.padding(top = 20.dp)) }
+                item(key = "browse-title") { SectionHeader("Browse the sample library", modifier = Modifier.padding(top = 20.dp)) }
                 item(key = "categories") {
                     Column(Modifier.padding(horizontal = SitaraSpacing.Gutter), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         BrowseCategory.entries.chunked(2).forEach { pair ->
@@ -113,29 +115,46 @@ fun SearchScreen(
                 }
                 browseItems(selected, library, onPlay, onAlbum, onArtist)
             }
-        } else if (results.query.trim() != query.trim()) {
-            item(key = "searching") { SearchMessage("Searching…") }
-        } else if (results.isEmpty) {
-            item(key = "no-results") { SearchMessage("Nothing found for “$query”. Try a song, album or artist.") }
         } else {
-            if (results.tracks.isNotEmpty()) {
-                item(key = "songs-title") { SectionHeader("Songs", subtitle = "${results.tracks.size} results", modifier = Modifier.padding(top = 20.dp)) }
-                itemsIndexed(results.tracks, key = { _, track -> "song-${track.id}" }) { index, track ->
-                    TrackRow(track, { onPlay(results.tracks, index) })
+            val current = query.trim()
+            when {
+                state is SearchState.Loaded && state.query == current -> searchResults(state.results, onPlay, onAlbum, onArtist)
+                state is SearchState.Failed && state.query == current -> item(key = "failed") {
+                    Column(Modifier.padding(SitaraSpacing.Gutter), verticalArrangement = Arrangement.spacedBy(16.dp)) {
+                        Text(
+                            "Search isn’t working right now. Check your connection, then try again.",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyLarge,
+                        )
+                        PillButton("Try again", onRetry)
+                    }
                 }
+                else -> item(key = "searching") { SearchMessage("Searching…") }
             }
-            if (results.albums.isNotEmpty()) {
-                item(key = "albums-title") { SectionHeader("Albums", modifier = Modifier.padding(top = 20.dp)) }
-                items(results.albums, key = { "album-${it.id}" }) { album ->
-                    CollectionRow(album.title, "${album.artist} · ${album.year}", album.artwork, { onAlbum(album) }, Modifier.padding(horizontal = SitaraSpacing.Gutter))
-                }
-            }
-            if (results.artists.isNotEmpty()) {
-                item(key = "artists-title") { SectionHeader("Artists", modifier = Modifier.padding(top = 20.dp)) }
-                items(results.artists, key = { "artist-${it.id}" }) { artist ->
-                    CollectionRow(artist.name, "Artist", artist.artwork, { onArtist(artist) }, Modifier.padding(horizontal = SitaraSpacing.Gutter))
-                }
-            }
+        }
+    }
+}
+
+private fun LazyListScope.searchResults(results: SearchResults, onPlay: (List<Track>, Int) -> Unit, onAlbum: (Album) -> Unit, onArtist: (Artist) -> Unit) {
+    if (results.isEmpty) {
+        item(key = "no-results") { SearchMessage("Nothing found for “${results.query}”. Try a song or an artist.") }
+        return
+    }
+    if (results.tracks.isNotEmpty()) {
+        item(key = "songs-title") { SectionHeader("Songs", subtitle = "${results.tracks.size} results", modifier = Modifier.padding(top = 20.dp)) }
+        itemsIndexed(results.tracks, key = { _, track -> "song-${track.id}" }) { index, track ->
+            TrackRow(track, { onPlay(results.tracks, index) })
+        }
+    }
+    if (results.albums.isNotEmpty()) {
+        item(key = "albums-title") { SectionHeader("Albums", modifier = Modifier.padding(top = 20.dp)) }
+        items(results.albums, key = { "album-${it.id}" }) { album ->
+            CollectionRow(album.title, "${album.artist} · ${album.year}", album.artwork, { onAlbum(album) }, Modifier.padding(horizontal = SitaraSpacing.Gutter))
+        }
+    }
+    if (results.artists.isNotEmpty()) {
+        item(key = "artists-title") { SectionHeader("Artists", modifier = Modifier.padding(top = 20.dp)) }
+        items(results.artists, key = { "artist-${it.id}" }) { artist ->
+            CollectionRow(artist.name, "Artist", artist.artwork, { onArtist(artist) }, Modifier.padding(horizontal = SitaraSpacing.Gutter))
         }
     }
 }

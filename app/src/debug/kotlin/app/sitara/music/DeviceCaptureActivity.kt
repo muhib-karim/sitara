@@ -21,6 +21,7 @@ import app.sitara.music.core.model.Lyrics
 import app.sitara.music.core.model.SearchResults
 import app.sitara.music.core.model.Shelf
 import app.sitara.music.core.model.SitaraSettings
+import app.sitara.music.feature.search.SearchState
 import app.sitara.music.source.fake.FakeMusicSource
 import app.sitara.music.source.fake.SampleCatalog
 
@@ -42,7 +43,7 @@ private data class CaptureCatalog(val home: List<Shelf>, val library: Library, v
 private fun CaptureScreen(screen: String, dark: Boolean, reduced: Boolean) {
     val source = remember { FakeMusicSource() }
     val catalog by produceState<CaptureCatalog?>(null, source) {
-        value = CaptureCatalog(source.home(), source.library(), source.lyrics(SampleCatalog.tracks.first()))
+        value = CaptureCatalog(source.home(), source.library(), source.lyrics(SampleCatalog.tracks.first())!!)
     }
     val ready = catalog ?: return
     val player = remember(ready) { DemoPlayer(SampleCatalog.tracks, ready.lyrics) }
@@ -55,10 +56,11 @@ private fun CaptureScreen(screen: String, dark: Boolean, reduced: Boolean) {
             home = ready.home,
             library = ready.library,
             query = query,
-            results = results,
+            search = SearchState.Loaded(results.query.trim(), results),
             player = player.state,
             actions = player,
             onQueryChange = { query = it },
+            onRetrySearch = {},
             onPlay = player::play,
             onSettingsChange = { settings = it },
             initialTab = when (screen) {

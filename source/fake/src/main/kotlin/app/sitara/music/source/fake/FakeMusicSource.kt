@@ -60,7 +60,8 @@ class FakeMusicSource(
         return ResolvedStream(SampleCatalog.demoStreamUrl(index), "audio/mpeg", bitrateKbps = 128)
     }
 
-    override suspend fun lyrics(track: Track): Lyrics = LrcParser.parse(SampleCatalog.demoLyricsLrc, track.durationMs)
+    override suspend fun lyrics(track: Track): Lyrics? =
+        if (SampleCatalog.tracks.any { it.id == track.id }) LrcParser.parse(SampleCatalog.demoLyricsLrc, track.durationMs) else null
 
     override suspend fun check(): HealthReport = HealthReport(id, HealthStatus.HEALTHY, latencyMs)
 
