@@ -19,6 +19,8 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
+import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
@@ -32,6 +34,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
+import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
 import app.sitara.music.core.common.formatBytes
 import app.sitara.music.core.designsystem.GlassIconButton
@@ -45,6 +50,7 @@ import app.sitara.music.core.model.DarkMode
 import app.sitara.music.core.model.SitaraSettings
 import app.sitara.music.core.model.SongDownload
 import app.sitara.music.core.model.ThemeMode
+import kotlin.math.roundToInt
 
 @Composable
 fun SettingsScreen(
@@ -86,6 +92,13 @@ fun SettingsScreen(
                 SwitchRow("Reduced motion", "Instant transitions, without blur", settings.reducedMotion) { onChange(settings.copy(reducedMotion = it)) }
             }
         }
+        item(key = "sound") {
+            SettingsGroup("Sound") {
+                SwitchRow("Normalise loudness", "Songs play at a similar volume", settings.normalisation) { onChange(settings.copy(normalisation = it)) }
+                InsetDivider()
+                CrossfadeRow(settings.crossfadeSeconds) { onChange(settings.copy(crossfadeSeconds = it)) }
+            }
+        }
         item(key = "downloads") {
             DownloadSettings(settings, onChange, downloads, onRemoveAllDownloads)
         }
@@ -123,6 +136,32 @@ private fun DownloadSettings(settings: SitaraSettings, onChange: (SitaraSettings
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun CrossfadeRow(seconds: Int, onChange: (Int) -> Unit) {
+    val label = if (seconds == 0) "Off" else "$seconds s"
+    Column(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Text("Crossfade", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
+            Text(label, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        }
+        Text(
+            "Overlaps the end of a song with the start of the next. Songs from one album still play without a gap.",
+            style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+        )
+        Slider(
+            value = seconds.toFloat(),
+            onValueChange = { it.roundToInt().let { picked -> if (picked != seconds) onChange(picked) } },
+            valueRange = 0f..SitaraSettings.MAX_CROSSFADE_SECONDS.toFloat(),
+            steps = SitaraSettings.MAX_CROSSFADE_SECONDS - 1,
+            colors = SliderDefaults.colors(thumbColor = MaterialTheme.colorScheme.primary, activeTrackColor = MaterialTheme.colorScheme.primary),
+            modifier = Modifier.semantics {
+                contentDescription = "Crossfade"
+                stateDescription = if (seconds == 0) "Off" else "$seconds seconds"
+            },
+        )
     }
 }
 

@@ -19,7 +19,7 @@ Goal: an original app with its own design and logo (not a reskin), shipped as a 
 - b4 (Phase B slice 4) DONE on main (CI, Device screens, Secret scan green at 360a64f), target v0.5.0 (owner tags): Home = YouTube Charts trending (ChartsSource, NewPipe trending_music kiosk) + Recently played / Jump back in / From your likes from Room; sample catalogue debug/test-only; Room v2 (saved queue, lyrics cache); queue restored after process death, saved on change/pause/15 s/destroy; onPlaybackResumption + MediaButtonReceiver; covers in system controls; LRCLIB lyrics (get -> search, cached, LyricsState with Try again). Report: docs/reports/REPORT_b4.md.
 - b1a DONE on main: YouTube/YouTube Music/youtu.be links (paste into Search, VIEW + SEND intents, autoplay), live smoke test job (search finds x7kGuhlXmFI; player request bot-checked on CI runners). Tagged and released as v0.2.0.
 
-- b5 (Phase B slice 5, target v0.6.0) IN PROGRESS: downloads/offline pushed (Media3 DownloadManager + SimpleCache keyed by sitara://track/<id>, read-only cache in playback); next sound (normaliser + crossfade), baselines, docs, REPORT_b5.
+- b5 (Phase B slice 5, target v0.6.0) IN PROGRESS: downloads/offline pushed (14dfd28; unit tests green, screenshots stale as expected); sound pushed (LoudnessLeveller processor, Crossfader tail player); next record baselines, docs, REPORT_b5.
 
 ## Next step
 Owner, before tagging v0.5.0: on-device pass of the checklist in REPORT_b4.md (chart, shelves, lyrics, lock screen and notification, focus and noisy, swipe away, restore after force-stop, headset resume, release build under R8). Next slice: image loader for in-app artwork, bot-check message + PoToken provider.

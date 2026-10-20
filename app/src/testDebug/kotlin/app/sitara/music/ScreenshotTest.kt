@@ -279,8 +279,12 @@ class ScreenshotTest {
         compose.onNodeWithTag("settings-content").performScrollToIndex(3)
     }
 
-    @Test fun settingsDownloads() = shot("settings_downloads", dark = true, settingsOpen = true, downloads = Fixtures.downloads) {
+    @Test fun settingsSound() = shot("settings_sound", dark = true, settingsOpen = true) {
         compose.onNodeWithTag("settings-content").performScrollToIndex(4)
+    }
+
+    @Test fun settingsDownloads() = shot("settings_downloads", dark = true, settingsOpen = true, downloads = Fixtures.downloads) {
+        compose.onNodeWithTag("settings-content").performScrollToIndex(5)
     }
 
     @Test fun scrubberMidpoint() = shot(

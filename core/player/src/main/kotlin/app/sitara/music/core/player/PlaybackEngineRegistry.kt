@@ -2,8 +2,10 @@ package app.sitara.music.core.player
 
 import androidx.media3.datasource.cache.Cache
 import app.sitara.music.core.model.SavedQueue
+import app.sitara.music.core.model.SitaraSettings
 import app.sitara.music.core.model.Track
 import app.sitara.music.source.api.StreamResolver
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -31,6 +33,9 @@ interface PlaybackDependencies {
 
     /** Downloaded songs; the player plays from it before it streams. */
     val downloadCache: Cache
+
+    /** The listener's settings; the player follows normalisation and crossfade as they change. */
+    val playbackSettings: Flow<SitaraSettings>
 
     /** A queued song started playing; called on the main thread, so implementations hand slow work off. */
     fun onTrackStarted(track: Track)

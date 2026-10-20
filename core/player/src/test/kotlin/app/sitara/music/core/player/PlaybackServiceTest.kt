@@ -11,13 +11,16 @@ import androidx.media3.datasource.cache.SimpleCache
 import app.sitara.music.core.model.Artwork
 import app.sitara.music.core.model.RepeatMode
 import app.sitara.music.core.model.SavedQueue
+import app.sitara.music.core.model.SitaraSettings
 import app.sitara.music.core.model.Track
 import app.sitara.music.source.api.ResolvedStream
 import app.sitara.music.source.api.StreamResolver
 import java.io.IOException
 import kotlin.io.path.createTempDirectory
+import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.Robolectric
@@ -44,6 +47,8 @@ class PlaybackServiceTest {
         }
 
         override val downloadCache: Cache by lazy { SimpleCache(createTempDirectory().toFile(), NoOpCacheEvictor(), StandaloneDatabaseProvider(this)) }
+
+        override val playbackSettings = MutableStateFlow(SitaraSettings())
 
         override fun onTrackStarted(track: Track) = Unit
 
@@ -74,5 +79,25 @@ class PlaybackServiceTest {
 
         service.destroy()
         assertEquals(app.saved, app.saves.last())
+    }
+
+    @Test
+    fun `normalisation and crossfade follow the settings while the service runs`() {
+        val app = RuntimeEnvironment.getApplication() as TestApp
+        app.playbackSettings.value = SitaraSettings(crossfadeSeconds = 6, normalisation = false, targetLufs = -16f)
+
+        val controller = Robolectric.buildService(PlaybackService::class.java).create()
+        shadowOf(Looper.getMainLooper()).idle()
+        val service = controller.get()
+        assertEquals(6_000L, service.crossfader.windowMs)
+        assertFalse(service.leveller.enabled)
+        assertEquals(-16f, service.leveller.targetLufs, 0f)
+
+        app.playbackSettings.value = SitaraSettings()
+        shadowOf(Looper.getMainLooper()).idle()
+        assertEquals("crossfade off by default", 0L, service.crossfader.windowMs)
+        assertTrue("normalisation on by default", service.leveller.enabled)
+
+        controller.destroy()
     }
 }

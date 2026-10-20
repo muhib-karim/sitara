@@ -52,6 +52,7 @@ class SitaraApplication :
     override val streamResolver: StreamResolver by lazy { YouTubeStreamResolver() }
     override val songDownloads: SongDownloads by lazy { SongDownloads(this, streamResolver, appScope, settings.settings.map { it.downloadOnWifiOnly }.distinctUntilChanged()) }
     override val downloadCache: Cache get() = songDownloads.cache
+    override val playbackSettings get() = settings.settings
     val player by lazy { PlayerController(this, appScope) }
 
     override fun onTrackStarted(track: Track) = writeLibrary { library.history.record(track) }

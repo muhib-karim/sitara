@@ -1,5 +1,6 @@
 package app.sitara.music.core.player
 
+import android.content.Context
 import android.content.Intent
 import android.os.Process
 import androidx.annotation.OptIn
@@ -11,7 +12,10 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DefaultDataSource
 import androidx.media3.datasource.ResolvingDataSource
 import androidx.media3.datasource.cache.CacheDataSource
+import androidx.media3.exoplayer.DefaultRenderersFactory
 import androidx.media3.exoplayer.ExoPlayer
+import androidx.media3.exoplayer.audio.AudioSink
+import androidx.media3.exoplayer.audio.DefaultAudioSink
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSession.MediaItemsWithStartPosition
@@ -41,6 +45,11 @@ class PlaybackService : MediaSessionService() {
     private var engine: PlaybackEngine? = null
     private lateinit var dependencies: PlaybackDependencies
 
+    // The tail player has its own leveller, started from the main one's level at each fade.
+    internal val leveller = LoudnessLeveller()
+    private val tailLeveller = LoudnessLeveller()
+    internal lateinit var crossfader: Crossfader
+
     override fun onCreate() {
         super.onCreate()
         val dependencies = application as PlaybackDependencies
@@ -53,19 +62,32 @@ class PlaybackService : MediaSessionService() {
             .setCache(dependencies.downloadCache)
             .setUpstreamDataSourceFactory(stream)
             .setCacheWriteDataSinkFactory(null)
+        val mediaSources = DefaultMediaSourceFactory(dataSource)
+        val music = AudioAttributes.Builder().setUsage(C.USAGE_MEDIA).setContentType(C.AUDIO_CONTENT_TYPE_MUSIC).build()
         val player = ExoPlayer.Builder(this)
-            .setMediaSourceFactory(DefaultMediaSourceFactory(dataSource))
+            .setMediaSourceFactory(mediaSources)
+            .setRenderersFactory(LevellingRenderersFactory(this, leveller))
             .setAudioAttributes(
-                AudioAttributes.Builder()
-                    .setUsage(C.USAGE_MEDIA)
-                    .setContentType(C.AUDIO_CONTENT_TYPE_MUSIC)
-                    .build(),
+                music,
                 // handleAudioFocus
                 true,
             )
             .setHandleAudioBecomingNoisy(true)
             .build()
+        // Plays only the end of a song during a crossfade; the main player holds audio focus for both.
+        val tail = ExoPlayer.Builder(this)
+            .setMediaSourceFactory(mediaSources)
+            .setRenderersFactory(LevellingRenderersFactory(this, tailLeveller))
+            .setAudioAttributes(
+                music,
+                // handleAudioFocus
+                false,
+            )
+            .build()
         port = Media3PlayerPort(player)
+        crossfader = Crossfader(player, tail, scope, trackOf = { item -> item.localConfiguration?.uri?.lastPathSegment?.let(port::track) }) {
+            tailLeveller.startFrom(leveller)
+        }
         val engine = PlaybackEngine(port, scope, ElapsedRealtimeTimeSource, dependencies::onTrackStarted)
         player.addListener(EngineListener(engine))
         this.engine = engine
@@ -74,6 +96,15 @@ class PlaybackService : MediaSessionService() {
         scope.launch {
             restoreSavedQueue(engine)
             keepSaving(engine, dependencies::saveQueue)
+        }
+        scope.launch {
+            dependencies.playbackSettings.collect { settings ->
+                listOf(leveller, tailLeveller).forEach {
+                    it.enabled = settings.normalisation
+                    it.targetLufs = settings.targetLufs
+                }
+                crossfader.windowMs = settings.crossfadeSeconds * 1_000L
+            }
         }
     }
 
@@ -101,12 +132,23 @@ class PlaybackService : MediaSessionService() {
         engine?.let(PlaybackEngineRegistry::detach)
         engine = null
         scope.cancel()
+        crossfader.release()
         session?.run {
             player.release()
             release()
         }
         session = null
         super.onDestroy()
+    }
+
+    /** ExoPlayer's renderers with [leveller] in the audio pipeline. */
+    private class LevellingRenderersFactory(context: Context, private val leveller: LoudnessLeveller) : DefaultRenderersFactory(context) {
+        override fun buildAudioSink(context: Context, enableFloatOutput: Boolean, enableAudioOutputPlaybackParams: Boolean): AudioSink =
+            DefaultAudioSink.Builder(context)
+                .setEnableFloatOutput(enableFloatOutput)
+                .setEnableAudioOutputPlaybackParameters(enableAudioOutputPlaybackParams)
+                .setAudioProcessors(arrayOf(LevellingAudioProcessor(leveller)))
+                .build()
     }
 
     /** Forwards what the player does on its own to the engine. */

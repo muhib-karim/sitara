@@ -298,6 +298,20 @@ class BrowseInteractionTest {
         assertEquals(1, removals)
     }
 
+    @Test fun soundSettingsSetNormalisationAndCrossfade() {
+        var changed = SitaraSettings()
+        render(Tab.SETTINGS, onSettings = { changed = it })
+        val list = compose.onNodeWithTag("settings-content")
+        list.performScrollToNode(hasText("Normalise loudness"))
+        compose.onNodeWithText("Normalise loudness").performSemanticsAction(SemanticsActions.OnClick)
+        assertEquals(false, changed.normalisation)
+
+        list.performScrollToNode(hasContentDescription("Crossfade"))
+        compose.onNodeWithContentDescription("Crossfade").performSemanticsAction(SemanticsActions.SetProgress) { it(6f) }
+        assertEquals(6, changed.crossfadeSeconds)
+        compose.onNodeWithText("6 s").assertIsDisplayed()
+    }
+
     @Test fun albumSaveButtonShowsAndTogglesItsLibraryState() {
         val album = library.albums.first()
         val saves = mutableListOf<Boolean>()

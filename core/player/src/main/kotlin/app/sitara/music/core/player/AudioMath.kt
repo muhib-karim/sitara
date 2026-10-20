@@ -1,5 +1,6 @@
 package app.sitara.music.core.player
 
+import app.sitara.music.core.model.Track
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.min
@@ -28,6 +29,20 @@ object Crossfade {
         val start = durationMs - window
         return ((positionMs - start).toFloat() / window).coerceIn(0f, 1f)
     }
+
+    /** How long before the fade the outgoing song's tail is loaded, so its stream is ready in time. */
+    const val PREPARE_LEAD_MS = 10_000L
+
+    /**
+     * Whether [current] fades into [next] over [windowMs]. Songs from one album play gapless instead, as do a song on
+     * repeat, the song the sleep timer stops after, and songs shorter than two fades.
+     */
+    fun shouldOverlap(windowMs: Long, current: Track, next: Track?, durationMs: Long, repeatOne: Boolean, pauseAtEnd: Boolean): Boolean =
+        windowMs > 0 && next != null && !repeatOne && !pauseAtEnd && durationMs >= 2 * windowMs &&
+            !(current.album.isNotBlank() && current.album == next.album)
+
+    /** Where the outgoing song's tail is loaded. */
+    fun prepareAtMs(durationMs: Long, windowMs: Long): Long = (durationMs - windowMs - PREPARE_LEAD_MS).coerceAtLeast(0)
 }
 
 /** ReplayGain-style loudness matching against an integrated LUFS target. */
