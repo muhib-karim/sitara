@@ -2,7 +2,7 @@
 
 How Sitara compares with the four apps it is measured against, updated with every release. Competitor columns come from their public documentation and release notes; **Y** = has it, **~** = partial or depends on version or setup, **—** = not offered, **?** = not documented. A Sitara entry says the release that shipped it, or the Phase C slice planned for it ([PHASE_C_PLAN.md](PHASE_C_PLAN.md)).
 
-Last updated: v0.6.0.
+Last updated: v0.7.0 (c1, on `main`; the owner tags).
 
 | Capability | BitChord | Metrolist | Meld | ReVanced | Sitara |
 |---|:---:|:---:|:---:|:---:|---|
@@ -19,8 +19,8 @@ Last updated: v0.6.0.
 | Synced lyrics | Y | Y | Y | Y | v0.5.0 (LRCLIB) |
 | Loudness normalisation | — | Y | Y | — | v0.6.0 |
 | Crossfade | Y | Y | Y | — | v0.6.0 |
-| Real artwork in the app, artwork-coloured player | Y | ~ | ~ | Y | c1 (v0.7.0); lock screen and notification since v0.5.0 |
-| Lyrics manual scroll with return to current line | ? | ? | ? | ? | c1 |
+| Real artwork in the app, artwork-coloured player | Y | ~ | ~ | Y | v0.7.0; lock screen and notification since v0.5.0 |
+| Lyrics manual scroll with return to current line | ? | ? | ? | ? | v0.7.0 |
 | Gapless playback | Y | ~ | ~ | ? | c2 (since v0.6.0, crossfade keeps same-album songs gapless; not yet checked on a phone) |
 | Speed and independent pitch | Y/— | Y/Y | Y/Y | ? | c2 |
 | Skip silence | Y | Y | Y | — | c2 |

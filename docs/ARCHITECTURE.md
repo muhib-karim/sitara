@@ -2,7 +2,7 @@
 
 This document describes how Sitara is put together: the module map, how data moves from a music source to the screen, how playback is wired to Media3, how the stream source stays reliable, and how the code is tested and shipped.
 
-> Status: Phase B complete (slice 5). Home's trending chart, search, artist/album/playlist pages, radio and streams are live (YouTube through NewPipeExtractor); lyrics come from LRCLIB; the library, the play queue and fetched lyrics are stored on the device with Room; downloaded songs live in a Media3 cache and play offline; playback levels loudness and can crossfade. The app contains no sample data; the sample catalogue is a test and debug fixture. Modules marked *planned* do not exist yet.
+> Status: Phase C slice 1 (after the complete Phase B). Home's trending chart, search, artist/album/playlist pages, radio and streams are live (YouTube through NewPipeExtractor); lyrics come from LRCLIB; the library, the play queue and fetched lyrics are stored on the device with Room; downloaded songs live in a Media3 cache and play offline; playback levels loudness and can crossfade; covers load through Coil and colour the player. The app contains no sample data; the sample catalogue is a test and debug fixture. Modules marked *planned* do not exist yet.
 
 ## Goals
 
@@ -20,9 +20,9 @@ This document describes how Sitara is put together: the module map, how data mov
 | `:core:common` | Pure Kotlin | Result types, coroutine dispatchers, time and formatting helpers |
 | `:core:data` | Android library | DataStore-backed settings (theme, motion, sound, Wi-Fi-only downloads); the on-device store (`LibraryStore`): repositories for liked songs, play history, saved albums and artists, playlists, the saved play queue and the lyrics cache, implemented with Room, whose schema is exported to `core/data/schemas` |
 | `:core:player` | Android library | `PlaybackService` (Media3 session + ExoPlayer), `PlaybackEngine`, `PlayerController` facade, queue engine and its save/restore, controller/stream policies, sleep timer; `SongDownloads` and `SitaraDownloadService` (Media3 downloads); `LoudnessLeveller` in a Media3 audio processor; `Crossfader` and its timing rules |
-| `:core:designsystem` | Android library | Theme, colour roles, artwork palette mapping, `SitaraMotion`, glass surfaces, typography, icons, shared components |
+| `:core:designsystem` | Android library | Theme, colour roles, `SitaraMotion`, glass surfaces, typography, icons, shared components; covers: the Coil image loader (memory and disk cache), cover URLs sized to their slot, square crops of video thumbnails, the cover palette and its contrast-checked stage theme |
 | `:source:api` | Pure Kotlin | Contracts: `SearchSource`, `ChartsSource`, `MusicSource`, `BrowseSource` (artist, album, playlist pages), `RadioSource`, `StreamResolver`, `LyricsProvider`, `HealthCheck` |
-| `:source:fake` | Pure Kotlin | Deterministic sample catalogue with generated gradient covers: a fixture for tests, screenshots and the debug capture screen (`debugImplementation` only, never in a release build) |
+| `:source:fake` | Pure Kotlin | Deterministic sample catalogue whose `sample:cover/` images the debug image loader draws from their colours: a fixture for tests, screenshots and the debug capture screen (`debugImplementation` only, never in a release build) |
 | `:source:lyrics` | Pure Kotlin (JVM) | LRC and enhanced (word-timed) LRC parser; `LrclibLyricsProvider` (LRCLIB over OkHttp, cached through a `LyricsCache`) and the title clean-up for lyric searches |
 | `:feature:home` | Android library | Home: the trending chart (loading, error, retry) and shelves from the library: Recently played, Jump back in, From your likes |
 | `:feature:search` | Android library | Search field, suggestions, results; debounced search states with loading, error and retry |

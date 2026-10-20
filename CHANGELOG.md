@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+Phase C, slice 1: real artwork and a player that looks like the music.
+
+### Added
+
+- Real covers everywhere in the app: songs, albums, artists and playlists on Home, Search, the Library, artist, album and playlist pages, Up next, the mini player and Now Playing. Each cover is fetched in a size that fits where it is drawn and kept in memory and on disk. YouTube video thumbnails are cropped to the square of their picture, without the black bars.
+- Now Playing takes its colours from the cover: the backdrop, the glow behind the sleeve, the scrubber, shuffle, repeat and like, and the mini player's tint. The highlight colour is checked to stay readable (at least 4.5:1) on the backdrop. Colours fade from song to song, or change at once with reduced motion. The AMOLED theme keeps saffron.
+- Lyrics: scrolling them by hand stops the list from following the song, and a "Back to current line" button returns to it. Tapping a line still jumps there.
+
+### Changed
+
+- While a cover loads, or when it cannot (offline, removed, no image), the generated gradient cover shows instead, and the player keeps colours from the song's own palette.
+
+### Fixed
+
+- The device screenshot job waits longer on a slow emulator and dismisses a system "isn't responding" dialog instead of failing.
+
 ## [0.6.0] - 2026-10-20
 
 Phase B, slice 5: offline listening and sound. This completes Phase B.

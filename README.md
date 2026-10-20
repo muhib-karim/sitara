@@ -30,9 +30,9 @@
 > Sitara is an early but complete-for-daily-listening preview: **Phase B is done**. Search YouTube Music for songs,
 > albums, artists and playlists, or paste or share a YouTube link; play through a background service with a queue you
 > can edit, radio and a sleep timer; keep liked songs, playlists and saved albums on the device; see what is trending
-> on YouTube Charts; sing along with synced lyrics from LRCLIB; and, on `main` for `0.6.0`, download songs to play
-> offline, with loudness levelling and crossfade. In the app, covers are still generated gradients (the notification
-> and lock screen show the real cover). Releases are on the [Releases](https://github.com/muhib-karim/sitara/releases) page.
+> on YouTube Charts; sing along with synced lyrics from LRCLIB; download songs to play offline, with loudness levelling
+> and crossfade (`0.6.0`). On `main` for `0.7.0`, Phase C has begun: real covers throughout the app, a player coloured by
+> the cover, and lyrics you can scroll freely. Releases are on the [Releases](https://github.com/muhib-karim/sitara/releases) page.
 
 ## Screenshots
 
@@ -51,8 +51,8 @@
 Existing clients cover the basics well. Sitara aims for the things that make an app feel *finished*:
 
 - **Motion you can feel.** Transitions ride springs. The cover travels from the unified dock to the player on a shared-element spring. Reduced motion uses instant transitions.
-- **Colour from the music.** Artwork colors the listening stage while the chrome keeps its saffron accent. Material You changes only the accent; AMOLED removes the wash.
-- **Lyrics as the hero.** Heavy Inter Display lyrics, a crisp active line, distance-softened context and tap-to-seek. Transliteration for Bangla, Hindi and Urdu is planned so everyone can sing along.
+- **Colour from the music.** The cover's own palette colours the listening stage and its controls, contrast-checked to stay readable; the rest of the app keeps its saffron (or Material You) accent. AMOLED removes the wash.
+- **Lyrics as the hero.** Heavy Inter Display lyrics, a crisp active line, distance-softened context and tap-to-seek; scroll away to read ahead and one tap brings you back to the current line. Transliteration for Bangla, Hindi and Urdu is planned so everyone can sing along.
 - **Playback that outlives the screen.** The queue, auto-advance and sleep timer live in the playback service, so the notification, Bluetooth and Android Auto controls keep working when the app is closed.
 - **Sound that flows.** Songs play at a similar volume, and can crossfade into each other while albums stay gapless.
 - **Offline when you need it.** Download songs, albums and playlists, on Wi-Fi only unless you allow mobile data.
@@ -75,6 +75,8 @@ Planned, not built yet: *Sitara Sync* (end-to-end encrypted sync through storage
 | | Settings: Download on Wi-Fi only (on by default), storage used, Remove all downloads | 🧪 |
 | **Player** | Mini player in the navigation dock: swipe up to open, sideways to skip | 🧪 |
 | | Shared artwork transition, white play disc and custom timeline | 🧪 |
+| | Real covers on every screen, fetched sized to fit their slot and cached in memory and on disk; YouTube video thumbnails cropped square; the generated gradient while loading or offline | 🧪 |
+| | Now Playing and the mini player coloured from the cover, highlight contrast at least 4.5:1, fading between songs | 🧪 |
 | | Artwork backdrop, scrubber, Playing / Lyrics / Up next pager | ✅ |
 | | Queue: unique entries, shuffle with order restore, repeat off / all / one | ✅ |
 | | Play next and Add to queue from any song; reorder and remove in Up next | 🧪 |
@@ -83,7 +85,7 @@ Planned, not built yet: *Sitara Sync* (end-to-end encrypted sync through storage
 | | The queue, current song and position are saved and come back after the app is closed or killed; a headset play button resumes them | 🧪 |
 | **Sound** | Normalise loudness (on by default): gentle levelling toward −14 LUFS, at most +6 dB, peaks kept under −1 dBFS | 🧪 |
 | | Crossfade, Off or 1 to 12 s; songs from one album stay gapless | 🧪 |
-| **Lyrics** | Synced lyrics from LRCLIB that follow the song and seek on tap; plain lyrics when nothing is synced; "No lyrics found" otherwise; cached on the device | 🧪 |
+| **Lyrics** | Synced lyrics from LRCLIB that follow the song and seek on tap; scrolling by hand pauses following until "Back to current line"; plain lyrics when nothing is synced; "No lyrics found" otherwise; cached on the device | 🧪 |
 | | LRC and enhanced LRC parsing (offsets, repeated timestamps, word timing) | ✅ |
 | **Settings** | Theme: dynamic, artwork or AMOLED black; light / dark; reduced motion | ✅ |
 | **Source** | Live YouTube Music search (songs, albums, artists, playlists) with loading, empty, error and retry states (NewPipeExtractor) | 🧪 |
@@ -91,7 +93,7 @@ Planned, not built yet: *Sitara Sync* (end-to-end encrypted sync through storage
 | | Links: paste a YouTube Music, YouTube or youtu.be link into Search, or share it to Sitara, to play that song. Tapping a link opens Sitara once it is allowed under Android's "Open by default" settings | 🧪 |
 | | Artist, album and playlist pages with Play all and Shuffle | 🧪 |
 | | Radio: Start radio from Up next, and a queue about to run out continues with related songs | 🧪 |
-| **Later** | Artwork images in the app, resolver health checks, local files, import, backup and restore | Not started |
+| **Later** | Resolver health checks, local files, import, backup and restore | Not started |
 | | Skip silence, speed and pitch, equaliser | Not started |
 | **Accounts** | Account library sync, scrobbling, widgets, Android Auto, Cast | Phase C |
 | | Sitara Sync, LAN remote control, smart offline | Phase C |
@@ -113,7 +115,7 @@ Planned, not built yet: *Sitara Sync* (end-to-end encrypted sync through storage
 - YouTube may answer with a bot check on some networks (it does on cloud servers); search and pages still load, but songs may not play there. Downloads need the same streams.
 - YouTube passes on no loudness values through NewPipeExtractor, so levelling measures the sound as it plays rather than knowing a song's loudness in advance; the first seconds of a song can be a little louder or softer.
 - Crossfade overlaps by switching to a second player; the hand-over may be audible on some devices.
-- Covers inside the app are generated gradients; real covers show in the notification, lock screen and Bluetooth displays.
+- Covers are cached on the device, and the cache can drop old covers when storage runs low; a downloaded song played offline then shows its generated cover instead.
 - An unofficial client can break when YouTube changes; fixes land in `:source:youtube`.
 
 ## Architecture
@@ -203,8 +205,8 @@ The debug APK is written to `app/build/outputs/apk/debug/`.
 ## Roadmap
 
 - **Phase A: foundation** (`v0.1.0`). Design system, navigation, player sheet, service-owned queue, lyrics engine, settings, CI with screenshot verification.
-- **Phase B: real source** (complete, `0.2.0` to `0.6.0`). Search and browse, links, radio, the on-device library and playlists, a real Home, background playback that survives restarts, synced lyrics, downloads and offline play, loudness levelling and crossfade. Carried over: artwork images in the app, health checks, local files, import and backup.
-- **Phase C: accounts and connection.** Library sync, scrobbling, widgets, Android Auto, Cast, Sitara Sync, LAN remote control.
+- **Phase B: real source** (complete, `0.2.0` to `0.6.0`). Search and browse, links, radio, the on-device library and playlists, a real Home, background playback that survives restarts, synced lyrics, downloads and offline play, loudness levelling and crossfade. Carried over: health checks, local files, import and backup.
+- **Phase C: beat the field** (`0.7.0` onward, [plan](docs/plan/PHASE_C_PLAN.md), [parity table](docs/plan/PARITY.md)). Real artwork and an artwork-coloured player first, then gapless playback, speed and a sleep timer, an equaliser, local audio, portable downloads and backup, more lyric sources, automix, widgets, Android Auto and scrobbling, imports and polish.
 - **Phase D: premium touches.** Animated canvas, automix, lyric translation and transliteration, Wear OS remote, TV layout.
 
 Follow progress in the [CHANGELOG](CHANGELOG.md) and on the [issue tracker](https://github.com/muhib-karim/sitara/issues).

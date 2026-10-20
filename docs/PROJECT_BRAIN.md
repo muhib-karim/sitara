@@ -21,8 +21,10 @@ Goal: an original app with its own design and logo (not a reskin), shipped as a 
 
 - b5 (Phase B slice 5) DONE on main, target v0.6.0 (owner tags), completes Phase B: downloads/offline (Media3 DownloadManager + SimpleCache keyed by sitara://track/<id>, read-only cache in playback, foreground download service, Wi-Fi only), loudness levelling (own gated-RMS audio processor; NewPipe exposes no loudness), crossfade (tail ExoPlayer, albums gapless), Settings Sound/Downloads, baselines, README/docs. Report: docs/reports/REPORT_b5.md.
 
+- c1 (Phase C slice 1) on main, target v0.7.0 (owner tags): real covers via Coil (sized URLs, video-thumbnail square crop, gradient placeholder/fallback, sample:cover fixtures drawn by a debug loader), artwork-coloured player (palette -> contrast-walked stage theme, theme LRU, fades respect reduced motion), lyrics follow mode with "Back to current line", device capture waits by time and dismisses ANR dialogs. Report: docs/reports/REPORT_c1.md.
+
 ## Next step
-Owner, before tagging v0.6.0: on-device pass of the checklist in REPORT_b5.md (downloads on Wi-Fi and mobile, airplane-mode playback, notification, Remove all, levelling, crossfade hand-over and album gapless, restore, release build under R8). Next: image loader for in-app artwork, bot-check message + PoToken provider, then Phase C.
+Owner: on-device pass of REPORT_b5.md and REPORT_c1.md "not verified" lists (covers over mobile data, offline art, palette speed, R8 release build), then tag v0.6.0 / v0.7.0. Next slice: c2 (gapless, speed/pitch, skip silence, sleep timer) per docs/plan/PHASE_C_PLAN.md; bot-check message + PoToken provider still open.
 
 ## Session log
 2026-10-17 22:21Z Codex / GPT-6 Astra: recorded original design and ui1 plan; next foundations and tests.
@@ -45,3 +47,4 @@ Owner, before tagging v0.6.0: on-device pass of the checklist in REPORT_b5.md (d
 2026-10-20 12:05Z Claude Code / Opus 5.5: b4 shipped (0fd6d61..360a64f + docs): real Home, queue kept across restarts + headset resume, LRCLIB lyrics; next owner device check and v0.5.0 tag.
 2026-10-20 13:00Z Claude Code / Opus 5.5: b5 shipped (14dfd28..f0634b0 + docs): downloads/offline, loudness levelling, crossfade, baselines, README/PLAN/ARCHITECTURE for finished Phase B; next owner device check and v0.6.0 tag.
 2026-10-20 13:25Z Claude Code / Opus 5.5: resumed after interruption; fixed device capture logcat decoding (b5e1ee4); CI 39427356213, Secret scan 39427356124, Device screens 39427356075 (re-run after an emulator ANR) green; b5 complete, next owner device check and v0.6.0 tag.
+2026-10-20 16:55Z Claude Code / Opus 5.5: c1 shipped (ea05949..cb3d295 + docs): device capture ANR hardening, real covers via Coil, cover-coloured player, lyrics follow mode; CI 39460003902, Secret scan 39460003860, Device screens 39460003949 green; next owner device check and v0.7.0 tag, then c2.
