@@ -53,9 +53,11 @@ class LrclibLyricsProvider(
         val now = clock()
         val answer = cache.get(track.id)?.takeIf { it.synced != null || it.plain != null || now - it.fetchedAtMs < NOT_FOUND_RETRY_MS }
             ?: lookUp(track, now).also { remember(track.id, it) }
+        val synced = answer.synced
+        val plain = answer.plain
         val lyrics = when {
-            answer.synced != null -> LrcParser.parse(answer.synced, track.durationMs.takeIf { it > 0 })
-            answer.plain != null -> LrcParser.parse(answer.plain)
+            synced != null -> LrcParser.parse(synced, track.durationMs.takeIf { it > 0 })
+            plain != null -> LrcParser.parse(plain)
             else -> return null
         }
         return lyrics.takeIf { it.lines.isNotEmpty() }?.copy(source = "LRCLIB")
