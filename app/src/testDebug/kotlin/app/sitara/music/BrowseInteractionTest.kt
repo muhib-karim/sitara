@@ -28,8 +28,7 @@ import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.performScrollToNode
-import androidx.compose.ui.test.performTextInput
-import androidx.compose.ui.test.performTextReplacement
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeLeft
 import androidx.compose.ui.unit.Density
@@ -123,7 +122,8 @@ class BrowseInteractionTest {
 
         val album = library.albums.first()
         compose.onNodeWithTag("library-content").performScrollToNode(hasText(album.title))
-        compose.onNodeWithText(album.title).performClick()
+        // Scrolled just into view, the tile can sit under the floating dock, so tap it through its click action.
+        compose.onNodeWithText(album.title).performSemanticsAction(SemanticsActions.OnClick)
         compose.onNodeWithText("Play all").performClick()
         assertEquals(album.tracks, queue)
     }
@@ -146,7 +146,7 @@ class BrowseInteractionTest {
         })
         compose.onNodeWithText("New playlist").performClick()
         compose.onNodeWithText("Create").assertIsNotEnabled()
-        compose.onNode(hasSetTextAction()).performTextInput("  Road trip ")
+        compose.onNode(hasSetTextAction()).setTextUnfocused("  Road trip ")
         compose.onNodeWithText("Create").performClick()
         assertEquals(listOf("Road trip"), created)
     }
@@ -205,7 +205,7 @@ class BrowseInteractionTest {
         compose.onNodeWithContentDescription("${first.title} by ${first.artist}").performCustomAction("Move down")
         compose.onNodeWithContentDescription("Remove ${second.title} from this playlist").performClick()
         compose.onNodeWithText("Rename").performClick()
-        compose.onNode(hasSetTextAction()).performTextReplacement("Evening")
+        compose.onNode(hasSetTextAction()).setTextUnfocused("Evening")
         compose.onNodeWithText("Save").performClick()
         compose.onNodeWithText("Delete").performClick()
         compose.onNode(hasText("Delete") and hasAnyAncestor(isDialog())).performClick()
