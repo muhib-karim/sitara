@@ -90,6 +90,9 @@ internal fun FullPlayer(
     val pager = rememberPagerState(initialPage = initialPage.coerceIn(0, 2)) { 3 }
     var tuningOpen by rememberSaveable { mutableStateOf(false) }
     var sleepTimerOpen by rememberSaveable { mutableStateOf(false) }
+    var moreOpen by rememberSaveable { mutableStateOf(false) }
+    var equaliserOpen by rememberSaveable { mutableStateOf(false) }
+    var songVolumeOpen by rememberSaveable { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
     val backdrop = rememberHazeState()
     fun selectPage(page: Int) {
@@ -127,7 +130,7 @@ internal fun FullPlayer(
                     }
                     HorizontalPager(pager, Modifier.weight(1f), userScrollEnabled = true) { page ->
                         when (page) {
-                            0 -> PlayingPage(state, theme, actions, artworkModifier, onQueue = { selectPage(2) }, onArtist = onArtist, onAddToPlaylist = onAddToPlaylist)
+                            0 -> PlayingPage(state, theme, actions, artworkModifier, onQueue = { selectPage(2) }, onArtist = onArtist, onMore = { moreOpen = true })
                             1 -> LyricsPanel(state, actions)
                             else -> Column(Modifier.fillMaxSize()) {
                                 Row(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
@@ -148,6 +151,11 @@ internal fun FullPlayer(
             }
             if (tuningOpen) TuningSheet(state.tuning, actions) { tuningOpen = false }
             if (sleepTimerOpen) SleepTimerSheet(state.sleepTimer, actions) { sleepTimerOpen = false }
+            if (moreOpen) {
+                PlayerMoreSheet(state, onAddToPlaylist, onEqualiser = { equaliserOpen = true }, onSongVolume = { songVolumeOpen = true }) { moreOpen = false }
+            }
+            if (equaliserOpen) EqualiserSheet(state.equaliser, state.systemEqualiser, actions) { equaliserOpen = false }
+            if (songVolumeOpen) SongVolumeSheet(state, actions) { songVolumeOpen = false }
         }
     }
 }
@@ -160,10 +168,10 @@ private fun PlayingPage(
     artworkModifier: Modifier,
     onQueue: () -> Unit,
     onArtist: (String) -> Unit,
-    onAddToPlaylist: () -> Unit,
+    onMore: () -> Unit,
 ) {
     val heading: @Composable () -> Unit = {
-        TrackHeading(state, onQueue = onQueue, onArtist = onArtist, onLike = actions::toggleLike, onAddToPlaylist = onAddToPlaylist)
+        TrackHeading(state, onQueue = onQueue, onArtist = onArtist, onLike = actions::toggleLike, onMore = onMore)
     }
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val stageHeight = maxHeight
@@ -215,7 +223,7 @@ private fun TrackHeading(
     onQueue: (() -> Unit)? = null,
     onArtist: ((String) -> Unit)? = null,
     onLike: (() -> Unit)? = null,
-    onAddToPlaylist: (() -> Unit)? = null,
+    onMore: (() -> Unit)? = null,
 ) {
     val track = state.track ?: return
     Row(modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
@@ -241,8 +249,8 @@ private fun TrackHeading(
                 tint = if (state.liked) MaterialTheme.colorScheme.primary else SitaraColors.StageContent,
             )
         }
-        if (onAddToPlaylist != null) GlassIconButton(SitaraIcons.Add, "Add to playlist", onAddToPlaylist)
         if (onQueue != null) GlassIconButton(SitaraIcons.Queue, "Open queue", onQueue)
+        if (onMore != null) GlassIconButton(SitaraIcons.More, "More options", onMore)
     }
 }
 

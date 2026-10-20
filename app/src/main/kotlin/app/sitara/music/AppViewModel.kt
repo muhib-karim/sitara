@@ -1,5 +1,7 @@
 package app.sitara.music
 
+import android.content.ActivityNotFoundException
+import android.content.Intent
 import android.widget.Toast
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -8,6 +10,7 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import app.sitara.music.core.model.Album
 import app.sitara.music.core.model.Artist
+import app.sitara.music.core.model.EqualiserSettings
 import app.sitara.music.core.model.PlaylistSummary
 import app.sitara.music.core.model.SearchFilter
 import app.sitara.music.core.model.SitaraSettings
@@ -16,6 +19,8 @@ import app.sitara.music.core.model.Track
 import app.sitara.music.core.model.toDownload
 import app.sitara.music.core.player.QueueState
 import app.sitara.music.core.player.SleepTimerState
+import app.sitara.music.core.player.hasSystemEqualiser
+import app.sitara.music.core.player.systemEqualiserPanel
 import app.sitara.music.feature.home.HomeFeed
 import app.sitara.music.feature.home.TrendingState
 import app.sitara.music.feature.home.homeFeed
@@ -43,6 +48,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.distinctUntilChangedBy
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.flatMapLatest
@@ -124,7 +130,14 @@ class AppViewModel(private val app: SitaraApplication) :
     // The listener's own pages follow the store live; they hold no network state to retry.
     private val ownPages = mutableMapOf<DetailRoute, StateFlow<DetailState>>()
 
-    val playerState: StateFlow<PlayerUiState> = combine(player.state, lyrics, player.sleepTimerState, radio, savedIds) { s, l, timer, radioStatus, saved ->
+    /** Whether the phone has an equaliser of its own to hand the sound to; looked up once per screen session. */
+    private val systemEqualiser: Boolean = app.hasSystemEqualiser()
+
+    private val trimDb: Flow<Int> = player.state.map { it.queue.current?.id }.distinctUntilChanged()
+        .flatMapLatest { id -> id?.let(app.library.songGain::trimDb) ?: flowOf(0) }
+        .catch { emit(0) }
+
+    private val nowPlaying = combine(player.state, lyrics, player.sleepTimerState, radio, savedIds) { s, l, timer, radioStatus, saved ->
         PlayerUiState(
             track = s.queue.current,
             isPlaying = s.isPlaying,
@@ -144,6 +157,10 @@ class AppViewModel(private val app: SitaraApplication) :
             tuning = s.tuning,
             failed = s.failed,
         )
+    }
+
+    val playerState: StateFlow<PlayerUiState> = combine(nowPlaying, settings, trimDb) { ui, s, trim ->
+        ui.copy(equaliser = s.equaliser, systemEqualiser = systemEqualiser, trimDb = trim)
     }.stateIn(viewModelScope, SharingStarted.Eagerly, PlayerUiState())
 
     init {
@@ -265,6 +282,23 @@ class AppViewModel(private val app: SitaraApplication) :
 
     fun updateSettings(s: SitaraSettings) {
         viewModelScope.launch { app.settings.update { s } }
+    }
+
+    override fun setEqualiser(equaliser: EqualiserSettings) {
+        viewModelScope.launch { app.settings.update { it.copy(equaliser = equaliser) } }
+    }
+
+    override fun openSystemEqualiser() {
+        try {
+            app.startActivity(systemEqualiserPanel(app, player.audioSessionId).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        } catch (e: ActivityNotFoundException) {
+            toast("Your phone's equaliser could not be opened")
+        }
+    }
+
+    override fun setTrimDb(db: Int) {
+        val id = player.state.value.queue.current?.id ?: return
+        app.writeLibrary { app.library.songGain.setTrimDb(id, db) }
     }
 
     override fun togglePlay() = player.togglePlay()

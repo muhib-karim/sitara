@@ -1,6 +1,7 @@
 package app.sitara.music.feature.settings
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -10,12 +11,14 @@ import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
@@ -32,6 +35,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -60,6 +64,8 @@ fun SettingsScreen(
     onRemoveAllDownloads: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
+    equaliserSummary: String = "Off",
+    onOpenEqualiser: () -> Unit = {},
     contentPadding: PaddingValues = PaddingValues(),
 ) {
     LazyColumn(modifier.fillMaxSize().testTag("settings-content"), contentPadding = contentPadding) {
@@ -94,6 +100,8 @@ fun SettingsScreen(
         }
         item(key = "sound") {
             SettingsGroup("Sound") {
+                LinkRow("Equaliser", equaliserSummary, onOpenEqualiser)
+                InsetDivider()
                 SwitchRow("Normalise loudness", "Songs play at a similar volume", settings.normalisation) { onChange(settings.copy(normalisation = it)) }
                 InsetDivider()
                 SwitchRow("Skip silence", "Skips quiet stretches inside and between songs", settings.skipSilence) { onChange(settings.copy(skipSilence = it)) }
@@ -164,6 +172,19 @@ private fun CrossfadeRow(seconds: Int, onChange: (Int) -> Unit) {
                 stateDescription = if (seconds == 0) "Off" else "$seconds seconds"
             },
         )
+    }
+}
+
+/** Opens a page of its own; [value] says what is set there. */
+@Composable
+private fun LinkRow(title: String, value: String, onClick: () -> Unit) {
+    Row(
+        Modifier.fillMaxWidth().defaultMinSize(minHeight = 56.dp).clickable(role = Role.Button, onClick = onClick).padding(16.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(title, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f).padding(end = 12.dp))
+        Text(value, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Icon(SitaraIcons.Back, null, tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.padding(start = 8.dp).size(20.dp).graphicsLayer { rotationZ = 180f })
     }
 }
 

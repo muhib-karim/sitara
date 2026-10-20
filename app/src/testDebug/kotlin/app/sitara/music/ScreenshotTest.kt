@@ -7,12 +7,17 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
+import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.performScrollToKey
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeLeft
 import androidx.compose.ui.test.swipeUp
@@ -21,6 +26,8 @@ import androidx.test.core.app.ApplicationProvider
 import app.sitara.music.core.designsystem.SitaraTheme
 import app.sitara.music.core.model.DarkMode
 import app.sitara.music.core.model.DownloadState
+import app.sitara.music.core.model.EqualiserPreset
+import app.sitara.music.core.model.EqualiserSettings
 import app.sitara.music.core.model.Library
 import app.sitara.music.core.model.PlaybackTuning
 import app.sitara.music.core.model.SearchFilter
@@ -37,11 +44,14 @@ import app.sitara.music.feature.library.LibraryState
 import app.sitara.music.feature.library.SavedIds
 import app.sitara.music.feature.library.SavedLibrary
 import app.sitara.music.feature.library.SongActions
+import app.sitara.music.feature.player.EqualiserPanel
 import app.sitara.music.feature.player.LyricsState
 import app.sitara.music.feature.player.PlayerActions
+import app.sitara.music.feature.player.PlayerMoreOptions
 import app.sitara.music.feature.player.PlayerUiState
 import app.sitara.music.feature.player.SleepTimerOptions
 import app.sitara.music.feature.player.SleepTimerStatus
+import app.sitara.music.feature.player.SongVolume
 import app.sitara.music.feature.player.SpeedAndPitch
 import app.sitara.music.feature.search.SearchState
 import app.sitara.music.source.fake.FakeMusicSource
@@ -117,6 +127,7 @@ class ScreenshotTest {
         homeFeed: HomeFeed = home,
         savedIds: SavedIds = SavedIds(),
         downloads: List<SongDownload> = emptyList(),
+        equaliser: EqualiserSettings = EqualiserSettings(),
         beforeCapture: () -> Unit = {},
     ) {
         val settings = SitaraSettings(themeMode = mode, darkMode = if (dark) DarkMode.DARK else DarkMode.LIGHT, reducedMotion = reduced)
@@ -129,7 +140,7 @@ class ScreenshotTest {
                     query = query,
                     searchFilter = filter,
                     search = search,
-                    player = playerState,
+                    player = playerState.copy(equaliser = equaliser),
                     actions = PlayerActions.None,
                     details = detail?.let(::FixedPage) ?: SampleDetailPages(source),
                     onQueryChange = {},
@@ -322,6 +333,24 @@ class ScreenshotTest {
     @Test fun settingsDownloads() = shot("settings_downloads", dark = true, settingsOpen = true, downloads = Fixtures.downloads) {
         compose.onNodeWithTag("settings-content").performScrollToIndex(5)
     }
+
+    private val rock = EqualiserSettings().withPreset(EqualiserPreset.ROCK)
+
+    private fun openEqualiser() {
+        compose.onNodeWithTag("settings-content").performScrollToNode(hasText("Equaliser"))
+        compose.onNodeWithText("Equaliser").performClick()
+    }
+
+    @Test fun equaliserDark() = shot("equaliser", dark = true, settingsOpen = true, equaliser = rock) { openEqualiser() }
+    @Test fun equaliserLight() = shot("equaliser", dark = false, settingsOpen = true, equaliser = rock) { openEqualiser() }
+    @Test fun equaliserEnd() = shot("equaliser_end", dark = true, settingsOpen = true, equaliser = rock) {
+        openEqualiser()
+        compose.onNodeWithText("Reset").performScrollTo()
+    }
+    @Test fun equaliserCustomWithPhoneOption() = sheet("equaliser_custom") { EqualiserPanel(rock.withBand(0, 9), systemEqualiser = true, onChange = {}, onOpenSystemEqualiser = {}) }
+    @Test fun equaliserPhone() = sheet("equaliser_phone") { EqualiserPanel(rock.copy(useSystem = true), systemEqualiser = true, onChange = {}, onOpenSystemEqualiser = {}) }
+    @Test fun playerMoreOptions() = sheet("player_more") { PlayerMoreOptions(playing.copy(equaliser = rock, trimDb = -2), {}, {}, {}) }
+    @Test fun songVolume() = sheet("song_volume") { SongVolume(playing.copy(trimDb = 3), PlayerActions.None) }
 
     @Test fun scrubberMidpoint() = shot(
         "player_scrubber_midpoint", dark = true, expanded = true,

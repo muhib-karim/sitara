@@ -3,6 +3,7 @@ package app.sitara.music
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
+import app.sitara.music.core.model.EqualiserSettings
 import app.sitara.music.core.model.Lyrics
 import app.sitara.music.core.model.PlaybackTuning
 import app.sitara.music.core.model.RepeatMode
@@ -72,6 +73,11 @@ internal class DemoPlayer(private var original: List<Track>, lyrics: Lyrics) : P
     }
     // The demo's lyrics are built in, so they never fail.
     override fun retryLyrics() = Unit
+    override fun setEqualiser(equaliser: EqualiserSettings) { state = state.copy(equaliser = equaliser) }
+
+    // The demo offers no phone equaliser (systemEqualiser stays false), so there is nothing to open.
+    override fun openSystemEqualiser() = Unit
+    override fun setTrimDb(db: Int) { state = state.copy(trimDb = db) }
 
     private fun editQueue(change: MutableList<Track>.() -> Unit) {
         queue = queue.toMutableList().apply(change)

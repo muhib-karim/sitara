@@ -127,6 +127,20 @@ object SitaraIcons {
     }
     val Add = icon("add", filled = false) { moveTo(12f, 5f); lineTo(12f, 19f); moveTo(5f, 12f); lineTo(19f, 12f) }
     val Minus = icon("minus", filled = false) { moveTo(5f, 12f); lineTo(19f, 12f) }
+    // Three faders at different heights, each with its knob.
+    val Equaliser = icon("equaliser", filled = false) {
+        for ((x, knob) in listOf(6f to 14f, 12f to 8f, 18f to 16f)) {
+            moveTo(x, 4f); lineTo(x, knob - 2f)
+            moveTo(x, knob + 2f); lineTo(x, 20f)
+            moveTo(x - 2f, knob - 2f); lineTo(x + 2f, knob - 2f); lineTo(x + 2f, knob + 2f); lineTo(x - 2f, knob + 2f); close()
+        }
+    }
+
+    // A speaker with one wave, for a song's own volume.
+    val Volume = icon("volume", filled = false) {
+        moveTo(4f, 9.5f); lineTo(7.5f, 9.5f); lineTo(12f, 5.5f); lineTo(12f, 18.5f); lineTo(7.5f, 14.5f); lineTo(4f, 14.5f); close()
+        moveTo(16f, 8.5f); arcTo(5f, 5f, 0f, false, true, 16f, 15.5f)
+    }
     val Timer = icon("timer", filled = false) {
         moveTo(19f, 13f)
         arcTo(7f, 7f, 0f, true, true, 5f, 13f)

@@ -1,5 +1,6 @@
 package app.sitara.music.feature.player
 
+import app.sitara.music.core.model.EqualiserSettings
 import app.sitara.music.core.model.Lyrics
 import app.sitara.music.core.model.PlaybackTuning
 import app.sitara.music.core.model.RepeatMode
@@ -23,6 +24,12 @@ data class PlayerUiState(
     val tuning: PlaybackTuning = PlaybackTuning(),
     /** The current song could not be played; the player surfaces offer Try again and Skip instead of Play. */
     val failed: Boolean = false,
+    /** The equaliser as the listener set it. */
+    val equaliser: EqualiserSettings = EqualiserSettings(),
+    /** The device has an equaliser of its own that Sitara can hand its sound to. */
+    val systemEqualiser: Boolean = false,
+    /** The current song's volume trim in dB. */
+    val trimDb: Int = 0,
 )
 
 /** The current song's lyrics, looked up when it starts. */
@@ -87,6 +94,14 @@ interface PlayerActions {
     /** Looks up the current song's lyrics again after a failure. */
     fun retryLyrics()
 
+    fun setEqualiser(equaliser: EqualiserSettings)
+
+    /** Opens the device's own equaliser on Sitara's audio session. */
+    fun openSystemEqualiser()
+
+    /** The current song's volume trim, within ±6 dB; kept with the song. */
+    fun setTrimDb(db: Int)
+
     object None : PlayerActions {
         override fun togglePlay() = Unit
         override fun retryPlayback() = Unit
@@ -110,5 +125,8 @@ interface PlayerActions {
         override fun moveUpNext(from: Int, to: Int) = Unit
         override fun removeUpNext(index: Int) = Unit
         override fun retryLyrics() = Unit
+        override fun setEqualiser(equaliser: EqualiserSettings) = Unit
+        override fun openSystemEqualiser() = Unit
+        override fun setTrimDb(db: Int) = Unit
     }
 }

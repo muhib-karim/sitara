@@ -17,14 +17,19 @@ import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
+import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipe
 import androidx.compose.ui.test.swipeLeft
 import androidx.compose.ui.test.swipeUp
 import app.sitara.music.core.model.DarkMode
+import app.sitara.music.core.model.EqualiserPreset
+import app.sitara.music.core.model.EqualiserSettings
 import app.sitara.music.core.model.PlaybackTuning
 import app.sitara.music.core.model.SearchFilter
 import app.sitara.music.core.model.SitaraSettings
@@ -64,6 +69,9 @@ class PlayerInteractionTest {
         tuning: PlaybackTuning = PlaybackTuning(),
         sleepTimer: SleepTimerStatus = SleepTimerStatus.Off,
         failed: Boolean = false,
+        equaliser: EqualiserSettings = EqualiserSettings(),
+        systemEqualiser: Boolean = false,
+        trimDb: Int = 0,
     ) {
         val source = FakeMusicSource()
         val track = SampleCatalog.tracks.first()
@@ -77,7 +85,10 @@ class PlayerInteractionTest {
                 query = "",
                 searchFilter = SearchFilter.SONGS,
                 search = SearchState.Idle,
-                player = PlayerUiState(track = track, durationMs = durationMs, lyrics = lyricsState ?: LyricsState.Found(lyrics), positionMs = 15_300, upNext = upNext, tuning = tuning, sleepTimer = sleepTimer, failed = failed),
+                player = PlayerUiState(
+                    track = track, durationMs = durationMs, lyrics = lyricsState ?: LyricsState.Found(lyrics), positionMs = 15_300, upNext = upNext, tuning = tuning, sleepTimer = sleepTimer, failed = failed,
+                    equaliser = equaliser, systemEqualiser = systemEqualiser, trimDb = trimDb,
+                ),
                 actions = actions,
                 details = SampleDetailPages(source),
                 onQueryChange = {},
@@ -327,8 +338,98 @@ class PlayerInteractionTest {
         })
         compose.onNodeWithContentDescription("Like").performClick()
         assertEquals(1, likes)
-        compose.onNodeWithContentDescription("Add to playlist").performClick()
+        compose.onNodeWithContentDescription("More options").performClick()
+        compose.onNodeWithText("Add to playlist").performClick()
         compose.onNodeWithText("No playlists yet. Name one above and this song starts it.").assertIsDisplayed()
+    }
+
+    @Test
+    fun nowPlayingEqualiserPicksPresetsAndMovesBandsWithAnnouncedGains() {
+        val picked = mutableListOf<EqualiserSettings>()
+        render(expanded = true, actions = object : PlayerActions by PlayerActions.None {
+            override fun setEqualiser(equaliser: EqualiserSettings) { picked += equaliser }
+        })
+        compose.onNodeWithContentDescription("More options").performClick()
+        compose.onNodeWithText("Equaliser").performClick()
+        compose.onNodeWithText("Rock").performScrollTo().performClick()
+        val band = compose.onNodeWithContentDescription("1 kHz").performScrollTo()
+        band.assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "0 dB"))
+        band.performSemanticsAction(SemanticsActions.SetProgress) { it(3f) }
+        compose.onNodeWithContentDescription("Preamp").performScrollTo().performSemanticsAction(SemanticsActions.SetProgress) { it(-4f) }
+        assertEquals(
+            listOf(EqualiserSettings().withPreset(EqualiserPreset.ROCK), EqualiserSettings().withBand(5, 3), EqualiserSettings().withPreamp(-4)),
+            picked,
+        )
+    }
+
+    @Test
+    fun everyBandIsNamedForScreenReaders() {
+        render(expanded = true, equaliser = EqualiserSettings().withPreset(EqualiserPreset.BASS_BOOST))
+        compose.onNodeWithContentDescription("More options").performClick()
+        compose.onNodeWithText("Bass boost").assertIsDisplayed()
+        compose.onNodeWithText("Equaliser").performClick()
+        listOf("31 Hz", "62 Hz", "125 Hz", "250 Hz", "500 Hz", "1 kHz", "2 kHz", "4 kHz", "8 kHz", "16 kHz").zip(EqualiserPreset.BASS_BOOST.bandsDb).forEach { (name, db) ->
+            compose.onNodeWithContentDescription(name).assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, if (db > 0) "+$db dB" else "$db dB"))
+        }
+    }
+
+    @Test
+    fun withThePhoneEqualiserChosenTheBandsGiveWayToIt() {
+        var opened = 0
+        val picked = mutableListOf<EqualiserSettings>()
+        val system = EqualiserSettings(useSystem = true).withPreset(EqualiserPreset.ROCK)
+        render(expanded = true, systemEqualiser = true, equaliser = system, actions = object : PlayerActions by PlayerActions.None {
+            override fun openSystemEqualiser() { opened++ }
+            override fun setEqualiser(equaliser: EqualiserSettings) { picked += equaliser }
+        })
+        compose.onNodeWithContentDescription("More options").performClick()
+        compose.onNodeWithText("Phone equaliser").assertIsDisplayed()
+        compose.onNodeWithText("Equaliser").performClick()
+        compose.onNodeWithContentDescription("1 kHz").assertDoesNotExist()
+        compose.onNodeWithText("Open phone equaliser").performClick()
+        compose.onNodeWithText("Use phone equaliser").performClick()
+        assertEquals(1, opened)
+        assertEquals(listOf(system.copy(useSystem = false)), picked)
+    }
+
+    @Test
+    fun withoutAPhoneEqualiserItIsNotOffered() {
+        render(expanded = true)
+        compose.onNodeWithContentDescription("More options").performClick()
+        compose.onNodeWithText("Equaliser").performClick()
+        compose.onNodeWithText("Use phone equaliser").assertDoesNotExist()
+    }
+
+    @Test
+    fun nowPlayingSetsAndResetsTheSongsVolume() {
+        val trims = mutableListOf<Int>()
+        render(expanded = true, trimDb = 2, actions = object : PlayerActions by PlayerActions.None {
+            override fun setTrimDb(db: Int) { trims += db }
+        })
+        compose.onNodeWithContentDescription("More options").performClick()
+        compose.onNodeWithText("+2 dB").assertIsDisplayed()
+        compose.onNodeWithText("Volume for this song").performClick()
+        val track = SampleCatalog.tracks.first()
+        compose.onNodeWithContentDescription("Volume for ${track.title}")
+            .assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, "+2 dB"))
+            .performSemanticsAction(SemanticsActions.SetProgress) { it(-5f) }
+        compose.onNodeWithText("Reset").performClick()
+        assertEquals(listOf(-5, 0), trims)
+    }
+
+    @Test
+    fun settingsOpensTheEqualiserPageAndBackReturns() {
+        val picked = mutableListOf<EqualiserSettings>()
+        render(actions = object : PlayerActions by PlayerActions.None {
+            override fun setEqualiser(equaliser: EqualiserSettings) { picked += equaliser }
+        })
+        compose.onNodeWithText("Settings").performClick()
+        compose.onNodeWithTag("settings-content").performScrollToNode(hasText("Equaliser"))
+        compose.onNodeWithText("Equaliser").performClick()
+        compose.onNodeWithText("Late night").performScrollTo().performClick()
+        assertEquals(listOf(EqualiserSettings().withPreset(EqualiserPreset.LATE_NIGHT)), picked)
+        compose.runOnIdle { backDispatcher.onBackPressed() }
+        compose.onNodeWithText("Appearance").assertIsDisplayed()
     }
 
     @Test

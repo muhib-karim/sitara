@@ -64,9 +64,11 @@ import app.sitara.music.feature.library.LibraryScreen
 import app.sitara.music.feature.library.LibraryState
 import app.sitara.music.feature.library.SavedIds
 import app.sitara.music.feature.library.SongActions
+import app.sitara.music.feature.player.EqualiserScreen
 import app.sitara.music.feature.player.PlayerActions
 import app.sitara.music.feature.player.PlayerSheet
 import app.sitara.music.feature.player.PlayerUiState
+import app.sitara.music.feature.player.equaliserSummary
 import app.sitara.music.feature.search.SearchScreen
 import app.sitara.music.feature.search.SearchState
 import app.sitara.music.feature.settings.SettingsScreen
@@ -157,6 +159,7 @@ fun SitaraShell(
     val browseState = rememberSaveableStateHolder()
     var menuTrack by remember { mutableStateOf<Track?>(null) }
     var playlistTrack by remember { mutableStateOf<Track?>(null) }
+    var equaliserOpen by rememberSaveable { mutableStateOf(false) }
     val openMenu: (Track) -> Unit = { menuTrack = it }
     val open: (DetailRoute) -> Unit = { detailStack = detailStack + it }
     val closeDetails: () -> Unit = { detailStack = emptyList() }
@@ -164,7 +167,11 @@ fun SitaraShell(
         tabRequests.collect { closeDetails(); tab = it }
     }
     BackHandler(enabled = detailStack.isNotEmpty() || tab == Tab.SETTINGS) {
-        if (detailStack.isNotEmpty()) detailStack = detailStack.dropLast(1) else tab = Tab.HOME
+        when {
+            detailStack.isNotEmpty() -> detailStack = detailStack.dropLast(1)
+            equaliserOpen -> equaliserOpen = false
+            else -> tab = Tab.HOME
+        }
     }
     SitaraTheme(settings.themeMode, settings.darkMode, settings.reducedMotion) {
         val haze = rememberHazeState()
@@ -219,10 +226,19 @@ fun SitaraShell(
                                 library = libraryActions,
                                 contentPadding = contentPadding,
                             )
-                            Tab.SETTINGS -> SettingsScreen(
-                                settings, onSettingsChange, downloads, onRemoveAllDownloads,
-                                onBack = { tab = Tab.HOME }, contentPadding = contentPadding,
-                            )
+                            Tab.SETTINGS -> if (equaliserOpen) {
+                                EqualiserScreen(
+                                    player.equaliser, player.systemEqualiser, actions::setEqualiser, actions::openSystemEqualiser,
+                                    onBack = { equaliserOpen = false }, contentPadding = contentPadding,
+                                )
+                            } else {
+                                SettingsScreen(
+                                    settings, onSettingsChange, downloads, onRemoveAllDownloads,
+                                    onBack = { tab = Tab.HOME }, contentPadding = contentPadding,
+                                    equaliserSummary = equaliserSummary(player.equaliser, player.systemEqualiser),
+                                    onOpenEqualiser = { equaliserOpen = true },
+                                )
+                            }
                         }
                     }
                 }
@@ -236,7 +252,7 @@ fun SitaraShell(
                 initiallyExpanded = playerExpanded,
                 initialPage = playerPage,
                 haze = haze,
-                navigation = { FloatingNav(tab, onSelect = { closeDetails(); tab = it }) },
+                navigation = { FloatingNav(tab, onSelect = { closeDetails(); equaliserOpen = false; tab = it }) },
                 onDockHeightChanged = { measuredDockHeight = it },
                 onArtist = { open(DetailRoute.Artist(it)) },
                 onAddToPlaylist = { playlistTrack = it },
