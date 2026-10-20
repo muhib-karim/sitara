@@ -96,6 +96,8 @@ fun SettingsScreen(
             SettingsGroup("Sound") {
                 SwitchRow("Normalise loudness", "Songs play at a similar volume", settings.normalisation) { onChange(settings.copy(normalisation = it)) }
                 InsetDivider()
+                SwitchRow("Skip silence", "Skips quiet stretches inside and between songs", settings.skipSilence) { onChange(settings.copy(skipSilence = it)) }
+                InsetDivider()
                 CrossfadeRow(settings.crossfadeSeconds) { onChange(settings.copy(crossfadeSeconds = it)) }
             }
         }

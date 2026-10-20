@@ -298,13 +298,17 @@ class BrowseInteractionTest {
         assertEquals(1, removals)
     }
 
-    @Test fun soundSettingsSetNormalisationAndCrossfade() {
+    @Test fun soundSettingsSetNormalisationSkipSilenceAndCrossfade() {
         var changed = SitaraSettings()
         render(Tab.SETTINGS, onSettings = { changed = it })
         val list = compose.onNodeWithTag("settings-content")
         list.performScrollToNode(hasText("Normalise loudness"))
         compose.onNodeWithText("Normalise loudness").performSemanticsAction(SemanticsActions.OnClick)
         assertEquals(false, changed.normalisation)
+
+        list.performScrollToNode(hasText("Skip silence"))
+        compose.onNodeWithText("Skip silence").performSemanticsAction(SemanticsActions.OnClick)
+        assertEquals("off by default, so a tap turns it on", true, changed.skipSilence)
 
         list.performScrollToNode(hasContentDescription("Crossfade"))
         compose.onNodeWithContentDescription("Crossfade").performSemanticsAction(SemanticsActions.SetProgress) { it(6f) }

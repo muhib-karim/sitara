@@ -19,6 +19,8 @@ data class SitaraSettings(
     val targetLufs: Float = DEFAULT_TARGET_LUFS,
     /** Downloads wait for an unmetered network (Wi-Fi) instead of using mobile data. */
     val downloadOnWifiOnly: Boolean = true,
+    /** The player skips silent stretches (Media3 silence skipping in the audio chain). */
+    val skipSilence: Boolean = false,
 ) {
     init {
         require(crossfadeSeconds in 0..MAX_CROSSFADE_SECONDS) { "crossfade out of range: $crossfadeSeconds" }

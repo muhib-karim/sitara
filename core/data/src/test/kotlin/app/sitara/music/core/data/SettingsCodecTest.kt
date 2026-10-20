@@ -10,7 +10,7 @@ import org.junit.Test
 class SettingsCodecTest {
     @Test
     fun `round trips every field`() {
-        val s = SitaraSettings(ThemeMode.AMOLED, DarkMode.DARK, reducedMotion = true, crossfadeSeconds = 6, normalisation = false, targetLufs = -16f, downloadOnWifiOnly = false)
+        val s = SitaraSettings(ThemeMode.AMOLED, DarkMode.DARK, reducedMotion = true, crossfadeSeconds = 6, normalisation = false, targetLufs = -16f, downloadOnWifiOnly = false, skipSilence = true)
         assertEquals(s, SettingsCodec.decode(SettingsCodec.encode(s)))
     }
 
@@ -24,6 +24,13 @@ class SettingsCodecTest {
         assertEquals(true, SettingsCodec.decode(emptyMap()).downloadOnWifiOnly)
         assertEquals(true, SettingsCodec.decode(mapOf(SettingsCodec.WIFI_ONLY to "maybe")).downloadOnWifiOnly)
         assertEquals(false, SettingsCodec.decode(mapOf(SettingsCodec.WIFI_ONLY to "false")).downloadOnWifiOnly)
+    }
+
+    @Test
+    fun `skip silence is off unless the listener turned it on`() {
+        assertEquals(false, SettingsCodec.decode(emptyMap()).skipSilence)
+        assertEquals(false, SettingsCodec.decode(mapOf(SettingsCodec.SKIP_SILENCE to "1")).skipSilence)
+        assertEquals(true, SettingsCodec.decode(mapOf(SettingsCodec.SKIP_SILENCE to "true")).skipSilence)
     }
 
     @Test

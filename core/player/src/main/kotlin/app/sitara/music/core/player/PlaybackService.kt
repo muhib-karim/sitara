@@ -51,6 +51,8 @@ class PlaybackService : MediaSessionService() {
     internal val leveller = LoudnessLeveller()
     private val tailLeveller = LoudnessLeveller()
     internal lateinit var crossfader: Crossfader
+    internal lateinit var player: ExoPlayer
+    internal lateinit var tail: ExoPlayer
 
     override fun onCreate() {
         super.onCreate()
@@ -66,7 +68,7 @@ class PlaybackService : MediaSessionService() {
             .setCacheWriteDataSinkFactory(null)
         val mediaSources = DefaultMediaSourceFactory(dataSource)
         val music = AudioAttributes.Builder().setUsage(C.USAGE_MEDIA).setContentType(C.AUDIO_CONTENT_TYPE_MUSIC).build()
-        val player = ExoPlayer.Builder(this)
+        player = ExoPlayer.Builder(this)
             .setMediaSourceFactory(mediaSources)
             .setRenderersFactory(LevellingRenderersFactory(this, leveller))
             .setAudioAttributes(
@@ -77,7 +79,7 @@ class PlaybackService : MediaSessionService() {
             .setHandleAudioBecomingNoisy(true)
             .build()
         // Plays only the end of a song during a crossfade; the main player holds audio focus for both.
-        val tail = ExoPlayer.Builder(this)
+        tail = ExoPlayer.Builder(this)
             .setMediaSourceFactory(mediaSources)
             .setRenderersFactory(LevellingRenderersFactory(this, tailLeveller))
             .setAudioAttributes(
@@ -109,6 +111,9 @@ class PlaybackService : MediaSessionService() {
                     it.targetLufs = settings.targetLufs
                 }
                 crossfader.windowMs = settings.crossfadeSeconds * 1_000L
+                // Turns the silence-skipping processor in each player's audio chain on or off.
+                player.skipSilenceEnabled = settings.skipSilence
+                tail.skipSilenceEnabled = settings.skipSilence
             }
         }
     }

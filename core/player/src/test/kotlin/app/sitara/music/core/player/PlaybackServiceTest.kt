@@ -82,9 +82,9 @@ class PlaybackServiceTest {
     }
 
     @Test
-    fun `normalisation and crossfade follow the settings while the service runs`() {
+    fun `normalisation, skip silence and crossfade follow the settings while the service runs`() {
         val app = RuntimeEnvironment.getApplication() as TestApp
-        app.playbackSettings.value = SitaraSettings(crossfadeSeconds = 6, normalisation = false, targetLufs = -16f)
+        app.playbackSettings.value = SitaraSettings(crossfadeSeconds = 6, normalisation = false, targetLufs = -16f, skipSilence = true)
 
         val controller = Robolectric.buildService(PlaybackService::class.java).create()
         shadowOf(Looper.getMainLooper()).idle()
@@ -92,11 +92,15 @@ class PlaybackServiceTest {
         assertEquals(6_000L, service.crossfader.windowMs)
         assertFalse(service.leveller.enabled)
         assertEquals(-16f, service.leveller.targetLufs, 0f)
+        assertTrue("silence skipping is in the audio chain", service.player.skipSilenceEnabled)
+        assertTrue("and in the crossfade tail's", service.tail.skipSilenceEnabled)
 
         app.playbackSettings.value = SitaraSettings()
         shadowOf(Looper.getMainLooper()).idle()
         assertEquals("crossfade off by default", 0L, service.crossfader.windowMs)
         assertTrue("normalisation on by default", service.leveller.enabled)
+        assertFalse("skip silence off by default", service.player.skipSilenceEnabled)
+        assertFalse(service.tail.skipSilenceEnabled)
 
         controller.destroy()
     }

@@ -16,6 +16,7 @@ object SettingsCodec {
     const val NORMALISE = "normalisation"
     const val TARGET_LUFS = "target_lufs"
     const val WIFI_ONLY = "download_wifi_only"
+    const val SKIP_SILENCE = "skip_silence"
 
     fun encode(s: SitaraSettings): Map<String, String> = mapOf(
         THEME to s.themeMode.name,
@@ -25,6 +26,7 @@ object SettingsCodec {
         NORMALISE to s.normalisation.toString(),
         TARGET_LUFS to s.targetLufs.toString(),
         WIFI_ONLY to s.downloadOnWifiOnly.toString(),
+        SKIP_SILENCE to s.skipSilence.toString(),
     )
 
     fun decode(map: Map<String, String>): SitaraSettings {
@@ -37,6 +39,7 @@ object SettingsCodec {
             normalisation = map[NORMALISE]?.toBooleanStrictOrNull() ?: d.normalisation,
             targetLufs = map[TARGET_LUFS]?.toFloatOrNull()?.takeIf { it in -30f..-5f } ?: d.targetLufs,
             downloadOnWifiOnly = map[WIFI_ONLY]?.toBooleanStrictOrNull() ?: d.downloadOnWifiOnly,
+            skipSilence = map[SKIP_SILENCE]?.toBooleanStrictOrNull() ?: d.skipSilence,
         )
     }
 }
