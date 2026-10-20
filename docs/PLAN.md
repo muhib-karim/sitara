@@ -7,8 +7,8 @@ Phases follow SPEC section 4. Each phase ends with CI green on `main` and a tagg
 | Phase | Scope | Status |
 |---|---|---|
 | A | Shell, design system, fake source, player UI, Media3 playback service, tests, CI, docs | Code complete; CI compiles and tests it; review findings fixed ([response](review/PHASE_A_REVIEW_RESPONSE.md)); on-device check pending |
-| B | Real source (NewPipeExtractor), downloads, LRCLIB lyrics, crossfade/normalise processors, Room | **Complete.** Slice 1 released as 0.2.0: live YouTube Music search and playback, YouTube links pasted, opened or shared ([ADR 0004](adr/0004-youtube-source-newpipeextractor.md), [report](reports/REPORT_b1.md)). Slice 2 released as 0.3.0: artist, album and playlist pages, search filters, Play all / Shuffle, radio ([report](reports/REPORT_b2.md)). Slice 3 released as 0.4.0: Room library (liked songs, history, saved albums and artists, playlists), song menus, editable Up next ([report](reports/REPORT_b3.md)). Slice 4 released as 0.5.0: Home from YouTube Charts and the library, LRCLIB synced lyrics, the queue kept across restarts ([report](reports/REPORT_b4.md)). Slice 5 on `main` (for 0.6.0): downloads and offline play, loudness levelling, crossfade ([report](reports/REPORT_b5.md)). Carried over, not built: local files (MediaStore), import and backup, artwork images in the app, resolver health checks and the source health screen, Hilt |
-| C | Accounts, scrobbling, widgets, Android Auto, Cast, Replay, remote control | Not started |
+| B | Real source (NewPipeExtractor), downloads, LRCLIB lyrics, crossfade/normalise processors, Room | **Complete.** Slice 1 released as 0.2.0: live YouTube Music search and playback, YouTube links pasted, opened or shared ([ADR 0004](adr/0004-youtube-source-newpipeextractor.md), [report](reports/REPORT_b1.md)). Slice 2 released as 0.3.0: artist, album and playlist pages, search filters, Play all / Shuffle, radio ([report](reports/REPORT_b2.md)). Slice 3 released as 0.4.0: Room library (liked songs, history, saved albums and artists, playlists), song menus, editable Up next ([report](reports/REPORT_b3.md)). Slice 4 released as 0.5.0: Home from YouTube Charts and the library, LRCLIB synced lyrics, the queue kept across restarts ([report](reports/REPORT_b4.md)). Slice 5 released as 0.6.0: downloads and offline play, loudness levelling, crossfade ([report](reports/REPORT_b5.md)). Carried over, not built: local files (MediaStore), import and backup, artwork images in the app, resolver health checks and the source health screen, Hilt |
+| C | Close every gap against BitChord, Metrolist, Meld and ReVanced, one release per slice ([plan](plan/PHASE_C_PLAN.md), [parity table](plan/PARITY.md)) | **Started.** c1 next: real artwork in the app, an artwork-coloured player, lyric follow mode (for 0.7.0) |
 | D | Canvas, automix, translation/transliteration, Wear OS, TV | Not started |
 
 ### History: CI blocked while the repo was private
@@ -48,7 +48,7 @@ Details: [`plan/PHASE_A_FIX_PLAN.md`](plan/PHASE_A_FIX_PLAN.md).
 - ktlint runs as the CLI in CI with a relaxed `.editorconfig`; detekt is deferred.
 
 ## Next steps
-1. Owner: on-device pass of the checklist in [REPORT_b5](reports/REPORT_b5.md), then tag `v0.6.0`.
+1. Owner: on-device pass of the checklist in [REPORT_b5](reports/REPORT_b5.md) on the 0.6.0 release.
 2. Carried over from Phase B: artwork images in the app (an image loader), a bot-check message and PoToken provider, resolver health checks, local files, import and backup.
-3. Phase C: accounts, scrobbling, widgets, Android Auto, Cast.
+3. Phase C, slice by slice: see [plan/PHASE_C_PLAN.md](plan/PHASE_C_PLAN.md).
 4. Still open from Phase A: a device check of the sheet spring and gestures on a 120 Hz phone, and enabling GitHub Pages (Settings, Pages, source "GitHub Actions") so `pages.yml` can deploy the site.
