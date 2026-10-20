@@ -67,6 +67,14 @@ jobs:
           gradle-version: ${{ env.GRADLE_VERSION }}
       - name: Unit tests
         run: gradle test --continue --stacktrace
+      - name: Upload Room schema
+        # KSP exports it while compiling :core:data; this is where a new schema version is picked up for review.
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: sitara-room-schema
+          path: core/data/schemas
+          if-no-files-found: ignore
       - name: Screenshot tests
         # Compares against the committed baselines in app/src/test/screenshots and fails on any mismatch.
         # Refresh baselines with the "Record screenshots" workflow, review them, then commit.

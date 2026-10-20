@@ -1,5 +1,7 @@
 plugins {
     alias(libs.plugins.android.library)
+    alias(libs.plugins.ksp)
+    alias(libs.plugins.room)
 }
 
 android {
@@ -14,13 +16,20 @@ android {
     testOptions { unitTests { isIncludeAndroidResources = true } }
 }
 
+// Committed so every schema change is reviewed with its migration; CI fails if the export drifts.
+room { schemaDirectory("$projectDir/schemas") }
+
 dependencies {
     api(project(":core:model"))
     implementation(libs.datastore.preferences)
     implementation(libs.kotlinx.coroutines.android)
+    implementation(libs.room.runtime)
+    ksp(libs.room.compiler)
 
     testImplementation(libs.junit4)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.turbine)
     testImplementation(libs.mockk)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.core)
 }

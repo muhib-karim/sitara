@@ -95,3 +95,18 @@ data class Library(
     val artists: List<Artist>,
     val likedTracks: List<Track>,
 )
+
+/** A playlist the listener made on this device, as the library lists it; [artwork] is its first song's. */
+data class PlaylistSummary(
+    val id: Long,
+    val name: String,
+    val songCount: Int,
+    val artwork: Artwork?,
+)
+
+/** A listener's own playlist with its songs in order. */
+data class UserPlaylist(
+    val id: Long,
+    val name: String,
+    val tracks: List<Track>,
+)
