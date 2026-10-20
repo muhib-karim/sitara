@@ -6,13 +6,16 @@ import app.sitara.music.core.model.SearchResults
 import app.sitara.music.core.model.Shelf
 import app.sitara.music.core.model.Track
 
+/** Catalogue search on its own, for sources that do not offer browse or a library yet. */
+interface SearchSource {
+    suspend fun search(query: String): SearchResults
+}
+
 /** Catalogue access: everything the browse screens need. */
-interface MusicSource {
+interface MusicSource : SearchSource {
     val id: String
 
     suspend fun home(): List<Shelf>
-
-    suspend fun search(query: String): SearchResults
 
     suspend fun library(): Library
 }
