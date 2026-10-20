@@ -2,7 +2,7 @@
 
 This document describes how Sitara is put together: the module map, how data moves from a music source to the screen, how playback is wired to Media3, how the stream source stays reliable, and how the code is tested and shipped.
 
-> Status: Phase B, slice 3. Search, artist/album/playlist pages, radio and streams are live (YouTube Music through NewPipeExtractor); the library is stored on the device with Room; home and lyrics are samples. Modules marked *planned* do not exist yet.
+> Status: Phase B, slice 4. Home's trending chart, search, artist/album/playlist pages, radio and streams are live (YouTube through NewPipeExtractor); lyrics come from LRCLIB; the library, the play queue and fetched lyrics are stored on the device with Room. The app contains no sample data; the sample catalogue is a test and debug fixture. Modules marked *planned* do not exist yet.
 
 ## Goals
 
@@ -18,18 +18,18 @@ This document describes how Sitara is put together: the module map, how data mov
 | `:app` | Android application | Activity, app shell (glass tab bar, mini player dock, detail back stack of typed `DetailRoute`s), dependency wiring |
 | `:core:model` | Pure Kotlin | Domain types: `Track`, `Album`, `Artist`, `Playlist`, `Queue`, `LyricsLine`, `LyricsWord` |
 | `:core:common` | Pure Kotlin | Result types, coroutine dispatchers, time and formatting helpers |
-| `:core:data` | Android library | DataStore-backed settings; the on-device library (`LibraryStore`): repositories for liked songs, play history, saved albums and artists and playlists, implemented with Room, whose schema is exported to `core/data/schemas` |
-| `:core:player` | Android library | `PlaybackService` (Media3 session + ExoPlayer), `PlaybackEngine`, `PlayerController` facade, queue engine, controller/stream policies, crossfade curves, LUFS gain, sleep timer |
+| `:core:data` | Android library | DataStore-backed settings; the on-device store (`LibraryStore`): repositories for liked songs, play history, saved albums and artists, playlists, the saved play queue and the lyrics cache, implemented with Room, whose schema is exported to `core/data/schemas` |
+| `:core:player` | Android library | `PlaybackService` (Media3 session + ExoPlayer), `PlaybackEngine`, `PlayerController` facade, queue engine and its save/restore, controller/stream policies, crossfade curves, LUFS gain, sleep timer |
 | `:core:designsystem` | Android library | Theme, colour roles, artwork palette mapping, `SitaraMotion`, glass surfaces, typography, icons, shared components |
-| `:source:api` | Pure Kotlin | Contracts: `SearchSource`, `MusicSource`, `BrowseSource` (artist, album, playlist pages), `RadioSource`, `StreamResolver`, `LyricsProvider`, `HealthCheck` |
-| `:source:fake` | Pure Kotlin | Deterministic sample catalogue with generated gradient covers, used by the app in Phase A and by every test |
-| `:source:lyrics` | Pure Kotlin | LRC and enhanced (word-timed) LRC parser; lyric providers plug in here |
-| `:feature:home` | Android library | Home feed: shelves, quick picks |
+| `:source:api` | Pure Kotlin | Contracts: `SearchSource`, `ChartsSource`, `MusicSource`, `BrowseSource` (artist, album, playlist pages), `RadioSource`, `StreamResolver`, `LyricsProvider`, `HealthCheck` |
+| `:source:fake` | Pure Kotlin | Deterministic sample catalogue with generated gradient covers: a fixture for tests, screenshots and the debug capture screen (`debugImplementation` only, never in a release build) |
+| `:source:lyrics` | Pure Kotlin (JVM) | LRC and enhanced (word-timed) LRC parser; `LrclibLyricsProvider` (LRCLIB over OkHttp, cached through a `LyricsCache`) and the title clean-up for lyric searches |
+| `:feature:home` | Android library | Home: the trending chart (loading, error, retry) and shelves from the library: Recently played, Jump back in, From your likes |
 | `:feature:search` | Android library | Search field, suggestions, results; debounced search states with loading, error and retry |
 | `:feature:library` | Android library | Library grid/list, and the artist, album and playlist detail pages with loading, error and empty states |
 | `:feature:player` | Android library | Mini player, full player sheet, scrubber, Up next / Lyrics pager, karaoke lyrics |
 | `:feature:settings` | Android library | Theme mode, reduced motion, playback preferences |
-| `:source:youtube` | Pure Kotlin (JVM) | YouTube Music search (songs, albums, artists, playlists), artist/album/playlist pages, radio from related songs, YouTube link parsing and audio stream resolution on NewPipeExtractor, with an OkHttp downloader ([ADR 0004](adr/0004-youtube-source-newpipeextractor.md)) |
+| `:source:youtube` | Pure Kotlin (JVM) | YouTube Music search (songs, albums, artists, playlists), artist/album/playlist pages, radio from related songs, the YouTube Charts trending list (NewPipe's `trending_music` kiosk), YouTube link parsing and audio stream resolution on NewPipeExtractor, with an OkHttp downloader ([ADR 0004](adr/0004-youtube-source-newpipeextractor.md)) |
 | `:source:local` | *planned, Phase B* | MediaStore and folder-based local files |
 
 ## Dependency graph
@@ -64,7 +64,8 @@ graph TD
     end
 
     app --> home & search & library & fplayer & settings
-    app --> cplayer & data & fake & youtube & common
+    app --> cplayer & data & youtube & lyrics & common
+    app -. debug and tests .-> fake
     home & search & library & fplayer & settings --> designsystem
     home & search & library & fplayer & settings --> model
     fplayer --> lyrics
@@ -81,7 +82,7 @@ graph TD
 Rules enforced in review:
 
 - `:core:model`, `:core:common`, `:source:api`, `:source:fake`, `:source:lyrics` and `:source:youtube` stay free of Android dependencies.
-- Only `:app` chooses concrete sources. Search uses `YouTubeMusicSource`; detail pages and radio ask the sample source first (it answers null for ids it does not own), then YouTube; home and lyrics use the fake source; the Library tab reads only `LibraryStore`; streams go through `FallbackStreamResolver(sample, YouTube)`.
+- Only `:app` chooses concrete sources. Home's chart, search, detail pages, radio and streams use YouTube (`YouTubeMusicSource`, `YouTubeStreamResolver`); lyrics use `LrclibLyricsProvider`; the Library tab and Home's shelves read only `LibraryStore`. The sample source is a fixture: it reaches only debug builds and tests.
 - UI modules depend on `:core:designsystem` for every colour, shape, spring and duration. Hard-coded values in feature code are a review comment.
 
 ## Data flow
@@ -140,6 +141,19 @@ sequenceDiagram
   `StreamResolver` for a URL when ExoPlayer opens the item. Only `sitara://` and https may be loaded (`StreamPolicy`).
 - **The session is filtered.** `ControllerPolicy` gives the app (identified by binder uid) full access, gives system
   surfaces transport controls only, and rejects other apps. External media items are refused.
+- **The queue survives the process.** `PlaybackService` asks the app for the saved queue when it starts and
+  `PlaybackEngine.restore`s it paused at the same song and position, unless the listener already queued something.
+  `keepSaving` hands the app the queue once a change settles (1 s), whenever playback pauses, every 15 s while
+  playing and when the service is destroyed; an empty queue never overwrites the saved one. The conversion
+  (`QueueState.toSaved` / `SavedQueue.toQueueState`) is pure: play order, the unshuffled order as indices, the
+  current index, position and repeat mode, with fresh entry ids on the way back. Room keeps it in `queue_entries`
+  and a one-row `queue_state`; a save that only moves the position rewrites that one row.
+- **Resuming without the app.** `MediaButtonReceiver` starts the service for a headset or Bluetooth play button,
+  and `onPlaybackResumption` restores the saved queue and hands its items to Media3 (also for Android's resume card).
+- **System controls.** Media items carry title, artist, album and the cover URL; the session's bitmap loader fetches
+  the cover for the notification, lock screen and Bluetooth displays. ExoPlayer handles audio focus (ducks, pauses
+  for a call and resumes after it) and pauses when the output becomes noisy (headphones unplugged, Bluetooth gone).
+  The service keeps running when the app is swiped away while music plays, and stops if it is paused or empty.
 - **The sleep timer** counts minutes on `elapsedRealtime` (monotonic), or pauses at the end of the current item using
   ExoPlayer's pause-at-end.
 - **Crossfade** and **normalisation** are pure functions (fade curves; gain toward −14 LUFS, capped by the true
@@ -147,6 +161,27 @@ sequenceDiagram
   `AudioProcessor` chain lands in Phase B.
 - **Lyrics** are parsed into timed lines and words, keeping the original text and syllables. The UI derives the active
   line and the karaoke character sweep from the position; unsynced lyrics are shown as static text.
+
+### Lyrics
+
+```mermaid
+flowchart LR
+    vm["AppViewModel<br/>(current song changes)"] --> p["LrclibLyricsProvider"]
+    p -->|"by song id"| c["LyricsCache<br/>(Room lyrics_cache)"]
+    p -->|"miss or stale"| g["GET /api/get<br/>title, artist, length"]
+    g -->|404| s["GET /api/search<br/>title, artist"]
+    s --> m["bestMatch: same length ±2 s,<br/>synced first"]
+    p --> lrc["LrcParser"] --> ui["LyricsState: Loading / Found / NotFound / Failed"]
+```
+
+- `LyricsProvider` (`:source:api`) returns parsed `Lyrics`, null for "none", and throws when the service fails.
+- `LrclibLyricsProvider` cleans the video title first (`lyricsQuery`: drops "(Official Video)"-style labels and a
+  " | …" tail, reads "Artist - Song" titles), asks `/api/get` and falls back to `/api/search`. It stores the raw
+  LRC and plain text, so a parser change never needs a cache migration. Found lyrics stay cached; "none found" is
+  asked again after a week; errors are not cached. Requests carry `User-Agent: Sitara (<repository URL>)` and
+  nothing else about the device or listener.
+- The view model looks lyrics up when the current song changes (a retry asks again for the same song); the
+  Lyrics page shows loading, the lyrics with an "LRCLIB" credit, "No lyrics found", or an error with Try again.
 
 ## Stream source abstraction (Phase B)
 
@@ -173,8 +208,9 @@ flowchart TD
 
 | Layer | Tools | What is covered |
 | --- | --- | --- |
-| Pure logic | JUnit 4/5, Turbine, coroutine test time | Queue engine (unique entries, shuffle restore, repeat), playback engine against a fake player (queue hand-off, transitions, end-of-queue restart, sleep timer), command gate, controller and stream policies, crossfade and LUFS maths, LRC and enhanced LRC parsing, karaoke sweep, sheet geometry, palette to theme mapping, settings codec, fake source, YouTube song mapping, audio stream selection, OkHttp downloader request/response mapping (interceptor, no network), search states |
-| Library store | Robolectric, in-memory Room | Liked songs, capped history and its last-play order, saved albums and artists, playlist order, duplicates, renumbering, rename, delete cascading to entries, name validation, song details surviving storage |
+| Pure logic | JUnit 4/5, Turbine, coroutine test time | Queue engine (unique entries, shuffle restore, repeat), playback engine against a fake player (queue hand-off, transitions, end-of-queue restart, sleep timer, restore, save triggers), saved queue round trip (shuffle order, broken data), Home feed shelves, LRCLIB lookups against an interceptor (exact, search fallback, best match, cache freshness, errors, User-Agent), lyric title clean-up, an LRCLIB-shaped LRC fixture (offset, repeated timestamps, blank break), command gate, controller and stream policies, crossfade and LUFS maths, LRC and enhanced LRC parsing, karaoke sweep, sheet geometry, palette to theme mapping, settings codec, fake source, YouTube song mapping, audio stream selection, OkHttp downloader request/response mapping (interceptor, no network), search states |
+| Library store | Robolectric, in-memory Room | Liked songs, capped history and its last-play order, saved albums and artists, playlist order, duplicates, renumbering, rename, delete cascading to entries, name validation, song details surviving storage; saved queue (repeats, shuffle order, replace, clear, position-only saves) and the lyrics cache |
+| Playback service | Robolectric | The real `PlaybackService` restores a saved queue paused at its song, position and repeat mode, and saves it on destroy; media item titles and covers are covered by `Media3PlayerPortTest` |
 | Screenshots | Roborazzi on Robolectric (debug variant) | Home, search, library, player, lyrics and settings in light and dark; CI fails on any pixel mismatch against the committed baselines in `app/src/test/screenshots` |
 
 Principles:
@@ -183,7 +219,7 @@ Principles:
 - The fake source is deterministic (stable ids, titles and generated covers), so screenshots are stable across runs.
 - A bug fix starts with a failing test.
 - Screenshot diffs are reviewed like code. An intentional UI change re-records the baselines with `screenshots.yml`, and they are reviewed and committed with that change.
-- Not covered by automated tests yet: the Media3 adapter (`Media3PlayerPort`, `StreamUriResolver`, `PlaybackService`) and gesture feel. Those need an instrumented or on-device check.
+- Not covered by automated tests yet: real stream playback, the player's audio attributes, audio focus and noisy-output behaviour on hardware, the notification's look, playback resumption from a media button, and gesture feel. Those need an on-device check.
 
 ## CI pipeline
 

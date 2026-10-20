@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+Phase B, slice 4: a real Home, playback that survives restarts, and lyrics.
+
+### Added
+
+- Home shows the songs trending now on YouTube Charts for your country (the United Kingdom's chart where YouTube has none), with loading, error and Try again states, then Recently played, Jump back in (your playlists and saved albums) and From your likes (liked songs you have not played lately). A fresh install says how Home fills up.
+- Lyrics from LRCLIB: synced lyrics highlight and follow the current line and seek on tap; plain lyrics show when nothing is synced; otherwise "No lyrics found". A failed lookup offers Try again. Lyrics are cached on the device (songs with none are asked again after a week), and the page credits LRCLIB. Requests name only the app and its repository.
+- The queue, the current song and the position are saved as you listen and come back, paused, after the app is closed or killed. A headset or Bluetooth play button, or Android's resume card, resumes them even when the app is not running.
+- The notification, lock screen and Bluetooth displays show the song's cover.
+
+### Changed
+
+- The built-in sample catalogue is gone from the app: Home's sample shelves and mood pills, the sample note and Search's sample browse are removed, and release builds no longer contain sample music. Songs from the sample catalogue saved in an earlier version can no longer play.
+- The database moves to version 2 (new tables for the play queue and the lyrics cache; existing data is kept).
+
 ## [0.4.0] - 2026-10-20
 
 Phase B, slice 3: your own library, stored on the device.
