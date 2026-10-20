@@ -19,6 +19,12 @@ Phase C, slice 2: sound I.
 
 - The sleep timer button opens a sheet (presets, custom minutes, end of this song, time left, extend and Turn off) instead of cycling through 15 min, 30 min and end of track. It takes the accent colour while a timer is set.
 
+### Fixed
+
+- When YouTube refuses a song's stream to NewPipe, Sitara asks two other YouTube clients (visionOS, then iOS) before it gives up, and asks the one that worked first for that song afterwards. This does not get past a "confirm you're not a bot" check on your network.
+- A song that cannot be played says so instead of sitting at 0:00 behind a Play button: Now Playing shows "Couldn't play this song" with Try again and Skip in place of the scrubber, and the mini player swaps Play for the same two buttons. Nothing is skipped without you choosing to.
+- Lyrics are found for more music videos: featured artists ("(feat. X)", "ft. X") are left out of the lyric search, "Artist - Topic" channels count as the artist, and the title as uploaded is tried when the cleaned-up one finds nothing.
+
 ## [0.7.0] - 2026-10-20
 
 Phase C, slice 1: real artwork and a player that looks like the music.

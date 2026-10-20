@@ -107,16 +107,16 @@ Planned, not built yet: *Sitara Sync* (end-to-end encrypted sync through storage
 
 ## How it works
 
-- **Playback.** Search, pages, the chart and radio come from YouTube Music through [NewPipeExtractor](https://github.com/TeamNewPipe/NewPipeExtractor); no account or API key is involved. When a song starts, Sitara resolves its best audio-only stream (opus or m4a) on the fly, so links never go stale in the queue. Playback runs in a Media3 service with a media session: notification, lock screen, Bluetooth and headset controls work with the app closed.
+- **Playback.** Search, pages, the chart and radio come from YouTube Music through [NewPipeExtractor](https://github.com/TeamNewPipe/NewPipeExtractor); no account or API key is involved. When a song starts, Sitara resolves its best audio-only stream (opus or m4a) on the fly, so links never go stale in the queue. If YouTube refuses NewPipe's request, Sitara asks two other YouTube clients (visionOS, then iOS) before giving up; a song that still cannot play says so in Now Playing and the mini player, with Try again and Skip. Playback runs in a Media3 service with a media session: notification, lock screen, Bluetooth and headset controls work with the app closed.
 - **Links.** Paste a `music.youtube.com`, `youtube.com/watch` or `youtu.be` link into Search, or share one to Sitara from another app; the song plays as soon as it resolves. Only the video id is read from the link.
-- **Lyrics.** For the playing song Sitara asks [LRCLIB](https://lrclib.net) by title, artist and length (then a search), prefers synced lyrics, and keeps what it finds on the device. Requests carry only the app's name and repository URL.
+- **Lyrics.** For the playing song Sitara asks [LRCLIB](https://lrclib.net) by title, artist and length (then a search), first with the title cleaned of video labels and featured artists, then as uploaded; it prefers synced lyrics, and keeps what it finds on the device. Requests carry only the app's name and repository URL.
 - **Downloads.** A download stores the song's audio in an app-private cache through Media3's download manager, resolving a fresh stream URL whenever it starts or resumes. The player always looks in that cache first, so a downloaded song plays with no connection. Downloads wait for Wi-Fi unless you turn off "Download on Wi-Fi only".
 - **Sound.** Loudness levelling runs inside the audio pipeline and adjusts gain slowly as a song plays. Crossfade hands the end of a song to a second player while the next one starts; the main player keeps the queue, so skipping, editing Up next and restoring after a restart behave as usual. While a song plays, the stream of the song that follows it is looked up ahead, so the player has it ready at the join (and a skip to it starts at once). Speed and pitch are applied by the player for as long as playback runs; skip silence is Media3's silence-skipping step in the same audio chain.
 
 ## Known limits
 
 - No sign-in: there is no YouTube account, so no account library, history sync or personal recommendations.
-- YouTube may answer with a bot check on some networks (it does on cloud servers); search and pages still load, but songs may not play there. Downloads need the same streams.
+- YouTube may answer with a bot check on some networks (it does on cloud servers, for all three stream clients Sitara tries); search and pages still load, but songs may not play there, and the player says so. Downloads need the same streams.
 - YouTube passes on no loudness values through NewPipeExtractor, so levelling measures the sound as it plays rather than knowing a song's loudness in advance; the first seconds of a song can be a little louder or softer.
 - Crossfade overlaps by switching to a second player; the hand-over may be audible on some devices.
 - Gapless joins rely on the player trimming each format's encoder padding; how YouTube's opus and m4a streams join on real albums has not been checked on a phone yet.

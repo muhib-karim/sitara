@@ -25,8 +25,10 @@ Goal: an original app with its own design and logo (not a reskin), shipped as a 
 
 - c2 (Phase C slice 2) on main, target v0.8.0 (owner tags): gapless (engine prepares the following entry once playback runs; one-slot PrefetchingStreamResolver), speed 0.5-2x + pitch ±6 semitones per session (PlaybackTuning; top-bar button + sheet), skip silence setting (Media3 skipSilenceEnabled on main + tail), sleep timer sheet (custom minutes, +5/+15 extend on a monotonic deadline, end of song). Report: docs/reports/REPORT_c2.md.
 
+- c2b (fixes from the v0.7.0 phone test) on main, required for v0.8.0: stream fallback NewPipe -> visionOS -> iOS client with per-song memory (all three bot-checked from CI); "Couldn't play this song" with Try again / Skip in Now Playing and the mini player, never auto-skips; lyric titles drop feat./Topic, cleaned then raw LRCLIB lookup; insets not reproduced on the API 34 emulator (gesture + three-button, both themes), device capture now guards Settings' last row. Report: docs/reports/REPORT_c2b.md.
+
 ## Next step
-Owner: on-device pass of the REPORT_b5, REPORT_c1 and REPORT_c2 "not verified" lists (gaps on real albums, speed/pitch artefacts, skip silence on real tracks, timer with the screen off, R8 release build), then tag v0.8.0. Next slice: c3 (equaliser) per docs/plan/PHASE_C_PLAN.md; bot-check message + PoToken provider still open.
+Owner: on-device pass of the REPORT_b5, REPORT_c1, REPORT_c2 and REPORT_c2b "not verified" lists (fallback clients from a home network, error UI on real failures, gaps on real albums, speed/pitch artefacts, skip silence, timer with the screen off, R8 release build; if the Settings/Search inset symptoms recur, note nav mode, themes, font/display size), then tag v0.8.0. Next slice: c3 (equaliser) per docs/plan/PHASE_C_PLAN.md; bot-check message + PoToken provider still open.
 
 ## Session log
 2026-10-17 22:21Z Codex / GPT-6 Astra: recorded original design and ui1 plan; next foundations and tests.
@@ -51,3 +53,4 @@ Owner: on-device pass of the REPORT_b5, REPORT_c1 and REPORT_c2 "not verified" l
 2026-10-20 13:25Z Claude Code / Opus 5.5: resumed after interruption; fixed device capture logcat decoding (b5e1ee4); CI 39427356213, Secret scan 39427356124, Device screens 39427356075 (re-run after an emulator ANR) green; b5 complete, next owner device check and v0.6.0 tag.
 2026-10-20 16:55Z Claude Code / Opus 5.5: c1 shipped (ea05949..cb3d295 + docs): device capture ANR hardening, real covers via Coil, cover-coloured player, lyrics follow mode; CI 39460003902, Secret scan 39460003860, Device screens 39460003949 green; next owner device check and v0.7.0 tag, then c2.
 2026-10-20 18:05Z Claude Code / Opus 5.5: c2 shipped (3f87869..3ecf0ec + docs): gapless prefetch, speed/pitch, skip silence, sleep timer sheet; baselines from Record screenshots 39468939585; next owner device check and v0.8.0 tag, then c3.
+2026-10-20 18:55Z Claude Code / Opus 5.5: c2b shipped (5f9ce3b..78920ad + docs): stream client fallback, playback error UI with Try again/Skip, lyric title cleaning, device-capture inset guard (symptoms not reproduced); CI 39476007550, Device screens 39476007551 green; next owner device check and v0.8.0 tag, then c3.
