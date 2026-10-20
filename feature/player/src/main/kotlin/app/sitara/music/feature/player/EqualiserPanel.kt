@@ -178,7 +178,8 @@ private fun BandSlider(band: Int, db: Int, onChange: (Int) -> Unit, modifier: Mo
             valueRange = -EqualiserSettings.MAX_GAIN_DB.toFloat()..EqualiserSettings.MAX_GAIN_DB.toFloat(),
             steps = 2 * EqualiserSettings.MAX_GAIN_DB - 1,
             colors = accentSlider(),
-            modifier = Modifier.vertical().height(BandHeight).semantics {
+            // The height is the fader's length, so it goes outside the turn.
+            modifier = Modifier.height(BandHeight).vertical().semantics {
                 contentDescription = bandLabel(band)
                 stateDescription = decibelLabel(db)
             },

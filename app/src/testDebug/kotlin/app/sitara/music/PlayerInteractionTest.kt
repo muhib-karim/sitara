@@ -8,9 +8,11 @@ import androidx.compose.ui.semantics.SemanticsProperties
 import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assert
+import androidx.compose.ui.test.assertHeightIsAtLeast
 import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsSelected
+import androidx.compose.ui.test.assertWidthIsAtLeast
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasContentDescription
@@ -28,6 +30,7 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipe
 import androidx.compose.ui.test.swipeLeft
 import androidx.compose.ui.test.swipeUp
+import androidx.compose.ui.unit.dp
 import app.sitara.music.core.model.DarkMode
 import app.sitara.music.core.model.EqualiserPreset
 import app.sitara.music.core.model.EqualiserSettings
@@ -371,6 +374,9 @@ class PlayerInteractionTest {
         compose.onNodeWithText("Equaliser").performClick()
         listOf("31 Hz", "62 Hz", "125 Hz", "250 Hz", "500 Hz", "1 kHz", "2 kHz", "4 kHz", "8 kHz", "16 kHz").zip(EqualiserPreset.BASS_BOOST.bandsDb).forEach { (name, db) ->
             compose.onNodeWithContentDescription(name).assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, if (db > 0) "+$db dB" else "$db dB"))
+                // A fader stands tall and keeps a full touch target across.
+                .assertHeightIsAtLeast(160.dp)
+                .assertWidthIsAtLeast(48.dp)
         }
     }
 
