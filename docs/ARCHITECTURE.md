@@ -29,7 +29,7 @@ This document describes how Sitara is put together: the module map, how data mov
 | `:feature:library` | Android library | Playlists, albums, artists, liked songs |
 | `:feature:player` | Android library | Mini player, full player sheet, scrubber, Up next / Lyrics pager, karaoke lyrics |
 | `:feature:settings` | Android library | Theme mode, reduced motion, playback preferences |
-| `:source:youtube` | Pure Kotlin (JVM) | YouTube Music song search and audio stream resolution on NewPipeExtractor, with an OkHttp downloader ([ADR 0004](adr/0004-youtube-source-newpipeextractor.md)); browse is planned |
+| `:source:youtube` | Pure Kotlin (JVM) | YouTube Music song search, YouTube link parsing and audio stream resolution on NewPipeExtractor, with an OkHttp downloader ([ADR 0004](adr/0004-youtube-source-newpipeextractor.md)); browse is planned |
 | `:source:local` | *planned, Phase B* | MediaStore and folder-based local files |
 
 ## Dependency graph

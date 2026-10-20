@@ -6,18 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
-Phase B, slice 1: real music.
+## [0.2.0] - 2026-10-20
+
+Phase B, first release: real music from YouTube Music.
 
 ### Added
 
 - Live song search on YouTube Music through NewPipeExtractor v0.26.5 (new `:source:youtube` module, OkHttp downloader).
 - Search results play through the existing player and queue together; the best audio-only stream (opus or m4a, https) is picked per song.
 - Search shows loading, empty and error states, with a "Try again" action.
+- Paste a YouTube Music, YouTube or youtu.be link into Search to get that song, ready to play.
+- Open or share those links into Sitara: the song starts playing. Shared plain text becomes a search. Tapping a link needs Sitara allowed under Android's "Open by default"; sharing always works.
 
 ### Changed
 
 - Home and Library say that they show built-in sample music; search suggestions are now genre searches.
 - Sample lyrics appear only on sample songs, never on real ones.
+- Search says "1 result" instead of "1 results".
 
 ## [0.1.0] - 2026-10-18
 
@@ -57,5 +62,6 @@ Phase A: foundation, plus the first UI redesign.
 - GitHub Actions workflows: CI (ktlint, unit tests, screenshot tests, debug APK artifact), release on `v*` tags with SHA256SUMS, GitHub Pages site, gitleaks scanning and a manual screenshot refresh workflow.
 - Project documentation: README, architecture and design system guides, contributing guide, code of conduct, security policy and the project website.
 
-[Unreleased]: https://github.com/muhib-karim/sitara/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/muhib-karim/sitara/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/muhib-karim/sitara/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/muhib-karim/sitara/releases/tag/v0.1.0

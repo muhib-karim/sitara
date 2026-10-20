@@ -7,7 +7,7 @@ Phases follow SPEC section 4. Each phase ends with CI green on `main` and a tagg
 | Phase | Scope | Status |
 |---|---|---|
 | A | Shell, design system, fake source, player UI, Media3 playback service, tests, CI, docs | Code complete; CI compiles and tests it; review findings fixed ([response](review/PHASE_A_REVIEW_RESPONSE.md)); on-device check pending |
-| B | Real source (NewPipeExtractor), downloads, local files, LRCLIB lyrics, crossfade/normalise processors, Hilt, Room | Slice 1 done: live YouTube Music search and playback ([ADR 0004](adr/0004-youtube-source-newpipeextractor.md), [report](reports/REPORT_b1.md)); home, library and lyrics still sample |
+| B | Real source (NewPipeExtractor), downloads, local files, LRCLIB lyrics, crossfade/normalise processors, Hilt, Room | Slice 1 done (0.2.0, ready to tag): live YouTube Music search and playback, YouTube links pasted, opened or shared ([ADR 0004](adr/0004-youtube-source-newpipeextractor.md), [report](reports/REPORT_b1.md)); home, library and lyrics still sample |
 | C | Accounts, scrobbling, widgets, Android Auto, Cast, Replay, remote control | Not started |
 | D | Canvas, automix, translation/transliteration, Wear OS, TV | Not started |
 

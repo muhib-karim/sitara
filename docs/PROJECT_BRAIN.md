@@ -14,9 +14,10 @@ Goal: an original app with its own design and logo (not a reskin), shipped as a 
 - fix1 source review complete: N1/6 completion synchronization, N2 atomic lookup and 5 resolver cancellation fixes retained with regression coverage; interrupt-status assertion added. Item 16 is superseded by the current sheet, covered by Back/drag and screenshot cases. Review copy and REPORT_fix1.md ready. All execution and acceptance remain pending in CI.
 - v0.1.0 RELEASED.
 - b1 (Phase B slice 1, real music) DONE on main: live YouTube Music song search + playback via :source:youtube (NewPipeExtractor v0.26.5); search states with retry; home, library, lyrics and covers still sample and labelled. Report: docs/reports/REPORT_b1.md.
+- b1a DONE on main: YouTube/YouTube Music/youtu.be links (paste into Search, VIEW + SEND intents, autoplay), live smoke test job (search finds x7kGuhlXmFI; player request bot-checked on CI runners). CHANGELOG [0.2.0] + versionName 0.2.0 ready for the owner to tag.
 
 ## Next step
-Owner: on-device check of live search/playback (incl. offline error + retry), then a release-build check (R8 rules for Rhino/NewPipeExtractor are untested) before tagging. Next slice: image loader for artwork, real home feed and album/artist browse, LRCLIB lyrics.
+Owner, before tagging v0.2.0: release-build check (R8 rules untested) and on-device acceptance: search "Niye Jabe Ki Xefer", paste and share https://music.youtube.com/watch?v=x7kGuhlXmFI; all must play. Next slice: bot-check message + PoToken provider, image loader for artwork, real home feed and album/artist browse, LRCLIB lyrics.
 
 ## Session log
 2026-10-17 22:21Z Codex / GPT-6 Astra: recorded original design and ui1 plan; next foundations and tests.
@@ -32,3 +33,4 @@ Owner: on-device check of live search/playback (incl. offline error + retry), th
 2026-10-17 23:43Z Codex: resumed fix1, retained targeted playback fixes, strengthened cancellation coverage and completed source review/report; next CI and device verification, with all edits uncommitted.
 2026-10-20 07:37Z Claude Code / Opus 5.5: b1 shipped (6 commits b29996d..e144854 + docs), CI green through 39387647017 (docs + report); next device + release-build check, then artwork/browse/lyrics.
 2026-10-20 07:45Z Claude Code / Opus 5.5: resumed after memory guard; nothing lost, recorded final CI run in report; b1 complete.
+2026-10-20 08:08Z Claude Code / Opus 5.5: b1a shipped (links, intents, smoke job, 0.2.0 docs); CI green; next owner device + release check, then tag.

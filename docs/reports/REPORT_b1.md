@@ -94,3 +94,67 @@ The first Record screenshots dispatch (39386334998) failed on the same compile e
   state; the fix is a version bump (ADR 0004).
 - README screenshots in `docs/screenshots` predate the Home and Library notes. The Device screens workflow produces
   fresh captures.
+
+---
+
+# b1a: links and the acceptance track
+
+Date: 2026-10-20. Harness: Claude Code · Opus 5.5. No tag or release; `0.2.0` is ready for the owner to tag.
+
+Acceptance track: <https://music.youtube.com/watch?v=x7kGuhlXmFI> ("Niye Jabe Ki" by Xefer). Both searching for it and
+pasting the link must play it.
+
+## What changed
+
+1. **Link parser.** `videoIdFromLink` in `:source:youtube` is pure and unit tested. It reads `watch?v=` on youtube.com,
+   www., m. and music., and `youtu.be/<id>`. It allows extra parameters (`si`, `list`, `t`), a missing scheme, and
+   share text around the link. It rejects other hosts, look-alike hosts (`youtube.com.example.com`), userinfo tricks
+   and non-web schemes. The song mapper reuses it, so there is one video-id rule.
+2. **Pasted links.** When the search text is a link, `YouTubeMusicSource.search` loads that video's `StreamInfo` and
+   returns it as the single result (title, artist, duration, artwork URL), which plays on tap. The mapper drops the
+   " - Topic" suffix of auto-generated artist channels. Search now says "1 result" (baselines re-recorded).
+3. **Opening and sharing links.** `MainActivity` has VIEW intent filters for http(s) youtube.com, www., m. and
+   music. `/watch`, plus youtu.be, and a SEND filter for `text/plain`.
+   - `sharedRequest` (unit tested) passes on only a validated video id, or at most 200 characters of shared text.
+   - A link switches to Search with the link and starts the song as soon as exactly that song resolves
+     (`autoplayTrack`, unit tested). A failure shows the existing error and "Try again", and the song still starts
+     after a successful retry.
+   - Shared plain text becomes a search.
+   - `onNewIntent` calls `setIntent` and applies the same validation. A recreated activity does not replay its
+     launch intent.
+4. **Live smoke test.** `NetworkSmokeTest` (JUnit tag `network`) is excluded from `test` and run by
+   `gradle :source:youtube:networkSmokeTest` (never cached) in the CI job "Live YouTube smoke test (non-blocking)",
+   which has `continue-on-error`. It is skipped when YouTube cannot be reached or bot-checks the runner.
+5. **Release prep.** CHANGELOG `[0.2.0] - 2026-10-20` covers b1 and b1a. `versionName` is `0.2.0` and `versionCode`
+   is `2`. README note and features are updated.
+
+## Live results (CI run 39390173722, smoke job)
+
+- **Search passes.** A YouTube Music songs search for "Niye Jabe Ki Xefer" returns `x7kGuhlXmFI | Niye Jabe Ki |
+  Xefer` as the top result: the exact acceptance video.
+- **Link and stream not verifiable on CI.** YouTube answered the GitHub runner's data-centre IP with "Sign in to
+  confirm you're not a bot" (`SignInConfirmNotBotException`) for the player request. That request is behind both
+  link resolution and stream extraction. The check now skips with that reason. On a phone's home or mobile
+  connection this request normally succeeds, but **only an on-device check can confirm that the acceptance track
+  plays.**
+
+## Commits and CI
+
+| Commit | Change | CI run | Result |
+|---|---|---|---|
+| 3ac4ec0 | Link parser | 39388557197 | green |
+| 9793006 | Pasted link resolves to its song | 39388987837 | green |
+| 62fd10f | VIEW/SEND intent filters, shared requests, autoplay, "1 result" | 39389323614 | unit tests green; screenshot step red on the 2 expected search baselines |
+| 63ea4fa | Search baselines (Record screenshots run 39389322349) | 39389830792 | green |
+| bcf99af | Live smoke test and non-blocking CI job | 39390173722 | green; smoke job: search passed, link/stream hit the bot check |
+| d9403c1 | Smoke test skips on the bot check | 39390642318 | green; smoke job green: search passed, link/stream skipped with the bot-check reason |
+
+## Risks and next steps
+
+- **Tapping links:** on Android 12+, web links open in an unverified app only after the user allows them under
+  "Open by default" in Sitara's app settings. Sharing a link to Sitara always works.
+- **Bot checks on real networks:** if a network gets the same bot check, search keeps working but playback and link
+  resolution fail with the generic error. Next: a specific message, and a PoToken provider (the extractor supports
+  one) to make player requests more robust.
+- **Before tagging 0.2.0:** run the release build (the R8 rules are untested) and, on a phone, search for "Niye Jabe Ki
+  Xefer", paste the link, and share the link from YouTube Music. All three should play the song.
