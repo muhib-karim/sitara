@@ -10,6 +10,9 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.click
+import androidx.compose.ui.test.hasAnyAncestor
+import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
@@ -220,7 +223,8 @@ class PlayerInteractionTest {
             override fun moveUpNext(from: Int, to: Int) { calls += "move $from $to" }
         })
         compose.onNodeWithContentDescription("Remove ${upNext[1].title} from the queue").performClick()
-        compose.onNodeWithContentDescription("${upNext[0].title} by ${upNext[0].artist}").performCustomAction("Move down")
+        // Home's quick picks stay composed behind the player, so look inside Up next only.
+        compose.onNode(hasContentDescription("${upNext[0].title} by ${upNext[0].artist}") and hasAnyAncestor(hasTestTag("up-next"))).performCustomAction("Move down")
         assertEquals(listOf("remove 1", "move 0 1"), calls)
     }
 }
