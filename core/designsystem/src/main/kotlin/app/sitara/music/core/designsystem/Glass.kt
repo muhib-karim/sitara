@@ -90,14 +90,21 @@ fun PillButton(label: String, onClick: () -> Unit, modifier: Modifier = Modifier
     }
 }
 
-/** A narrow blur band lets scrolling content dissolve under fixed chrome. */
+/**
+ * A narrow band lets scrolling content dissolve under fixed chrome. The top band is glass; the bottom one is a
+ * plain fade, because a blur drawn there could stay painted as a grey bar over the dock after the keyboard closed.
+ */
 @Composable
 fun ScrollEdge(haze: HazeState, modifier: Modifier = Modifier, top: Boolean = true) {
     val fill = MaterialTheme.colorScheme.background
+    if (!top) {
+        Box(modifier.background(Brush.verticalGradient(listOf(Color.Transparent, fill.copy(alpha = 0.88f)))))
+        return
+    }
     Box(
         modifier.glass(haze, fill).graphicsLayer { compositingStrategy = CompositingStrategy.Offscreen }
             .drawWithCache {
-                val mask = Brush.verticalGradient(if (top) listOf(Color.Black, Color.Transparent) else listOf(Color.Transparent, Color.Black))
+                val mask = Brush.verticalGradient(listOf(Color.Black, Color.Transparent))
                 onDrawWithContent {
                     drawContent()
                     drawRect(mask, blendMode = BlendMode.DstIn)
