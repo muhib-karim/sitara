@@ -30,4 +30,5 @@ Owner: on-device check of live search/playback (incl. offline error + retry), th
 2026-10-17 23:13Z Codex: resumed ui2, retained the approved split-star, completed browse/settings and scrubber corrections with CI test cases; final source review and report next.
 2026-10-17 23:15Z Codex: completed ui2 source review, regression/screenshot cases and report; whitespace check passed, all execution and visual acceptance deferred to CI.
 2026-10-17 23:43Z Codex: resumed fix1, retained targeted playback fixes, strengthened cancellation coverage and completed source review/report; next CI and device verification, with all edits uncommitted.
-2026-10-20 07:37Z Claude Code / Opus 5.5: b1 shipped (6 commits b29996d..e144854 + docs), CI green through 39387182255; next device + release-build check, then artwork/browse/lyrics.
+2026-10-20 07:37Z Claude Code / Opus 5.5: b1 shipped (6 commits b29996d..e144854 + docs), CI green through 39387647017 (docs + report); next device + release-build check, then artwork/browse/lyrics.
+2026-10-20 07:45Z Claude Code / Opus 5.5: resumed after memory guard; nothing lost, recorded final CI run in report; b1 complete.

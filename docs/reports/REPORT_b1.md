@@ -66,7 +66,7 @@ Sitara now searches YouTube Music and plays the results. Search uses NewPipeExtr
 | 26c6265 | Search states, retry UI, wiring, sample labels, lyrics fix | 39386327072 | red: `flatMapLatest` took the idle branch's type (compile error) |
 | 1d38e5f | Explicit `flatMapLatest<String, SearchState>` | 39386687663 | unit tests and ktlint green; screenshot step red on the 19 expected stale baselines |
 | e144854 | Baselines from Record screenshots run 39386687456 | 39387182255 | green (verify and assemble ran fresh) |
-| 675c06b + this report | Docs | see PROJECT_BRAIN session log | |
+| 675c06b, a0b42aa | Docs and this report | 39387647017 | green |
 
 The first Record screenshots dispatch (39386334998) failed on the same compile error as 26c6265.
 
