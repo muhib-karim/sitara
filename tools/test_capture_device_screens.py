@@ -36,6 +36,20 @@ class CaptureReadinessTest(unittest.TestCase):
             with self.assertRaisesRegex(RuntimeError, "library"):
                 capture.wait_for_screen("library", "Library", timeout=0)
 
+    def test_bounds_reads_the_first_node_with_the_label(self):
+        root = ET.fromstring(
+            '<hierarchy><node text="Storage used" bounds="[42,1800][700,1860]"/>'
+            '<node content-desc="Open player" bounds="[30,1900][1050,2060]"/></hierarchy>'
+        )
+        self.assertEqual((42, 1800, 700, 1860), capture.bounds(root, "Storage used"))
+        self.assertEqual((30, 1900, 1050, 2060), capture.bounds(root, "Open player"))
+        self.assertIsNone(capture.bounds(root, "Downloads"))
+
+    def test_a_row_reaching_below_the_dock_top_is_hidden(self):
+        dock = (30, 1900, 1050, 2060)
+        self.assertFalse(capture.hidden_under_dock((42, 1800, 700, 1900), dock))
+        self.assertTrue(capture.hidden_under_dock((42, 1850, 700, 1910), dock))
+
     def test_logcat_with_non_utf8_bytes_is_saved_as_is(self):
         raw = b"I/proc: \xc0\xff\n"
 

@@ -14,6 +14,8 @@ SCREENS = {
     "lyrics": "Sitara, light the dark",
     "library": "Night Drive",
     "mini": "Open player",
+    "settings": "Appearance",
+    "search": "Try a search",
 }
 
 
@@ -62,6 +64,44 @@ def wait_for_screen(screen, expected, timeout=30):
         time.sleep(0.5)
 
 
+def bounds(root, label):
+    """(left, top, right, bottom) of the first node whose text or content description is [label], else None."""
+    for node in root.iter("node"):
+        if label in (node.get("text"), node.get("content-desc")):
+            return tuple(map(int, re.findall(r"\d+", node.get("bounds", ""))))
+    return None
+
+
+def hidden_under_dock(row, dock):
+    """Whether a row's bottom edge reaches below the top of the dock (the mini player is the dock's top part)."""
+    return row[3] > dock[1]
+
+
+def scroll_to_end(screen):
+    for _ in range(4):
+        adb("shell", "input", "swipe", "540", "1700", "540", "500", "300")
+    time.sleep(1)
+    return wait_for_screen(screen, "Storage used")
+
+
+def type_then_close_keyboard(screen, hierarchy, while_typing):
+    """Types a query, calls [while_typing] with the keyboard up, then closes the keyboard with Back, as a listener does."""
+    for node in ET.fromstring(hierarchy).iter("node"):
+        if node.get("class") == "android.widget.EditText":
+            left, top, right, bottom = map(int, re.findall(r"\d+", node.get("bounds", "")))
+            adb("shell", "input", "tap", str((left + right) // 2), str((top + bottom) // 2))
+            break
+    else:
+        raise RuntimeError("No search field on the search screen")
+    time.sleep(1.5)
+    adb("shell", "input", "text", "night")
+    time.sleep(1.5)
+    while_typing()
+    adb("shell", "input", "keyevent", "4")
+    time.sleep(2)
+    return wait_for_screen(screen, "Songs")
+
+
 def launch_and_wait(screen, expected, dark, timeout):
     for attempt in range(2):
         adb("shell", "am", "force-stop", "app.sitara.music")
@@ -77,6 +117,14 @@ def launch_and_wait(screen, expected, dark, timeout):
                 raise
 
 
+def save(name, hierarchy):
+    png = adb("exec-out", "screencap", "-p", binary=True)
+    if not png.startswith(b"\x89PNG\r\n\x1a\n"):
+        raise RuntimeError("adb did not return a PNG")
+    (OUTPUT / f"{name}.png").write_bytes(png)
+    (OUTPUT / f"{name}.xml").write_text(hierarchy)
+
+
 def main():
     OUTPUT.mkdir(parents=True, exist_ok=True)
     timeout = 90  # the first launch also waits out a cold emulator
@@ -86,11 +134,17 @@ def main():
                 hierarchy = launch_and_wait(screen, expected, theme == "dark", timeout)
                 timeout = 30
                 time.sleep(1)
-                png = adb("exec-out", "screencap", "-p", binary=True)
-                if not png.startswith(b"\x89PNG\r\n\x1a\n"):
-                    raise RuntimeError("adb did not return a PNG")
-                (OUTPUT / f"{screen}_{theme}.png").write_bytes(png)
-                (OUTPUT / f"{screen}_{theme}.xml").write_text(hierarchy)
+                if screen == "search":
+                    hierarchy = type_then_close_keyboard(screen, hierarchy, lambda: save(f"search_typing_{theme}", hierarchy))
+                if screen == "settings":
+                    hierarchy = scroll_to_end(screen)
+                save(f"{screen}_{theme}", hierarchy)
+                if screen == "settings":
+                    root = ET.fromstring(hierarchy)
+                    row, dock = bounds(root, "Storage used"), bounds(root, "Open player")
+                    print(f"settings {theme}: last row {row}, mini player {dock}")
+                    if row is None or dock is None or hidden_under_dock(row, dock):
+                        raise RuntimeError(f"The last Settings row is not clear of the mini player ({theme})")
     finally:
         # Raw bytes: logcat can carry non-UTF-8 output from any process, which must not fail a finished capture.
         (OUTPUT / "logcat.txt").write_bytes(adb("logcat", "-d", "-v", "brief", binary=True))

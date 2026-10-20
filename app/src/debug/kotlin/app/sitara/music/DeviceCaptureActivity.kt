@@ -82,6 +82,7 @@ private fun CaptureScreen(screen: String, dark: Boolean, reduced: Boolean) {
                 "search" -> Tab.SEARCH
                 else -> Tab.HOME
             },
+            initialSettingsOpen = screen == "settings",
             playerExpanded = screen == "player" || screen == "lyrics",
             playerPage = if (screen == "lyrics") 1 else 0,
             greetingText = "Good evening",
