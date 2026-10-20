@@ -6,6 +6,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.8.1] - 2026-10-20
+
+### Fixed
+
+- Lyrics load for songs from channels named like "ArtistVEVO": the channel name is split back into the artist's name ("OliviaRodrigoVEVO" becomes "Olivia Rodrigo"), and a busy or failing lyrics server on one search no longer stops the others from being tried.
+- No grey bar is left over the bottom of the dock after the keyboard closes on Android 14.
+
 ## [0.8.0] - 2026-10-20
 
 Phase C, slice 2: sound I.
@@ -171,7 +178,8 @@ Phase A: foundation, plus the first UI redesign.
 - GitHub Actions workflows: CI (ktlint, unit tests, screenshot tests, debug APK artifact), release on `v*` tags with SHA256SUMS, GitHub Pages site, gitleaks scanning and a manual screenshot refresh workflow.
 - Project documentation: README, architecture and design system guides, contributing guide, code of conduct, security policy and the project website.
 
-[Unreleased]: https://github.com/muhib-karim/sitara/compare/v0.8.0...HEAD
+[Unreleased]: https://github.com/muhib-karim/sitara/compare/v0.8.1...HEAD
+[0.8.1]: https://github.com/muhib-karim/sitara/compare/v0.8.0...v0.8.1
 [0.8.0]: https://github.com/muhib-karim/sitara/compare/v0.7.0...v0.8.0
 [0.7.0]: https://github.com/muhib-karim/sitara/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/muhib-karim/sitara/compare/v0.5.0...v0.6.0
