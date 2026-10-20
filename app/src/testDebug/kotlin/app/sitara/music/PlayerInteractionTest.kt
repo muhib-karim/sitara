@@ -26,6 +26,7 @@ import app.sitara.music.core.model.DarkMode
 import app.sitara.music.core.model.SearchFilter
 import app.sitara.music.core.model.SitaraSettings
 import app.sitara.music.core.model.Track
+import app.sitara.music.feature.home.HomeFeed
 import app.sitara.music.feature.library.LibraryState
 import app.sitara.music.feature.player.PlayerActions
 import app.sitara.music.feature.player.PlayerUiState
@@ -57,15 +58,12 @@ class PlayerInteractionTest {
     ) {
         val source = FakeMusicSource()
         val track = SampleCatalog.tracks.first()
-        val home = runBlocking { source.home() }
-        val library = runBlocking { source.library() }
         val lyrics = runBlocking { source.lyrics(track)!! }
         compose.setContent {
             backDispatcher = checkNotNull(LocalOnBackPressedDispatcherOwner.current).onBackPressedDispatcher
             SitaraShell(
                 settings = SitaraSettings(darkMode = DarkMode.DARK, reducedMotion = true),
-                home = home,
-                sampleLibrary = library,
+                home = HomeFeed(),
                 library = LibraryState.Loading,
                 query = "",
                 searchFilter = SearchFilter.SONGS,
@@ -76,6 +74,7 @@ class PlayerInteractionTest {
                 onQueryChange = {},
                 onSearchFilterChange = {},
                 onRetrySearch = {},
+                onRetryTrending = {},
                 onPlay = { _, _ -> },
                 onShuffle = {},
                 onSettingsChange = {},

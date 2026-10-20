@@ -9,15 +9,15 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import app.sitara.music.core.common.formatDuration
 import app.sitara.music.core.model.Album
 import app.sitara.music.core.model.Artist
-import app.sitara.music.core.model.Library
-import app.sitara.music.core.model.Lyrics
 import app.sitara.music.core.model.PlaylistSummary
 import app.sitara.music.core.model.SearchFilter
-import app.sitara.music.core.model.Shelf
 import app.sitara.music.core.model.SitaraSettings
 import app.sitara.music.core.model.Track
 import app.sitara.music.core.player.QueueState
 import app.sitara.music.core.player.SleepTimerState
+import app.sitara.music.feature.home.HomeFeed
+import app.sitara.music.feature.home.TrendingState
+import app.sitara.music.feature.home.homeFeed
 import app.sitara.music.feature.library.DetailState
 import app.sitara.music.feature.library.LibraryActions
 import app.sitara.music.feature.library.LibraryState
@@ -40,11 +40,9 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.catch
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.distinctUntilChangedBy
 import kotlinx.coroutines.flow.filter
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
@@ -57,9 +55,7 @@ class AppViewModel(private val app: SitaraApplication) :
     DetailPages {
     private val player = app.player
 
-    val home = MutableStateFlow<List<Shelf>>(emptyList())
-    /** The sample catalogue Search offers to browse. */
-    val sampleLibrary = MutableStateFlow(Library(emptyList(), emptyList(), emptyList(), emptyList()))
+    private val trending = MutableStateFlow<TrendingState>(TrendingState.Loading)
     val query = MutableStateFlow("")
     val searchFilter = MutableStateFlow(SearchFilter.SONGS)
     private val searchRetries = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
@@ -72,10 +68,6 @@ class AppViewModel(private val app: SitaraApplication) :
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SearchState.Idle)
     val settings: StateFlow<SitaraSettings> = app.settings.settings.stateIn(viewModelScope, SharingStarted.Eagerly, SitaraSettings())
 
-    private val lyrics: StateFlow<Lyrics> = player.state.map { it.queue.current }.distinctUntilChanged()
-        .mapLatest { t -> t?.let { app.sampleSource.lyrics(it) } ?: Lyrics.Empty }
-        .stateIn(viewModelScope, SharingStarted.Eagerly, Lyrics.Empty)
-
     private val radio = MutableStateFlow(RadioStatus.READY)
 
     val savedIds: StateFlow<SavedIds> = combine(app.library.likedSongs.ids, app.library.saved.albumIds, app.library.saved.artistIds, ::SavedIds)
@@ -87,6 +79,14 @@ class AppViewModel(private val app: SitaraApplication) :
         .catch<LibraryState> { emit(LibraryState.Failed) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), LibraryState.Loading)
 
+    val home: StateFlow<HomeFeed> = combine(trending, library) { chart, saved ->
+        if (saved is LibraryState.Ready) {
+            saved.library.run { homeFeed(chart, recent, liked, playlists, albums) }
+        } else {
+            HomeFeed(chart)
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HomeFeed())
+
     val playlists: StateFlow<List<PlaylistSummary>> = app.library.playlists.all.catch { emit(emptyList()) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
@@ -97,7 +97,7 @@ class AppViewModel(private val app: SitaraApplication) :
     // The listener's own pages follow the store live; they hold no network state to retry.
     private val ownPages = mutableMapOf<DetailRoute, StateFlow<DetailState>>()
 
-    val playerState: StateFlow<PlayerUiState> = combine(player.state, lyrics, player.sleepTimerState, radio, savedIds) { s, l, timer, radioStatus, saved ->
+    val playerState: StateFlow<PlayerUiState> = combine(player.state, player.sleepTimerState, radio, savedIds) { s, timer, radioStatus, saved ->
         PlayerUiState(
             track = s.queue.current,
             isPlaying = s.isPlaying,
@@ -106,7 +106,6 @@ class AppViewModel(private val app: SitaraApplication) :
             upNext = s.queue.upNext,
             shuffled = s.queue.shuffled,
             repeatMode = s.queue.repeatMode,
-            lyrics = l,
             sleepTimerLabel = when (timer) {
                 SleepTimerState.Off -> null
                 SleepTimerState.EndOfTrack -> "end of track"
@@ -119,10 +118,7 @@ class AppViewModel(private val app: SitaraApplication) :
 
     init {
         player.connect()
-        viewModelScope.launch {
-            home.value = app.sampleSource.home()
-            sampleLibrary.value = app.sampleSource.library()
-        }
+        loadTrending()
         viewModelScope.launch { search.collect { playSharedSongIfResolved(it) } }
         val queue = player.state.map { it.queue }
         viewModelScope.launch { queue.distinctUntilChangedBy { it.currentEntry?.uid }.collect { radio.value = RadioStatus.READY } }
@@ -163,9 +159,24 @@ class AppViewModel(private val app: SitaraApplication) :
         }
     }
 
-    // Samples first: that lookup is local, and sample ids are never YouTube ids.
-    private suspend fun <T : Any> browse(page: suspend BrowseSource.() -> T?): T =
-        app.sampleSource.page() ?: app.youtube.page() ?: throw NoSuchElementException("No catalogue has this page")
+    private suspend fun <T : Any> browse(page: suspend BrowseSource.() -> T?): T = app.youtube.page() ?: throw NoSuchElementException("No catalogue has this page")
+
+    fun retryTrending() {
+        if (trending.value == TrendingState.Failed) loadTrending()
+    }
+
+    private fun loadTrending() {
+        viewModelScope.launch {
+            trending.value = TrendingState.Loading
+            trending.value = try {
+                TrendingState.Ready(app.youtube.trending())
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                TrendingState.Failed
+            }
+        }
+    }
 
     override fun startRadio() {
         if (radio.value == RadioStatus.LOADING) return
@@ -177,7 +188,7 @@ class AppViewModel(private val app: SitaraApplication) :
         radio.value = RadioStatus.LOADING
         val queued = queue.items.mapTo(HashSet()) { it.id }
         val picks = try {
-            app.sampleSource.radio(seed, queued) ?: app.youtube.radio(seed, queued).orEmpty()
+            app.youtube.radio(seed, queued).orEmpty()
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {

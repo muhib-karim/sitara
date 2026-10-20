@@ -10,9 +10,7 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
-import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
-import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeLeft
@@ -27,6 +25,8 @@ import app.sitara.music.core.model.SearchResults
 import app.sitara.music.core.model.SitaraSettings
 import app.sitara.music.core.model.ThemeMode
 import app.sitara.music.core.model.UserPlaylist
+import app.sitara.music.feature.home.HomeFeed
+import app.sitara.music.feature.home.TrendingState
 import app.sitara.music.feature.library.AddToPlaylist
 import app.sitara.music.feature.library.DetailState
 import app.sitara.music.feature.library.LibraryState
@@ -57,8 +57,8 @@ class ScreenshotTest {
     val compose = createComposeRule()
 
     private val source = FakeMusicSource()
-    private val home = runBlocking { source.home() }
     private val library: Library = runBlocking { source.library() }
+    private val home = sampleHomeFeed(runBlocking { source.trending() }, sampleSavedLibrary(library))
     private val track = SampleCatalog.tracks.first()
     private val playing = PlayerUiState(
         track = track,
@@ -92,6 +92,7 @@ class ScreenshotTest {
         detail: DetailState? = null,
         route: DetailRoute? = null,
         saved: LibraryState = LibraryState.Ready(sampleSavedLibrary(library)),
+        homeFeed: HomeFeed = home,
         beforeCapture: () -> Unit = {},
     ) {
         val settings = SitaraSettings(themeMode = mode, darkMode = if (dark) DarkMode.DARK else DarkMode.LIGHT, reducedMotion = reduced)
@@ -99,8 +100,7 @@ class ScreenshotTest {
             CompositionLocalProvider(LocalDensity provides Density(LocalDensity.current.density, fontScale)) {
                 SitaraShell(
                     settings = settings,
-                    home = home,
-                    sampleLibrary = library,
+                    home = homeFeed,
                     library = saved,
                     query = query,
                     searchFilter = filter,
@@ -111,6 +111,7 @@ class ScreenshotTest {
                     onQueryChange = {},
                     onSearchFilterChange = {},
                     onRetrySearch = {},
+                    onRetryTrending = {},
                     onPlay = { _, _ -> },
                     onShuffle = {},
                     onSettingsChange = {},
@@ -191,12 +192,14 @@ class ScreenshotTest {
         compose.onNodeWithTag("quick-picks").performTouchInput { swipeLeft() }
     }
 
-    @Test fun homeFocus() = shot("home_focus", dark = true) {
-        compose.onNodeWithText("Focus").performClick()
-    }
+    @Test fun homeLoading() = shot("home_loading", dark = true, playerState = PlayerUiState(), homeFeed = HomeFeed())
+
+    @Test fun homeChartFailed() = shot("home_chart_failed", dark = true, homeFeed = home.copy(trending = TrendingState.Failed))
+
+    @Test fun homeFreshInstall() = shot("home_fresh", dark = true, playerState = PlayerUiState(), homeFeed = HomeFeed(home.trending, libraryLoaded = true))
 
     @Test fun homeBottomLargeText() = shot("home_bottom_large_text", dark = true, fontScale = 2f) {
-        compose.onNodeWithTag("home-content").performScrollToIndex(3 + home.size * 2 - 1)
+        compose.onNodeWithTag("home-content").performScrollToIndex(8)
     }
 
     @Test fun libraryEmpty() = shot("library_empty", dark = true, tab = Tab.LIBRARY, saved = LibraryState.Ready(SavedLibrary(emptyList(), emptyList(), emptyList(), emptyList(), emptyList())))
@@ -228,8 +231,8 @@ class ScreenshotTest {
         compose.onRoot().captureRoboImage("src/test/screenshots/${name}_dark.png")
     }
 
-    @Test fun searchBrowseDark() = shot("search_browse", dark = true, tab = Tab.SEARCH)
-    @Test fun searchBrowseLight() = shot("search_browse", dark = false, tab = Tab.SEARCH)
+    @Test fun searchIdleDark() = shot("search_idle", dark = true, tab = Tab.SEARCH)
+    @Test fun searchIdleLight() = shot("search_idle", dark = false, tab = Tab.SEARCH)
     @Test fun searchFailed() = shot("search_failed", dark = true, tab = Tab.SEARCH, query = "lofi", search = SearchState.Failed("lofi"))
     @Test fun searchGrouped() = shot("search_grouped", dark = true, tab = Tab.SEARCH, query = "Lumen Drift")
 

@@ -62,7 +62,8 @@ dependencies {
     implementation(project(":core:player"))
     implementation(project(":core:designsystem"))
     implementation(project(":source:api"))
-    implementation(project(":source:fake"))
+    // The sample catalogue is a fixture: debug capture screens and tests only, never in a release build.
+    debugImplementation(project(":source:fake"))
     implementation(project(":source:lyrics"))
     implementation(project(":source:youtube"))
     implementation(project(":feature:home"))

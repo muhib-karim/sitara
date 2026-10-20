@@ -2,13 +2,16 @@ package app.sitara.music.source.youtube
 
 import app.sitara.music.core.model.Album
 import app.sitara.music.core.model.ArtistPage
+import app.sitara.music.core.model.Chart
 import app.sitara.music.core.model.Playlist
 import app.sitara.music.core.model.SearchFilter
 import app.sitara.music.core.model.SearchResults
 import app.sitara.music.core.model.Track
 import app.sitara.music.source.api.BrowseSource
+import app.sitara.music.source.api.ChartsSource
 import app.sitara.music.source.api.RadioSource
 import app.sitara.music.source.api.SearchSource
+import java.util.Locale
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -18,15 +21,19 @@ import org.schabi.newpipe.extractor.ServiceList
 import org.schabi.newpipe.extractor.channel.ChannelInfo
 import org.schabi.newpipe.extractor.channel.tabs.ChannelTabInfo
 import org.schabi.newpipe.extractor.channel.tabs.ChannelTabs
+import org.schabi.newpipe.extractor.exceptions.UnsupportedContentInCountryException
+import org.schabi.newpipe.extractor.kiosk.KioskInfo
+import org.schabi.newpipe.extractor.localization.ContentCountry
 import org.schabi.newpipe.extractor.playlist.PlaylistInfo
 import org.schabi.newpipe.extractor.search.SearchInfo
 import org.schabi.newpipe.extractor.services.youtube.linkHandler.YoutubeSearchQueryHandlerFactory.MUSIC_SONGS
 import org.schabi.newpipe.extractor.stream.StreamInfo
 import org.schabi.newpipe.extractor.stream.StreamInfoItem
 
-/** YouTube Music search (songs, albums, artists, playlists), their pages and radio from related songs; a pasted video link resolves to that one song. Home and library stay with the sample source. */
+/** YouTube Music search (songs, albums, artists, playlists), their pages, radio from related songs and the YouTube Charts trending list; a pasted video link resolves to that one song. */
 class YouTubeMusicSource :
     SearchSource,
+    ChartsSource,
     BrowseSource,
     RadioSource {
     private val service = ServiceList.YouTube
@@ -68,7 +75,30 @@ class YouTubeMusicSource :
     override suspend fun radio(seed: Track, exclude: Set<String>): List<Track>? {
         if (!isVideoId(seed.id)) return null
         val info = io { StreamInfo.getInfo(service, "https://www.youtube.com/watch?v=${seed.id}") }
-        return radioTracks(info.relatedItems, exclude + seed.id)
+        return songsFrom(info.relatedItems, exclude + seed.id)
+    }
+
+    /** The device country's trending music videos, or the United Kingdom's where YouTube Charts has no chart for that country. */
+    override suspend fun trending(): Chart {
+        val country = Locale.getDefault().country.ifEmpty { FALLBACK_COUNTRY }
+        return try {
+            chart(country)
+        } catch (e: UnsupportedContentInCountryException) {
+            if (country == FALLBACK_COUNTRY) throw e
+            chart(FALLBACK_COUNTRY)
+        }
+    }
+
+    private suspend fun chart(country: String): Chart {
+        val info = io {
+            val extractor = service.kioskList.getExtractorById(TRENDING_MUSIC_KIOSK, null)
+            extractor.forceContentCountry(ContentCountry(country))
+            extractor.fetchPage()
+            KioskInfo.getInfo(extractor)
+        }
+        // Like search, the extractor logs parse failures; an empty chart with an error is a failure.
+        if (info.relatedItems.isEmpty()) info.errors.firstOrNull()?.let { throw it }
+        return Chart(chartLabel(country), songsFrom(info.relatedItems))
     }
 
     // shortcut: stops after MAX_PLAYLIST_ITEMS so a huge playlist stays one quick load; page lazily on scroll if people hit the cap.
@@ -97,5 +127,7 @@ class YouTubeMusicSource :
 
     private companion object {
         const val MAX_PLAYLIST_ITEMS = 500
+        const val TRENDING_MUSIC_KIOSK = "trending_music"
+        const val FALLBACK_COUNTRY = "GB"
     }
 }

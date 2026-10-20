@@ -1,8 +1,12 @@
 package app.sitara.music
 
+import app.sitara.music.core.model.Chart
 import app.sitara.music.core.model.Library
 import app.sitara.music.core.model.PlaylistSummary
 import app.sitara.music.core.model.UserPlaylist
+import app.sitara.music.feature.home.HomeFeed
+import app.sitara.music.feature.home.TrendingState
+import app.sitara.music.feature.home.homeFeed
 import app.sitara.music.feature.library.DetailState
 import app.sitara.music.feature.library.SavedLibrary
 import app.sitara.music.source.fake.FakeMusicSource
@@ -37,3 +41,6 @@ internal fun sampleSavedLibrary(sample: Library) = SavedLibrary(
     albums = sample.albums,
     artists = sample.artists,
 )
+
+/** Debug and test fixture: Home for a listener with [saved] in their library, under [chart]. */
+internal fun sampleHomeFeed(chart: Chart, saved: SavedLibrary): HomeFeed = homeFeed(TrendingState.Ready(chart), saved.recent, saved.liked, saved.playlists, saved.albums)

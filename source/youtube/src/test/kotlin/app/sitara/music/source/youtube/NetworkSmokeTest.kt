@@ -49,6 +49,13 @@ class NetworkSmokeTest {
         )
     }
 
+    @Test
+    fun `the trending chart lists songs`() = runBlocking {
+        val chart = YouTubeMusicSource().trending()
+        chart.tracks.take(5).forEach { println("chart ${chart.label} -> ${it.id} | ${it.title} | ${it.artist}") }
+        assertTrue(chart.tracks.size >= 10, "only ${chart.tracks.size} songs in ${chart.label}")
+    }
+
     private inline fun <T> unlessBotChecked(block: () -> T): T = try {
         block()
     } catch (e: SignInConfirmNotBotException) {

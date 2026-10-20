@@ -2,14 +2,15 @@ package app.sitara.music.source.fake
 
 import app.sitara.music.core.model.Album
 import app.sitara.music.core.model.ArtistPage
+import app.sitara.music.core.model.Chart
 import app.sitara.music.core.model.Library
 import app.sitara.music.core.model.Lyrics
 import app.sitara.music.core.model.Playlist
 import app.sitara.music.core.model.SearchFilter
 import app.sitara.music.core.model.SearchResults
-import app.sitara.music.core.model.Shelf
 import app.sitara.music.core.model.Track
 import app.sitara.music.source.api.BrowseSource
+import app.sitara.music.source.api.ChartsSource
 import app.sitara.music.source.api.HealthCheck
 import app.sitara.music.source.api.HealthReport
 import app.sitara.music.source.api.HealthStatus
@@ -21,21 +22,15 @@ import app.sitara.music.source.api.StreamResolver
 import app.sitara.music.source.lyrics.LrcParser
 import kotlinx.coroutines.delay
 
-/** An offline source backed by [SampleCatalog]; it powers Phase A, previews and tests. */
+/** An offline source backed by [SampleCatalog], for tests, screenshot fixtures and debug capture screens only. */
 class FakeMusicSource(
     private val latencyMs: Long = 0,
-) : MusicSource, BrowseSource, RadioSource, StreamResolver, LyricsProvider, HealthCheck {
+) : MusicSource, ChartsSource, BrowseSource, RadioSource, StreamResolver, LyricsProvider, HealthCheck {
     override val id: String = "fake"
 
-    override suspend fun home(): List<Shelf> {
+    override suspend fun trending(): Chart {
         simulateLatency()
-        val tracks = SampleCatalog.tracks
-        return listOf(
-            Shelf("quick", "Quick picks", tracks = tracks.take(6)),
-            Shelf("albums", "New for you", albums = SampleCatalog.albums),
-            Shelf("mixes", "Your mixes", playlists = SampleCatalog.playlists),
-            Shelf("again", "Listen again", tracks = tracks.reversed().take(6)),
-        )
+        return Chart("Sample chart", SampleCatalog.tracks)
     }
 
     override suspend fun search(query: String, filter: SearchFilter): SearchResults {

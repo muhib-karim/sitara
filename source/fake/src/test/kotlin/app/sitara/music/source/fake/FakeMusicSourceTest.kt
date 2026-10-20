@@ -11,10 +11,8 @@ class FakeMusicSourceTest {
     private val source = FakeMusicSource()
 
     @Test
-    fun `home has shelves with content`() = runTest {
-        val shelves = source.home()
-        assertTrue(shelves.size >= 3)
-        assertTrue(shelves.all { it.tracks.isNotEmpty() || it.albums.isNotEmpty() || it.playlists.isNotEmpty() })
+    fun `the sample chart ranks every sample song`() = runTest {
+        assertEquals(SampleCatalog.tracks, source.trending().tracks)
     }
 
     @Test

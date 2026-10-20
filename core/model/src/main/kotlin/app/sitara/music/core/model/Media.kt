@@ -49,27 +49,20 @@ data class ArtistPage(
     val releases: List<Album>,
 )
 
-enum class ListeningMood(val label: String) { FOCUS("Focus"), UNWIND("Unwind"), UPLIFT("Uplift") }
-
 data class Playlist(
     val id: String,
     val title: String,
     val description: String,
     val artwork: Artwork,
     val tracks: List<Track>,
-    val moods: Set<ListeningMood> = emptySet(),
     /** Who made the playlist, when the source says. */
     val curator: String = "",
 )
 
-/** A titled horizontal row on the home screen. */
-data class Shelf(
-    val id: String,
-    val title: String,
-    val subtitle: String? = null,
-    val tracks: List<Track> = emptyList(),
-    val albums: List<Album> = emptyList(),
-    val playlists: List<Playlist> = emptyList(),
+/** A ranked list of songs, such as a country's trending chart; [label] names the chart and where it is from. */
+data class Chart(
+    val label: String,
+    val tracks: List<Track>,
 )
 
 /** What a search looks for. */

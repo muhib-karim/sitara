@@ -49,12 +49,11 @@ import app.sitara.music.core.designsystem.SitaraSpacing
 import app.sitara.music.core.designsystem.SitaraTheme
 import app.sitara.music.core.model.Album
 import app.sitara.music.core.model.Artist
-import app.sitara.music.core.model.Library
 import app.sitara.music.core.model.PlaylistSummary
 import app.sitara.music.core.model.SearchFilter
-import app.sitara.music.core.model.Shelf
 import app.sitara.music.core.model.SitaraSettings
 import app.sitara.music.core.model.Track
+import app.sitara.music.feature.home.HomeFeed
 import app.sitara.music.feature.home.HomeScreen
 import app.sitara.music.feature.library.AddToPlaylist
 import app.sitara.music.feature.library.DetailScreen
@@ -87,7 +86,6 @@ fun SitaraRoot(vm: AppViewModel, systemReducedMotion: Boolean) {
     val settings by vm.settings.collectAsState()
     val player by vm.playerState.collectAsState()
     val home by vm.home.collectAsState()
-    val sampleLibrary by vm.sampleLibrary.collectAsState()
     val library by vm.library.collectAsState()
     val savedIds by vm.savedIds.collectAsState()
     val playlists by vm.playlists.collectAsState()
@@ -97,7 +95,6 @@ fun SitaraRoot(vm: AppViewModel, systemReducedMotion: Boolean) {
     SitaraShell(
         settings = settings.let { if (systemReducedMotion) it.copy(reducedMotion = true) else it },
         home = home,
-        sampleLibrary = sampleLibrary,
         library = library,
         savedIds = savedIds,
         playlists = playlists,
@@ -111,6 +108,7 @@ fun SitaraRoot(vm: AppViewModel, systemReducedMotion: Boolean) {
         onQueryChange = { vm.query.value = it },
         onSearchFilterChange = { vm.searchFilter.value = it },
         onRetrySearch = vm::retrySearch,
+        onRetryTrending = vm::retryTrending,
         onPlay = vm::play,
         onShuffle = vm::shuffle,
         onSettingsChange = vm::updateSettings,
@@ -122,8 +120,7 @@ fun SitaraRoot(vm: AppViewModel, systemReducedMotion: Boolean) {
 @Composable
 fun SitaraShell(
     settings: SitaraSettings,
-    home: List<Shelf>,
-    sampleLibrary: Library,
+    home: HomeFeed,
     library: LibraryState,
     query: String,
     searchFilter: SearchFilter,
@@ -134,6 +131,7 @@ fun SitaraShell(
     onQueryChange: (String) -> Unit,
     onSearchFilterChange: (SearchFilter) -> Unit,
     onRetrySearch: () -> Unit,
+    onRetryTrending: () -> Unit,
     onPlay: (List<Track>, Int) -> Unit,
     onShuffle: (List<Track>) -> Unit,
     onSettingsChange: (SitaraSettings) -> Unit,
@@ -197,12 +195,12 @@ fun SitaraShell(
                     } else {
                         when (tab) {
                             Tab.HOME -> HomeScreen(
-                                greetingText, home, onPlay, openAlbum, openMenu, contentPadding = contentPadding,
-                                note = "These shelves are built-in sample music. Search finds real songs, albums, artists and playlists.",
+                                greetingText, home, onPlay, onRetryTrending, openAlbum, { open(DetailRoute.UserPlaylist(it.id)) }, openMenu,
+                                contentPadding = contentPadding,
                             )
                             Tab.SEARCH -> SearchScreen(
                                 query, onQueryChange, searchFilter, onSearchFilterChange, search, onRetrySearch,
-                                listOf("Lo-fi beats", "Jazz piano", "Classical focus"), onPlay, sampleLibrary,
+                                listOf("Lo-fi beats", "Jazz piano", "Classical focus"), onPlay,
                                 openAlbum, openArtist, { open(DetailRoute.Playlist(it.id)) }, openMenu, contentPadding = contentPadding,
                             )
                             Tab.LIBRARY -> LibraryScreen(

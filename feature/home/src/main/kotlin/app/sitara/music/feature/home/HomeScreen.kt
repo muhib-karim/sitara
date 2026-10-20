@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -20,77 +21,112 @@ import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.key
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.unit.dp
 import app.sitara.music.core.designsystem.ArtworkTile
+import app.sitara.music.core.designsystem.EmptyCollectionArtwork
 import app.sitara.music.core.designsystem.LargeTitle
+import app.sitara.music.core.designsystem.PillButton
 import app.sitara.music.core.designsystem.SectionHeader
-import app.sitara.music.core.designsystem.SelectionPill
 import app.sitara.music.core.designsystem.SitaraSpacing
 import app.sitara.music.core.designsystem.TrackRow
 import app.sitara.music.core.designsystem.byline
 import app.sitara.music.core.model.Album
-import app.sitara.music.core.model.ListeningMood
-import app.sitara.music.core.model.Shelf
+import app.sitara.music.core.model.PlaylistSummary
 import app.sitara.music.core.model.Track
 
+/** Trending songs, then the listener's own shelves; a fresh install with nothing played says how Home fills up. */
 @Composable
 fun HomeScreen(
     greeting: String,
-    shelves: List<Shelf>,
+    feed: HomeFeed,
     onPlay: (tracks: List<Track>, index: Int) -> Unit,
+    onRetryTrending: () -> Unit,
     onAlbum: (Album) -> Unit,
+    onPlaylist: (PlaylistSummary) -> Unit,
     onTrackMenu: (Track) -> Unit,
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(),
     listState: LazyListState = rememberLazyListState(),
-    note: String? = null,
 ) {
-    var mood by rememberSaveable { mutableStateOf<ListeningMood?>(null) }
-    val available = remember(shelves) { shelves.flatMap { it.playlists }.flatMap { it.moods }.toSet() }
-    val selectedMood = mood?.takeIf { it in available }
-    val visible = remember(shelves, selectedMood) { shelvesForMood(shelves, selectedMood) }
     LazyColumn(modifier.fillMaxSize().testTag("home-content"), state = listState, contentPadding = contentPadding) {
         item(key = "title") { LargeTitle(greeting) }
-        if (note != null) {
-            item(key = "note") {
-                Text(
-                    note, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.padding(horizontal = SitaraSpacing.Gutter),
-                )
+        item(key = "trending-heading") {
+            SectionHeader("Trending now", subtitle = (feed.trending as? TrendingState.Ready)?.chart?.label, modifier = Modifier.padding(top = 12.dp))
+        }
+        item(key = "trending") {
+            when (val trending = feed.trending) {
+                TrendingState.Loading -> HomeMessage("Loading the charts…")
+                TrendingState.Failed -> Column {
+                    HomeMessage("The charts didn’t load. Check your connection, then try again.")
+                    PillButton("Try again", onRetryTrending, Modifier.padding(horizontal = SitaraSpacing.Gutter))
+                }
+                is TrendingState.Ready ->
+                    if (trending.chart.tracks.isEmpty()) HomeMessage("Nothing is charting here right now.") else QuickPicks(trending.chart.tracks, onPlay, onTrackMenu)
             }
         }
-        item(key = "moods") {
-            LazyRow(contentPadding = PaddingValues(horizontal = SitaraSpacing.Gutter, vertical = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                item { SelectionPill("For you", selectedMood == null, { mood = null }) }
-                items(ListeningMood.entries.filter { it in available }) { value ->
-                    SelectionPill(value.label, selectedMood == value, { mood = value })
+        if (feed.libraryLoaded && !feed.hasLibrary) {
+            item(key = "welcome") {
+                SectionHeader("Make Home yours", subtitle = "Songs you play, like and save show up here.", modifier = Modifier.padding(top = 20.dp))
+            }
+        }
+        trackShelf("recent", "Recently played", feed.recent, onPlay)
+        if (feed.jumpBackIn.isNotEmpty()) {
+            item(key = "h-jump") { SectionHeader("Jump back in", modifier = Modifier.padding(top = 12.dp)) }
+            item(key = "r-jump") {
+                Rail("jump") {
+                    items(feed.jumpBackIn, key = { it.key }) { saved ->
+                        when (saved) {
+                            is SavedCollection.OwnPlaylist -> ArtworkTile(
+                                saved.playlist.name, songCount(saved.playlist.songCount), saved.playlist.artwork ?: EmptyCollectionArtwork,
+                                { onPlaylist(saved.playlist) }, Modifier.width(156.dp),
+                            )
+                            is SavedCollection.SavedAlbum -> ArtworkTile(saved.album.title, saved.album.byline, saved.album.artwork, { onAlbum(saved.album) }, Modifier.width(156.dp))
+                        }
+                    }
                 }
             }
         }
-        if (visible.isEmpty()) {
-            item { SectionHeader("A little quiet here", subtitle = "Your music collections will appear here.") }
-        }
-        for (shelf in visible) {
-            item(key = "h-${shelf.id}") {
-                SectionHeader(shelf.title, subtitle = shelf.subtitle, modifier = Modifier.padding(top = 12.dp))
-            }
-            item(key = "r-${shelf.id}") {
-                when {
-                    shelf.id == "quick" && shelf.tracks.isNotEmpty() -> key(selectedMood) { QuickPicks(shelf.tracks, onPlay, onTrackMenu) }
-                    else -> ArtworkRail(shelf, onPlay, onAlbum)
-                }
+        trackShelf("likes", "From your likes", feed.fromLikes, onPlay)
+    }
+}
+
+private val SavedCollection.key: String get() = when (this) {
+    is SavedCollection.OwnPlaylist -> "playlist-${playlist.id}"
+    is SavedCollection.SavedAlbum -> "album-${album.id}"
+}
+
+private fun songCount(count: Int) = if (count == 1) "1 song" else "$count songs"
+
+private fun LazyListScope.trackShelf(key: String, title: String, tracks: List<Track>, onPlay: (List<Track>, Int) -> Unit) {
+    if (tracks.isEmpty()) return
+    item(key = "h-$key") { SectionHeader(title, modifier = Modifier.padding(top = 12.dp)) }
+    item(key = "r-$key") {
+        Rail(key) {
+            items(tracks.size, key = { tracks[it].id }) { index ->
+                val track = tracks[index]
+                ArtworkTile(track.title, track.artist, track.artwork, { onPlay(tracks, index) }, Modifier.width(156.dp))
             }
         }
     }
+}
+
+@Composable
+private fun Rail(key: String, content: LazyListScope.() -> Unit) {
+    LazyRow(
+        modifier = Modifier.testTag("rail-$key"),
+        contentPadding = PaddingValues(horizontal = SitaraSpacing.Gutter, vertical = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        content = content,
+    )
+}
+
+@Composable
+private fun HomeMessage(text: String) {
+    Text(text, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(horizontal = SitaraSpacing.Gutter, vertical = 8.dp))
 }
 
 @Composable
@@ -127,32 +163,6 @@ private fun QuickPicks(tracks: List<Track>, onPlay: (List<Track>, Int) -> Unit, 
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     style = MaterialTheme.typography.labelSmall,
                     modifier = Modifier.padding(horizontal = SitaraSpacing.Gutter, vertical = 8.dp),
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun ArtworkRail(shelf: Shelf, onPlay: (List<Track>, Int) -> Unit, onAlbum: (Album) -> Unit) {
-    LazyRow(
-        modifier = Modifier.testTag("rail-${shelf.id}"),
-        contentPadding = PaddingValues(horizontal = SitaraSpacing.Gutter, vertical = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
-    ) {
-        when {
-            shelf.tracks.isNotEmpty() -> items(shelf.tracks.size, key = { shelf.tracks[it].id }) { index ->
-                val track = shelf.tracks[index]
-                ArtworkTile(track.title, track.artist, track.artwork, { onPlay(shelf.tracks, index) }, Modifier.width(156.dp))
-            }
-            shelf.albums.isNotEmpty() -> items(shelf.albums, key = { it.id }) { album ->
-                ArtworkTile(album.title, album.byline, album.artwork, { onAlbum(album) }, Modifier.width(164.dp))
-            }
-            shelf.playlists.isNotEmpty() -> items(shelf.playlists, key = { it.id }) { playlist ->
-                ArtworkTile(
-                    playlist.title, playlist.description, playlist.artwork,
-                    { onPlay(playlist.tracks, 0) }, Modifier.width(164.dp),
-                    enabled = playlist.tracks.isNotEmpty(),
                 )
             }
         }

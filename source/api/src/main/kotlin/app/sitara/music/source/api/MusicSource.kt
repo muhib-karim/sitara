@@ -1,13 +1,13 @@
 package app.sitara.music.source.api
 
 import app.sitara.music.core.model.Album
+import app.sitara.music.core.model.Chart
 import app.sitara.music.core.model.ArtistPage
 import app.sitara.music.core.model.Library
 import app.sitara.music.core.model.Lyrics
 import app.sitara.music.core.model.Playlist
 import app.sitara.music.core.model.SearchFilter
 import app.sitara.music.core.model.SearchResults
-import app.sitara.music.core.model.Shelf
 import app.sitara.music.core.model.Track
 
 /** Catalogue search on its own, for sources that do not offer browse or a library yet. */
@@ -29,11 +29,14 @@ interface RadioSource {
     suspend fun radio(seed: Track, exclude: Set<String>): List<Track>?
 }
 
-/** Catalogue access: everything the browse screens need. */
+/** The songs trending now, for Home. */
+interface ChartsSource {
+    suspend fun trending(): Chart
+}
+
+/** A whole catalogue with a listener's library, as the offline sample source offers it to tests and fixtures. */
 interface MusicSource : SearchSource {
     val id: String
-
-    suspend fun home(): List<Shelf>
 
     suspend fun library(): Library
 }

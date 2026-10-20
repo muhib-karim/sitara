@@ -31,6 +31,7 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeLeft
 import androidx.compose.ui.unit.Density
 import app.sitara.music.core.model.Album
+import app.sitara.music.core.model.Chart
 import app.sitara.music.core.model.DarkMode
 import app.sitara.music.core.model.PlaylistSummary
 import app.sitara.music.core.model.SearchFilter
@@ -38,6 +39,8 @@ import app.sitara.music.core.model.SearchResults
 import app.sitara.music.core.model.SitaraSettings
 import app.sitara.music.core.model.ThemeMode
 import app.sitara.music.core.model.Track
+import app.sitara.music.feature.home.HomeFeed
+import app.sitara.music.feature.home.TrendingState
 import app.sitara.music.feature.library.DetailState
 import app.sitara.music.feature.library.LibraryActions
 import app.sitara.music.feature.library.LibraryState
@@ -65,8 +68,8 @@ class BrowseInteractionTest {
     @get:Rule val compose = createComposeRule()
     private val opensArtist = SemanticsMatcher("opens the artist") { it.config.getOrNull(SemanticsActions.OnClick)?.label == "Open artist" }
     private val source = FakeMusicSource()
-    private val home = runBlocking { source.home() }
     private val library = runBlocking { source.library() }
+    private val chart = runBlocking { source.trending() }
 
     private fun render(
         tab: Tab = Tab.HOME,
@@ -85,6 +88,8 @@ class BrowseInteractionTest {
         onShuffle: (List<Track>) -> Unit = {},
         onFilter: (SearchFilter) -> Unit = {},
         initialDetail: DetailRoute? = null,
+        home: HomeFeed = sampleHomeFeed(chart, (saved as? LibraryState.Ready)?.library ?: sampleSavedLibrary(library)),
+        onRetryTrending: () -> Unit = {},
     ): StateRestorationTester {
         val restoration = StateRestorationTester(compose)
         restoration.setContent {
@@ -93,10 +98,10 @@ class BrowseInteractionTest {
             var filter by remember { mutableStateOf(SearchFilter.SONGS) }
             CompositionLocalProvider(LocalDensity provides Density(LocalDensity.current.density, fontScale)) {
                 SitaraShell(
-                    settings, home, library, saved, query, filter, search,
+                    settings, home, saved, query, filter, search,
                     PlayerUiState(track = SampleCatalog.tracks.first()), actions, details,
                     onQueryChange = { query = it; onQuery(it) }, onSearchFilterChange = { filter = it; onFilter(it) },
-                    onRetrySearch = onRetrySearch, onPlay = onPlay, onShuffle = onShuffle,
+                    onRetrySearch = onRetrySearch, onRetryTrending = onRetryTrending, onPlay = onPlay, onShuffle = onShuffle,
                     onSettingsChange = { settings = it; onSettings(it) }, initialTab = tab, initialDetail = initialDetail,
                     savedIds = savedIds, playlists = (saved as? LibraryState.Ready)?.library?.playlists.orEmpty(), libraryActions = libraryActions,
                 )
@@ -276,20 +281,15 @@ class BrowseInteractionTest {
         var queue = emptyList<Track>()
         render(onPlay = { tracks, selected -> queue = tracks; index = selected })
         compose.onNodeWithTag("quick-picks").performTouchInput { swipeLeft() }
-        val picks = home.first { it.id == "quick" }.tracks
+        val picks = chart.tracks
         compose.onNodeWithContentDescription("${picks[4].title} by ${picks[4].artist}").performClick()
         assertEquals(picks, queue)
         assertEquals(4, index)
     }
 
-    @Test fun searchCategoriesAndSuggestionsAreActions() {
+    @Test fun searchSuggestionsAreActions() {
         var query = ""
         render(Tab.SEARCH, onQuery = { query = it })
-        compose.onNodeWithText("Albums").performClick()
-        compose.onNodeWithText(library.albums.first().title).performClick()
-        compose.onNodeWithText("Play all").assertIsDisplayed()
-        compose.onNodeWithContentDescription("Back").performClick()
-        compose.onNodeWithContentDescription("All browse categories").performClick()
         compose.onNodeWithTag("search-content").performScrollToIndex(4)
         compose.onNodeWithText("Jazz piano").performClick()
         assertEquals("Jazz piano", query)
@@ -342,10 +342,42 @@ class BrowseInteractionTest {
 
     @Test fun lastHomeRailScrollsAboveTheDockAtLargeText() {
         render(fontScale = 2f)
-        // Header, sample note, moods, and two items per populated shelf (heading + content).
-        compose.onNodeWithTag("home-content").performScrollToIndex(3 + home.size * 2 - 1)
-        val rail = compose.onNodeWithTag("rail-${home.last().id}").fetchSemanticsNode().boundsInRoot
+        // Title, the trending heading and chart, then a heading and a rail for each of the three library shelves.
+        compose.onNodeWithTag("home-content").performScrollToIndex(8)
+        val rail = compose.onNodeWithTag("rail-likes").fetchSemanticsNode().boundsInRoot
         val dock = compose.onNodeWithTag("playback-dock").fetchSemanticsNode().boundsInRoot
         assertTrue("The final rail must clear the entire playback dock", rail.bottom <= dock.top)
+    }
+
+    @Test fun failedChartOffersTryAgain() {
+        var retries = 0
+        render(home = HomeFeed(TrendingState.Failed), onRetryTrending = { retries++ })
+        compose.onNodeWithText("The charts didn’t load. Check your connection, then try again.").assertIsDisplayed()
+        compose.onNodeWithText("Try again").performClick()
+        assertEquals(1, retries)
+    }
+
+    @Test fun freshInstallHomeSaysHowItFillsUp() {
+        render(home = HomeFeed(TrendingState.Ready(Chart("YouTube Charts · Iceland", emptyList())), libraryLoaded = true))
+        compose.onNodeWithText("Nothing is charting here right now.").assertIsDisplayed()
+        compose.onNodeWithText("Make Home yours").assertIsDisplayed()
+        compose.onNodeWithText("Recently played").assertDoesNotExist()
+    }
+
+    @Test fun homeShelvesPlayAndOpenWhatTheyShow() {
+        var queue = emptyList<Track>()
+        var index = -1
+        val saved = sampleSavedLibrary(library)
+        render(onPlay = { tracks, selected -> queue = tracks; index = selected })
+        compose.onNodeWithText(chart.label).assertIsDisplayed()
+
+        compose.onNodeWithTag("home-content").performScrollToIndex(4)
+        compose.onNode(hasText(saved.recent[1].title) and hasAnyAncestor(hasTestTag("rail-recent"))).performSemanticsAction(SemanticsActions.OnClick)
+        assertEquals(saved.recent, queue)
+        assertEquals(1, index)
+
+        compose.onNodeWithTag("home-content").performScrollToIndex(6)
+        compose.onNode(hasText(saved.playlists.first().name) and hasAnyAncestor(hasTestTag("rail-jump"))).performSemanticsAction(SemanticsActions.OnClick)
+        compose.onNodeWithText("Your playlist").assertIsDisplayed()
     }
 }

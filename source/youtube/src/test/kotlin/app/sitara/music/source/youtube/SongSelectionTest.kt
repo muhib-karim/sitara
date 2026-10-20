@@ -7,7 +7,7 @@ import org.schabi.newpipe.extractor.stream.StreamInfoItem
 import org.schabi.newpipe.extractor.stream.StreamType
 
 /** Related items are built by hand the way a watch page lists them: songs, videos, mixes and streams mixed together. */
-class RadioSelectionTest {
+class SongSelectionTest {
     private fun related(videoId: String, seconds: Long = 210, type: StreamType = StreamType.VIDEO_STREAM) =
         StreamInfoItem(0, "https://www.youtube.com/watch?v=$videoId", "Song $videoId", type).apply {
             uploaderName = "Artist"
@@ -16,7 +16,7 @@ class RadioSelectionTest {
 
     @Test
     fun `keeps songs in the order YouTube suggests them`() {
-        val picks = radioTracks(listOf(related("aaaaaaaaaaa"), related("bbbbbbbbbbb")), exclude = emptySet())
+        val picks = songsFrom(listOf(related("aaaaaaaaaaa"), related("bbbbbbbbbbb")), exclude = emptySet())
 
         assertEquals(listOf("aaaaaaaaaaa", "bbbbbbbbbbb"), picks.map { it.id })
     }
@@ -25,7 +25,7 @@ class RadioSelectionTest {
     fun `drops songs already queued and repeats`() {
         val items = listOf(related("x7kGuhlXmFI"), related("aaaaaaaaaaa"), related("aaaaaaaaaaa"), related("bbbbbbbbbbb"))
 
-        assertEquals(listOf("bbbbbbbbbbb"), radioTracks(items, exclude = setOf("x7kGuhlXmFI", "aaaaaaaaaaa")).map { it.id })
+        assertEquals(listOf("bbbbbbbbbbb"), songsFrom(items, exclude = setOf("x7kGuhlXmFI", "aaaaaaaaaaa")).map { it.id })
     }
 
     @Test
@@ -41,6 +41,12 @@ class RadioSelectionTest {
             related("keepsong002", seconds = 60, type = StreamType.AUDIO_STREAM),
         )
 
-        assertEquals(listOf("keepsong001", "keepsong002"), radioTracks(items, exclude = emptySet()).map { it.id })
+        assertEquals(listOf("keepsong001", "keepsong002"), songsFrom(items, exclude = emptySet()).map { it.id })
+    }
+
+    @Test
+    fun `names the chart and its country in English`() {
+        assertEquals("YouTube Charts · India", chartLabel("IN"))
+        assertEquals("YouTube Charts · United Kingdom", chartLabel("GB"))
     }
 }

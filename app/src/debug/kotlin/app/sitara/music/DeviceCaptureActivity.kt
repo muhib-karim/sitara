@@ -16,13 +16,13 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import app.sitara.music.core.model.DarkMode
-import app.sitara.music.core.model.Library
 import app.sitara.music.core.model.Lyrics
 import app.sitara.music.core.model.SearchFilter
 import app.sitara.music.core.model.SearchResults
-import app.sitara.music.core.model.Shelf
 import app.sitara.music.core.model.SitaraSettings
+import app.sitara.music.feature.home.HomeFeed
 import app.sitara.music.feature.library.LibraryState
+import app.sitara.music.feature.library.SavedLibrary
 import app.sitara.music.feature.search.SearchState
 import app.sitara.music.source.fake.FakeMusicSource
 import app.sitara.music.source.fake.SampleCatalog
@@ -39,13 +39,14 @@ class DeviceCaptureActivity : ComponentActivity() {
     }
 }
 
-private data class CaptureCatalog(val home: List<Shelf>, val library: Library, val lyrics: Lyrics)
+private data class CaptureCatalog(val home: HomeFeed, val library: SavedLibrary, val lyrics: Lyrics)
 
 @Composable
 private fun CaptureScreen(screen: String, dark: Boolean, reduced: Boolean) {
     val source = remember { FakeMusicSource() }
     val catalog by produceState<CaptureCatalog?>(null, source) {
-        value = CaptureCatalog(source.home(), source.library(), source.lyrics(SampleCatalog.tracks.first())!!)
+        val saved = sampleSavedLibrary(source.library())
+        value = CaptureCatalog(sampleHomeFeed(source.trending(), saved), saved, source.lyrics(SampleCatalog.tracks.first())!!)
     }
     val ready = catalog ?: return
     val player = remember(ready) { DemoPlayer(SampleCatalog.tracks, ready.lyrics) }
@@ -58,8 +59,7 @@ private fun CaptureScreen(screen: String, dark: Boolean, reduced: Boolean) {
         SitaraShell(
             settings = settings,
             home = ready.home,
-            sampleLibrary = ready.library,
-            library = LibraryState.Ready(sampleSavedLibrary(ready.library)),
+            library = LibraryState.Ready(ready.library),
             query = query,
             searchFilter = filter,
             search = SearchState.Loaded(results.query.trim(), results, filter),
@@ -69,6 +69,7 @@ private fun CaptureScreen(screen: String, dark: Boolean, reduced: Boolean) {
             onQueryChange = { query = it },
             onSearchFilterChange = { filter = it },
             onRetrySearch = {},
+            onRetryTrending = {},
             onPlay = player::play,
             onShuffle = { player.play(it.shuffled(), 0) },
             onSettingsChange = { settings = it },
