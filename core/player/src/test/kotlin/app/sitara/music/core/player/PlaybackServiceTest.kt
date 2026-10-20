@@ -24,6 +24,7 @@ import app.sitara.music.source.api.StreamResolver
 import java.io.IOException
 import kotlin.io.path.createTempDirectory
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.map
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
@@ -57,7 +58,11 @@ class PlaybackServiceTest {
 
         override val playbackSettings = MutableStateFlow(SitaraSettings())
 
+        val trims = MutableStateFlow(mapOf<String, Int>())
+
         override fun onTrackStarted(track: Track) = Unit
+
+        override fun songGainDb(trackId: String) = trims.map { it[trackId] ?: 0 }
 
         override suspend fun savedQueue() = saved
 
@@ -186,5 +191,27 @@ class PlaybackServiceTest {
         val announced = shadowOf(app).broadcastIntents.map { it.action }
         assertFalse(AudioEffect.ACTION_OPEN_AUDIO_EFFECT_CONTROL_SESSION in announced)
         assertFalse(AudioEffect.ACTION_CLOSE_AUDIO_EFFECT_CONTROL_SESSION in announced)
+    }
+
+    @Test
+    fun `the current song's trim is applied and follows changes to it`() {
+        val app = RuntimeEnvironment.getApplication() as TestApp
+        app.saved = SavedQueue(songs, currentIndex = 1, positionMs = 0, repeatMode = RepeatMode.OFF)
+        app.trims.value = mapOf("id2" to -4, "id3" to 5)
+
+        val controller = Robolectric.buildService(PlaybackService::class.java).create()
+        shadowOf(Looper.getMainLooper()).idle()
+        val service = controller.get()
+        assertEquals(-4, service.equaliser.trimDb)
+
+        app.trims.value = mapOf("id2" to 2)
+        shadowOf(Looper.getMainLooper()).idle()
+        assertEquals(2, service.equaliser.trimDb)
+
+        checkNotNull(PlaybackEngineRegistry.engine.value).next()
+        shadowOf(Looper.getMainLooper()).idle()
+        assertEquals("the next song has no trim", 0, service.equaliser.trimDb)
+
+        controller.destroy()
     }
 }

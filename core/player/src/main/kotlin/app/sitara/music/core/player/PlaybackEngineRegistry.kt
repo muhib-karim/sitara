@@ -44,6 +44,9 @@ interface PlaybackDependencies {
     /** A queued song started playing; called on the main thread, so implementations hand slow work off. */
     fun onTrackStarted(track: Track)
 
+    /** The song's volume trim in dB, 0 when none is set; the player follows it while the song plays. */
+    fun songGainDb(trackId: String): Flow<Int>
+
     /** The queue saved before the process last ended, or null. */
     suspend fun savedQueue(): SavedQueue?
 

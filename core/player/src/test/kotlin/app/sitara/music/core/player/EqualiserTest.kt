@@ -160,4 +160,27 @@ class EqualiserTest {
         val settled = input.size / 2
         assertEquals(0.0, 20 * log10(rms(out, settled) / rms(input, settled)), 0.5)
     }
+
+    @Test
+    fun `a song's trim applies with the equaliser off and adds to the preamp when on`() {
+        val input = sine(3_000.0, 0.05, 44_100, 2, seconds = 0.5)
+        val settled = input.size / 2
+        fun gainDb(settings: EqualiserSettings, trim: Int): Double {
+            val out = Equaliser().apply { this.settings = settings; trimDb = trim }.run(input.copyOf(), 44_100, 2)
+            return 20 * log10(rms(out, settled) / rms(input, settled))
+        }
+        assertEquals(-4.0, gainDb(EqualiserSettings(), -4), 0.05)
+        assertEquals(6.0, gainDb(EqualiserSettings(useSystem = true), 6), 0.05)
+        assertEquals(-1.0, gainDb(EqualiserSettings(enabled = true, preampDb = -3), 2), 0.05)
+    }
+
+    @Test
+    fun `no trim and a flat equaliser stay bit for bit`() {
+        val input = sine(3_000.0, 0.5, 48_000, 2, seconds = 0.2)
+        val equaliser = Equaliser().apply { trimDb = 3 }
+        equaliser.run(input.copyOf(), 48_000, 2)
+        equaliser.trimDb = 0
+        equaliser.run(input.copyOf(), 48_000, 2)
+        assertArrayEquals(input, equaliser.run(input.copyOf(), 48_000, 2), 0f)
+    }
 }

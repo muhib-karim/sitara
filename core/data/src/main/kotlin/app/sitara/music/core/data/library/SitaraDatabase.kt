@@ -6,16 +6,16 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
-/** The listener's library, the saved play queue and cached lyrics. A schema change bumps [version] and ships a migration; the exported schema is committed. */
+/** The listener's library, the saved play queue, cached lyrics and per-song volume trims. A schema change bumps [version] and ships a migration; the exported schema is committed. */
 @Database(
     entities = [
         LikedSongEntity::class, PlayEntity::class, SavedAlbumEntity::class, SavedArtistEntity::class, PlaylistEntity::class, PlaylistEntryEntity::class,
-        QueueEntryEntity::class, QueueStateEntity::class, LyricsCacheEntity::class,
+        QueueEntryEntity::class, QueueStateEntity::class, LyricsCacheEntity::class, SongGainEntity::class,
     ],
-    version = 2,
+    version = 3,
     exportSchema = true,
-    // 2 adds the saved play queue and the lyrics cache: new tables only.
-    autoMigrations = [AutoMigration(from = 1, to = 2)],
+    // 2 adds the saved play queue and the lyrics cache, 3 per-song volume trims: new tables only.
+    autoMigrations = [AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3)],
 )
 abstract class SitaraDatabase : RoomDatabase() {
     abstract fun likedSongs(): LikedSongsDao
@@ -29,6 +29,8 @@ abstract class SitaraDatabase : RoomDatabase() {
     abstract fun playbackQueue(): PlaybackQueueDao
 
     abstract fun lyricsCache(): LyricsCacheDao
+
+    abstract fun songGain(): SongGainDao
 
     companion object {
         fun open(context: Context): SitaraDatabase = Room.databaseBuilder(context, SitaraDatabase::class.java, "sitara.db").build()

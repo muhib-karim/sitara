@@ -178,3 +178,15 @@ interface LyricsCacheDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun put(entry: LyricsCacheEntity)
 }
+
+@Dao
+interface SongGainDao {
+    @Query("SELECT trim_db FROM song_gain WHERE track_id = :trackId")
+    fun trimDb(trackId: String): Flow<Int?>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun put(entry: SongGainEntity)
+
+    @Query("DELETE FROM song_gain WHERE track_id = :trackId")
+    suspend fun clear(trackId: String)
+}

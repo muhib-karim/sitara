@@ -75,3 +75,12 @@ interface LyricsCacheRepository {
 
     suspend fun put(trackId: String, lyrics: CachedLyrics)
 }
+
+/** Per-song volume trims, applied before the equaliser. */
+interface SongGainRepository {
+    /** The song's trim in dB, 0 when none is set; follows changes. */
+    fun trimDb(trackId: String): Flow<Int>
+
+    /** Keeps [db] for the song, clamped to ±6 dB; 0 forgets it. */
+    suspend fun setTrimDb(trackId: String, db: Int)
+}

@@ -32,8 +32,14 @@ import com.google.common.util.concurrent.SettableFuture
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
 /**
@@ -43,7 +49,7 @@ import kotlinx.coroutines.launch
  * resuming after it) and pauses when headphones or Bluetooth disconnect. The queue is saved as it
  * changes and restored, paused, when the service starts again after the process died.
  */
-@OptIn(UnstableApi::class)
+@OptIn(UnstableApi::class, ExperimentalCoroutinesApi::class)
 class PlaybackService : MediaSessionService() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
     private var session: MediaSession? = null
@@ -110,6 +116,8 @@ class PlaybackService : MediaSessionService() {
         port = Media3PlayerPort(player)
         crossfader = Crossfader(player, tail, scope, trackOf = { item -> item.localConfiguration?.uri?.lastPathSegment?.let(port::track) }) {
             tailLeveller.startFrom(leveller)
+            // The tail plays the end of the song the main player is leaving, at that song's trim.
+            tailEqualiser.trimDb = equaliser.trimDb
         }
         val engine = PlaybackEngine(port, scope, ElapsedRealtimeTimeSource, dependencies::onTrackStarted) { track ->
             // A downloaded song plays from the cache and needs no lookup.
@@ -122,6 +130,13 @@ class PlaybackService : MediaSessionService() {
         scope.launch {
             restoreSavedQueue(engine)
             keepSaving(engine, dependencies::saveQueue)
+        }
+        scope.launch {
+            engine.state.map { it.queue.current?.id }.distinctUntilChanged()
+                .flatMapLatest { id -> id?.let(dependencies::songGainDb) ?: flowOf(0) }
+                // A store that cannot be read plays the song untrimmed rather than stopping the music.
+                .catch { emit(0) }
+                .collect { equaliser.trimDb = it }
         }
         scope.launch {
             dependencies.playbackSettings.collect { settings ->

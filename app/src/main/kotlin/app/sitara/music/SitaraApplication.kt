@@ -63,6 +63,8 @@ class SitaraApplication :
 
     override fun onTrackStarted(track: Track) = writeLibrary { library.history.record(track) }
 
+    override fun songGainDb(trackId: String) = library.songGain.trimDb(trackId)
+
     override suspend fun savedQueue(): SavedQueue? = library.queue.load()
 
     override fun saveQueue(queue: SavedQueue) = writeLibrary { library.queue.save(queue) }

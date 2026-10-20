@@ -2,7 +2,7 @@ package app.sitara.music.core.data.library
 
 import android.content.Context
 
-/** The listener's library, the saved play queue and cached lyrics on this device; Room stays an implementation detail of this module. */
+/** The listener's library, the saved play queue, cached lyrics and per-song volume trims on this device; Room stays an implementation detail of this module. */
 class LibraryStore(context: Context) {
     private val database = SitaraDatabase.open(context)
     val likedSongs: LikedSongsRepository = RoomLikedSongs(database.likedSongs())
@@ -11,4 +11,5 @@ class LibraryStore(context: Context) {
     val playlists: PlaylistRepository = RoomPlaylists(database.playlists())
     val queue: PlaybackQueueRepository = RoomPlaybackQueue(database.playbackQueue())
     val lyrics: LyricsCacheRepository = RoomLyricsCache(database.lyricsCache())
+    val songGain: SongGainRepository = RoomSongGain(database.songGain())
 }

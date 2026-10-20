@@ -12,14 +12,18 @@ import kotlin.math.sin
 import kotlin.math.sinh
 
 /**
- * The built-in 10-band equaliser: one peaking biquad per band (RBJ cookbook, an octave wide) after a preamp. Gains glide at [SLEW_DB_PER_S], the filters re-designed every [CHUNK_FRAMES] frames
+ * The built-in 10-band equaliser: one peaking biquad per band (RBJ cookbook, an octave wide) after a preamp, which also
+ * carries the song's volume trim. Gains glide at [SLEW_DB_PER_S], the filters re-designed every [CHUNK_FRAMES] frames
  * and the preamp ramped per sample, so moving a slider never clicks. Headroom is the listener's (the presets carry a
  * preamp that cancels their largest boost); a peak limiter with instant attack keeps every sample under [CEILING], so a
- * boost squashes a loud master rather than clipping it. Flat settings, once the gains have glided back,
- * pass audio through untouched. [process] runs on the playback thread; [settings] may be set from any thread.
+ * boost squashes a loud master rather than clipping it. Flat settings and no trim, once the gains have glided back,
+ * pass audio through untouched. [process] runs on the playback thread; [settings] and [trimDb] may be set from any thread.
  */
 class Equaliser {
     @Volatile var settings = EqualiserSettings()
+
+    /** The current song's volume trim, applied whether or not the bands are on. */
+    @Volatile var trimDb = 0
 
     private var sampleRate = 0
     private var channels = 0
@@ -28,7 +32,7 @@ class Equaliser {
     // A band runs until it is back at 0 dB and its memory has caught up with its input, so dropping it changes nothing.
     private val running = BooleanArray(BANDS)
 
-    // The preamp, as it glides.
+    // Preamp plus trim, as it glides.
     private var levelDb = 0.0
 
     // b0, b1, b2, a1, a2 per band, normalised by a0.
@@ -41,7 +45,7 @@ class Equaliser {
     private var limiterRelease = 1.0
 
     /** Audio passes through unchanged. */
-    val isUnity: Boolean get() = settings.isFlat && levelDb == 0.0 && limiterGain == 1.0 && running.none { it }
+    val isUnity: Boolean get() = settings.isFlat && trimDb == 0 && levelDb == 0.0 && limiterGain == 1.0 && running.none { it }
 
     /** Forgets recent audio, for a seek or a new stream. */
     fun reset() {
@@ -72,7 +76,7 @@ class Equaliser {
                 }
             }
             val levelFrom = dbToGain(levelDb)
-            levelDb = approach(levelDb, if (target.enabled) target.preampDb.toDouble() else 0.0, step)
+            levelDb = approach(levelDb, trimDb + (if (target.enabled) target.preampDb.toDouble() else 0.0), step)
             val levelTo = dbToGain(levelDb)
             for (f in start until end) {
                 val level = levelFrom + (levelTo - levelFrom) * (f - start + 1) / (end - start)

@@ -66,3 +66,8 @@ enum class EqualiserPreset(val label: String, val bandsDb: List<Int>) {
 
     val preampDb: Int get() = -maxOf(0, bandsDb.max())
 }
+
+/** A listener's volume trim for one song, applied before the equaliser, for a song mastered too loud or too quiet. */
+object SongGain {
+    const val MAX_TRIM_DB = 6
+}

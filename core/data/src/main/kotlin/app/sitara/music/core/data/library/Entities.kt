@@ -129,3 +129,10 @@ data class LyricsCacheEntity(
     val plain: String?,
     @ColumnInfo(name = "fetched_at") val fetchedAt: Long,
 )
+
+/** The listener's volume trim for one song, in whole decibels; a song without a row plays at 0 dB. */
+@Entity(tableName = "song_gain")
+data class SongGainEntity(
+    @PrimaryKey @ColumnInfo(name = "track_id") val trackId: String,
+    @ColumnInfo(name = "trim_db") val trimDb: Int,
+)

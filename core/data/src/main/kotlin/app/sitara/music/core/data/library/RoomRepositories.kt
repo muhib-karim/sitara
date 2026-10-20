@@ -7,6 +7,7 @@ import app.sitara.music.core.model.CachedLyrics
 import app.sitara.music.core.model.PlaylistSummary
 import app.sitara.music.core.model.RepeatMode
 import app.sitara.music.core.model.SavedQueue
+import app.sitara.music.core.model.SongGain
 import app.sitara.music.core.model.Track
 import app.sitara.music.core.model.UserPlaylist
 import kotlinx.coroutines.flow.Flow
@@ -110,4 +111,13 @@ class RoomLyricsCache(private val dao: LyricsCacheDao) : LyricsCacheRepository {
     override suspend fun get(trackId: String): CachedLyrics? = dao.get(trackId)?.let { CachedLyrics(it.synced, it.plain, it.fetchedAt) }
 
     override suspend fun put(trackId: String, lyrics: CachedLyrics) = dao.put(LyricsCacheEntity(trackId, lyrics.synced, lyrics.plain, lyrics.fetchedAtMs))
+}
+
+class RoomSongGain(private val dao: SongGainDao) : SongGainRepository {
+    override fun trimDb(trackId: String): Flow<Int> = dao.trimDb(trackId).map { it ?: 0 }
+
+    override suspend fun setTrimDb(trackId: String, db: Int) {
+        val trim = db.coerceIn(-SongGain.MAX_TRIM_DB, SongGain.MAX_TRIM_DB)
+        if (trim == 0) dao.clear(trackId) else dao.put(SongGainEntity(trackId, trim))
+    }
 }
