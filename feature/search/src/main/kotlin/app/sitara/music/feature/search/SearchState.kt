@@ -37,7 +37,7 @@ fun searchStates(queries: Flow<String>, retries: Flow<Unit>, debounceMs: Long, s
     queries.map { it.trim() }
         .debounce { if (it.isEmpty()) 0L else debounceMs }
         .distinctUntilChanged()
-        .flatMapLatest { query ->
+        .flatMapLatest<String, SearchState> { query ->
             if (query.isEmpty()) {
                 flowOf(SearchState.Idle)
             } else {
