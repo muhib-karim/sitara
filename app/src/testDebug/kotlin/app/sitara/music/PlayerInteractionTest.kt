@@ -374,9 +374,9 @@ class PlayerInteractionTest {
         compose.onNodeWithText("Equaliser").performClick()
         listOf("31 Hz", "62 Hz", "125 Hz", "250 Hz", "500 Hz", "1 kHz", "2 kHz", "4 kHz", "8 kHz", "16 kHz").zip(EqualiserPreset.BASS_BOOST.bandsDb).forEach { (name, db) ->
             compose.onNodeWithContentDescription(name).assert(SemanticsMatcher.expectValue(SemanticsProperties.StateDescription, if (db > 0) "+$db dB" else "$db dB"))
-                // A fader stands tall and keeps a full touch target across.
-                .assertHeightIsAtLeast(160.dp)
-                .assertWidthIsAtLeast(48.dp)
+                // Bounds are measured before the fader's quarter turn: its length runs across, its touch target up and down.
+                .assertWidthIsAtLeast(160.dp)
+                .assertHeightIsAtLeast(48.dp)
         }
     }
 
