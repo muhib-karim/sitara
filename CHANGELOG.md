@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-10-20
+
 Phase B, slice 3: your own library, stored on the device.
 
 ### Added
@@ -98,7 +100,8 @@ Phase A: foundation, plus the first UI redesign.
 - GitHub Actions workflows: CI (ktlint, unit tests, screenshot tests, debug APK artifact), release on `v*` tags with SHA256SUMS, GitHub Pages site, gitleaks scanning and a manual screenshot refresh workflow.
 - Project documentation: README, architecture and design system guides, contributing guide, code of conduct, security policy and the project website.
 
-[Unreleased]: https://github.com/muhib-karim/sitara/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/muhib-karim/sitara/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/muhib-karim/sitara/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/muhib-karim/sitara/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/muhib-karim/sitara/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/muhib-karim/sitara/releases/tag/v0.1.0
