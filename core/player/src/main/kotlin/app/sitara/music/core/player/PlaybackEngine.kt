@@ -44,6 +44,23 @@ class PlaybackEngine(
         if (next.currentIndex >= 0) port.setQueue(next.entries, next.currentIndex, play = true)
     }
 
+    /** Plays [tracks] in random order from a random one; turning shuffle off restores the list order. */
+    fun shuffle(tracks: List<Track>, random: Random = Random.Default) {
+        if (tracks.isEmpty()) return
+        val next = queue.setQueue(tracks, random.nextInt(tracks.size)).toggleShuffle(random)
+        publish(next)
+        port.setQueue(next.entries, next.currentIndex, play = true)
+    }
+
+    /** Extends a non-empty queue after its last entry, keeping the playing item and the ended flag as they are. */
+    fun append(tracks: List<Track>) {
+        val q = queue
+        if (tracks.isEmpty() || q.currentEntry == null) return
+        val next = tracks.fold(q) { acc, track -> acc.add(track) }.copy(ended = q.ended)
+        publish(next)
+        port.append(next.entries.takeLast(tracks.size))
+    }
+
     fun togglePlay() {
         val q = queue
         if (q.currentEntry == null) return

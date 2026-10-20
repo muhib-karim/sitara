@@ -39,6 +39,49 @@ class PlaybackEngineTest {
     }
 
     @Test
+    fun `shuffle plays every track once in random order and unshuffle restores the list`() = runTest {
+        val engine = engine()
+        engine.shuffle(five, Random(7))
+
+        assertTrue(engine.state.value.queue.shuffled)
+        assertEquals(five.map { it.id }.sorted(), port.entries.map { it.track.id }.sorted())
+        assertEquals(engine.state.value.queue.current, port.entries[port.index].track)
+        assertTrue(port.playing)
+
+        engine.toggleShuffle()
+        assertEquals(five, engine.state.value.queue.items)
+    }
+
+    @Test
+    fun `shuffling nothing leaves the queue alone`() = runTest {
+        val engine = engine()
+        engine.play(five, 0)
+        engine.shuffle(emptyList())
+        assertEquals(five, engine.state.value.queue.items)
+    }
+
+    @Test
+    fun `append adds entries after the last one without reloading the playing item`() = runTest {
+        val engine = engine()
+        engine.play(five.take(2), 1)
+        engine.append(listOf(t(6), t(7)))
+
+        assertEquals(listOf("t1", "t2", "t6", "t7"), engine.state.value.queue.items.map { it.id })
+        assertEquals(listOf("t1", "t2", "t6", "t7"), port.entries.map { it.track.id })
+        assertEquals(engine.state.value.queue.entries.map { it.uid }, port.entries.map { it.uid })
+        assertEquals(1, port.setQueueCalls)
+        assertEquals("t2", engine.state.value.queue.current?.id)
+    }
+
+    @Test
+    fun `append needs a queue to extend`() = runTest {
+        val engine = engine()
+        engine.append(listOf(t(6)))
+        assertEquals(emptyList<Track>(), engine.state.value.queue.items)
+        assertEquals(emptyList<QueueEntry>(), port.entries)
+    }
+
+    @Test
     fun `sleep timer pauses the player with no UI attached`() = runTest {
         val engine = engine()
         engine.play(five, 0)

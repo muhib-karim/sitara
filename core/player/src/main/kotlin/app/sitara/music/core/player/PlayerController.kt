@@ -70,6 +70,10 @@ class PlayerController(
 
     fun play(tracks: List<Track>, index: Int) = gate.run { it.play(tracks, index) }
 
+    fun shuffle(tracks: List<Track>) = gate.run { it.shuffle(tracks) }
+
+    fun append(tracks: List<Track>) = gate.run { it.append(tracks) }
+
     fun togglePlay() = gate.run { it.togglePlay() }
 
     fun next() = gate.run { it.next() }

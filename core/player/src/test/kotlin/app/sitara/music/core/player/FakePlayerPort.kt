@@ -30,6 +30,10 @@ class FakePlayerPort : PlayerPort {
         this.index = index
     }
 
+    override fun append(entries: List<QueueEntry>) {
+        this.entries += entries
+    }
+
     override fun seekToItem(index: Int, positionMs: Long) {
         this.index = index
         this.positionMs = positionMs

@@ -15,6 +15,7 @@ import app.sitara.music.source.api.HealthReport
 import app.sitara.music.source.api.HealthStatus
 import app.sitara.music.source.api.LyricsProvider
 import app.sitara.music.source.api.MusicSource
+import app.sitara.music.source.api.RadioSource
 import app.sitara.music.source.api.ResolvedStream
 import app.sitara.music.source.api.StreamResolver
 import app.sitara.music.source.lyrics.LrcParser
@@ -23,7 +24,7 @@ import kotlinx.coroutines.delay
 /** An offline source backed by [SampleCatalog]; it powers Phase A, previews and tests. */
 class FakeMusicSource(
     private val latencyMs: Long = 0,
-) : MusicSource, BrowseSource, StreamResolver, LyricsProvider, HealthCheck {
+) : MusicSource, BrowseSource, RadioSource, StreamResolver, LyricsProvider, HealthCheck {
     override val id: String = "fake"
 
     override suspend fun home(): List<Shelf> {
@@ -58,6 +59,11 @@ class FakeMusicSource(
     override suspend fun album(id: String): Album? = SampleCatalog.albums.find { it.id == id }
 
     override suspend fun playlist(id: String): Playlist? = SampleCatalog.playlists.find { it.id == id }
+
+    override suspend fun radio(seed: Track, exclude: Set<String>): List<Track>? {
+        if (SampleCatalog.tracks.none { it.id == seed.id }) return null
+        return SampleCatalog.tracks.filter { it.id != seed.id && it.id !in exclude }
+    }
 
     override suspend fun library(): Library {
         simulateLatency()

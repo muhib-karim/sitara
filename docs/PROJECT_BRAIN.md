@@ -14,6 +14,7 @@ Goal: an original app with its own design and logo (not a reskin), shipped as a 
 - fix1 source review complete: N1/6 completion synchronization, N2 atomic lookup and 5 resolver cancellation fixes retained with regression coverage; interrupt-status assertion added. Item 16 is superseded by the current sheet, covered by Back/drag and screenshot cases. Review copy and REPORT_fix1.md ready. All execution and acceptance remain pending in CI.
 - v0.1.0 RELEASED.
 - b1 (Phase B slice 1, real music) DONE on main: live YouTube Music song search + playback via :source:youtube (NewPipeExtractor v0.26.5); search states with retry; home, library, lyrics and covers still sample and labelled. Report: docs/reports/REPORT_b1.md.
+- b2 (Phase B slice 2, real detail pages) IN PROGRESS, target v0.3.0 (owner tags): source side pushed and tested (artist pages, album/playlist pages with paging, Songs/Albums/Artists/Playlists search filters, radio selection, engine shuffle/append). Next: app routes, pages, chips, Play all/Shuffle/Start radio wiring, screenshots, docs, REPORT_b2.md.
 - b1a DONE on main: YouTube/YouTube Music/youtu.be links (paste into Search, VIEW + SEND intents, autoplay), live smoke test job (search finds x7kGuhlXmFI; player request bot-checked on CI runners). CHANGELOG [0.2.0] + versionName 0.2.0 ready for the owner to tag.
 
 ## Next step

@@ -44,6 +44,12 @@ class Media3PlayerPort(private val player: ExoPlayer) : PlayerPort {
         player.addMediaItems(entries.drop(index + 1).map(::toMediaItem))
     }
 
+    override fun append(entries: List<QueueEntry>) {
+        // Publish the grown membership before the player can ask for the new items.
+        tracks = tracks + entries.associate { it.track.id to it.track }
+        player.addMediaItems(entries.map(::toMediaItem))
+    }
+
     override fun seekToItem(index: Int, positionMs: Long) = player.seekTo(index, positionMs)
 
     override fun seekTo(positionMs: Long) = player.seekTo(positionMs)

@@ -1,12 +1,14 @@
 package app.sitara.music.core.player
 
 import androidx.annotation.OptIn
+import androidx.media3.common.MediaItem
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.exoplayer.ExoPlayer
 import app.sitara.music.core.model.Artwork
 import app.sitara.music.core.model.Track
 import io.mockk.every
 import io.mockk.mockk
+import io.mockk.verify
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import org.junit.After
@@ -69,6 +71,18 @@ class Media3PlayerPortTest {
 
         assertTrue("Lookup must overlap replacement", reads >= replacement.size)
         assertLoaderSees(replacement)
+    }
+
+    @Test
+    fun `appended tracks are known before the player can load them`() {
+        port.setQueue(entries, 0, play = false)
+        val added = listOf(QueueEntry(3, Track("t3", "Song 3", "Artist", "Album", 1_000, Artwork(listOf(0)))))
+        every { player.addMediaItems(any<List<MediaItem>>()) } answers { assertLoaderSees(entries + added) }
+
+        port.append(added)
+
+        verify { player.addMediaItems(match<List<MediaItem>> { items -> items.map { it.mediaId } == listOf("3") }) }
+        assertLoaderSees(entries + added)
     }
 
     private fun assertLoaderSees(expected: List<QueueEntry>) {

@@ -32,6 +32,9 @@ data class QueueState(
     val upNext: List<Track> get() = if (currentIndex < 0) items else items.drop(currentIndex + 1)
     val hasNext: Boolean get() = repeatMode != RepeatMode.OFF || currentIndex < entries.lastIndex
 
+    /** At most one entry left after the current one and nothing repeats: the moment to extend the queue. */
+    val runningOut: Boolean get() = currentIndex >= 0 && repeatMode == RepeatMode.OFF && currentIndex >= entries.lastIndex - 1
+
     fun setQueue(tracks: List<Track>, startIndex: Int = 0): QueueState = QueueState(
         entries = tracks.mapIndexed { i, t -> QueueEntry(nextUid + i, t) },
         currentIndex = if (tracks.isEmpty()) -1 else startIndex.coerceIn(0, tracks.lastIndex),

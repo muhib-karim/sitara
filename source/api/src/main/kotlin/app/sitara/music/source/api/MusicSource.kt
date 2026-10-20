@@ -24,6 +24,11 @@ interface BrowseSource {
     suspend fun playlist(id: String): Playlist?
 }
 
+/** Songs to play after [seed] ("radio"), none of them in [exclude]; null when [seed] is not from this catalogue. */
+interface RadioSource {
+    suspend fun radio(seed: Track, exclude: Set<String>): List<Track>?
+}
+
 /** Catalogue access: everything the browse screens need. */
 interface MusicSource : SearchSource {
     val id: String

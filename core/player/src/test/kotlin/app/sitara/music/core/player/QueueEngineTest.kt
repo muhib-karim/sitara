@@ -28,6 +28,16 @@ class QueueEngineTest {
     }
 
     @Test
+    fun `the queue is running out on its last two entries unless it repeats`() {
+        assertFalse(QueueState().runningOut)
+        assertFalse(QueueState().setQueue(five, 2).runningOut)
+        assertTrue(QueueState().setQueue(five, 3).runningOut)
+        assertTrue(QueueState().setQueue(five, 4).runningOut)
+        assertFalse(QueueState().setQueue(five, 4).withRepeat(RepeatMode.ALL).runningOut)
+        assertFalse(QueueState().setQueue(five, 4).withRepeat(RepeatMode.ONE).runningOut)
+    }
+
+    @Test
     fun `move keeps the current track selected`() {
         val q = QueueState().setQueue(five, 1).move(from = 1, to = 4)
         assertEquals(listOf("t1", "t3", "t4", "t5", "t2"), q.items.map { it.id })

@@ -47,6 +47,14 @@ class FakeMusicSourceTest {
     }
 
     @Test
+    fun `sample radio skips the seed and the queue and ignores real songs`() = runTest {
+        val seed = SampleCatalog.tracks[0]
+        val picks = source.radio(seed, exclude = setOf(SampleCatalog.tracks[1].id))!!
+        assertEquals(SampleCatalog.tracks.drop(2), picks)
+        assertNull(source.radio(seed.copy(id = "x7kGuhlXmFI"), emptySet()))
+    }
+
+    @Test
     fun `every track resolves to a distinct https demo stream`() = runTest {
         val urls = SampleCatalog.tracks.map { source.resolve(it).url }
         assertTrue(urls.all { it.startsWith("https://") })

@@ -5,7 +5,9 @@ import app.sitara.music.core.model.ArtistPage
 import app.sitara.music.core.model.Playlist
 import app.sitara.music.core.model.SearchFilter
 import app.sitara.music.core.model.SearchResults
+import app.sitara.music.core.model.Track
 import app.sitara.music.source.api.BrowseSource
+import app.sitara.music.source.api.RadioSource
 import app.sitara.music.source.api.SearchSource
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -22,10 +24,11 @@ import org.schabi.newpipe.extractor.services.youtube.linkHandler.YoutubeSearchQu
 import org.schabi.newpipe.extractor.stream.StreamInfo
 import org.schabi.newpipe.extractor.stream.StreamInfoItem
 
-/** YouTube Music search (songs, albums, artists, playlists) and their pages; a pasted video link resolves to that one song. Home and library stay with the sample source. */
+/** YouTube Music search (songs, albums, artists, playlists), their pages and radio from related songs; a pasted video link resolves to that one song. Home and library stay with the sample source. */
 class YouTubeMusicSource :
     SearchSource,
-    BrowseSource {
+    BrowseSource,
+    RadioSource {
     private val service = ServiceList.YouTube
 
     override suspend fun search(query: String, filter: SearchFilter): SearchResults {
@@ -60,6 +63,12 @@ class YouTubeMusicSource :
         if (!isPlaylistId(id)) return null
         val (info, items) = playlistWithItems(id)
         return playlistPage(id, info.name, info.uploaderName, info.thumbnails, items)
+    }
+
+    override suspend fun radio(seed: Track, exclude: Set<String>): List<Track>? {
+        if (!isVideoId(seed.id)) return null
+        val info = io { StreamInfo.getInfo(service, "https://www.youtube.com/watch?v=${seed.id}") }
+        return radioTracks(info.relatedItems, exclude + seed.id)
     }
 
     // shortcut: stops after MAX_PLAYLIST_ITEMS so a huge playlist stays one quick load; page lazily on scroll if people hit the cap.
