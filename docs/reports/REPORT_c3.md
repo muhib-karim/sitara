@@ -126,7 +126,7 @@ Now Playing's overflow *or* the song menu, and the song menu was left unchanged.
 | `756b7a5`, `ce3bc02` | CI 39499987892, 39500643799 | unit tests green; only the expected screenshot diffs before the baselines |
 | Record screenshots | 39497358265, 39498520344, 39498955784, 39499567734 failed on the tests above; 39498035957 and 39499988236 recorded but were not committed (short faders, end shot under the dock); 39500642822 committed | |
 
-FINAL_RUNS
+**Final, at `4155c0e` (baselines and docs): CI 39501146174, Device screens 39501146115 and Secret scan 39501146002 all green.** Device screens needed no re-run this time.
 
 ## Not verified on a real phone
 
