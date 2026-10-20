@@ -70,6 +70,8 @@ class LyricsQueryTest {
     @Test
     fun `a VEVO channel name is the artist without VEVO`() {
         assertEquals("Orchid Lane", query("Paper Lanterns", "Orchid LaneVEVO").artist)
+        assertEquals("Olivia Rodrigo", query("expectations", "OliviaRodrigoVEVO").artist)
+        assertEquals("ACDC", query("Thunderstruck", "ACDCVEVO").artist)
     }
 
     @Test

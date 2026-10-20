@@ -77,20 +77,42 @@ class LrclibLyricsProvider(
 
     // The title as uploaded is the fallback for when the clean-up took too much.
     private suspend fun lookUp(track: Track, now: Long): CachedLyrics {
-        val match = listOf(lyricsQuery(track), LyricsQuery(track.title, track.artist)).distinct().firstNotNullOfOrNull { find(it, track.durationMs) }
+        // A failed call (LRCLIB answers 503 when its lookup of an unknown song is overloaded) does not stop the other
+        // queries; the lookup fails only when nothing was found and a call failed, so "nothing found" is never cached by mistake.
+        var failure: IOException? = null
+        var match: JsonObject? = null
+        for (query in listOf(lyricsQuery(track), LyricsQuery(track.title, track.artist)).distinct()) {
+            match = try {
+                find(query, track.durationMs)
+            } catch (e: IOException) {
+                failure = failure ?: e
+                null
+            }
+            if (match != null) break
+        }
+        if (match == null && failure != null) throw failure
         return CachedLyrics(match?.text("syncedLyrics"), match?.text("plainLyrics"), now)
     }
 
     private suspend fun find(query: LyricsQuery, durationMs: Long): JsonObject? {
-        val exact = get("api/get") {
-            addQueryParameter("track_name", query.title)
-            addQueryParameter("artist_name", query.artist)
-            if (durationMs > 0) addQueryParameter("duration", (durationMs / 1_000).toString())
-        }?.let { JsonParser.`object`().from(it) }
-        return exact ?: get("api/search") {
+        var failure: IOException? = null
+        val exact = try {
+            get("api/get") {
+                addQueryParameter("track_name", query.title)
+                addQueryParameter("artist_name", query.artist)
+                if (durationMs > 0) addQueryParameter("duration", (durationMs / 1_000).toString())
+            }?.let { JsonParser.`object`().from(it) }
+        } catch (e: IOException) {
+            failure = e
+            null
+        }
+        // LRCLIB's own search can still know a song its exact lookup failed on.
+        val found = exact ?: get("api/search") {
             addQueryParameter("track_name", query.title)
             addQueryParameter("artist_name", query.artist)
         }?.let { body -> bestMatch(JsonParser.array().from(body).filterIsInstance<JsonObject>(), (durationMs / 1_000.0).takeIf { durationMs > 0 }) }
+        if (found == null && failure != null) throw failure
+        return found
     }
 
     /** The body of a successful call, null for 404 (no such song); any other failure throws. */
