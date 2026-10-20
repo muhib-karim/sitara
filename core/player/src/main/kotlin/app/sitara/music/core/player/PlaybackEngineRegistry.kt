@@ -25,6 +25,10 @@ object PlaybackEngineRegistry {
     internal fun detach(engine: PlaybackEngine) {
         _engine.compareAndSet(engine, null)
     }
+
+    /** The running service's audio session, for the device's equaliser panel; [SystemEqualiserSession.NO_SESSION] while none runs. */
+    @Volatile var audioSessionId = SystemEqualiserSession.NO_SESSION
+        internal set
 }
 
 /** Implemented by the Application so the service can reach app-level dependencies without a DI framework. */

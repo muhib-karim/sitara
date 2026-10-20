@@ -42,6 +42,9 @@ class PlayerController(
         .flatMapLatest { it?.sleepTimerState ?: flowOf(SleepTimerState.Off) }
         .stateIn(scope, SharingStarted.Eagerly, SleepTimerState.Off)
 
+    /** The player's audio session, for the device's equaliser panel. */
+    val audioSessionId: Int get() = PlaybackEngineRegistry.audioSessionId
+
     init {
         scope.launch { PlaybackEngineRegistry.engine.collect(gate::attach) }
     }

@@ -1,6 +1,10 @@
 package app.sitara.music.core.player
 
 import android.app.Application
+import android.content.Intent
+import android.content.pm.ActivityInfo
+import android.content.pm.ResolveInfo
+import android.media.audiofx.AudioEffect
 import android.os.Looper
 import androidx.annotation.OptIn
 import androidx.media3.common.util.UnstableApi
@@ -22,6 +26,7 @@ import kotlin.io.path.createTempDirectory
 import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -126,5 +131,60 @@ class PlaybackServiceTest {
         assertEquals(custom, service.tailEqualiser.settings)
 
         controller.destroy()
+    }
+
+    /** Runs the main looper until [done], while ExoPlayer's playback thread works in the background. */
+    private fun idleUntil(done: () -> Boolean) {
+        val deadline = System.currentTimeMillis() + 5_000
+        while (!done() && System.currentTimeMillis() < deadline) {
+            shadowOf(Looper.getMainLooper()).idle()
+            Thread.sleep(10)
+        }
+        assertTrue("timed out", done())
+    }
+
+    private fun installSystemEqualiser(app: Application) {
+        val panel = ResolveInfo().apply { activityInfo = ActivityInfo().apply { packageName = "com.example.equaliser"; name = "Panel" } }
+        shadowOf(app.packageManager).addResolveInfoForIntent(Intent(AudioEffect.ACTION_DISPLAY_AUDIO_EFFECT_CONTROL_PANEL), panel)
+    }
+
+    @Test
+    fun `with the device's equaliser chosen, the built-in one stays flat and both players share its audio session`() {
+        val app = RuntimeEnvironment.getApplication() as TestApp
+        installSystemEqualiser(app)
+        val rock = EqualiserSettings(useSystem = true).withPreset(EqualiserPreset.ROCK)
+        app.playbackSettings.value = SitaraSettings(equaliser = rock)
+
+        val controller = Robolectric.buildService(PlaybackService::class.java).create()
+        val service = controller.get()
+        idleUntil { service.player.audioSessionId != 0 && service.tail.audioSessionId == service.player.audioSessionId }
+        assertTrue(service.equaliser.settings.isFlat)
+        assertTrue(service.tailEqualiser.settings.isFlat)
+        assertEquals(service.player.audioSessionId, PlaybackEngineRegistry.audioSessionId)
+
+        app.playbackSettings.value = SitaraSettings(equaliser = rock.copy(useSystem = false))
+        shadowOf(Looper.getMainLooper()).idle()
+        assertEquals("switching back hands the sound to the built-in one", rock.copy(useSystem = false), service.equaliser.settings)
+
+        controller.destroy()
+        assertEquals(0, PlaybackEngineRegistry.audioSessionId)
+    }
+
+    @Test
+    fun `without a device equaliser the built-in one keeps the sound and no session is announced`() {
+        val app = RuntimeEnvironment.getApplication() as TestApp
+        val rock = EqualiserSettings(useSystem = true).withPreset(EqualiserPreset.ROCK)
+        app.playbackSettings.value = SitaraSettings(equaliser = rock)
+
+        val controller = Robolectric.buildService(PlaybackService::class.java).create()
+        val service = controller.get()
+        idleUntil { service.player.audioSessionId != 0 }
+        assertEquals(rock, service.equaliser.settings)
+        assertNotEquals(0, service.player.audioSessionId)
+
+        controller.destroy()
+        val announced = shadowOf(app).broadcastIntents.map { it.action }
+        assertFalse(AudioEffect.ACTION_OPEN_AUDIO_EFFECT_CONTROL_SESSION in announced)
+        assertFalse(AudioEffect.ACTION_CLOSE_AUDIO_EFFECT_CONTROL_SESSION in announced)
     }
 }

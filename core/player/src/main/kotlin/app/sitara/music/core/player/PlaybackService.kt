@@ -2,6 +2,7 @@ package app.sitara.music.core.player
 
 import android.content.Context
 import android.content.Intent
+import android.media.audiofx.AudioEffect
 import android.os.Process
 import androidx.annotation.OptIn
 import androidx.media3.common.AudioAttributes
@@ -24,6 +25,7 @@ import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSession.MediaItemsWithStartPosition
 import androidx.media3.session.MediaSessionService
 import androidx.media3.session.SessionCommands
+import app.sitara.music.core.model.EqualiserSettings
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
 import com.google.common.util.concurrent.SettableFuture
@@ -53,6 +55,17 @@ class PlaybackService : MediaSessionService() {
     private val tailLeveller = LoudnessLeveller()
     internal val equaliser = Equaliser()
     internal val tailEqualiser = Equaliser()
+    private var equaliserChoice = EqualiserSettings()
+    private var systemEqualiserAvailable = false
+    private val systemEqualiser = SystemEqualiserSession { open, sessionId ->
+        val action = if (open) AudioEffect.ACTION_OPEN_AUDIO_EFFECT_CONTROL_SESSION else AudioEffect.ACTION_CLOSE_AUDIO_EFFECT_CONTROL_SESSION
+        sendBroadcast(
+            Intent(action)
+                .putExtra(AudioEffect.EXTRA_AUDIO_SESSION, sessionId)
+                .putExtra(AudioEffect.EXTRA_PACKAGE_NAME, packageName)
+                .putExtra(AudioEffect.EXTRA_CONTENT_TYPE, AudioEffect.CONTENT_TYPE_MUSIC),
+        )
+    }
     internal lateinit var crossfader: Crossfader
     internal lateinit var player: ExoPlayer
     internal lateinit var tail: ExoPlayer
@@ -91,6 +104,9 @@ class PlaybackService : MediaSessionService() {
                 false,
             )
             .build()
+        systemEqualiserAvailable = hasSystemEqualiser()
+        // ExoPlayer creates its audio session in the background and reports it here.
+        player.addListener(EqualiserListener())
         port = Media3PlayerPort(player)
         crossfader = Crossfader(player, tail, scope, trackOf = { item -> item.localConfiguration?.uri?.lastPathSegment?.let(port::track) }) {
             tailLeveller.startFrom(leveller)
@@ -113,15 +129,23 @@ class PlaybackService : MediaSessionService() {
                     it.enabled = settings.normalisation
                     it.targetLufs = settings.targetLufs
                 }
-                // Each glides to the new bands while playing.
-                equaliser.settings = settings.equaliser
-                tailEqualiser.settings = settings.equaliser
+                equaliserChoice = settings.equaliser
+                routeEqualiser()
                 crossfader.windowMs = settings.crossfadeSeconds * 1_000L
                 // Turns the silence-skipping processor in each player's audio chain on or off.
                 player.skipSilenceEnabled = settings.skipSilence
                 tail.skipSilenceEnabled = settings.skipSilence
             }
         }
+    }
+
+    /** Gives the sound to the built-in equaliser (each glides to new bands while playing) or to the device's, never both. */
+    private fun routeEqualiser() {
+        val builtIn = equaliserChoice.builtIn(systemEqualiserAvailable)
+        equaliser.settings = builtIn
+        tailEqualiser.settings = builtIn
+        val playing = player.playbackState == Player.STATE_READY || player.playbackState == Player.STATE_BUFFERING
+        systemEqualiser.update(equaliserChoice.systemActive(systemEqualiserAvailable) && playing, player.audioSessionId)
     }
 
     /** Puts the last queue back unless something is already queued; a store that cannot be read only costs the old queue. */
@@ -153,6 +177,8 @@ class PlaybackService : MediaSessionService() {
         engine?.let(PlaybackEngineRegistry::detach)
         engine = null
         scope.cancel()
+        systemEqualiser.close()
+        PlaybackEngineRegistry.audioSessionId = SystemEqualiserSession.NO_SESSION
         crossfader.release()
         session?.run {
             player.release()
@@ -170,6 +196,18 @@ class PlaybackService : MediaSessionService() {
                 .setEnableAudioOutputPlaybackParameters(enableAudioOutputPlaybackParams)
                 .setAudioProcessors(arrayOf(SoundAudioProcessor(leveller, equaliser)))
                 .build()
+    }
+
+    /** The device's equaliser follows playback starting and stopping, and a new audio session. */
+    private inner class EqualiserListener : Player.Listener {
+        override fun onPlaybackStateChanged(playbackState: Int) = routeEqualiser()
+
+        override fun onAudioSessionIdChanged(audioSessionId: Int) {
+            // One session for both players, so the device's equaliser also shapes the end of a song fading out.
+            tail.audioSessionId = audioSessionId
+            PlaybackEngineRegistry.audioSessionId = audioSessionId
+            routeEqualiser()
+        }
     }
 
     /** Forwards what the player does on its own to the engine. */

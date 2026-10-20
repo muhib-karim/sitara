@@ -53,4 +53,16 @@ class EqualiserSettingsTest {
     fun `reset flattens the bands and preamp and leaves the switch alone`() {
         assertEquals(EqualiserSettings(enabled = true), EqualiserSettings().withPreset(EqualiserPreset.ROCK).reset())
     }
+
+    @Test
+    fun `the built-in and the device's equaliser never shape the sound together`() {
+        for (useSystem in listOf(false, true)) for (available in listOf(false, true)) for (preset in EqualiserPreset.entries) {
+            val settings = EqualiserSettings(useSystem = useSystem).withPreset(preset)
+            val system = settings.systemActive(available)
+            val builtIn = !settings.builtIn(available).isFlat
+            assertTrue(!(system && builtIn), "$useSystem, $available, $preset")
+            assertEquals(useSystem && available, system)
+            assertEquals(!system && preset != EqualiserPreset.FLAT, builtIn)
+        }
+    }
 }

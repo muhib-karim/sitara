@@ -14,7 +14,7 @@ class SettingsCodecTest {
     fun `round trips every field`() {
         val s = SitaraSettings(
             ThemeMode.AMOLED, DarkMode.DARK, reducedMotion = true, crossfadeSeconds = 6, normalisation = false, targetLufs = -16f, downloadOnWifiOnly = false, skipSilence = true,
-            equaliser = EqualiserSettings(enabled = true, bandsDb = listOf(-12, -7, 0, 1, 2, 3, 4, 5, 11, 12), preampDb = -5),
+            equaliser = EqualiserSettings(enabled = true, bandsDb = listOf(-12, -7, 0, 1, 2, 3, 4, 5, 11, 12), preampDb = -5, useSystem = true),
         )
         assertEquals(s, SettingsCodec.decode(SettingsCodec.encode(s)))
     }

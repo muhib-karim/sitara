@@ -2,11 +2,15 @@ package app.sitara.music.core.model
 
 import kotlin.math.pow
 
-/** The built-in equaliser: ten peaking bands an octave apart and a preamp, in whole decibels. Off, or with every gain at 0, it leaves the sound alone. */
+/**
+ * The built-in equaliser: ten peaking bands an octave apart and a preamp, in whole decibels. Off, or with every gain at
+ * 0, it leaves the sound alone. With [useSystem] the device's own equaliser gets the audio session instead.
+ */
 data class EqualiserSettings(
     val enabled: Boolean = false,
     val bandsDb: List<Int> = List(BAND_COUNT) { 0 },
     val preampDb: Int = 0,
+    val useSystem: Boolean = false,
 ) {
     init {
         require(bandsDb.size == BAND_COUNT) { "expected $BAND_COUNT bands, got ${bandsDb.size}" }
@@ -28,6 +32,12 @@ data class EqualiserSettings(
     fun withPreamp(db: Int) = copy(enabled = true, preampDb = db.coerceIn(-MAX_GAIN_DB, MAX_GAIN_DB))
 
     fun reset() = copy(bandsDb = EqualiserPreset.FLAT.bandsDb, preampDb = 0)
+
+    /** Whether the device's equaliser has the sound; it can only when the device has one. */
+    fun systemActive(systemAvailable: Boolean) = useSystem && systemAvailable
+
+    /** What the built-in equaliser plays: off while the device's has the sound, so the two never shape it together. */
+    fun builtIn(systemAvailable: Boolean) = if (systemActive(systemAvailable)) copy(enabled = false) else this
 
     companion object {
         const val BAND_COUNT = 10
@@ -56,3 +66,4 @@ enum class EqualiserPreset(val label: String, val bandsDb: List<Int>) {
 
     val preampDb: Int get() = -maxOf(0, bandsDb.max())
 }
+

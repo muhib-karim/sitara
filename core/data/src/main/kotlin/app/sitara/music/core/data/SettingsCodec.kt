@@ -21,6 +21,7 @@ object SettingsCodec {
     const val EQ_ON = "equaliser_on"
     const val EQ_BANDS = "equaliser_bands"
     const val EQ_PREAMP = "equaliser_preamp"
+    const val EQ_SYSTEM = "equaliser_system"
 
     fun encode(s: SitaraSettings): Map<String, String> = mapOf(
         THEME to s.themeMode.name,
@@ -34,6 +35,7 @@ object SettingsCodec {
         EQ_ON to s.equaliser.enabled.toString(),
         EQ_BANDS to s.equaliser.bandsDb.joinToString(","),
         EQ_PREAMP to s.equaliser.preampDb.toString(),
+        EQ_SYSTEM to s.equaliser.useSystem.toString(),
     )
 
     fun decode(map: Map<String, String>): SitaraSettings {
@@ -51,6 +53,7 @@ object SettingsCodec {
                 enabled = map[EQ_ON]?.toBooleanStrictOrNull() ?: d.equaliser.enabled,
                 bandsDb = decodeBands(map[EQ_BANDS]) ?: d.equaliser.bandsDb,
                 preampDb = map[EQ_PREAMP]?.toIntOrNull()?.coerceIn(-GAIN, GAIN) ?: d.equaliser.preampDb,
+                useSystem = map[EQ_SYSTEM]?.toBooleanStrictOrNull() ?: d.equaliser.useSystem,
             ),
         )
     }
