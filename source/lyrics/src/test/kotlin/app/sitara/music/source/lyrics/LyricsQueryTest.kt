@@ -10,6 +10,7 @@ import org.junit.jupiter.params.provider.CsvSource
 class LyricsQueryTest {
     private fun query(title: String, artist: String) = lyricsQuery(Track("id", title, artist, "", 200_000, Artwork(listOf(0))))
 
+    // The block ends on its last row: a Kotlin raw string keeps a trailing whitespace line, which would be one more (empty) row.
     @ParameterizedTest(name = "{0} by {1} -> {2} by {3}")
     @CsvSource(
         delimiter = '|',
@@ -33,8 +34,7 @@ class LyricsQueryTest {
         Orchid Lane - Paper Lanterns ft. Kite                     | OrchidLaneVEVO      | Paper Lanterns        | Orchid Lane
         Paper Lanterns (Acoustic) (Official Audio)                | Orchid Lane - Topic | Paper Lanterns (Acoustic) | Orchid Lane
         Left Behind                                               | Orchid Lane         | Left Behind           | Orchid Lane
-        Soft Light                                                | Orchid Lane         | Soft Light            | Orchid Lane
-        """,
+        Soft Light                                                | Orchid Lane         | Soft Light            | Orchid Lane""",
     )
     fun `real-world video titles become the song and its artist`(title: String, artist: String, song: String, songArtist: String) {
         assertEquals(LyricsQuery(song, songArtist), query(title, artist))
