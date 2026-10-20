@@ -82,6 +82,9 @@ dependencies {
     implementation(libs.compose.animation)
     implementation(libs.compose.material3)
     implementation(libs.haze)
+    implementation(libs.coil.compose)
+    // Covers come over the OkHttp client stack the app already ships.
+    implementation(libs.coil.network.okhttp)
     coreLibraryDesugaring(libs.desugar.jdk.libs)
     debugImplementation(libs.compose.ui.tooling)
     debugImplementation(libs.compose.ui.test.manifest)

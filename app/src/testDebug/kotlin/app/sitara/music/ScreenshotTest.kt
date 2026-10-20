@@ -17,6 +17,7 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeLeft
 import androidx.compose.ui.test.swipeUp
 import androidx.compose.ui.unit.Density
+import androidx.test.core.app.ApplicationProvider
 import app.sitara.music.core.designsystem.SitaraTheme
 import app.sitara.music.core.model.DarkMode
 import app.sitara.music.core.model.DownloadState
@@ -41,10 +42,14 @@ import app.sitara.music.feature.player.PlayerUiState
 import app.sitara.music.feature.search.SearchState
 import app.sitara.music.source.fake.FakeMusicSource
 import app.sitara.music.source.fake.SampleCatalog
+import coil3.SingletonImageLoader
+import coil3.annotation.DelicateCoilApi
 import com.github.takahirom.roborazzi.captureRoboImage
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.runBlocking
+import org.junit.After
+import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -59,6 +64,14 @@ import org.robolectric.annotation.GraphicsMode
 class ScreenshotTest {
     @get:Rule
     val compose = createComposeRule()
+
+    @OptIn(DelicateCoilApi::class)
+    @Before
+    fun drawSampleCovers() = SingletonImageLoader.setUnsafe(sampleImageLoader(ApplicationProvider.getApplicationContext()))
+
+    @OptIn(DelicateCoilApi::class)
+    @After
+    fun releaseImageLoader() = SingletonImageLoader.reset()
 
     private val source = FakeMusicSource()
     private val library: Library = runBlocking { source.library() }
@@ -229,6 +242,11 @@ class ScreenshotTest {
     @Test fun userPlaylistDark() = shot("user_playlist", dark = true, tab = Tab.LIBRARY, detail = DetailState.UserPlaylistReady(UserPlaylist(1, "Late night", Fixtures.playlist.tracks)))
     @Test fun userPlaylistLight() = shot("user_playlist", dark = false, tab = Tab.LIBRARY, detail = DetailState.UserPlaylistReady(UserPlaylist(1, "Late night", Fixtures.playlist.tracks)))
     @Test fun upNext() = shot("up_next", dark = true, expanded = true, page = 2)
+    @Test fun playerCoverFailed() = shot(
+        "player_cover_failed", dark = true, expanded = true,
+        playerState = playing.copy(track = track.copy(artwork = track.artwork.copy(imageUrl = "https://offline.invalid/cover.jpg"))),
+    )
+
     @Test fun playerLiked() = shot("player_liked", dark = true, expanded = true, playerState = playing.copy(liked = true))
 
     @Test fun songActionsSheet() = sheet("song_actions") { SongActions(Fixtures.playlist.tracks.first(), liked = true, download = null, {}, {}, {}, {}, {}, {}) }

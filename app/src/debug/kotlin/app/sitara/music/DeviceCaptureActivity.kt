@@ -26,11 +26,15 @@ import app.sitara.music.feature.library.SavedLibrary
 import app.sitara.music.feature.search.SearchState
 import app.sitara.music.source.fake.FakeMusicSource
 import app.sitara.music.source.fake.SampleCatalog
+import coil3.SingletonImageLoader
+import coil3.annotation.DelicateCoilApi
 
 /** Only debug APKs expose this deterministic UI capture route. */
 class DeviceCaptureActivity : ComponentActivity() {
+    @OptIn(DelicateCoilApi::class)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        SingletonImageLoader.setUnsafe(sampleImageLoader(applicationContext))
         enableEdgeToEdge()
         val screen = intent.getStringExtra("screen").orEmpty()
         val dark = intent.getBooleanExtra("dark", true)

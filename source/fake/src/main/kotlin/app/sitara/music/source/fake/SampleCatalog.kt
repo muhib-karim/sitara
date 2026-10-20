@@ -8,10 +8,11 @@ import app.sitara.music.core.model.Track
 
 /**
  * Invented artists, albums and songs used by the fake source, previews and screenshot tests.
- * Covers are colour specs rendered as gradients at runtime, so nothing here is copyrighted.
+ * Covers are colour specs; their `sample:cover/` URLs are drawn from those colours by the debug image loader,
+ * so nothing here is copyrighted and nothing goes over the network.
  */
 object SampleCatalog {
-    private fun art(vararg argb: Long) = Artwork(argb.map { it.toInt() })
+    private fun art(vararg argb: Long) = Artwork(argb.map { it.toInt() }, imageUrl = "sample:cover/" + argb.joinToString("-") { "%08X".format(it) })
 
     val artists = listOf(
         Artist("ar-lumen", "Lumen Drift", art(0xFF6C5CE7, 0xFF00CEC9)),

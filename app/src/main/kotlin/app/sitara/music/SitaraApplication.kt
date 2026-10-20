@@ -1,10 +1,12 @@
 package app.sitara.music
 
 import android.app.Application
+import android.content.Context
 import android.util.Log
 import androidx.media3.datasource.cache.Cache
 import app.sitara.music.core.data.SettingsRepository
 import app.sitara.music.core.data.library.LibraryStore
+import app.sitara.music.core.designsystem.sitaraImageLoader
 import app.sitara.music.core.model.CachedLyrics
 import app.sitara.music.core.model.SavedQueue
 import app.sitara.music.core.model.Track
@@ -19,6 +21,7 @@ import app.sitara.music.source.lyrics.lrclibLyrics
 import app.sitara.music.source.youtube.YouTubeMusicSource
 import app.sitara.music.source.youtube.YouTubeStreamResolver
 import app.sitara.music.source.youtube.installNewPipe
+import coil3.SingletonImageLoader
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -29,12 +32,13 @@ import kotlinx.coroutines.launch
 
 /**
  * Dependencies are wired by hand (see ADR 0001). Home's chart, search, detail pages, radio and streams come from
- * YouTube, lyrics from LRCLIB; the library, the play queue, fetched lyrics and downloaded songs are stored on the device.
+ * YouTube, lyrics from LRCLIB, covers through Coil; the library, the play queue, fetched lyrics and downloaded songs are stored on the device.
  */
 class SitaraApplication :
     Application(),
     PlaybackDependencies,
-    DownloadDependencies {
+    DownloadDependencies,
+    SingletonImageLoader.Factory {
     val appScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     val youtube by lazy { YouTubeMusicSource() }
     val settings by lazy { SettingsRepository(this) }
@@ -54,6 +58,8 @@ class SitaraApplication :
     override val downloadCache: Cache get() = songDownloads.cache
     override val playbackSettings get() = settings.settings
     val player by lazy { PlayerController(this, appScope) }
+
+    override fun newImageLoader(context: Context) = sitaraImageLoader(context)
 
     override fun onTrackStarted(track: Track) = writeLibrary { library.history.record(track) }
 
