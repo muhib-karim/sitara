@@ -15,8 +15,8 @@ android {
         applicationId = "app.sitara.music"
         minSdk = 26
         targetSdk = 36
-        versionCode = 21
-        versionName = "0.9.9"
+        versionCode = 22
+        versionName = "0.10.0"
         testInstrumentationRunner = "app.sitara.music.WidgetCheckInstrumentation"
         buildConfigField("String", "LASTFM_API_KEY", "\"${lastFm("LASTFM_API_KEY")}\"")
         buildConfigField("String", "LASTFM_SHARED_SECRET", "\"${lastFm("LASTFM_SHARED_SECRET")}\"")

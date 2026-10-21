@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.10.0] - 2026-10-21
+
 Polish slice 10: your own music, local audio, backup and restore.
 
 ### Added
@@ -385,7 +387,8 @@ Phase A: foundation, plus the first UI redesign.
 - GitHub Actions workflows: CI (ktlint, unit tests, screenshot tests, debug APK artifact), release on `v*` tags with SHA256SUMS, GitHub Pages site, gitleaks scanning and a manual screenshot refresh workflow.
 - Project documentation: README, architecture and design system guides, contributing guide, code of conduct, security policy and the project website.
 
-[Unreleased]: https://github.com/muhib-karim/sitara/compare/v0.9.9...HEAD
+[Unreleased]: https://github.com/muhib-karim/sitara/compare/v0.10.0...HEAD
+[0.10.0]: https://github.com/muhib-karim/sitara/compare/v0.9.9...v0.10.0
 [0.9.9]: https://github.com/muhib-karim/sitara/compare/v0.9.8...v0.9.9
 [0.9.8]: https://github.com/muhib-karim/sitara/compare/v0.9.7...v0.9.8
 [0.9.7]: https://github.com/muhib-karim/sitara/compare/v0.9.6...v0.9.7
