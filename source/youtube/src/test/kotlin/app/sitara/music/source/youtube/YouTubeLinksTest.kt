@@ -60,4 +60,25 @@ class YouTubeLinksTest {
         assertFalse(isVideoId("tr-01"))
         assertFalse(isVideoId("x7kGuhlXmFI&list=x"))
     }
+
+    @Test
+    fun `reads a playlist id from playlist pages on every host and from shared watch links`() {
+        assertEquals("PLx0sYbCqOb8TBPRdmBHs5Iftvv9TPboYG", playlistIdFromLink("https://www.youtube.com/playlist?list=PLx0sYbCqOb8TBPRdmBHs5Iftvv9TPboYG"))
+        assertEquals("RDCLAK5uy_kmPRjHDECIcuVwnKsx2Ng7fyNgFKWNJFs", playlistIdFromLink("https://music.youtube.com/playlist?list=RDCLAK5uy_kmPRjHDECIcuVwnKsx2Ng7fyNgFKWNJFs&si=AbC"))
+        assertEquals("PL123abc", playlistIdFromLink("m.youtube.com/playlist?feature=share&list=PL123abc"))
+        assertEquals("PL123abc", playlistIdFromLink("https://youtu.be/x7kGuhlXmFI?list=PL123abc&si=AbC"))
+        assertEquals("PL123abc", playlistIdFromLink("https://www.youtube.com/watch?v=x7kGuhlXmFI&list=PL123abc&index=2"))
+        assertEquals("PL123abc", playlistIdFromLink("Check out this playlist\nhttps://music.youtube.com/playlist?list=PL123abc"))
+    }
+
+    @Test
+    fun `a link without a usable playlist id is not a playlist link`() {
+        assertNull(playlistIdFromLink("https://music.youtube.com/watch?v=x7kGuhlXmFI"))
+        assertNull(playlistIdFromLink("https://www.youtube.com/playlist?list="))
+        assertNull(playlistIdFromLink("https://www.youtube.com/playlist?list=PL1%22%3E"))
+        assertNull(playlistIdFromLink("https://example.com/playlist?list=PL123abc"))
+        assertNull(playlistIdFromLink("https://youtube.com.example.com/playlist?list=PL123abc"))
+        assertNull(playlistIdFromLink("https://music.youtube.com/browse/VLPL123abc"))
+        assertNull(playlistIdFromLink("my favourite songs"))
+    }
 }
