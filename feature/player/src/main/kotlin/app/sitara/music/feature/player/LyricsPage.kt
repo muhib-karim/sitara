@@ -39,6 +39,7 @@ import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import app.sitara.music.core.designsystem.ArtworkScrim
@@ -52,9 +53,10 @@ import app.sitara.music.source.lyrics.LyricsCursor
 import kotlin.math.abs
 import kotlinx.coroutines.flow.first
 
-private val LineStyle = LyricStyle
-private val PlainStyle = TextStyle(fontFamily = Inter, fontSize = 22.sp, lineHeight = 32.sp, fontWeight = FontWeight.SemiBold)
-private val TranslationStyle = TextStyle(fontFamily = Inter, fontSize = 17.sp, lineHeight = 24.sp, fontWeight = FontWeight.Medium)
+// Text follows the app's layout direction unless told to read it from the text: a right-to-left line must start at the right.
+private val LineStyle = LyricStyle.copy(textDirection = TextDirection.Content)
+private val PlainStyle = TextStyle(fontFamily = Inter, fontSize = 22.sp, lineHeight = 32.sp, fontWeight = FontWeight.SemiBold, textDirection = TextDirection.Content)
+private val TranslationStyle = TextStyle(fontFamily = Inter, fontSize = 17.sp, lineHeight = 24.sp, fontWeight = FontWeight.Medium, textDirection = TextDirection.Content)
 private const val LINE_CONTENT_TYPE = "lyric"
 
 /**
@@ -137,8 +139,8 @@ private fun TranslatedLine(text: String?, contentColor: Color) {
 }
 
 /**
- * Whether [text] reads right to left (Urdu, Arabic, Hebrew): its first character with a strong direction does. Text
- * lays such a line out right to left and starts it at the right edge on its own; this tells the focus scale where to grow from.
+ * Whether [text] reads right to left (Urdu, Arabic, Hebrew): its first character with a strong direction does, as
+ * [TextDirection.Content] decides for the line's layout; this tells the focus scale where to grow from.
  */
 internal fun isRightToLeft(text: String): Boolean {
     for (char in text) {

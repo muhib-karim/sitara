@@ -46,6 +46,7 @@ import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextDirection
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Constraints
 import androidx.compose.ui.unit.Density
@@ -165,7 +166,11 @@ fun LyricShareCard(style: LyricCardStyle, lines: List<String>, track: Track, cre
         characters <= 140 -> 25.sp
         else -> 21.sp
     }
-    val lyricStyle = TextStyle(fontFamily = InterDisplay, fontWeight = FontWeight.ExtraBold, fontSize = size, lineHeight = size * 1.2f, letterSpacing = (-0.4).sp)
+    val lyricStyle = TextStyle(
+        fontFamily = InterDisplay, fontWeight = FontWeight.ExtraBold, fontSize = size, lineHeight = size * 1.2f, letterSpacing = (-0.4).sp,
+        // A right-to-left line starts at the right edge.
+        textDirection = TextDirection.Content,
+    )
     CompositionLocalProvider(LocalDensity provides CardDensity, LocalArtworkWash provides true) {
         Box(
             modifier.size(360.dp, 450.dp).testTag("lyric-share-card")
