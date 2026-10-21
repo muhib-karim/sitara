@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+Polish slice 9: lyrics II.
+
+### Added
+
+- Lyrics from YouTube Music as well as LRCLIB. YouTube Music's are the plain lyrics on a song's Lyrics tab, credited to whoever licensed them (Musixmatch, LyricFind). Both sources are asked at once; one that fails or gives no answer within 10 seconds is left out.
+- The lyrics shown first are synced before plain, then filed under a song as long as this one (within 2 seconds), then under its exact title and artist.
+- A "Source: LRCLIB, synced" chip over the lyrics opens every source's lyrics for the song: whether they are synced, how many lines, how their song's length compares, and their first lines. Picking one shows it at once and keeps it for that song. A source with nothing for the song is named.
+- Translate, off until you turn it on: each line's translation appears under it, smaller and dimmer, translated by MyMemory (credited) from the language it detects into the app's language, or another you pick for the session. Translating, offline, the daily free limit, lyrics already in your language and a service error each say so, with Try again where it can help. Translations are kept on the phone per song, source and language.
+- Lyric cards: Share lyrics over the lyrics, or a long press on a line, picks one to five lines; the card shows them in big heavy type with the song, the lyrics' source and Sitara's mark, over the blurred cover, in the cover's colour or on paper white, and Share image sends a 1080 × 1350 PNG through the share sheet. Nothing is saved outside the app's cache.
+- Bangla, Hindi and Urdu lyrics and cards are checked in screenshots; right-to-left lines (Urdu, Arabic) start at the right edge.
+
+### Changed
+
+- With no lyrics found, the page names the sources it asked ("No lyrics found in LRCLIB or YouTube Music") and Try again asks them again, instead of waiting a week.
+- Lyrics found earlier are kept per source; lyrics cached before this release count as LRCLIB's.
+
 ## [0.9.8] - 2026-10-21
 
 Polish slice 8: scrobbling.

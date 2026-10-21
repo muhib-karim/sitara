@@ -2,7 +2,7 @@
 
 This document describes how Sitara is put together: the module map, how data moves from a music source to the screen, how playback is wired to Media3, how stream lookups fall back, and how the code is tested and shipped.
 
-> Status: polish slice 8 (after Phase C slice 3). Home (YouTube Music's own Home, with the trending chart in its place when it fails), search with suggestions and Moods & genres, artist/album/playlist pages, radio and streams are live (YouTube through NewPipeExtractor); lyrics come from LRCLIB; the library, the play queue and fetched lyrics are stored on the device with Room; downloaded songs live in a Media3 cache and play offline; playback levels loudness, can crossfade, joins songs gapless, changes speed and pitch and can skip silence; covers load through Coil and colour the player, and, if the listener chooses, the whole app; Android Auto browses the library through a media library service, and a Glance widget shows what plays on the home screen; plays can be scrobbled to ListenBrainz and Last.fm through an outbox kept in Room; playlists come in from YouTube links and M3U/CSV files through a resumable import, and streams follow a quality setting per network. The app contains no sample data; the sample catalogue is a test and debug fixture. Modules marked *planned* do not exist yet.
+> Status: polish slice 9 (after Phase C slice 3). Home (YouTube Music's own Home, with the trending chart in its place when it fails), search with suggestions and Moods & genres, artist/album/playlist pages, radio and streams are live (YouTube through NewPipeExtractor); lyrics come from LRCLIB and YouTube Music, ranked and cached per source, with opt-in translation by MyMemory and shareable lyric cards; the library, the play queue and fetched lyrics are stored on the device with Room; downloaded songs live in a Media3 cache and play offline; playback levels loudness, can crossfade, joins songs gapless, changes speed and pitch and can skip silence; covers load through Coil and colour the player, and, if the listener chooses, the whole app; Android Auto browses the library through a media library service, and a Glance widget shows what plays on the home screen; plays can be scrobbled to ListenBrainz and Last.fm through an outbox kept in Room; playlists come in from YouTube links and M3U/CSV files through a resumable import, and streams follow a quality setting per network. The app contains no sample data; the sample catalogue is a test and debug fixture. Modules marked *planned* do not exist yet.
 
 ## Goals
 
@@ -24,13 +24,13 @@ This document describes how Sitara is put together: the module map, how data mov
 | `:source:api` | Pure Kotlin | Contracts: `SearchSource`, `SearchSuggestionSource`, `ChartsSource`, `HomeFeedSource`, `ScrobbleClient`, `MoodsSource`, `MusicSource`, `BrowseSource` (artist, album, playlist pages), `RadioSource`, `StreamResolver`, `LyricsProvider`, `HealthCheck` |
 | `:source:fake` | Pure Kotlin | Deterministic sample catalogue whose `sample:cover/` images the debug image loader draws from their colours: a fixture for tests, screenshots and the debug capture screen (`debugImplementation` only, never in a release build) |
 | `:source:scrobble` | Pure Kotlin (JVM) | `ListenBrainzClient` (token check, submit-listens) and Last.fm (`LastFmAuth` web sign-in, `LastFmClient`, signed calls) over OkHttp, answers mapped to `SendOutcome` |
-| `:source:lyrics` | Pure Kotlin (JVM) | LRC and enhanced (word-timed) LRC parser; `LrclibLyricsProvider` (LRCLIB over OkHttp, cached through a `LyricsCache`) and the title clean-up for lyric searches |
+| `:source:lyrics` | Pure Kotlin (JVM) | LRC and enhanced (word-timed) LRC parser; `LrclibLyricsProvider` (LRCLIB over OkHttp, cached through a `LyricsCache`) and the title clean-up for lyric searches; `LyricsSources` (every provider at once, ranked, a timeout per source, the listener's pick through `LyricsChoices`); `MyMemoryTranslator` (batched lines, cached through a `TranslationCache`) |
 | `:feature:home` | Android library | Home: `OnlineHomeLoader` (the catalogue's Home page by page, mood chips, the trending chart when the feed fails) and the screen: chips, Quick picks pages, cover carousels, Listen again, Your likes, Jump back in, placeholders and the offline card; `MoodScreen`, a mood or genre page drawn with the same shelves |
 | `:feature:search` | Android library | Search field, results with debounced states (loading, error, retry); with nothing typed, recent searches and Moods & genres tiles; suggestions while typing with recent searches as the fallback |
 | `:feature:library` | Android library | Library (Liked songs and Downloads pinned, Recently played, playlists, songs, albums, artists or downloads as a grid or a list, `LibraryOrder` for the orders each kind offers, playlist collages; Downloads with progress, cancel, delete and retry), song menus, Import playlist (link or file, progress counts, review of uncertain matches, worded problems), Your stats (ranges, totals, the hour chart, top songs, artists and albums, the share card sent through the app's FileProvider), and the artist, album and playlist detail pages with loading, error and empty states, Download all and downloaded badges |
-| `:feature:player` | Android library | Mini player, full player sheet, scrubber, Up next (swipe to remove with Undo, Save as playlist, radio's own section) / Lyrics pager, karaoke lyrics, speed and pitch sheet, sleep timer sheet |
+| `:feature:player` | Android library | Mini player, full player sheet, scrubber, Up next (swipe to remove with Undo, Save as playlist, radio's own section) / Lyrics pager, karaoke lyrics with the source chip and sheet, Translate and its language sheet, lyric cards (line picking, three styles, the 1080 × 1350 card), speed and pitch sheet, sleep timer sheet |
 | `:feature:settings` | Android library | Appearance (theme, pure black, wallpaper colours, accents, artwork colours across the app, live preview), reduced motion, Playback (stream quality on Wi-Fi and on mobile data), Library (Import playlist), Sound (normalise loudness, skip silence, crossfade), Listening history (Your stats, Scrobbling with ListenBrainz and Last.fm, Pause, Clear), Downloads (Wi-Fi only, storage used, Remove all) |
-| `:source:youtube` | Pure Kotlin (JVM) | YouTube Music search (songs, albums, artists, playlists), artist/album/playlist pages, radio from related songs, the YouTube Charts trending list (NewPipe's `trending_music` kiosk), YouTube Music's Home (`FEmusic_home` asked directly over NewPipe's HTTP layer as the WEB_REMIX client, chips and continuations, parsed in `HomeFeedParsing`), search suggestions and Moods & genres with their pages (`ExploreParsing`, the same client), YouTube song and playlist link parsing, whole playlists for imports, and audio stream resolution on NewPipeExtractor at a quality asked for per lookup (with the codec named), with an OkHttp downloader ([ADR 0004](adr/0004-youtube-source-newpipeextractor.md)) |
+| `:source:youtube` | Pure Kotlin (JVM) | YouTube Music search (songs, albums, artists, playlists), artist/album/playlist pages, radio from related songs, the YouTube Charts trending list (NewPipe's `trending_music` kiosk), YouTube Music's Home (`FEmusic_home` asked directly over NewPipe's HTTP layer as the WEB_REMIX client, chips and continuations, parsed in `HomeFeedParsing`), search suggestions and Moods & genres with their pages (`ExploreParsing`, the same client), YouTube song and playlist link parsing, whole playlists for imports, and audio stream resolution on NewPipeExtractor at a quality asked for per lookup (with the codec named), with an OkHttp downloader ([ADR 0004](adr/0004-youtube-source-newpipeextractor.md)); YouTube Music's lyrics (`YouTubeMusicLyricsProvider`: the watch page's Lyrics tab) |
 | `:source:local` | *planned, Phase B* | MediaStore and folder-based local files |
 
 ## Dependency graph
@@ -76,7 +76,7 @@ graph TD
     data --> model
     designsystem --> model
     fake --> api & lyrics
-    youtube --> api
+    youtube --> api & lyrics
     lyrics --> api
     scrobble --> api
     data --> api
@@ -86,7 +86,7 @@ graph TD
 Rules enforced in review:
 
 - `:core:model`, `:core:common`, `:source:api`, `:source:fake`, `:source:lyrics` and `:source:youtube` stay free of Android dependencies.
-- Only `:app` chooses concrete sources. Home's chart, search, detail pages, radio and streams use YouTube (`YouTubeMusicSource`, `youTubeStreamResolver()`); lyrics use `LrclibLyricsProvider`; the Library tab and Home's shelves read only `LibraryStore`. The sample source is a fixture: it reaches only debug builds and tests.
+- Only `:app` chooses concrete sources. Home's chart, search, detail pages, radio and streams use YouTube (`YouTubeMusicSource`, `youTubeStreamResolver()`); lyrics use `LrclibLyricsProvider` and `YouTubeMusicLyricsProvider` through `LyricsSources`, translations `MyMemoryTranslator`; the Library tab and Home's shelves read only `LibraryStore`. The sample source is a fixture: it reaches only debug builds and tests.
 - UI modules depend on `:core:designsystem` for every colour, shape, spring and duration. Hard-coded values in feature code are a review comment.
 
 ## Data flow
@@ -258,22 +258,53 @@ flowchart LR
 
 ```mermaid
 flowchart LR
-    vm["AppViewModel<br/>(current song changes)"] --> p["LrclibLyricsProvider"]
-    p -->|"by song id"| c["LyricsCache<br/>(Room lyrics_cache)"]
-    p -->|"miss or stale"| g["GET /api/get<br/>title, artist, length"]
-    g -->|404| s["GET /api/search<br/>title, artist"]
-    s --> m["bestMatch: same length ±2 s,<br/>synced first"]
-    p --> lrc["LrcParser"] --> ui["LyricsState: Loading / Found / NotFound / Failed"]
+    vm["AppViewModel<br/>(current song changes)"] --> ls["LyricsSources<br/>(all at once, 10 s each)"]
+    ls --> lr["LrclibLyricsProvider"] & yt["YouTubeMusicLyricsProvider"]
+    lr & yt -->|"by song id and source"| c["Room lyrics_cache"]
+    lr -->|"miss"| g["LRCLIB /api/get, then /api/search"]
+    yt -->|"miss"| n["youtubei/v1/next: Lyrics tab"] --> b["youtubei/v1/browse: the tab's page"]
+    ls -->|"rank, then the pick<br/>(Room lyrics_choice)"| ui["LyricsState: Loading / Found(lyrics, matches) / NotFound / Failed"]
+    ui -->|"Translate on"| t["MyMemoryTranslator"] -->|"by song, source, language"| tc["Room lyrics_translation"]
 ```
 
-- `LyricsProvider` (`:source:api`) returns parsed `Lyrics`, null for "none", and throws when the service fails.
-- `LrclibLyricsProvider` cleans the video title first (`lyricsQuery`: drops "(Official Video)"-style labels and a
-  " | …" tail, reads "Artist - Song" titles), asks `/api/get` and falls back to `/api/search`. It stores the raw
-  LRC and plain text, so a parser change never needs a cache migration. Found lyrics stay cached; "none found" is
-  asked again after a week; errors are not cached. Requests carry `User-Agent: Sitara (<repository URL>)` and
-  nothing else about the device or listener.
-- The view model looks lyrics up when the current song changes (a retry asks again for the same song); the
-  Lyrics page shows loading, the lyrics with an "LRCLIB" credit, "No lyrics found", or an error with Try again.
+- `LyricsProvider` (`:source:api`) returns parsed `Lyrics` (with the source's name, the text's licensor and the song the
+  source matched: title, artist, length), null for "none", and throws when the service fails. Each provider caches its own
+  raw answers by song id: found lyrics for good, "none found" for a week, errors never.
+- **LRCLIB** (`LrclibLyricsProvider`) cleans the video title first (`lyricsQuery`: drops "(Official Video)"-style labels
+  and a " | …" tail, reads "Artist - Song" titles), asks `/api/get` and falls back to `/api/search`. LRCLIB is a free,
+  open lyrics database whose API needs no key or account and asks clients to identify themselves
+  ([lrclib.net/docs](https://lrclib.net/docs)); requests carry `User-Agent: Sitara (<repository URL>)` and nothing about
+  the device or listener.
+- **YouTube Music** (`YouTubeMusicLyricsProvider`, `:source:youtube`) reads the Lyrics tab of a song's watch page with
+  the same WEB_REMIX InnerTube requests the app already makes for Home and suggestions: `next` names the tab's browse id
+  (by its `MUSIC_PAGE_TYPE_TRACK_LYRICS` page type), `browse` returns the plain text and its licensor ("Source:
+  Musixmatch"). This is YouTube Music's own client interface, not a documented public API, like the rest of the app's
+  YouTube access; it gives plain lyrics only. Tests use responses recorded from music.youtube.com, trimmed and with the
+  lyric text replaced.
+- No other source was added. The services checked either need a key or an account (Musixmatch, Genius, whose API does
+  not return lyric text anyway) or are scrapers of other sites or unofficial endpoints (lyrics.ovh, NetEase, KuGou, QQ
+  Music), which this project does not use.
+- **Ranking** (`LyricsSources`): synced before plain, then lyrics whose matched song is as long as this one within 2 s
+  (LRCLIB's own tolerance), then an exact title and artist (case-insensitive, against the title as uploaded or cleaned);
+  ties keep the providers' order (LRCLIB, then YouTube Music). A source that throws or says nothing within 10 s is left
+  out; with nothing found and a source failed, the lookup fails so it can be tried again. The source the listener picks
+  in the sheet is kept per song (`lyrics_choice`) and comes first while it still has lyrics for the song.
+- Room 7 keyed `lyrics_cache` by song and source (rows from version 6 became LRCLIB's) and added the matched song and the
+  licensor; Try again on "No lyrics found" deletes the song's "none found" rows before asking again.
+- **Translation** (`MyMemoryTranslator`): only while Translate is on, the shown lyrics' distinct non-blank lines go to
+  MyMemory's public `GET /get` endpoint, joined with newlines in requests of at most 500 bytes, with
+  `langpair=autodetect|<target>`; MyMemory needs no key, allows 5,000 characters a day per address for anonymous use
+  ([usage limits](https://mymemory.translated.net/doc/usagelimits.php)), and is credited next to every translation.
+  Lines MyMemory merges are asked one by one; a request answered "two distinct languages" leaves its lines as they were
+  (all of them: "already in that language"). Failures are typed (`TranslationProblem`: offline, daily limit, same
+  language, service) so the page words each one. Room 8 keeps translations per song, source and language
+  (`lyrics_translation`). The target is the app's language until the listener picks another for the session.
+- **Cards** (`LyricShareCard`, `LyricShareSheet`): the card is laid out at 360 × 450 dp at a fixed three pixels to the
+  dp, so it is 1080 × 1350 px on any phone, and shown scaled to the sheet's width; Share image records the card into a
+  `GraphicsLayer`, writes it as a PNG under the app's cache (`shared/`) and offers it through the FileProvider with read
+  access for the chosen app only (`shareImage`, also used by the stats card).
+- Lines take the full width so a right-to-left line (Urdu, Arabic) starts at the right edge; Bangla, Devanagari and
+  Arabic-script text falls back from Inter to the system's fonts, checked in screenshot fixtures.
 
 ### Scrobbling
 

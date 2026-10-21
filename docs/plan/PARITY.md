@@ -18,7 +18,7 @@ Last updated: polish slice 8 (target v0.9.8, on `main`; the owner tags).
 | Listening stats (top songs, artists, time listened) and a share card | ? | Y | ? | ? | v0.9.5 (week, month, year, all time; on the phone only) |
 | Queue reorder, play next, remove | Y | Y | Y | Y | v0.4.0; Undo, swipe to remove, haptic reorder, Save as playlist and radio's own section in v0.9.4 |
 | Offline downloads | Y | Y | Y | ~ | v0.6.0 (no storage cap yet) |
-| Synced lyrics | Y | Y | Y | Y | v0.5.0 (LRCLIB) |
+| Synced lyrics | Y | Y | Y | Y | v0.5.0 (LRCLIB); YouTube Music's plain lyrics as a second source in v0.9.9 |
 | Loudness normalisation | — | Y | Y | — | v0.6.0 |
 | Crossfade | Y | Y | Y | — | v0.6.0 |
 | Real artwork in the app, artwork-coloured player | Y | ~ | ~ | Y | v0.7.0; lock screen and notification since v0.5.0; artwork colours across the whole app in v0.9.4 |
@@ -33,9 +33,9 @@ Last updated: polish slice 8 (target v0.9.8, on `main`; the owner tags).
 | Local audio files | Y | — | — | ~ | c4 |
 | Downloads exported as tagged files with lyrics | — | ? | ? | — | c5 |
 | Backup and restore | Y | Y | Y | — | c5 |
-| Several lyric sources with a picker | Y | Y | ? | — | c6 |
-| Lyric translation | Y | Y | ~ | — | c6 |
-| Lyric share cards | Y | — | — | — | c6 |
+| Several lyric sources with a picker | Y | Y | ? | — | v0.9.9 (LRCLIB and YouTube Music; no other lyrics service has an open API without a key) |
+| Lyric translation | Y | Y | ~ | — | v0.9.9 (MyMemory, free daily limit; not yet checked on a phone) |
+| Lyric share cards | Y | — | — | — | v0.9.9 (three styles, 1080 × 1350 PNG) |
 | Beat-aware automix | ~ | — | — | — | c7 |
 | Widgets | Y | Y | Y | Y | v0.9.6 (one now-playing widget, 4 × 1 resizable to 4 × 2 with the heart and progress; not yet checked on a real launcher) |
 | Android Auto | Y | Y | ~ | Y | v0.9.6 (library, downloads offline, search and voice, Like and Shuffle; not yet checked in a car or the Desktop Head Unit) |

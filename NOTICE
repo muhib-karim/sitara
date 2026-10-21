@@ -10,5 +10,11 @@ NewPipeExtractor: Copyright NewPipe e.V. and contributors
 Used unmodified as a library (v0.26.5, via JitPack) for YouTube Music
 search and stream extraction in the :source:youtube module.
 
+Lyrics come from LRCLIB (https://lrclib.net) and YouTube Music, and
+translations from MyMemory (https://mymemory.translated.net), at run
+time; each is credited in the app. No lyric or translation text is
+bundled; test fixtures use original lines or public-domain verse
+(Rabindranath Tagore, Kabir, Mirza Ghalib).
+
 BitChord, Metrolist and Meld are quality references only. No source or
 assets from these applications are included in this change.
