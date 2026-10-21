@@ -1,6 +1,7 @@
 package app.sitara.music.core.player
 
 import app.sitara.music.core.model.Artwork
+import app.sitara.music.core.model.Listen
 import app.sitara.music.core.model.PlaybackTuning
 import app.sitara.music.core.model.RepeatMode
 import app.sitara.music.core.model.SavedQueue
@@ -24,7 +25,8 @@ class PlaybackEngineTest {
     private fun t(n: Int) = Track("t$n", "Song $n", "Artist", "Album", 1000, Artwork(listOf(0)))
     private val five = (1..5).map(::t)
     private val port = FakePlayerPort()
-    private val started = mutableListOf<String>()
+    private val listens = mutableListOf<Listen>()
+    private val listened get() = listens.map { it.track.id }
     private val prepared = mutableListOf<String>()
 
     private fun TestScope.engine() = PlaybackEngine(
@@ -33,7 +35,7 @@ class PlaybackEngineTest {
         timeSource = object : AbstractLongTimeSource(DurationUnit.MILLISECONDS) {
             override fun read(): Long = testScheduler.currentTime
         },
-        onTrackStarted = { started += it.id },
+        onListen = { listens += it },
         prepareAhead = { prepared += it.id },
     )
 
@@ -342,18 +344,23 @@ class PlaybackEngineTest {
     }
 
     @Test
-    fun `a song is recorded once when it actually starts playing`() = runTest {
+    fun `a song becomes a play once it has been heard long enough`() = runTest {
         val engine = engine()
         engine.play(five, 0)
         port.playing = false
         engine.refresh()
-        assertEquals(emptyList<String>(), started)
+        advanceTimeBy(10_000)
+        engine.checkpointListening()
+        assertEquals("a queued song that never plays is not a play", emptyList<String>(), listened)
 
         port.playing = true
         engine.refresh()
-        engine.refresh()
+        // Each song is 1 s long, so half of it counts.
+        advanceTimeBy(600)
         engine.onItemTransition(port.entries[1].uid)
-        assertEquals(listOf("t1", "t2"), started)
+        advanceTimeBy(100)
+        engine.onItemTransition(port.entries[2].uid)
+        assertEquals("t2 was skipped after 0.1 s", listOf("t1"), listened)
     }
 
     @Test
@@ -361,8 +368,26 @@ class PlaybackEngineTest {
         val engine = engine()
         engine.play(five, 0)
         engine.refresh()
+        advanceTimeBy(600)
         engine.onItemTransition(port.entries[0].uid)
-        assertEquals(listOf("t1", "t1"), started)
+        advanceTimeBy(600)
+        engine.checkpointListening()
+        assertEquals(listOf("t1", "t1"), listened)
+    }
+
+    @Test
+    fun `playing a finished queue again counts as another play`() = runTest {
+        val engine = engine()
+        engine.play(listOf(t(1)), 0)
+        engine.refresh()
+        advanceTimeBy(600)
+        port.playing = false
+        engine.onPlaybackStateChanged(ended = true)
+
+        engine.togglePlay()
+        advanceTimeBy(600)
+        engine.checkpointListening()
+        assertEquals(listOf("t1", "t1"), listened)
     }
 
     @Test
@@ -552,7 +577,9 @@ class PlaybackEngineTest {
         assertEquals(61_000, port.positionMs)
         assertEquals(RepeatMode.ALL, port.repeat)
         assertFalse(port.playing)
-        assertTrue("a restored song has not started playing", started.isEmpty())
+        advanceTimeBy(10_000)
+        engine.checkpointListening()
+        assertTrue("a restored song has not started playing", listens.isEmpty())
     }
 
     @Test
@@ -600,5 +627,17 @@ class PlaybackEngineTest {
         val afterPause = saves.size
         advanceTimeBy(QUEUE_SAVE_INTERVAL_MS * 3)
         assertEquals("nothing changes while paused", afterPause, saves.size)
+    }
+
+    @Test
+    fun `the play being heard is kept with each save, so a killed process loses little of it`() = runTest {
+        val engine = engine()
+        backgroundScope.launch { keepSaving(engine) {} }
+        engine.play(listOf(t(1).copy(durationMs = 300_000)), 0)
+        engine.refresh()
+
+        // Saves at 15, 30 and 45 s; the play counts from 30 s.
+        advanceTimeBy(QUEUE_SAVE_INTERVAL_MS * 3 + 1)
+        assertEquals(listOf(30_000L, 45_000L), listens.map { it.listenedMs })
     }
 }

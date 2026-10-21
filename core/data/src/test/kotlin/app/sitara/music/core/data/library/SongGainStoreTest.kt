@@ -1,13 +1,11 @@
 package app.sitara.music.core.data.library
 
 import android.content.Context
-import android.database.sqlite.SQLiteDatabase
 import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import java.io.File
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
-import org.json.JSONObject
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -66,27 +64,12 @@ class SongGainStoreTest {
         assertEquals(3, gains.trimDb("kept").first())
     }
 
-    /** A database exactly as version 2 left it, built from the committed schema, with a liked song and cached lyrics. */
-    private fun createVersion2(file: File) {
-        val schema = JSONObject(File("schemas/app.sitara.music.core.data.library.SitaraDatabase/2.json").readText()).getJSONObject("database")
-        file.parentFile?.mkdirs()
-        SQLiteDatabase.openOrCreateDatabase(file, null).use { db ->
-            val entities = schema.getJSONArray("entities")
-            for (i in 0 until entities.length()) {
-                val entity = entities.getJSONObject(i)
-                val table = entity.getString("tableName")
-                db.execSQL(entity.getString("createSql").replace("\${TABLE_NAME}", table))
-                val indices = entity.optJSONArray("indices") ?: continue
-                for (j in 0 until indices.length()) db.execSQL(indices.getJSONObject(j).getString("createSql").replace("\${TABLE_NAME}", table))
-            }
-            val setup = schema.getJSONArray("setupQueries")
-            for (i in 0 until setup.length()) db.execSQL(setup.getString(i))
-            db.execSQL(
-                "INSERT INTO liked_songs (liked_at, track_id, track_title, track_artist, track_album, track_duration_ms, track_artwork_colors, track_artwork_url, track_explicit, track_artist_id) " +
-                    "VALUES (1, 'kept', 'Kept song', 'Artist', 'Album', 200000, '1,2', NULL, 0, NULL)",
-            )
-            db.execSQL("INSERT INTO lyrics_cache (track_id, synced, plain, fetched_at) VALUES ('kept', NULL, 'kept lyrics', 1)")
-            db.version = 2
-        }
+    /** A database exactly as version 2 left it, with a liked song and cached lyrics. */
+    private fun createVersion2(file: File) = createDatabaseAt(2, file) { db ->
+        db.execSQL(
+            "INSERT INTO liked_songs (liked_at, track_id, track_title, track_artist, track_album, track_duration_ms, track_artwork_colors, track_artwork_url, track_explicit, track_artist_id) " +
+                "VALUES (1, 'kept', 'Kept song', 'Artist', 'Album', 200000, '1,2', NULL, 0, NULL)",
+        )
+        db.execSQL("INSERT INTO lyrics_cache (track_id, synced, plain, fetched_at) VALUES ('kept', NULL, 'kept lyrics', 1)")
     }
 }

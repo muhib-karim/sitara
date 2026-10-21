@@ -16,6 +16,7 @@ import androidx.media3.session.CommandButton
 import app.sitara.music.core.model.Artwork
 import app.sitara.music.core.model.EqualiserPreset
 import app.sitara.music.core.model.EqualiserSettings
+import app.sitara.music.core.model.Listen
 import app.sitara.music.core.model.RepeatMode
 import app.sitara.music.core.model.SavedQueue
 import app.sitara.music.core.model.SitaraSettings
@@ -61,7 +62,7 @@ class PlaybackServiceTest {
 
         val trims = MutableStateFlow(mapOf<String, Int>())
 
-        override fun onTrackStarted(track: Track) = Unit
+        override fun onListened(listen: Listen) = Unit
 
         override fun songGainDb(trackId: String) = trims.map { it[trackId] ?: 0 }
 

@@ -5,6 +5,7 @@ import androidx.test.core.app.ApplicationProvider
 import app.sitara.music.core.model.Album
 import app.sitara.music.core.model.Artist
 import app.sitara.music.core.model.Artwork
+import app.sitara.music.core.model.Listen
 import app.sitara.music.core.model.PlayCount
 import app.sitara.music.core.model.PlaylistSummary
 import app.sitara.music.core.model.Track
@@ -59,24 +60,45 @@ class LibraryStoreTest {
         assertEquals(listOf(song(1)), liked.tracks.first())
     }
 
+    /** A play of [n] heard for 40 s, starting at the next clock tick. */
+    private fun listen(n: Int) = Listen(song(n), startedAtMs = clock(), listenedMs = 40_000)
+
     @Test
-    fun `history keeps only the newest plays and lists each song once by its last play`() = runTest {
-        val history = RoomPlayHistory(db.playHistory(), clock, limit = 3)
-        listOf(1, 2, 3, 2, 4).forEach { history.record(song(it)) }
-        // Plays kept: 3, 2, 4. Song 1 fell off the end.
-        assertEquals(listOf(song(4), song(2), song(3)), history.recent(10).first())
+    fun `history lists each song once by its last play`() = runTest {
+        val history = RoomPlayHistory(db.playHistory())
+        listOf(1, 2, 3, 2, 4).forEach { history.record(listen(it)) }
+        assertEquals(listOf(song(4), song(2), song(3), song(1)), history.recent(10).first())
         assertEquals(listOf(song(4)), history.recent(1).first())
     }
 
     @Test
-    fun `play counts give each kept song its plays and when it last played`() = runTest {
-        val history = RoomPlayHistory(db.playHistory(), clock, limit = 4)
-        listOf(1, 2, 1, 3, 1).forEach { history.record(song(it)) }
-        // Plays kept: 2, 1, 3, 1. Each play takes the next clock tick, from 1000.
+    fun `play counts give each song its plays and when it last played`() = runTest {
+        val history = RoomPlayHistory(db.playHistory())
+        listOf(1, 2, 1, 3, 1).forEach { history.record(listen(it)) }
+        // Each play starts at the next clock tick, from 1000.
         assertEquals(
-            setOf(PlayCount("id1", "UC1", lastPlayedAt = 1004, plays = 2), PlayCount("id2", "UC2", 1001, 1), PlayCount("id3", "UC3", 1003, 1)),
+            setOf(PlayCount("id1", "UC1", lastPlayedAt = 1004, plays = 3), PlayCount("id2", "UC2", 1001, 1), PlayCount("id3", "UC3", 1003, 1)),
             history.counts.first().toSet(),
         )
+    }
+
+    @Test
+    fun `every play is kept, however long the history grows`() = runTest {
+        val history = RoomPlayHistory(db.playHistory())
+        repeat(600) { history.record(listen(it % 7)) }
+        assertEquals(600, history.counts.first().sumOf { it.plays })
+    }
+
+    @Test
+    fun `reporting the same play again updates the time heard and adds no play`() = runTest {
+        val history = RoomPlayHistory(db.playHistory())
+        val play = Listen(song(1), startedAtMs = 5_000, listenedMs = 30_000)
+        history.record(play)
+        history.record(play.copy(listenedMs = 95_000))
+        history.record(play.copy(startedAtMs = 400_000, listenedMs = 31_000))
+
+        assertEquals(listOf(PlayCount("id1", "UC1", lastPlayedAt = 400_000, plays = 2)), history.counts.first())
+        assertEquals(listOf(95_000L, 31_000L), db.listenedMs())
     }
 
     @Test
