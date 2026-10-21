@@ -246,6 +246,14 @@ class ScreenshotTest {
 
     @Test fun settingsLight() = shot("settings", dark = false, settingsOpen = true)
 
+    @Test fun appearanceAccentDark() = shot("appearance_violet", dark = true, settingsOpen = true, accent = AccentColor.VIOLET)
+
+    @Test fun appearanceAccentLight() = shot("appearance_violet", dark = false, settingsOpen = true, accent = AccentColor.VIOLET)
+
+    @Test fun homeArtworkColoursDark() = shot("home_artwork_colours", dark = true, accent = AccentColor.ARTWORK, artworkAcrossApp = true)
+
+    @Test fun homeArtworkColoursLight() = shot("home_artwork_colours", dark = false, accent = AccentColor.ARTWORK, artworkAcrossApp = true)
+
     @Test fun homeQuickPicksSecondPage() = shot("home_quick_page2", dark = true) {
         compose.onNodeWithTag("quick-picks").performTouchInput { swipeLeft(startX = right * 0.75f, endX = right * 0.15f) }
     }
@@ -296,6 +304,13 @@ class ScreenshotTest {
     @Test fun userPlaylistDark() = shot("user_playlist", dark = true, tab = Tab.LIBRARY, detail = DetailState.UserPlaylistReady(UserPlaylist(1, "Late night", Fixtures.playlist.tracks)))
     @Test fun userPlaylistLight() = shot("user_playlist", dark = false, tab = Tab.LIBRARY, detail = DetailState.UserPlaylistReady(UserPlaylist(1, "Late night", Fixtures.playlist.tracks)))
     @Test fun upNext() = shot("up_next", dark = true, expanded = true, page = 2)
+
+    // Two radio songs under their own heading, and the Undo offer after a removal; the frozen clock holds the snackbar up.
+    @Test fun upNextUndo() = shot("up_next_undo", dark = true, expanded = true, page = 2, playerState = playing.copy(upNext = playing.upNext.take(5), upNextFromRadio = 2)) {
+        compose.mainClock.autoAdvance = false
+        compose.onNodeWithContentDescription("Remove ${playing.upNext[1].title} from the queue").performClick()
+        compose.mainClock.advanceTimeBy(1_000)
+    }
     @Test fun playerCoverFailed() = shot(
         "player_cover_failed", dark = true, expanded = true,
         playerState = playing.copy(track = track.copy(artwork = track.artwork.copy(imageUrl = "https://offline.invalid/cover.jpg"))),
