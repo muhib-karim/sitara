@@ -39,6 +39,8 @@ class RoomPlayHistory(private val dao: PlayHistoryDao) : PlayHistoryRepository {
     }
 
     override suspend fun record(listen: Listen) = dao.record(PlayEntity(track = listen.track.toColumns(), playedAt = listen.startedAtMs, listenedMs = listen.listenedMs))
+
+    override suspend fun clear() = dao.clear()
 }
 
 class RoomSavedCollections(private val dao: SavedDao, private val clock: () -> Long = System::currentTimeMillis) : SavedCollectionsRepository {

@@ -440,6 +440,8 @@ class AppViewModel(private val app: SitaraApplication) :
 
     fun removeAllDownloads() = app.songDownloads.removeAll()
 
+    fun clearListeningHistory() = app.writeLibrary { app.library.history.clear() }
+
     override fun createPlaylist(name: String, tracks: List<Track>) = app.writeLibrary {
         val id = app.library.playlists.create(name)
         // A song queued twice goes in once: a playlist holds each song once.

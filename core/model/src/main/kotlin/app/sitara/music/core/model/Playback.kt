@@ -43,6 +43,8 @@ data class SitaraSettings(
     val recentSearches: List<String> = emptyList(),
     val libraryLayout: LibraryLayout = LibraryLayout.GRID,
     val librarySort: LibrarySort = LibrarySort.RECENTLY_ADDED,
+    /** New plays are neither kept nor counted; what is kept stays. */
+    val pauseListeningHistory: Boolean = false,
 ) {
     init {
         require(crossfadeSeconds in 0..MAX_CROSSFADE_SECONDS) { "crossfade out of range: $crossfadeSeconds" }

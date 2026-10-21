@@ -35,6 +35,7 @@ object SettingsCodec {
     const val RECENT_SEARCHES = "recent_searches"
     const val LIBRARY_LAYOUT = "library_layout"
     const val LIBRARY_SORT = "library_sort"
+    const val PAUSE_HISTORY = "pause_listening_history"
 
     fun encode(s: SitaraSettings): Map<String, String> = mapOf(
         DARK to s.darkMode.name,
@@ -57,6 +58,7 @@ object SettingsCodec {
         RECENT_SEARCHES to s.recentSearches.joinToString("\n"),
         LIBRARY_LAYOUT to s.libraryLayout.name,
         LIBRARY_SORT to s.librarySort.name,
+        PAUSE_HISTORY to s.pauseListeningHistory.toString(),
     )
 
     fun decode(map: Map<String, String>): SitaraSettings {
@@ -85,6 +87,7 @@ object SettingsCodec {
             recentSearches = map[RECENT_SEARCHES]?.lines()?.filter { it.isNotBlank() } ?: d.recentSearches,
             libraryLayout = map[LIBRARY_LAYOUT]?.let { v -> LibraryLayout.entries.firstOrNull { it.name == v } } ?: d.libraryLayout,
             librarySort = map[LIBRARY_SORT]?.let { v -> LibrarySort.entries.firstOrNull { it.name == v } } ?: d.librarySort,
+            pauseListeningHistory = map[PAUSE_HISTORY]?.toBooleanStrictOrNull() ?: d.pauseListeningHistory,
         )
     }
 

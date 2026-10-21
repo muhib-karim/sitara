@@ -6,10 +6,12 @@ import android.util.Log
 import androidx.media3.datasource.cache.Cache
 import app.sitara.music.core.data.SettingsRepository
 import app.sitara.music.core.data.library.LibraryStore
+import app.sitara.music.core.data.library.PlayHistoryRepository
 import app.sitara.music.core.designsystem.sitaraImageLoader
 import app.sitara.music.core.model.CachedLyrics
 import app.sitara.music.core.model.Listen
 import app.sitara.music.core.model.SavedQueue
+import app.sitara.music.core.model.SitaraSettings
 import app.sitara.music.core.model.Track
 import app.sitara.music.core.player.DownloadDependencies
 import app.sitara.music.core.player.PlaybackDependencies
@@ -27,9 +29,16 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+
+/** Keeps [listen] unless the listener paused listening history; the setting is read at the moment of the play. */
+internal suspend fun PlayHistoryRepository.recordUnlessPaused(listen: Listen, settings: Flow<SitaraSettings>) {
+    if (!settings.first().pauseListeningHistory) record(listen)
+}
 
 /**
  * Dependencies are wired by hand (see ADR 0001). Home's chart, search, detail pages, radio and streams come from
@@ -62,7 +71,7 @@ class SitaraApplication :
 
     override fun newImageLoader(context: Context) = sitaraImageLoader(context)
 
-    override fun onListened(listen: Listen) = writeLibrary { library.history.record(listen) }
+    override fun onListened(listen: Listen) = writeLibrary { library.history.recordUnlessPaused(listen, settings.settings) }
 
     override fun songGainDb(trackId: String) = library.songGain.trimDb(trackId)
 

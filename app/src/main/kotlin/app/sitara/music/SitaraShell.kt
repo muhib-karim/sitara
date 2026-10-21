@@ -135,6 +135,7 @@ fun SitaraRoot(vm: AppViewModel, systemReducedMotion: Boolean) {
         tabRequests = vm.requestedTabs,
         downloads = downloads,
         onRemoveAllDownloads = vm::removeAllDownloads,
+        onClearHistory = vm::clearListeningHistory,
         searchLanding = searchLanding,
         searchActions = vm,
     )
@@ -171,6 +172,7 @@ fun SitaraShell(
     homeActions: HomeActions = HomeActions.None,
     downloads: List<SongDownload> = emptyList(),
     onRemoveAllDownloads: () -> Unit = {},
+    onClearHistory: () -> Unit = {},
     searchLanding: SearchLanding = SearchLanding(),
     searchActions: SearchActions = SearchActions.None,
 ) {
@@ -251,7 +253,7 @@ fun SitaraShell(
                         var range by rememberSaveable { mutableStateOf(StatsRange.WEEK) }
                         val state by remember(details, range) { details.stats(range) }.collectAsState()
                         StatsScreen(
-                            state, range, onRange = { range = it },
+                            state, range, settings.pauseListeningHistory, onRange = { range = it },
                             onBack = { detailStack = detailStack.dropLast(1) },
                             onPlay = onPlay,
                             onArtist = { open(DetailRoute.Artist(it)) },
@@ -310,6 +312,7 @@ fun SitaraShell(
                                     equaliserSummary = equaliserSummary(player.equaliser, player.systemEqualiser),
                                     onOpenEqualiser = { equaliserOpen = true },
                                     onOpenStats = { open(DetailRoute.Stats) },
+                                    onClearHistory = onClearHistory,
                                 )
                             }
                         }

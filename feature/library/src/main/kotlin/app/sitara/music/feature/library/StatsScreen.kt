@@ -83,6 +83,7 @@ sealed interface StatsState {
 fun StatsScreen(
     state: StatsState,
     range: StatsRange,
+    historyPaused: Boolean,
     onRange: (StatsRange) -> Unit,
     onBack: () -> Unit,
     onPlay: (tracks: List<Track>, index: Int) -> Unit,
@@ -114,6 +115,9 @@ fun StatsScreen(
             ) {
                 StatsRange.entries.forEach { SelectionPill(it.label, it == range, { onRange(it) }) }
             }
+        }
+        if (historyPaused) {
+            item(key = "paused") { StatsMessage("Listening history is paused in Settings, so new plays aren’t counted.") }
         }
         when (state) {
             StatsState.Loading -> item(key = "loading", contentType = "skeleton") { StatsSkeleton() }

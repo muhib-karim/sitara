@@ -49,6 +49,9 @@ abstract class PlayHistoryDao {
     @Query("SELECT played_at, listened_ms FROM play_history WHERE listened_ms IS NOT NULL AND played_at >= :since")
     abstract fun listenTimes(since: Long): Flow<List<ListenTimeRow>>
 
+    @Query("DELETE FROM play_history")
+    abstract suspend fun clear()
+
     /** Returns how many plays it changed: 0 or 1. */
     @Query("UPDATE play_history SET listened_ms = :listenedMs WHERE track_id = :trackId AND played_at = :playedAt")
     abstract suspend fun updateListened(trackId: String, playedAt: Long, listenedMs: Long?): Int

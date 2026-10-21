@@ -34,6 +34,9 @@ interface PlayHistoryRepository {
 
     /** Keeps [listen], or updates its time heard when the same play (song and start) is kept already. */
     suspend fun record(listen: Listen)
+
+    /** Forgets every play: Recently played, play counts and stats start over. */
+    suspend fun clear()
 }
 
 /** Albums and artists the listener saved, newest first. Albums are stored without their songs. */

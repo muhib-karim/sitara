@@ -81,6 +81,7 @@ fun SettingsScreen(
     equaliserSummary: String = "Off",
     onOpenEqualiser: () -> Unit = {},
     onOpenStats: () -> Unit = {},
+    onClearHistory: () -> Unit = {},
     contentPadding: PaddingValues = PaddingValues(),
 ) {
     LazyColumn(modifier.fillMaxSize().testTag("settings-content"), contentPadding = contentPadding) {
@@ -108,9 +109,7 @@ fun SettingsScreen(
             }
         }
         item(key = "history") {
-            SettingsGroup("Listening history") {
-                LinkRow("Your stats", "On this phone", onOpenStats)
-            }
+            HistorySettings(settings, onChange, onOpenStats, onClearHistory)
         }
         item(key = "downloads") {
             DownloadSettings(settings, onChange, downloads, onRemoveAllDownloads)
@@ -227,6 +226,37 @@ private fun Swatch(label: String, tone: Color, selected: Boolean, onClick: () ->
         if (selected) Box(Modifier.size(46.dp).border(2.dp, MaterialTheme.colorScheme.onSurface, CircleShape))
         Box(Modifier.size(36.dp).clip(CircleShape).background(tone), contentAlignment = Alignment.Center) {
             if (selected) Icon(SitaraIcons.Check, null, tint = Color(ArtworkPalette.inkOn(tone.toArgb())), modifier = Modifier.size(20.dp))
+        }
+    }
+}
+
+/** Stats, and the listener's say over the plays kept for them, which never leave the phone. */
+@Composable
+private fun HistorySettings(settings: SitaraSettings, onChange: (SitaraSettings) -> Unit, onOpenStats: () -> Unit, onClear: () -> Unit) {
+    var confirming by rememberSaveable { mutableStateOf(false) }
+    SettingsGroup("Listening history") {
+        LinkRow("Your stats", "On this phone", onOpenStats)
+        InsetDivider()
+        SwitchRow("Pause listening history", "New plays aren’t kept for Recently played, play counts or stats", settings.pauseListeningHistory) {
+            onChange(settings.copy(pauseListeningHistory = it))
+        }
+        InsetDivider()
+        if (confirming) {
+            Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(
+                    "Clear listening history? Recently played, play counts and stats start over. Liked songs, playlists and downloads stay.",
+                    style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface,
+                )
+                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    PillButton("Clear history", { confirming = false; onClear() })
+                    PillButton("Keep history", { confirming = false }, primary = false)
+                }
+            }
+        } else {
+            Column(Modifier.fillMaxWidth().clickable(role = Role.Button) { confirming = true }.padding(16.dp)) {
+                Text("Clear listening history", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+                Text("Recently played, play counts and stats", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
         }
     }
 }
