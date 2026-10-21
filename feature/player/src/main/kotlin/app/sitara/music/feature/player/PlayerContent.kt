@@ -260,4 +260,3 @@ private fun LyricsPanel(state: PlayerUiState, actions: PlayerActions, onMore: ()
         }
     }
 }
-

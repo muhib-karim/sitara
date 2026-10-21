@@ -124,6 +124,7 @@ and YT Music. Slices 1 to 3 fixed the stage, the shell, Home, Search and Library
 | `c619c31`, `5888baa` | queue tests and feature | CI 39540079626, Device screens 39540079621 | Red: the debug-only `DemoPlayer` lacked `undoRemoveUpNext` (compile error in the debug source set) |
 | `a39c3a7`, `0e920ce` | demo Undo; new screenshot tests | CI 39540346939, Record screenshots 39540346128 | Red: two of the new Up next tests were wrong. The snackbar needs the clock moved while it is frozen, and a removal right after a move reports the moved song's new place. The recording stopped on the same failures |
 | `354702d` | those test fixes | CI 39540746770, Secret scan 39540747002, Record screenshots 39540746242 | Unit tests green. Only the 8 new or changed screenshots fail, as expected. Recording green (100 baselines; the 8 inspected before commit) |
+| `139ad31` | baselines, README, CHANGELOG, PARITY, ARCHITECTURE, report | CI 39541541451, Secret scan 39541541443, Device screens 39541541530, Pages 39541541476 | Tests and every screenshot green. Device screens passed on the first try, with no infrastructure flake. CI was red on ktlint only: a blank line I left at the end of `PlayerContent.kt` in `5888baa` (ktlint had also flagged it in the queue runs; I had only read their test failures) |
 
 ## Not verified on a real phone
 
