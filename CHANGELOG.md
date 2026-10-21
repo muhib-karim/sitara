@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+Polish slice 8: scrobbling.
+
+### Added
+
+- Settings → Listening history → Scrobbling: send the songs you listen to to ListenBrainz or Last.fm. Both are off until you connect them.
+- ListenBrainz: paste your user token (from listenbrainz.org/settings). Sitara checks it with ListenBrainz and shows the user it belongs to. A wrong token or no connection is explained under the field.
+- Last.fm: sign in on last.fm in your browser and come back; Sitara never sees your password. This needs a Last.fm API key built into the app; a build without one says so on the page and offers no sign-in.
+- A song counts once it is longer than 30 seconds and half of it, or 4 minutes, has been heard. Pauses don't count towards that, seeking back doesn't count it twice, and each loop of a song on repeat counts. The service also hears what is playing now as each song starts.
+- Plays wait on the phone while you're offline or the app is closed, and go out in batches of up to 50 once there is a connection, retried with a growing wait. Each play is kept once per service and marked once that service has taken it.
+- Each service shows its state (Connected, Sign in again, Paused, Not connected, Unavailable), who you're signed in as, when plays were last sent and how many are waiting, with Send now and Disconnect (which asks first and says how many waiting plays it drops). "Only songs in your library" limits a service to liked songs and songs in your playlists. Pause scrobbling stops new plays from being sent or kept for sending.
+- If a service ends the sign-in (a token revoked, a session expired), plays keep waiting and the page asks you to sign in again.
+- Tokens and session keys are encrypted with a key kept in the Android Keystore before they are stored.
+
 ## [0.9.7] - 2026-10-21
 
 Polish slice 7: bring your music.

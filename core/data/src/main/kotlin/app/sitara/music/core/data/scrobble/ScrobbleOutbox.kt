@@ -62,7 +62,7 @@ interface ScrobbleDao {
 /**
  * Plays waiting to be scrobbled, kept in Room across restarts and while offline. Each play is kept once per service
  * and marked sent once its service took it, so it goes out once; a send cut off before the mark resends it with the
- * same start time, which the services take as the same listen.
+ * same start time, which the services are expected to keep as one listen.
  */
 class ScrobbleOutbox internal constructor(private val dao: ScrobbleDao, private val clock: () -> Long = System::currentTimeMillis) {
     /** Keeps [scrobble] for each of [services]; one already kept (the same play reported again) stays as it is. True when anything new was kept. */

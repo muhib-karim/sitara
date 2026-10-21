@@ -72,7 +72,8 @@ Planned, not built yet: *Sitara Sync* (end-to-end encrypted sync through storage
 | | Home: YouTube Music's own Home, signed out (Quick picks, playlists, new albums, songs, artists; more shelves as you scroll), filtered by its mood chips, with Listen again, Your likes and Jump back in from your library; placeholders while it loads; offline, a Try again card above the YouTube Charts trending list and your shelves | 🧪 |
 | | Search: recent searches (kept on the phone, remove one or clear all), YouTube Music's suggestions while typing (your recent searches when it does not answer), Moods & genres as colour tiles that open each mood's page, and the last filter remembered | 🧪 |
 | **Library** | Liked songs, saved albums and artists, recently played, stored on the device (Room); a play counts after 30 s heard (or half a short song), pauses and skipped parts left out | 🧪 |
-| | Your stats, from Library or Settings: this week, month, year or all time; time listened and plays, the hours you listen in (a chart TalkBack reads as a summary), top songs, artists and albums; Share as an image card over the top song's cover; Pause or Clear listening history in Settings; nothing leaves the phone | 🧪 |
+| | Your stats, from Library or Settings: this week, month, year or all time; time listened and plays, the hours you listen in (a chart TalkBack reads as a summary), top songs, artists and albums; Share as an image card over the top song's cover; Pause or Clear listening history in Settings; nothing leaves the phone unless you turn on scrobbling | 🧪 |
+| | Scrobbling, opt-in: ListenBrainz with your user token, Last.fm by signing in on last.fm in the browser (only in builds made with a Last.fm API key); now playing, plays that count (over 30 s, half or 4 minutes heard) kept on the phone while offline and each sent once, Send now, Disconnect, library songs only, Pause; tokens encrypted with a Keystore key | 🧪 |
 | | Liked songs and Downloads pinned with their counts; playlists, songs, albums, artists or downloads as a grid of covers or a list (kept); ordered by Recently added or A to Z, and for songs and artists also by Recently played or Most played from your play history; 2 × 2 collages for playlists with four covers | 🧪 |
 | | Your own playlists: create, rename, delete, drag to reorder, remove songs; Add to playlist from any song or the player | 🧪 |
 | | Import playlist: a YouTube or YouTube Music playlist link (pasted or shared to Sitara) or an M3U/CSV file; songs found by title, artist and length, uncertain matches reviewed with their covers (Use this, Other matches, Skip); found / to check / not found counts, Cancel, resume after an interruption without duplicates, a repeat import updates its playlist; up to 2,000 songs | 🧪 |
@@ -108,7 +109,7 @@ Planned, not built yet: *Sitara Sync* (end-to-end encrypted sync through storage
 | | Artist, album and playlist pages with Play all and Shuffle | 🧪 |
 | | Radio: Start radio from Up next, and a queue about to run out continues with related songs | 🧪 |
 | **Later** | Resolver health checks, local files, Spotify import, backup and restore | Not started |
-| **Accounts** | Account library sync, scrobbling, Cast | Phase C |
+| **Accounts** | Account library sync, Cast | Phase C |
 | | Sitara Sync, LAN remote control, smart offline | Phase C |
 | **Premium** | Animated canvas, automix, lyric translation and transliteration, Wear OS remote, TV layout | Phase D |
 
