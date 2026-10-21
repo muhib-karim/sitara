@@ -481,18 +481,21 @@ class PlayerInteractionTest {
             override fun moveUpNext(from: Int, to: Int) { calls += "move $from $to" }
             override fun undoRemoveUpNext() { calls += "undo" }
         })
-        // A frozen clock keeps the snackbar up until Undo is tapped.
+        // A clock moved by hand shows the snackbar and keeps it up until Undo is tapped.
         compose.waitForIdle()
         compose.mainClock.autoAdvance = false
         compose.onNodeWithContentDescription("Remove ${upNext[1].title} from the queue").performClick()
+        compose.mainClock.advanceTimeBy(1_000)
         compose.onNodeWithText("Removed ${upNext[1].title}").assertIsDisplayed()
         compose.onNodeWithText("Undo").performClick()
+        compose.mainClock.autoAdvance = true
         // Home's quick picks stay composed behind the player, so look inside Up next only.
         val first = compose.onNode(hasContentDescription("${upNext[0].title} by ${upNext[0].artist}") and hasAnyAncestor(hasTestTag("up-next")))
         first.performCustomAction("Move down")
+        // The moved song shows in its new place at once, so it is removed from there.
         first.performCustomAction("Remove from the queue")
         first.performTouchInput { swipeLeft() }
-        assertEquals(listOf("remove 1", "undo", "move 0 1", "remove 0", "remove 0"), calls)
+        assertEquals(listOf("remove 1", "undo", "move 0 1", "remove 1", "remove 1"), calls)
     }
 
     @Test
@@ -507,8 +510,8 @@ class PlayerInteractionTest {
         fun row(track: Track) = compose.onNode(hasContentDescription("${track.title} by ${track.artist}") and hasAnyAncestor(hasTestTag("up-next")))
         assertTrue("the last own song cannot move into radio's", row(upNext[1]).fetchSemanticsNode().config.getOrNull(SemanticsActions.CustomActions).orEmpty().none { it.label == "Move down" })
         row(upNext[2]).performCustomAction("Move down")
-        row(upNext[3]).performCustomAction("Remove from the queue")
-        assertEquals(listOf("move 2 3", "remove 3"), calls)
+        row(upNext[2]).performCustomAction("Remove from the queue")
+        assertEquals("the moved radio song is removed from its new place", listOf("move 2 3", "remove 3"), calls)
     }
 
     @Test
