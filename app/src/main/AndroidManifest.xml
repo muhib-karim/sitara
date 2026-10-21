@@ -3,6 +3,9 @@
 
     <!-- Wi-Fi or mobile data decides which stream quality setting applies. -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <!-- The phone's music for Library → On this phone; asked for only when the listener opens it. Picked folders need neither. -->
+    <uses-permission android:name="android.permission.READ_MEDIA_AUDIO" />
+    <uses-permission android:name="android.permission.READ_EXTERNAL_STORAGE" android:maxSdkVersion="32" />
 
     <application
         android:name=".SitaraApplication"

@@ -18,6 +18,6 @@ data class SongDownload(
     val bytes: Long,
 )
 
-/** The songs in this list that are neither downloaded nor on their way (a failed one is tried again), each once. */
+/** The songs in this list that are neither downloaded nor on their way (a failed one is tried again), each once; songs on the phone are already there. */
 fun List<Track>.toDownload(states: Map<String, DownloadState>): List<Track> =
-    filter { states[it.id].let { state -> state == null || state == DownloadState.FAILED } }.distinctBy { it.id }
+    filter { !it.isLocal && states[it.id].let { state -> state == null || state == DownloadState.FAILED } }.distinctBy { it.id }
