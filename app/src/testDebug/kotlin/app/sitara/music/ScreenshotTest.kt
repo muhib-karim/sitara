@@ -222,7 +222,9 @@ class ScreenshotTest {
     @Test fun scrobblingDark() = shot("scrobbling", dark = true, tab = Tab.SETTINGS, route = DetailRoute.Scrobbling, scrobbling = connected)
     @Test fun scrobblingLight() = shot("scrobbling", dark = false, tab = Tab.SETTINGS, route = DetailRoute.Scrobbling, scrobbling = connected)
     @Test fun scrobblingPureBlack() = shot("scrobbling_amoled", dark = true, pureBlack = true, tab = Tab.SETTINGS, route = DetailRoute.Scrobbling, scrobbling = connected)
-    @Test fun scrobblingLargeText() = shot("scrobbling_large_text", dark = true, fontScale = 2f, tab = Tab.SETTINGS, route = DetailRoute.Scrobbling, scrobbling = connected)
+    @Test fun scrobblingLargeText() = shot("scrobbling_large_text", dark = true, fontScale = 2f, tab = Tab.SETTINGS, route = DetailRoute.Scrobbling, scrobbling = connected) {
+        compose.onNodeWithTag("scrobbling-content").performScrollToKey(ScrobbleService.LISTENBRAINZ.name)
+    }
     @Test fun scrobblingLibraryOnly() = shot(
         "scrobbling_library_only", dark = true, tab = Tab.SETTINGS, route = DetailRoute.Scrobbling,
         scrobbling = connected.copy(services = listOf(listenBrainz.copy(account = listenBrainz.account!!.copy(libraryOnly = true), pending = 0), ScrobbleServiceState(ScrobbleService.LASTFM))),

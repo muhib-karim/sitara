@@ -182,12 +182,23 @@ fun ScrobblingScreen(
 private fun ServiceGroup(state: ScrobbleServiceState, paused: Boolean, actions: ScrobblingActions, zone: ZoneId, nowMs: Long) {
     val account = state.account
     SettingsGroup(state.service.label) {
-        Row(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 16.dp), verticalAlignment = Alignment.CenterVertically) {
+        // The chip moves under the title when both do not fit (large text, a long user name).
+        FlowRow(
+            Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalArrangement = Arrangement.spacedBy(8.dp),
+            itemVerticalAlignment = Alignment.CenterVertically,
+        ) {
             Text(
-                account?.let { "Signed in as ${it.userName}" } ?: state.service.label,
+                when {
+                    account != null -> "Signed in as ${account.userName}"
+                    !state.available -> "Needs a Last.fm API key"
+                    state.service == ScrobbleService.LISTENBRAINZ -> "Connect with your user token"
+                    else -> "Connect your Last.fm account"
+                },
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurface,
-                modifier = Modifier.weight(1f).padding(end = 12.dp),
+                modifier = Modifier.padding(end = 12.dp),
             )
             StatusChip(state, paused)
         }
