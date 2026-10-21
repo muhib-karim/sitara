@@ -1,11 +1,14 @@
 package app.sitara.music
 
 import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.test.assertContentDescriptionContains
+import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onAllNodesWithContentDescription
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -132,6 +135,22 @@ class StatsInteractionTest {
         compose.onNodeWithTag("settings-content").performScrollToNode(hasText("Your stats"))
         tap("Your stats")
         stats.performScrollToNode(hasText("Top songs"))
+    }
+
+    @Test fun shareShowsTheCardForTheRangeBeforeSharing() {
+        render(Tab.LIBRARY)
+        openFromLibrary()
+        compose.onNodeWithContentDescription("Share your stats").performSemanticsAction(SemanticsActions.OnClick)
+        val week = sampleListeningStats(StatsRange.WEEK)
+        compose.onNodeWithTag("stats-share-card").assertContentDescriptionContains("This week on Sitara", substring = true)
+        compose.onNodeWithTag("stats-share-card").assertContentDescriptionContains(week.topSongs.first().track.title, substring = true)
+        compose.onNodeWithText("Share image").assertExists()
+    }
+
+    @Test fun aRangeWithoutPlaysHasNothingToShare() {
+        render(Tab.LIBRARY, details = pages(StatsRange.WEEK))
+        openFromLibrary()
+        compose.onAllNodesWithContentDescription("Share your stats").assertCountEquals(0)
     }
 
     @Test fun aRangeWithoutPlaysSaysSoHonestly() {
