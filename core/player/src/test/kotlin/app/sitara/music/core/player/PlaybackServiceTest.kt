@@ -11,6 +11,7 @@ import androidx.annotation.OptIn
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaLibraryInfo
+import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.database.StandaloneDatabaseProvider
@@ -18,6 +19,7 @@ import androidx.media3.datasource.cache.Cache
 import androidx.media3.datasource.cache.NoOpCacheEvictor
 import androidx.media3.datasource.cache.SimpleCache
 import androidx.media3.session.CommandButton
+import androidx.media3.session.MediaConstants
 import androidx.media3.session.MediaSession
 import androidx.media3.session.SessionCommand
 import androidx.media3.session.SessionError
@@ -267,6 +269,40 @@ class PlaybackServiceTest {
         idleUntil { unknown.isDone }
         assertEquals(SessionError.ERROR_BAD_VALUE, unknown.get().resultCode)
         controller.destroy()
+    }
+
+    @Test
+    fun `the car lays out playlists, albums and artists as a grid and songs as a list`() {
+        val controller = Robolectric.buildService(PlaybackService::class.java).create()
+        shadowOf(Looper.getMainLooper()).idle()
+        val service = controller.get()
+        val session = checkNotNull(service.session)
+
+        val root = service.callback.onGetLibraryRoot(session, car(), null).get()
+        val defaults = checkNotNull(root.params).extras
+        assertEquals(MediaConstants.EXTRAS_VALUE_CONTENT_STYLE_LIST_ITEM, defaults.getInt(MediaConstants.EXTRAS_KEY_CONTENT_STYLE_PLAYABLE))
+
+        val library = service.callback.onGetChildren(session, car(), BrowseId.Library.mediaId, 0, 10, null)
+        idleUntil { library.isDone }
+        checkNotNull(library.get().value).forEach { folder ->
+            assertEquals(folder.mediaId, MediaConstants.EXTRAS_VALUE_CONTENT_STYLE_GRID_ITEM, folder.mediaMetadata.extras?.getInt(MediaConstants.EXTRAS_KEY_CONTENT_STYLE_BROWSABLE))
+        }
+        val tabs = service.callback.onGetChildren(session, car(), BrowseId.Root.mediaId, 0, 10, null)
+        idleUntil { tabs.isDone }
+        val liked = checkNotNull(tabs.get().value).first { it.mediaId == BrowseId.Liked.mediaId }
+        assertEquals(MediaConstants.EXTRAS_VALUE_CONTENT_STYLE_LIST_ITEM, liked.mediaMetadata.extras?.getInt(MediaConstants.EXTRAS_KEY_CONTENT_STYLE_PLAYABLE))
+        controller.destroy()
+    }
+
+    @Test
+    fun `a song that could not be played tells the car so in words, and only while it is the current one`() {
+        val queue = QueueState().setQueue(songs)
+        val failed = PlaybackSnapshot(queue = queue, failedUid = queue.currentEntry!!.uid)
+        val error = checkNotNull(playbackError(failed))
+        assertEquals("Couldn’t play this song. Try again, skip it, or play a download.", error.message)
+        assertEquals(PlaybackException.ERROR_CODE_IO_UNSPECIFIED, error.errorCode)
+        assertEquals("skipped past it", null, playbackError(failed.copy(queue = queue.skipNext())))
+        assertEquals(null, playbackError(PlaybackSnapshot(queue = queue)))
     }
 
     @Test
