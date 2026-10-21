@@ -1,6 +1,7 @@
 package app.sitara.music.source.youtube
 
 import app.sitara.music.core.model.Artwork
+import app.sitara.music.core.model.AudioQuality
 import app.sitara.music.core.model.Track
 import java.net.InetAddress
 import kotlinx.coroutines.runBlocking
@@ -35,7 +36,7 @@ class NetworkSmokeTest {
         assertEquals("x7kGuhlXmFI", track.id)
         assertTrue(track.title.contains("Niye Jabe Ki", ignoreCase = true), track.title)
 
-        val stream = unlessBotChecked { YouTubeStreamResolver().resolve(track) }
+        val stream = unlessBotChecked { YouTubeStreamResolver { AudioQuality.HIGH }.resolve(track) }
         println("stream -> ${stream.mimeType} ${stream.bitrateKbps} kbps, expires ${stream.expiresAtMs}")
         assertTrue(stream.url.startsWith("https://"))
         assertTrue(stream.mimeType.startsWith("audio/"), stream.mimeType)
@@ -44,7 +45,7 @@ class NetworkSmokeTest {
     @Test
     fun `at least one stream route plays the acceptance track, and each route reports how it fared`() = runBlocking {
         val track = Track("x7kGuhlXmFI", "Niye Jabe Ki", "Xefer", "", 0, Artwork(listOf(0)))
-        val outcomes = youTubeStreamRoutes().map { route -> route.id to runCatching { route.resolve(track) } }
+        val outcomes = youTubeStreamRoutes { AudioQuality.HIGH }.map { route -> route.id to runCatching { route.resolve(track) } }
         outcomes.forEach { (id, outcome) -> println("route $id -> ${outcome.fold({ "${it.mimeType} ${it.bitrateKbps} kbps" }, { it.toString() })}") }
         if (outcomes.none { it.second.isSuccess } && outcomes.any { it.second.exceptionOrNull() is SignInConfirmNotBotException }) {
             abort<Unit>("YouTube asked this network to confirm it is not a bot")

@@ -1,6 +1,7 @@
 package app.sitara.music.core.data
 
 import app.sitara.music.core.model.AccentColor
+import app.sitara.music.core.model.AudioQuality
 import app.sitara.music.core.model.DarkMode
 import app.sitara.music.core.model.EqualiserPreset
 import app.sitara.music.core.model.EqualiserSettings
@@ -20,6 +21,7 @@ class SettingsCodecTest {
             equaliser = EqualiserSettings(enabled = true, bandsDb = listOf(-12, -7, 0, 1, 2, 3, 4, 5, 11, 12), preampDb = -5, useSystem = true),
             searchFilter = SearchFilter.PLAYLISTS, recentSearches = listOf("lo-fi beats", "Jazz, piano"),
             libraryLayout = LibraryLayout.LIST, librarySort = LibrarySort.MOST_PLAYED, pauseListeningHistory = true,
+            wifiQuality = AudioQuality.NORMAL, mobileQuality = AudioQuality.DATA_SAVER,
         )
         assertEquals(s, SettingsCodec.decode(SettingsCodec.encode(s)))
     }

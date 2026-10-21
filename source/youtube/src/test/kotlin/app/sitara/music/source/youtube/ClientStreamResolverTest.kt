@@ -1,6 +1,7 @@
 package app.sitara.music.source.youtube
 
 import app.sitara.music.core.model.Artwork
+import app.sitara.music.core.model.AudioQuality
 import app.sitara.music.core.model.Track
 import com.grack.nanojson.JsonObject
 import com.grack.nanojson.JsonParser
@@ -16,7 +17,7 @@ class ClientStreamResolverTest {
 
     private fun response(json: String): JsonObject = JsonParser.`object`().from(json)
 
-    private fun resolver(json: String) = ClientStreamResolver("youtube-test") { response(json) }
+    private fun resolver(json: String) = ClientStreamResolver("youtube-test", { AudioQuality.HIGH }) { response(json) }
 
     private fun format(itag: Int, mime: String, bitrate: Int, url: String? = "https://rr1.googlevideo.com/videoplayback?itag=$itag&expire=1760000000", extra: String = "") =
         """{"itag":$itag,"mimeType":"$mime","averageBitrate":$bitrate${url?.let { ",\"url\":\"$it\"" } ?: ",\"signatureCipher\":\"s=x\""}$extra}"""
@@ -84,7 +85,7 @@ class ClientStreamResolverTest {
     @Test
     fun `rejects ids that are not YouTube video ids without a request`() {
         var asked = false
-        val resolver = ClientStreamResolver("youtube-test") { asked = true; response(ok()) }
+        val resolver = ClientStreamResolver("youtube-test", { AudioQuality.HIGH }) { asked = true; response(ok()) }
 
         assertThrows<IllegalArgumentException> { runBlocking { resolver.resolve(track.copy(id = "sample:1")) } }
         assertEquals(false, asked)

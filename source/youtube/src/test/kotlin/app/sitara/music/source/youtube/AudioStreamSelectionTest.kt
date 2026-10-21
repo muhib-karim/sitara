@@ -1,5 +1,7 @@
 package app.sitara.music.source.youtube
 
+import app.sitara.music.core.model.AudioQuality
+import com.grack.nanojson.JsonObject
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Test
@@ -99,5 +101,56 @@ class AudioStreamSelectionTest {
     @Test
     fun `a malformed expire parameter is ignored`() {
         assertNull(selectAudioStream(listOf(audio("https://a.example/a?expire=soon", MediaFormat.M4A, 128)))!!.expiresAtMs)
+    }
+
+    // YouTube's usual audio ladder: two AAC and three Opus streams.
+    private val ladder = listOf(
+        audio("https://a.example/139", MediaFormat.M4A, 48),
+        audio("https://a.example/140", MediaFormat.M4A, 129),
+        audio("https://a.example/249", MediaFormat.WEBMA_OPUS, 50),
+        audio("https://a.example/250", MediaFormat.WEBMA_OPUS, 70),
+        audio("https://a.example/251", MediaFormat.WEBMA_OPUS, 141),
+    )
+
+    @Test
+    fun `high takes the highest bitrate, normal the highest up to 96 kbps, data saver the lowest`() {
+        assertEquals("https://a.example/251", selectAudioStream(ladder, AudioQuality.HIGH)!!.url)
+        assertEquals("https://a.example/250", selectAudioStream(ladder, AudioQuality.NORMAL)!!.url)
+        assertEquals("https://a.example/139", selectAudioStream(ladder, AudioQuality.DATA_SAVER)!!.url)
+    }
+
+    @Test
+    fun `normal takes the lowest stream when every one is above 96 kbps`() {
+        assertEquals("https://a.example/140", selectAudioStream(listOf(ladder[1], ladder[4]), AudioQuality.NORMAL)!!.url)
+    }
+
+    @Test
+    fun `a stream of unknown bitrate is never taken to save data while others say theirs`() {
+        val streams = listOf(audio("https://a.example/unknown", MediaFormat.WEBMA_OPUS, AudioStream.UNKNOWN_BITRATE), ladder[3])
+        assertEquals("https://a.example/250", selectAudioStream(streams, AudioQuality.DATA_SAVER)!!.url)
+    }
+
+    @Test
+    fun `the codec is named for the readout`() {
+        assertEquals("Opus", selectAudioStream(ladder, AudioQuality.HIGH)!!.codec)
+        assertEquals("AAC", selectAudioStream(ladder.take(2), AudioQuality.HIGH)!!.codec)
+    }
+
+    private fun format(url: String, mimeType: String, bitrate: Int): JsonObject =
+        JsonObject.builder().value("url", url).value("mimeType", mimeType).value("averageBitrate", bitrate).done()
+
+    @Test
+    fun `player response formats are chosen by quality too, with their codec from the mime type`() {
+        val formats = listOf(
+            format("https://a.example/140", "audio/mp4; codecs=\"mp4a.40.2\"", 129_000),
+            format("https://a.example/250", "audio/webm; codecs=\"opus\"", 70_000),
+            format("https://a.example/251", "audio/webm; codecs=\"opus\"", 141_000),
+        )
+        assertEquals("https://a.example/251", selectAudioFormat(formats, AudioQuality.HIGH)!!.url)
+        val normal = selectAudioFormat(formats, AudioQuality.NORMAL)!!
+        assertEquals("https://a.example/250", normal.url)
+        assertEquals("Opus", normal.codec)
+        assertEquals(70, normal.bitrateKbps)
+        assertEquals("AAC", selectAudioFormat(formats.take(1), AudioQuality.DATA_SAVER)!!.codec)
     }
 }

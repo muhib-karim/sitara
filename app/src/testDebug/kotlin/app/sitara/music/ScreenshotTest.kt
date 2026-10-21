@@ -44,6 +44,7 @@ import app.sitara.music.core.model.SearchResults
 import app.sitara.music.core.model.SitaraSettings
 import app.sitara.music.core.model.SongDownload
 import app.sitara.music.core.model.StatsRange
+import app.sitara.music.core.model.StreamFormat
 import app.sitara.music.core.model.UserPlaylist
 import app.sitara.music.feature.home.FeedState
 import app.sitara.music.feature.home.HomeFeed
@@ -435,6 +436,12 @@ class ScreenshotTest {
     @Test fun settingsMotion() = shot("settings_motion", dark = true, settingsOpen = true) {
         compose.onNodeWithTag("settings-content").performScrollToKey("motion")
     }
+
+    @Test fun settingsPlayback() = shot("settings_playback", dark = true, settingsOpen = true) {
+        compose.onNodeWithTag("settings-content").performScrollToKey("playback")
+    }
+
+    @Test fun playerStreamReadout() = shot("player_stream_readout", dark = true, expanded = true, playerState = playing.copy(stream = StreamFormat("Opus", 160)))
 
     @Test fun settingsSound() = shot("settings_sound", dark = true, settingsOpen = true) {
         compose.onNodeWithTag("settings-content").performScrollToKey("sound")
