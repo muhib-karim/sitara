@@ -96,15 +96,17 @@ internal fun PlayerControls(state: PlayerUiState, actions: PlayerActions, modifi
     }
 }
 
-/** Takes the scrubber's place while the current song cannot play: a stream that never loaded has nothing to seek. */
+/** One row under the still scrubber, as tall as its buttons; on the Playing page the cover gives up the room, so the transport row stays put. */
 @Composable
 private fun PlaybackFailed(actions: PlayerActions) {
-    Column(Modifier.fillMaxWidth().padding(top = 8.dp).semantics { liveRegion = LiveRegionMode.Polite }) {
-        Text(PLAYBACK_FAILED, color = SitaraColors.StageContent, style = MaterialTheme.typography.titleSmall)
-        Row(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            PillButton("Try again", actions::retryPlayback)
-            PillButton("Skip", actions::next, primary = false)
-        }
+    Row(
+        Modifier.fillMaxWidth().padding(top = 4.dp).semantics { liveRegion = LiveRegionMode.Polite },
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(PLAYBACK_FAILED, color = SitaraColors.StageContent, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+        PillButton("Try again", actions::retryPlayback)
+        PillButton("Skip", actions::next, primary = false)
     }
 }
 

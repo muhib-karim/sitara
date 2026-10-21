@@ -188,13 +188,16 @@ private fun PlayingPage(
                 }
             }
         } else {
-            Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(horizontal = 24.dp, vertical = 16.dp)) {
-                // Reserve room for transport while keeping the sleeve prominent on tall phones.
-                ArtworkStage(state, theme, artworkModifier, Modifier.fillMaxWidth().height((stageHeight - 240.dp).coerceIn(180.dp, 440.dp)))
-                Spacer(Modifier.height(24.dp))
-                heading()
-                Spacer(Modifier.height(12.dp))
-                PlayerControls(state, actions)
+            // The cover takes the height the heading and controls leave, so the controls stay on screen on a small phone,
+            // with the failed-song row too; only text too large for the screen scrolls.
+            Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState())) {
+                Column(Modifier.heightIn(min = stageHeight).padding(horizontal = 24.dp, vertical = 16.dp)) {
+                    ArtworkStage(state, theme, artworkModifier, Modifier.fillMaxWidth().weight(1f))
+                    Spacer(Modifier.height(24.dp))
+                    heading()
+                    Spacer(Modifier.height(12.dp))
+                    PlayerControls(state, actions)
+                }
             }
         }
     }
