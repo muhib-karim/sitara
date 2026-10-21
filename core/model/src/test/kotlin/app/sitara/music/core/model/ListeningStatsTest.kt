@@ -121,5 +121,13 @@ class ListeningStatsTest {
         val stats = ListeningStats.of(emptyList(), emptyList(), berlin)
         assertTrue(stats.isEmpty)
         assertEquals(List(24) { 0L }, stats.listenedByHour)
+        assertEquals(null, stats.peakHour)
+    }
+
+    @Test
+    fun `the peak hour is the one with the most time heard, the earlier on a tie`() {
+        fun at(vararg hours: Int) = ListeningStats.of(emptyList(), hours.map { TimedListen(ms(berlin, 2026, 3, 31, it), 60_000) }, berlin).peakHour
+        assertEquals(9, at(21, 9))
+        assertEquals(21, at(9, 21, 21))
     }
 }
