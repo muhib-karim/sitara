@@ -98,7 +98,7 @@ and YT Music. Slices 1 to 3 fixed the stage, the shell, Home, Search and Library
        Save as playlist through the Done key.
 4. **Screenshots and docs.** New baselines: Appearance with the Violet accent (light and dark), Home with artwork
    colours across the app (light and dark), and Up next with the radio section and the Undo snackbar. Settings and Up next
-   were re-recorded. CHANGELOG (Unreleased), README, PARITY and ARCHITECTURE are updated.
+   were re-recorded. CHANGELOG (Unreleased), README, PARITY and ARCHITECTURE are updated. The device capture now swipes Settings until its last row shows, then once more, because the longer page outran its four fixed flings (`825c4cb`).
 
 ## Accessibility and layout
 
@@ -125,6 +125,8 @@ and YT Music. Slices 1 to 3 fixed the stage, the shell, Home, Search and Library
 | `a39c3a7`, `0e920ce` | demo Undo; new screenshot tests | CI 39540346939, Record screenshots 39540346128 | Red: two of the new Up next tests were wrong. The snackbar needs the clock moved while it is frozen, and a removal right after a move reports the moved song's new place. The recording stopped on the same failures |
 | `354702d` | those test fixes | CI 39540746770, Secret scan 39540747002, Record screenshots 39540746242 | Unit tests green. Only the 8 new or changed screenshots fail, as expected. Recording green (100 baselines; the 8 inspected before commit) |
 | `139ad31` | baselines, README, CHANGELOG, PARITY, ARCHITECTURE, report | CI 39541541451, Secret scan 39541541443, Device screens 39541541530, Pages 39541541476 | Tests and every screenshot green. Device screens passed on the first try, with no infrastructure flake. CI was red on ktlint only: a blank line I left at the end of `PlayerContent.kt` in `5888baa` (ktlint had also flagged it in the queue runs; I had only read their test failures) |
+| `7264986` | ktlint blank line | CI 39542244145, Secret scan 39542244352, Device screens 39542244164 | CI and Secret scan green. Device screens red for a real reason, not the adb/ZipFile infrastructure flake: four fixed flings no longer reliably reached Settings' last row ("Storage used") now that the Appearance group makes the page longer |
+| `825c4cb` | capture swipes until the last row shows, then once more | CI 39543021774, Secret scan 39543021803, Device screens 39543021821 | All green; Device screens passed first time |
 
 ## Not verified on a real phone
 
