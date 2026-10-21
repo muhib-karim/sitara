@@ -6,7 +6,7 @@ Last updated: v0.8.0 (c2, on `main`; the owner tags).
 
 | Capability | BitChord | Metrolist | Meld | ReVanced | Sitara |
 |---|:---:|:---:|:---:|:---:|---|
-| Search, home and catalogue browsing | Y | Y | Y | Y | v0.2.0 search, v0.5.0 Home |
+| Search, home and catalogue browsing | Y | Y | Y | Y | v0.2.0 search, v0.5.0 Home; YouTube Music's own Home with mood chips in v0.9.2 (signed out, so no personal mixes) |
 | Play from a pasted YouTube / YouTube Music link | ? | ? | ? | ? | v0.2.0 |
 | Artist, album and playlist pages | Y | Y | Y | Y | v0.3.0 |
 | Radio and autoplay | Y | Y | Y | Y | v0.3.0 |

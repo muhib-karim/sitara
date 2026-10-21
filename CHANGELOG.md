@@ -6,6 +6,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+Polish slice 2: a Home that fills the screen.
+
+### Added
+
+- Home comes from YouTube Music's own Home (signed out, for your language and country): Quick picks, playlists, new albums, songs and artists, shelf after shelf. More shelves load as you near the end of the list.
+- Mood chips at the top (Relax, Workout, Focus, Commute and the others YouTube Music offers) filter Home; tap the chosen one again for all of Home. A mood whose shelves Sitara cannot play (Podcasts) says so instead of showing an empty page.
+- Quick picks page four songs at a time, with the next page peeking in; tap to play, long-press or the row's button for the song's menu. Albums, playlists and songs ride carousels of 150 dp covers with two-line titles, and artists show as round portraits. A shelf has More when it leads to a playlist or an artist page.
+- Listen again (your recent plays), Your likes and Jump back in follow the first shelf.
+- While Home loads, placeholders in its own layout pulse gently (they hold still with Reduce motion) and TalkBack hears "Loading Home" once.
+- When YouTube Music does not answer, a card says so with Try again; the trending chart and your own shelves stay below it, so Home is never blank. A shelf page that fails to load more says so with its own Try again.
+
+### Changed
+
+- "Recently played" on Home is now "Listen again", and "From your likes" is "Your likes". Songs on Home's shelves open their menu on a long press.
+- The trending chart now only stands in when YouTube Music's Home does not load.
+
+### Not shown
+
+- Podcasts, mood and genre buttons and the taste-builder shelf are left out of Home, since Sitara cannot play or open them yet.
+
 ## [0.9.1] - 2026-10-21
 
 Polish slice 1: the stage and the shell.

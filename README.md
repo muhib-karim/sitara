@@ -42,7 +42,7 @@
 
 | Home | Player | Lyrics | Downloads | Sound | Equaliser |
 | :---: | :---: | :---: | :---: | :---: | :---: |
-| <img src="docs/screenshots/home_dark.png" alt="Home with the trending chart, recently played and jump back in over the floating glass dock" width="160"> | <img src="docs/screenshots/player_dark.png" alt="Now Playing on the blurred cover: artwork, title, round glass buttons, thick scrubber and controls" width="160"> | <img src="docs/screenshots/lyrics_dark.png" alt="Hero lyrics on the blurred cover: the sung line in white, the others dimmed and blurred, under a compact header" width="160"> | <img src="docs/screenshots/downloads_dark.png" alt="Library downloads with progress, waiting for Wi-Fi, failed and downloaded songs" width="160"> | <img src="docs/screenshots/sound_dark.png" alt="Sound settings with the equaliser, normalise loudness, skip silence and the crossfade slider" width="160"> | <img src="docs/screenshots/equaliser_dark.png" alt="Equaliser with presets, ten band faders and their gains" width="160"> |
+| <img src="docs/screenshots/home_dark.png" alt="Home with mood chips, Quick picks, Listen again and Your likes over the floating glass dock" width="160"> | <img src="docs/screenshots/player_dark.png" alt="Now Playing on the blurred cover: artwork, title, round glass buttons, thick scrubber and controls" width="160"> | <img src="docs/screenshots/lyrics_dark.png" alt="Hero lyrics on the blurred cover: the sung line in white, the others dimmed and blurred, under a compact header" width="160"> | <img src="docs/screenshots/downloads_dark.png" alt="Library downloads with progress, waiting for Wi-Fi, failed and downloaded songs" width="160"> | <img src="docs/screenshots/sound_dark.png" alt="Sound settings with the equaliser, normalise loudness, skip silence and the crossfade slider" width="160"> | <img src="docs/screenshots/equaliser_dark.png" alt="Equaliser with presets, ten band faders and their gains" width="160"> |
 
 <sub>Recorded by the Record screenshots workflow (Roborazzi on Robolectric) from hand-built fixtures shaped like a listener's library; release builds contain no sample data. Light versions and more screens live in docs/screenshots.</sub>
 
@@ -69,7 +69,7 @@ Planned, not built yet: *Sitara Sync* (end-to-end encrypted sync through storage
 | Area | Feature | Status |
 | --- | --- | :---: |
 | **Shell** | One floating glass pill for the mini player and the four tabs, tinted with the cover's accent; it folds into a single row while you scroll on and unfolds when you scroll back or tap the open tab; edge-to-edge layout | ✅ |
-| | Home: trending songs from YouTube Charts for your country (loading, error and Try again), then Recently played, Jump back in and From your likes from your library | 🧪 |
+| | Home: YouTube Music's own Home, signed out (Quick picks, playlists, new albums, songs, artists; more shelves as you scroll), filtered by its mood chips, with Listen again, Your likes and Jump back in from your library; placeholders while it loads; offline, a Try again card above the YouTube Charts trending list and your shelves | 🧪 |
 | **Library** | Liked songs, saved albums and artists, recently played (latest 500 plays), stored on the device (Room) | 🧪 |
 | | Your own playlists: create, rename, delete, drag to reorder, remove songs; Add to playlist from any song or the player | 🧪 |
 | **Offline** | Download a song from its menu, or Download all on an album, a playlist or Liked songs; downloaded songs play with no connection and carry a badge | 🧪 |
