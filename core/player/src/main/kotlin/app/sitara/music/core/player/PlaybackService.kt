@@ -134,7 +134,7 @@ class PlaybackService : MediaLibraryService() {
             // The tail plays the end of the song the main player is leaving, at that song's trim.
             tailEqualiser.trimDb = equaliser.trimDb
         }
-        val engine = PlaybackEngine(port, scope, ElapsedRealtimeTimeSource, dependencies::onListened) { track ->
+        val engine = PlaybackEngine(port, scope, ElapsedRealtimeTimeSource, dependencies::onListened, dependencies::onPlayStarted) { track ->
             // A downloaded song plays from the cache and needs no lookup.
             if (!dependencies.downloadCache.holdsWhole(StreamUriResolver.uriFor(track.id).toString())) streams.prepare(track)
         }

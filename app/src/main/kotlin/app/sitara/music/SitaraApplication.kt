@@ -159,6 +159,9 @@ class SitaraApplication :
 
     override fun onListened(listen: Listen) = writeLibrary { library.history.recordUnlessPaused(listen, settings.settings) }
 
+    // Scrobbling's "now playing" arrives with the services that take it.
+    override fun onPlayStarted(track: Track) = Unit
+
     override fun songGainDb(trackId: String) = library.songGain.trimDb(trackId)
 
     override fun isLiked(trackId: String) = library.likedSongs.ids.map { trackId in it }.distinctUntilChanged()

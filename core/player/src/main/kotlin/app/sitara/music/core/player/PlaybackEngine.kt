@@ -40,6 +40,8 @@ class PlaybackEngine(
     timeSource: TimeSource,
     /** A play that counts (see [ListeningTracker]), reported again as more of it is heard. */
     onListen: (Listen) -> Unit = {},
+    /** A play starting: a new song, or the same one from the top. */
+    onPlayStart: (Track) -> Unit = {},
     /** Gets the song the player will move to next ready while the current one plays (gapless joins, instant skips). */
     private val prepareAhead: (Track) -> Unit = {},
 ) {
@@ -51,7 +53,7 @@ class PlaybackEngine(
 
     private val queue: QueueState get() = _state.value.queue
 
-    private val listening = ListeningTracker(timeSource, System::currentTimeMillis, onListen)
+    private val listening = ListeningTracker(timeSource, System::currentTimeMillis, onListen, onPlayStart)
 
     // The entry last handed to prepareAhead, so each following entry is prepared once.
     private var preparedUid: Long? = null

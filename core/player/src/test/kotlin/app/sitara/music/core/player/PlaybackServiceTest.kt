@@ -77,6 +77,8 @@ class PlaybackServiceTest {
 
         override fun onListened(listen: Listen) = Unit
 
+        override fun onPlayStarted(track: Track) = Unit
+
         override fun songGainDb(trackId: String) = trims.map { it[trackId] ?: 0 }
 
         val liked = MutableStateFlow(setOf<String>())

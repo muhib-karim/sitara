@@ -1,6 +1,7 @@
 package app.sitara.music.core.player
 
 import app.sitara.music.core.model.Listen
+import app.sitara.music.core.model.Track
 import kotlin.time.TimeMark
 import kotlin.time.TimeSource
 
@@ -11,11 +12,13 @@ internal const val PLAY_COUNTS_AFTER_MS = 30_000L
  * Measures how long each queue entry is heard: only time while the player plays counts, so pauses, buffering and a
  * failed stream add nothing and a seek adds only what is then played. Once a play counts, [onListen] gets it at every
  * checkpoint (a pause, the next song, a periodic save) with the time heard so far; the same play keeps its start time.
+ * [onStart] hears of each play as it first plays.
  */
 internal class ListeningTracker(
     private val timeSource: TimeSource,
     private val wallClock: () -> Long,
     private val onListen: (Listen) -> Unit,
+    private val onStart: (Track) -> Unit = {},
 ) {
     private var entry: QueueEntry? = null
 
@@ -34,8 +37,12 @@ internal class ListeningTracker(
             entry = current
         }
         val since = playingSince
-        if (playing && since == null && entry != null) {
-            if (startedAtMs == null) startedAtMs = wallClock()
+        val playingEntry = entry
+        if (playing && since == null && playingEntry != null) {
+            if (startedAtMs == null) {
+                startedAtMs = wallClock()
+                onStart(playingEntry.track)
+            }
             playingSince = timeSource.markNow()
         } else if (!playing && since != null) {
             heardMs += since.elapsedNow().inWholeMilliseconds

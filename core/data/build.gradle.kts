@@ -21,6 +21,8 @@ room { schemaDirectory("$projectDir/schemas") }
 
 dependencies {
     api(project(":core:model"))
+    // The scrobble outbox sends through the scrobbling contract.
+    api(project(":source:api"))
     implementation(libs.datastore.preferences)
     implementation(libs.kotlinx.coroutines.android)
     implementation(libs.room.runtime)

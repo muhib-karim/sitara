@@ -45,6 +45,9 @@ interface PlaybackDependencies {
     /** A play that counts, or one already reported heard for longer (same song and start); called on the main thread, so implementations hand slow work off. */
     fun onListened(listen: Listen)
 
+    /** A play starting (for scrobbling's "now playing"); called on the main thread, so implementations hand slow work off. */
+    fun onPlayStarted(track: Track)
+
     /** The song's volume trim in dB, 0 when none is set; the player follows it while the song plays. */
     fun songGainDb(trackId: String): Flow<Int>
 
