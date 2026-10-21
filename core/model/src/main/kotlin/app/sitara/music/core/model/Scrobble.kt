@@ -25,6 +25,9 @@ data class ScrobbleAccount(
     val signInNeeded: Boolean = false,
 )
 
+/** Scrobbling as set up: the connected services, and whether the listener paused it for now. */
+data class ScrobbleSetup(val paused: Boolean = false, val accounts: List<ScrobbleAccount> = emptyList())
+
 /** The scrobbling rule Last.fm and ListenBrainz share: a song longer than 30 s, heard for half its length or 4 minutes, whichever comes first. */
 fun scrobbleCounts(durationMs: Long, heardMs: Long): Boolean = durationMs > SHORTEST_SCROBBLE_MS && heardMs >= minOf(durationMs / 2, SCROBBLE_AFTER_MS)
 

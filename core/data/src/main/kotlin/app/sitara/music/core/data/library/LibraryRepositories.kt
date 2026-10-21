@@ -73,6 +73,9 @@ interface PlaylistRepository {
     suspend fun move(id: Long, from: Int, to: Int)
 
     suspend fun remove(id: Long, trackId: String)
+
+    /** Whether any playlist holds the song. */
+    suspend fun inAnyPlaylist(trackId: String): Boolean
 }
 
 /** The play queue kept for after a restart; there is at most one. */

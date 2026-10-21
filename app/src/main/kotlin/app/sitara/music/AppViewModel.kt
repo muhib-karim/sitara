@@ -111,6 +111,9 @@ class AppViewModel(private val app: SitaraApplication) :
     }
     private val importRequests = Channel<Unit>(Channel.CONFLATED)
 
+    /** Settings → Scrobbling; a sign-in in progress outlives the page. */
+    val scrobbling = ScrobblingSettings(viewModelScope, app.scrobbling)
+
     /** Requests to open Import playlist (a shared playlist link), buffered until the UI collects them. */
     val requestedImport: Flow<Unit> = importRequests.receiveAsFlow()
     val search: StateFlow<SearchState> = searchStates(query, searchRetries, debounceMs = 300, searchFilter) { q, filter -> app.youtube.search(q, filter) }
@@ -289,6 +292,7 @@ class AppViewModel(private val app: SitaraApplication) :
                     is DetailRoute.Mood -> error("A mood page is a feed: see moodPage")
                     DetailRoute.Stats -> error("Stats have their own state: see stats")
                     DetailRoute.Import -> error("Import has its own state: see imports")
+                    DetailRoute.Scrobbling -> error("Scrobbling has its own state: see scrobbling")
                 }
             } catch (e: CancellationException) {
                 throw e

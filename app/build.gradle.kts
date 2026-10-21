@@ -66,6 +66,7 @@ dependencies {
     // The sample catalogue is a fixture: debug capture screens and tests only, never in a release build.
     debugImplementation(project(":source:fake"))
     implementation(project(":source:lyrics"))
+    implementation(project(":source:scrobble"))
     implementation(project(":source:youtube"))
     implementation(project(":feature:home"))
     implementation(project(":feature:search"))
@@ -88,6 +89,8 @@ dependencies {
     implementation(libs.coil.network.okhttp)
     // The home-screen widget (Apache-2.0).
     implementation(libs.glance.appwidget)
+    // Scrobbles wait for a connection and back off in a worker (Apache-2.0; Glance already ships it).
+    implementation(libs.work.runtime)
     coreLibraryDesugaring(libs.desugar.jdk.libs)
     debugImplementation(libs.compose.ui.tooling)
     debugImplementation(libs.compose.ui.test.manifest)

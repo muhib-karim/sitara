@@ -91,6 +91,9 @@ import app.sitara.music.feature.search.SearchActions
 import app.sitara.music.feature.search.SearchLanding
 import app.sitara.music.feature.search.SearchScreen
 import app.sitara.music.feature.search.SearchState
+import app.sitara.music.feature.settings.ScrobblingActions
+import app.sitara.music.feature.settings.ScrobblingScreen
+import app.sitara.music.feature.settings.ScrobblingState
 import app.sitara.music.feature.settings.SettingsScreen
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
@@ -118,6 +121,7 @@ fun SitaraRoot(vm: AppViewModel, systemReducedMotion: Boolean) {
     val searchLanding by vm.searchLanding.collectAsState()
     val downloads by vm.downloads.collectAsState()
     val imports by vm.imports.state.collectAsState()
+    val scrobbling by vm.scrobbling.state.collectAsState()
     SitaraShell(
         settings = settings.let { if (systemReducedMotion) it.copy(reducedMotion = true) else it },
         home = home,
@@ -148,6 +152,8 @@ fun SitaraRoot(vm: AppViewModel, systemReducedMotion: Boolean) {
         imports = imports,
         importActions = vm.imports,
         importRequests = vm.requestedImport,
+        scrobbling = scrobbling,
+        scrobblingActions = vm.scrobbling,
     )
 }
 
@@ -189,6 +195,8 @@ fun SitaraShell(
     imports: ImportState = ImportState.Start(),
     importActions: ImportActions = ImportActions.None,
     importRequests: Flow<Unit> = emptyFlow(),
+    scrobbling: ScrobblingState = ScrobblingState(),
+    scrobblingActions: ScrobblingActions = ScrobblingActions.None,
 ) {
     var tab by rememberSaveable { mutableStateOf(if (initialSettingsOpen) Tab.SETTINGS else initialTab) }
     var detailStack by rememberSaveable(stateSaver = DetailStackSaver) { mutableStateOf(listOfNotNull(initialDetail)) }
@@ -286,6 +294,8 @@ fun SitaraShell(
                             onBack = { detailStack = detailStack.dropLast(1) },
                             contentPadding = contentPadding,
                         )
+                    } else if (route == DetailRoute.Scrobbling) {
+                        ScrobblingScreen(scrobbling, scrobblingActions, onBack = { detailStack = detailStack.dropLast(1) }, contentPadding = contentPadding)
                     } else if (route != null) {
                         val state by remember(details, route) { details.state(route) }.collectAsState()
                         DetailScreen(
@@ -342,6 +352,8 @@ fun SitaraShell(
                                     onOpenStats = { open(DetailRoute.Stats) },
                                     onClearHistory = onClearHistory,
                                     onImportPlaylist = { open(DetailRoute.Import) },
+                                    scrobblingSummary = scrobbling.summary,
+                                    onOpenScrobbling = { open(DetailRoute.Scrobbling) },
                                 )
                             }
                         }

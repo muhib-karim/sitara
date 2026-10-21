@@ -86,6 +86,8 @@ fun SettingsScreen(
     onOpenStats: () -> Unit = {},
     onClearHistory: () -> Unit = {},
     onImportPlaylist: () -> Unit = {},
+    scrobblingSummary: String = "Off",
+    onOpenScrobbling: () -> Unit = {},
     contentPadding: PaddingValues = PaddingValues(),
 ) {
     LazyColumn(modifier.fillMaxSize().testTag("settings-content"), contentPadding = contentPadding) {
@@ -121,7 +123,7 @@ fun SettingsScreen(
             }
         }
         item(key = "history") {
-            HistorySettings(settings, onChange, onOpenStats, onClearHistory)
+            HistorySettings(settings, onChange, onOpenStats, onClearHistory, scrobblingSummary, onOpenScrobbling)
         }
         item(key = "downloads") {
             DownloadSettings(settings, onChange, downloads, onRemoveAllDownloads)
@@ -276,12 +278,21 @@ private fun qualityDescription(quality: AudioQuality, wifi: Boolean): String = w
     AudioQuality.DATA_SAVER -> "The lowest offered, about 50 kbps"
 }
 
-/** Stats, and the listener's say over the plays kept for them, which never leave the phone. */
+/** Stats and the listener's say over the plays kept for them on the phone, and scrobbling, which sends plays out. */
 @Composable
-private fun HistorySettings(settings: SitaraSettings, onChange: (SitaraSettings) -> Unit, onOpenStats: () -> Unit, onClear: () -> Unit) {
+private fun HistorySettings(
+    settings: SitaraSettings,
+    onChange: (SitaraSettings) -> Unit,
+    onOpenStats: () -> Unit,
+    onClear: () -> Unit,
+    scrobblingSummary: String,
+    onOpenScrobbling: () -> Unit,
+) {
     var confirming by rememberSaveable { mutableStateOf(false) }
     SettingsGroup("Listening history") {
         LinkRow("Your stats", "On this phone", onOpenStats)
+        InsetDivider()
+        LinkRow("Scrobbling", scrobblingSummary, onOpenScrobbling)
         InsetDivider()
         SwitchRow("Pause listening history", "New plays aren’t kept for Recently played, play counts or stats", settings.pauseListeningHistory) {
             onChange(settings.copy(pauseListeningHistory = it))
@@ -369,7 +380,7 @@ private fun CrossfadeRow(seconds: Int, onChange: (Int) -> Unit) {
 
 /** Opens a page of its own; [value] says what is set there. */
 @Composable
-private fun LinkRow(title: String, value: String, onClick: () -> Unit) {
+internal fun LinkRow(title: String, value: String, onClick: () -> Unit) {
     Row(
         Modifier.fillMaxWidth().defaultMinSize(minHeight = 56.dp).clickable(role = Role.Button, onClick = onClick).padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -381,7 +392,7 @@ private fun LinkRow(title: String, value: String, onClick: () -> Unit) {
 }
 
 @Composable
-private fun SwitchRow(title: String, description: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
+internal fun SwitchRow(title: String, description: String, checked: Boolean, onCheckedChange: (Boolean) -> Unit) {
     Row(
         Modifier.fillMaxWidth().toggleable(checked, role = Role.Switch, onValueChange = onCheckedChange).padding(16.dp),
         verticalAlignment = Alignment.CenterVertically,
@@ -402,7 +413,7 @@ private fun SwitchRow(title: String, description: String, checked: Boolean, onCh
 }
 
 @Composable
-private fun SettingsGroup(title: String, content: @Composable ColumnScope.() -> Unit) {
+internal fun SettingsGroup(title: String, content: @Composable ColumnScope.() -> Unit) {
     Column(Modifier.padding(bottom = 20.dp)) {
         SectionHeader(title)
         Column(
@@ -414,7 +425,7 @@ private fun SettingsGroup(title: String, content: @Composable ColumnScope.() -> 
 }
 
 @Composable
-private fun InsetDivider() {
+internal fun InsetDivider() {
     HorizontalDivider(Modifier.padding(horizontal = 16.dp), thickness = 0.5.dp, color = MaterialTheme.colorScheme.outlineVariant)
 }
 

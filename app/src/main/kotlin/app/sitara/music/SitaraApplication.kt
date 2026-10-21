@@ -11,6 +11,7 @@ import androidx.media3.datasource.cache.Cache
 import app.sitara.music.core.data.SettingsRepository
 import app.sitara.music.core.data.library.LibraryStore
 import app.sitara.music.core.data.library.PlayHistoryRepository
+import app.sitara.music.core.data.scrobble.ScrobbleAccounts
 import app.sitara.music.core.designsystem.sitaraImageLoader
 import app.sitara.music.core.model.AudioQuality
 import app.sitara.music.core.model.CachedLyrics
@@ -104,6 +105,13 @@ class SitaraApplication :
     override val playbackSettings get() = settings.settings
     val player by lazy { PlayerController(this, appScope) }
 
+    /** Last.fm and ListenBrainz; a song is in the library when it is liked or in a playlist. */
+    val scrobbling by lazy {
+        Scrobbling(this, ScrobbleAccounts(this), library.scrobbles) { track ->
+            track.id in library.likedSongs.ids.first() || library.playlists.inAnyPlaylist(track.id)
+        }
+    }
+
     /** What the home-screen widget shows, changing only when that is worth drawing (see shownWidgetStates). */
     val widgetStates: StateFlow<WidgetState> by lazy {
         val snapshots = PlaybackEngineRegistry.engine.flatMapLatest { it?.state ?: flowOf(null) }
@@ -157,10 +165,12 @@ class SitaraApplication :
 
     override fun newImageLoader(context: Context) = sitaraImageLoader(context)
 
-    override fun onListened(listen: Listen) = writeLibrary { library.history.recordUnlessPaused(listen, settings.settings) }
+    override fun onListened(listen: Listen) {
+        writeLibrary { library.history.recordUnlessPaused(listen, settings.settings) }
+        writeLibrary { scrobbling.onListened(listen) }
+    }
 
-    // Scrobbling's "now playing" arrives with the services that take it.
-    override fun onPlayStarted(track: Track) = Unit
+    override fun onPlayStarted(track: Track) = writeLibrary { scrobbling.onPlayStarted(track) }
 
     override fun songGainDb(trackId: String) = library.songGain.trimDb(trackId)
 

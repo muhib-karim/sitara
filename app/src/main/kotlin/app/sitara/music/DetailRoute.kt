@@ -21,6 +21,9 @@ sealed interface DetailRoute {
 
     /** Import playlist: a link or a file into the library. */
     data object Import : DetailRoute
+
+    /** Settings → Scrobbling: Last.fm and ListenBrainz. */
+    data object Scrobbling : DetailRoute
 }
 
 /** "kind:id", the form a route is saved in across process death. */
@@ -34,6 +37,7 @@ fun DetailRoute.encode(): String = when (this) {
     is DetailRoute.Mood -> "mood:$params|$title"
     DetailRoute.Stats -> "stats:listening"
     DetailRoute.Import -> "import:playlist"
+    DetailRoute.Scrobbling -> "scrobbling:services"
 }
 
 fun decodeDetailRoute(saved: String): DetailRoute? {
@@ -45,6 +49,7 @@ fun decodeDetailRoute(saved: String): DetailRoute? {
         "liked" -> DetailRoute.LikedSongs
         "stats" -> DetailRoute.Stats
         "import" -> DetailRoute.Import
+        "scrobbling" -> DetailRoute.Scrobbling
         "mine" -> id.toLongOrNull()?.let(DetailRoute::UserPlaylist)
         "mood" -> DetailRoute.Mood(id.substringBefore('|').ifEmpty { return null }, id.substringAfter('|', "").ifEmpty { return null })
         else -> null

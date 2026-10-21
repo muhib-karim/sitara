@@ -92,6 +92,9 @@ interface SavedDao {
 
 @Dao
 abstract class PlaylistDao {
+    @Query("SELECT EXISTS(SELECT 1 FROM playlist_entries WHERE track_id = :trackId)")
+    abstract suspend fun inAnyPlaylist(trackId: String): Boolean
+
     @Query(
         """
         SELECT p.id, p.name,

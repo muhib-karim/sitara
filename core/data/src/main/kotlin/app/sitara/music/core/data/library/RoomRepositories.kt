@@ -89,6 +89,8 @@ class RoomPlaylists(private val dao: PlaylistDao, private val clock: () -> Long 
 
     override suspend fun remove(id: Long, trackId: String) = dao.remove(id, trackId, clock())
 
+    override suspend fun inAnyPlaylist(trackId: String) = dao.inAnyPlaylist(trackId)
+
     private fun validName(name: String): String = name.trim().also { require(it.isNotEmpty()) { "A playlist needs a name" } }
 }
 
