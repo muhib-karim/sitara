@@ -71,6 +71,8 @@ data class SitaraSettings(
     /** Stream quality on Wi-Fi (and Ethernet) and on mobile data. */
     val wifiQuality: AudioQuality = AudioQuality.AUTO,
     val mobileQuality: AudioQuality = AudioQuality.AUTO,
+    /** The language lyrics are translated into (a language tag such as "bn"), or null for the app's language. */
+    val translationLanguage: String? = null,
 ) {
     init {
         require(crossfadeSeconds in 0..MAX_CROSSFADE_SECONDS) { "crossfade out of range: $crossfadeSeconds" }

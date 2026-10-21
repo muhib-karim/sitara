@@ -267,8 +267,8 @@ class AppViewModel(private val app: SitaraApplication) :
 
     private val translating = MutableStateFlow(false)
 
-    // The app's language until the listener picks another; kept for this session.
-    private val translationLanguage = MutableStateFlow(Locale.getDefault().toLanguageTag().substringBefore('-').ifEmpty { "en" })
+    // The language picked last, kept in the settings across restarts; the app's language until one is picked.
+    private val translationLanguage = settings.map { it.translationLanguage ?: Locale.getDefault().toLanguageTag().substringBefore('-').ifEmpty { "en" } }.distinctUntilChanged()
     private val translationRetries = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
 
     // The shown lyrics translated while Translate is on: anew for another song, source or language, or when tried again.
@@ -408,7 +408,7 @@ class AppViewModel(private val app: SitaraApplication) :
     }
 
     override fun setTranslationLanguage(language: String) {
-        translationLanguage.value = language
+        viewModelScope.launch { app.settings.update { it.copy(translationLanguage = language) } }
     }
 
     override fun startRadio() {

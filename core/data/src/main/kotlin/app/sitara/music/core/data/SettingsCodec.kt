@@ -39,6 +39,7 @@ object SettingsCodec {
     const val PAUSE_HISTORY = "pause_listening_history"
     const val WIFI_QUALITY = "wifi_quality"
     const val MOBILE_QUALITY = "mobile_quality"
+    const val TRANSLATION_LANGUAGE = "translation_language"
 
     fun encode(s: SitaraSettings): Map<String, String> = mapOf(
         DARK to s.darkMode.name,
@@ -64,6 +65,8 @@ object SettingsCodec {
         PAUSE_HISTORY to s.pauseListeningHistory.toString(),
         WIFI_QUALITY to s.wifiQuality.name,
         MOBILE_QUALITY to s.mobileQuality.name,
+        // Empty for the app's language: the store keeps strings only.
+        TRANSLATION_LANGUAGE to s.translationLanguage.orEmpty(),
     )
 
     fun decode(map: Map<String, String>): SitaraSettings {
@@ -95,10 +98,14 @@ object SettingsCodec {
             pauseListeningHistory = map[PAUSE_HISTORY]?.toBooleanStrictOrNull() ?: d.pauseListeningHistory,
             wifiQuality = map[WIFI_QUALITY]?.let { v -> AudioQuality.entries.firstOrNull { it.name == v } } ?: d.wifiQuality,
             mobileQuality = map[MOBILE_QUALITY]?.let { v -> AudioQuality.entries.firstOrNull { it.name == v } } ?: d.mobileQuality,
+            translationLanguage = map[TRANSLATION_LANGUAGE]?.takeIf { LANGUAGE_TAG.matches(it) } ?: d.translationLanguage,
         )
     }
 
     private const val GAIN = EqualiserSettings.MAX_GAIN_DB
+
+    // "bn", "zh-CN": the tags the language sheet offers.
+    private val LANGUAGE_TAG = Regex("[a-z]{2,3}(-[A-Za-z0-9]{2,8})*")
 
     // Exactly one whole number of decibels per band; anything else is corrupt.
     private fun decodeBands(text: String?): List<Int>? =
