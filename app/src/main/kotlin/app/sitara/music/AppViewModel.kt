@@ -11,6 +11,8 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import app.sitara.music.core.model.Album
 import app.sitara.music.core.model.Artist
 import app.sitara.music.core.model.EqualiserSettings
+import app.sitara.music.core.model.LibraryLayout
+import app.sitara.music.core.model.LibrarySort
 import app.sitara.music.core.model.PlaylistSummary
 import app.sitara.music.core.model.SearchFilter
 import app.sitara.music.core.model.SitaraSettings
@@ -144,8 +146,12 @@ class AppViewModel(private val app: SitaraApplication) :
     ).stateIn(viewModelScope, SharingStarted.Eagerly, SavedIds())
 
     val library: StateFlow<LibraryState> = combine(
-        app.library.likedSongs.tracks, app.library.history.recent(RECENT_SHELF), app.library.playlists.all, app.library.saved.albums, app.library.saved.artists,
-    ) { liked, recent, playlists, albums, artists -> LibraryState.Ready(SavedLibrary(liked, recent, playlists, albums, artists)) }
+        combine(
+            app.library.likedSongs.tracks, app.library.history.recent(RECENT_SHELF), app.library.playlists.all, app.library.saved.albums, app.library.saved.artists,
+            ::SavedLibrary,
+        ),
+        app.library.history.counts,
+    ) { saved, counts -> LibraryState.Ready(saved.copy(counts = counts)) }
         .catch<LibraryState> { emit(LibraryState.Failed) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), LibraryState.Loading)
 
@@ -406,6 +412,14 @@ class AppViewModel(private val app: SitaraApplication) :
     }
 
     override fun removeDownload(trackId: String) = app.songDownloads.remove(trackId)
+
+    override fun setLibraryLayout(layout: LibraryLayout) {
+        viewModelScope.launch { app.settings.update { it.copy(libraryLayout = layout) } }
+    }
+
+    override fun setLibrarySort(sort: LibrarySort) {
+        viewModelScope.launch { app.settings.update { it.copy(librarySort = sort) } }
+    }
 
     fun removeAllDownloads() = app.songDownloads.removeAll()
 

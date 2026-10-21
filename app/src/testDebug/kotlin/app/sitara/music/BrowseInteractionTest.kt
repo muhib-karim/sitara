@@ -140,6 +140,7 @@ class BrowseInteractionTest {
         compose.onNodeWithContentDescription("Back").performClick()
 
         val album = library.albums.first()
+        compose.onNode(hasText("Albums") and isSelectable()).performSemanticsAction(SemanticsActions.OnClick)
         compose.onNodeWithTag("library-content").performScrollToNode(hasText(album.title))
         // Scrolled just into view, the tile can sit under the floating dock, so tap it through its click action.
         compose.onNodeWithText(album.title).performSemanticsAction(SemanticsActions.OnClick)
@@ -147,15 +148,11 @@ class BrowseInteractionTest {
         assertEquals(album.tracks, queue)
     }
 
-    @Test fun emptyLibraryExplainsHowToFillEachSection() {
+    @Test fun emptyLibraryOffersOneWayToStart() {
         render(Tab.LIBRARY, saved = LibraryState.Ready(SavedLibrary(emptyList(), emptyList(), emptyList(), emptyList(), emptyList())))
-        compose.onNodeWithText("0 songs").assertIsDisplayed()
-        listOf(
-            "Make a playlist to keep songs in your own order.",
-            "Songs you play show up here.",
-            "Save an album from its page to keep it here.",
-            "Save an artist from their page to keep them here.",
-        ).forEach { compose.onNodeWithTag("library-content").performScrollToNode(hasText(it)) }
+        compose.onNodeWithText("Your library starts here").assertIsDisplayed()
+        compose.onNodeWithText("Find music").performClick()
+        compose.onNodeWithContentDescription("Search").assertIsDisplayed()
     }
 
     @Test fun newPlaylistIsNamedBeforeItIsCreated() {
@@ -261,6 +258,7 @@ class BrowseInteractionTest {
                 override fun removeDownload(trackId: String) { calls += "remove $trackId" }
             },
         )
+        compose.onNode(hasText("Downloads") and isSelectable()).performSemanticsAction(SemanticsActions.OnClick)
         val list = compose.onNodeWithTag("library-content")
         list.performScrollToNode(hasText("4 songs · 8.5 MB"))
         // The end of the list, so the rows clear the floating dock.

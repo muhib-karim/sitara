@@ -3,6 +3,9 @@ package app.sitara.music.feature.library
 import app.sitara.music.core.model.Album
 import app.sitara.music.core.model.Artist
 import app.sitara.music.core.model.DownloadState
+import app.sitara.music.core.model.LibraryLayout
+import app.sitara.music.core.model.LibrarySort
+import app.sitara.music.core.model.PlayCount
 import app.sitara.music.core.model.PlaylistSummary
 import app.sitara.music.core.model.Track
 
@@ -33,6 +36,11 @@ interface LibraryActions {
     /** Cancels a running download or deletes a finished one. */
     fun removeDownload(trackId: String)
 
+    /** Keeps how Library lays out and orders what it lists, for next time too. */
+    fun setLibraryLayout(layout: LibraryLayout)
+
+    fun setLibrarySort(sort: LibrarySort)
+
     object None : LibraryActions {
         override fun setLiked(track: Track, liked: Boolean) = Unit
         override fun setSaved(album: Album, saved: Boolean) = Unit
@@ -45,6 +53,8 @@ interface LibraryActions {
         override fun removePlaylistEntry(id: Long, trackId: String) = Unit
         override fun download(tracks: List<Track>) = Unit
         override fun removeDownload(trackId: String) = Unit
+        override fun setLibraryLayout(layout: LibraryLayout) = Unit
+        override fun setLibrarySort(sort: LibrarySort) = Unit
     }
 }
 
@@ -63,6 +73,8 @@ data class SavedLibrary(
     val playlists: List<PlaylistSummary>,
     val albums: List<Album>,
     val artists: List<Artist>,
+    /** Plays per song in the kept history, for ordering by plays. */
+    val counts: List<PlayCount> = emptyList(),
 )
 
 sealed interface LibraryState {

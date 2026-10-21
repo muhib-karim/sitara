@@ -84,8 +84,8 @@ fun AddToPlaylist(track: Track, playlists: List<PlaylistSummary>, onPick: (Playl
             LazyColumn(Modifier.heightIn(max = 360.dp).padding(top = 8.dp)) {
                 items(playlists, key = { it.id }) { playlist ->
                     CollectionRow(
-                        playlist.name, songCount(playlist.songCount), playlist.artwork ?: EmptyCollectionArtwork, { onPick(playlist) },
-                        Modifier.padding(horizontal = SitaraSpacing.Gutter),
+                        playlist.name, songCount(playlist.songCount), EmptyCollectionArtwork, { onPick(playlist) },
+                        Modifier.padding(horizontal = SitaraSpacing.Gutter), covers = playlist.covers,
                     )
                 }
             }

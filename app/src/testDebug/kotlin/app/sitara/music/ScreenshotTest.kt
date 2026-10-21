@@ -7,6 +7,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.semantics.SemanticsActions
+import androidx.compose.ui.test.hasText
+import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
@@ -15,6 +18,7 @@ import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.performScrollToKey
+import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeLeft
 import androidx.compose.ui.test.swipeUp
@@ -26,6 +30,7 @@ import app.sitara.music.core.model.DownloadState
 import app.sitara.music.core.model.EqualiserPreset
 import app.sitara.music.core.model.EqualiserSettings
 import app.sitara.music.core.model.Library
+import app.sitara.music.core.model.LibraryLayout
 import app.sitara.music.core.model.PlaybackTuning
 import app.sitara.music.core.model.SearchFilter
 import app.sitara.music.core.model.SearchResults
@@ -133,9 +138,10 @@ class ScreenshotTest {
         downloads: List<SongDownload> = emptyList(),
         equaliser: EqualiserSettings = EqualiserSettings(),
         landing: SearchLanding = searchLanding,
+        libraryLayout: LibraryLayout = LibraryLayout.GRID,
         beforeCapture: () -> Unit = {},
     ) {
-        val settings = SitaraSettings(themeMode = mode, darkMode = if (dark) DarkMode.DARK else DarkMode.LIGHT, reducedMotion = reduced)
+        val settings = SitaraSettings(themeMode = mode, darkMode = if (dark) DarkMode.DARK else DarkMode.LIGHT, reducedMotion = reduced, libraryLayout = libraryLayout)
         compose.setContent {
             CompositionLocalProvider(LocalDensity provides Density(LocalDensity.current.density, fontScale)) {
                 SitaraShell(
@@ -263,6 +269,13 @@ class ScreenshotTest {
         compose.onNodeWithTag("home-content").performScrollToIndex(15)
     }
 
+    @Test fun libraryList() = shot("library_list", dark = true, tab = Tab.LIBRARY, libraryLayout = LibraryLayout.LIST)
+
+    @Test fun librarySongs() = shot("library_songs", dark = true, tab = Tab.LIBRARY) {
+        compose.onNode(hasText("Songs") and isSelectable()).performSemanticsAction(SemanticsActions.OnClick)
+        compose.onNodeWithTag("library-content").performScrollToIndex(5)
+    }
+
     @Test fun libraryEmpty() = shot("library_empty", dark = true, tab = Tab.LIBRARY, saved = LibraryState.Ready(SavedLibrary(emptyList(), emptyList(), emptyList(), emptyList(), emptyList())))
 
     @Test fun libraryLoading() = shot("library_loading", dark = true, tab = Tab.LIBRARY, saved = LibraryState.Loading)
@@ -304,9 +317,11 @@ class ScreenshotTest {
     }
 
     @Test fun libraryDownloads() = shot("library_downloads", dark = true, tab = Tab.LIBRARY, downloads = Fixtures.downloads) {
+        compose.onNode(hasText("Downloads") and isSelectable()).performSemanticsAction(SemanticsActions.OnClick)
         compose.onNodeWithTag("library-content").performScrollToKey("download-${Fixtures.downloads.last().track.id}")
     }
     @Test fun libraryDownloadsLight() = shot("library_downloads", dark = false, tab = Tab.LIBRARY, downloads = Fixtures.downloads) {
+        compose.onNode(hasText("Downloads") and isSelectable()).performSemanticsAction(SemanticsActions.OnClick)
         compose.onNodeWithTag("library-content").performScrollToKey("download-${Fixtures.downloads.last().track.id}")
     }
     @Test fun albumPageDownloads() = shot(

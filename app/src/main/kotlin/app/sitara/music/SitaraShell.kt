@@ -272,12 +272,14 @@ fun SitaraShell(
                                 onMood = { open(DetailRoute.Mood(it.params, it.title)) }, onTrackMenu = openMenu, contentPadding = contentPadding,
                             )
                             Tab.LIBRARY -> LibraryScreen(
-                                library, downloads, onPlay,
+                                library, downloads, settings.libraryLayout, settings.librarySort, onPlay,
                                 onLikedSongs = { open(DetailRoute.LikedSongs) },
                                 onPlaylist = { open(DetailRoute.UserPlaylist(it.id)) },
                                 onAlbum = openAlbum,
                                 onArtist = openArtist,
                                 onNewPlaylist = { libraryActions.createPlaylist(it, null) },
+                                onTrackMenu = openMenu,
+                                onFindMusic = { tab = Tab.SEARCH },
                                 library = libraryActions,
                                 contentPadding = contentPadding,
                             )

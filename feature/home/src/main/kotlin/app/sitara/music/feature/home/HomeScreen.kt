@@ -115,8 +115,8 @@ fun HomeScreen(
                         items(feed.jumpBackIn, key = { it.key }) { saved ->
                             when (saved) {
                                 is SavedCollection.OwnPlaylist -> ArtworkTile(
-                                    saved.playlist.name, songCount(saved.playlist.songCount), saved.playlist.artwork ?: EmptyCollectionArtwork,
-                                    { onOwnPlaylist(saved.playlist) }, Modifier.width(CardWidth),
+                                    saved.playlist.name, songCount(saved.playlist.songCount), EmptyCollectionArtwork,
+                                    { onOwnPlaylist(saved.playlist) }, Modifier.width(CardWidth), covers = saved.playlist.covers,
                                 )
                                 is SavedCollection.SavedAlbum -> ArtworkTile(saved.album.title, saved.album.byline, saved.album.artwork, { onAlbum(saved.album) }, Modifier.width(CardWidth))
                             }

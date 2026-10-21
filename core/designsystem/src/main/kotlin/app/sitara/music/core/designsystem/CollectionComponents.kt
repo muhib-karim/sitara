@@ -7,6 +7,7 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -20,9 +21,11 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import app.sitara.music.core.model.Album
 import app.sitara.music.core.model.Artwork
@@ -58,6 +61,7 @@ fun ArtworkTile(
     round: Boolean = false,
     enabled: Boolean = true,
     onLongClick: (() -> Unit)? = null,
+    covers: List<Artwork>? = null,
 ) {
     Column(
         // Only the top corners round: a full round clip cut the first letter of the subtitle's last line.
@@ -66,7 +70,11 @@ fun ArtworkTile(
             .semantics(mergeDescendants = true) {},
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
-        ArtworkImage(artwork, Modifier.fillMaxWidth(), cornerRadius = if (round) 500.dp else SitaraRadius.Tile)
+        if (covers != null) {
+            PlaylistCover(covers, Modifier.fillMaxWidth(), SitaraRadius.Tile)
+        } else {
+            ArtworkImage(artwork, Modifier.fillMaxWidth(), cornerRadius = if (round) 500.dp else SitaraRadius.Tile)
+        }
         Text(
             title, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface,
             maxLines = 2, overflow = TextOverflow.Ellipsis, modifier = Modifier.padding(top = 4.dp),
@@ -87,6 +95,7 @@ fun CollectionRow(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
+    covers: List<Artwork>? = null,
 ) {
     Row(
         modifier.fillMaxWidth().clip(RoundedCornerShape(SitaraRadius.Cover))
@@ -95,7 +104,11 @@ fun CollectionRow(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        ArtworkImage(artwork, Modifier.size(48.dp), cornerRadius = SitaraRadius.Cover)
+        if (covers != null) {
+            PlaylistCover(covers, Modifier.size(48.dp), SitaraRadius.Cover)
+        } else {
+            ArtworkImage(artwork, Modifier.size(48.dp), cornerRadius = SitaraRadius.Cover)
+        }
         Column(Modifier.weight(1f)) {
             Text(
                 title, color = MaterialTheme.colorScheme.onSurface, style = MaterialTheme.typography.titleMedium,
@@ -108,3 +121,19 @@ fun CollectionRow(
         }
     }
 }
+
+/** A playlist's cover: its first four different song covers as a 2 x 2 collage when it has four, else its first one (a quiet gradient when empty). */
+@Composable
+fun PlaylistCover(covers: List<Artwork>, modifier: Modifier, cornerRadius: Dp) {
+    if (covers.size < COLLAGE_SIZE) {
+        ArtworkImage(covers.firstOrNull() ?: EmptyCollectionArtwork, modifier, cornerRadius = cornerRadius)
+        return
+    }
+    Column(modifier.aspectRatio(1f).clip(RoundedCornerShape(cornerRadius)).testTag("collage")) {
+        covers.take(COLLAGE_SIZE).chunked(2).forEach { pair ->
+            Row(Modifier.weight(1f)) { pair.forEach { ArtworkImage(it, Modifier.weight(1f), cornerRadius = 0.dp) } }
+        }
+    }
+}
+
+private const val COLLAGE_SIZE = 4
