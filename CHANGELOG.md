@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+Polish slice 7: bring your music.
+
+### Added
+
+- Import playlist, from Library or Settings → Library. Paste a YouTube or YouTube Music playlist link, or pick an M3U, M3U8 or CSV file (title, artist and album columns, found by name in a header row; comma, semicolon or tab separated). Picking a file needs no storage permission. Sharing a playlist link to Sitara, or opening one, opens the import with the link filled in.
+- Songs from a file are found by searching YouTube Music for their title and artist; each result is scored on the title, the artist and the length. Sure matches go straight in, songs from a YouTube link go in as they are, and uncertain ones wait in a review step: the line from your list next to the best match with its cover, and Use this, Other matches or Skip.
+- While it works the import shows how many songs were found, are to check and were not found, with Cancel, which stops at once and forgets the import. An import cut short (offline, or the app closed) waits on the import screen to resume where it stopped, without adding a song twice. Importing the same link or file again updates its playlist and keeps the choices you made in review.
+- Problems are worded with a way on: a link that is not a playlist link, a private or deleted playlist, no connection (with Try again), a file that can't be read or is over 4 MB. Up to 2,000 songs per import.
+- Settings → Playback: stream quality on Wi-Fi and on mobile data, each Auto (High on Wi-Fi, Normal on mobile data), High, Normal (up to 96 kbps) or Data saver (the lowest offered). Changes apply from the next song; downloads always take the best stream.
+- Now Playing shows the codec and bitrate the song streams in under the scrubber, for example "Opus · 160 kbps" (TalkBack reads it in words); it is hidden when unknown.
+
 ## [0.9.6] - 2026-10-21
 
 Polish slice 6: everywhere the music goes.

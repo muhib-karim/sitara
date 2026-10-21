@@ -2,7 +2,7 @@
 
 How Sitara compares with the four apps it is measured against, updated with every release. Competitor columns come from their public documentation and release notes; **Y** = has it, **~** = partial or depends on version or setup, **—** = not offered, **?** = not documented. A Sitara entry says the release that shipped it, or the Phase C slice planned for it ([PHASE_C_PLAN.md](PHASE_C_PLAN.md)).
 
-Last updated: polish slice 6 (target v0.9.6, on `main`; the owner tags).
+Last updated: polish slice 7 (target v0.9.7, on `main`; the owner tags).
 
 | Capability | BitChord | Metrolist | Meld | ReVanced | Sitara |
 |---|:---:|:---:|:---:|:---:|---|
@@ -40,8 +40,8 @@ Last updated: polish slice 6 (target v0.9.6, on `main`; the owner tags).
 | Widgets | Y | Y | Y | Y | v0.9.6 (one now-playing widget, 4 × 1 resizable to 4 × 2 with the heart and progress; not yet checked on a real launcher) |
 | Android Auto | Y | Y | ~ | Y | v0.9.6 (library, downloads offline, search and voice, Like and Shuffle; not yet checked in a car or the Desktop Head Unit) |
 | Last.fm / ListenBrainz | Y/Y | Y/— | Y/— | — | c8 |
-| Playlist imports (YouTube, Spotify, M3U/CSV) | Y | ~ | Y | — | c9 |
-| Audio quality per network, codec readout | Y | — | — | ~ | c9 |
+| Playlist imports (YouTube, Spotify, M3U/CSV) | Y | ~ | Y | — | v0.9.7 for YouTube and YouTube Music links and M3U/CSV files, with a review step and resumable imports (not yet tried on a phone); Spotify later (it needs an API key) |
+| Audio quality per network, codec readout | Y | — | — | ~ | v0.9.7 (Auto / High / Normal / Data saver for Wi-Fi and mobile data; codec and bitrate under the scrubber) |
 | Palette presets, QR sharing | Y | Y | Y | — | c10 |
 | App translations and right-to-left layout | ~ | Y | ~ | Y | c10 |
 | Dynamic, light, dark and black themes | Y | Y | Y | limited | v0.1.0; Appearance with pure black, six accents or the cover's, and a live preview in v0.9.4 |
