@@ -54,6 +54,9 @@ interface PlaybackDependencies {
     /** Likes or unlikes [track] from the notification; implementations hand the write off. */
     fun setLiked(track: Track, liked: Boolean)
 
+    /** The library as a car browses it. */
+    val libraryContent: LibraryContent
+
     /** The queue saved before the process last ended, or null. */
     suspend fun savedQueue(): SavedQueue?
 

@@ -11,7 +11,14 @@ data class ControllerIdentity(
     val isCar: Boolean,
 )
 
-enum class ControllerAccess { FULL, PLAYBACK_ONLY, REJECT }
+enum class ControllerAccess {
+    FULL,
+
+    /** Transport controls, the library to browse and search, and picking a song from it: what a car needs. */
+    BROWSE,
+    PLAYBACK_ONLY,
+    REJECT,
+}
 
 /**
  * Who may control playback. The service is exported so system surfaces can bind,
@@ -42,12 +49,16 @@ object ControllerPolicy {
         Player.COMMAND_RELEASE,
     )
 
+    /** A car's: transport controls, and a song picked from the library to play (the engine builds the queue). */
+    val BROWSE_COMMANDS: Set<Int> = PLAYBACK_COMMANDS + Player.COMMAND_SET_MEDIA_ITEM
+
     /**
      * The app itself is recognised by the binder-verified [ControllerIdentity.uid], never by a
-     * package-name string. System surfaces get transport controls; everyone else is turned away.
+     * package-name string. The car browses; other system surfaces get transport controls; everyone else is turned away.
      */
     fun access(caller: ControllerIdentity, ownUid: Int): ControllerAccess = when {
-        caller.isMediaNotification || caller.isCar -> ControllerAccess.PLAYBACK_ONLY
+        caller.isCar -> ControllerAccess.BROWSE
+        caller.isMediaNotification -> ControllerAccess.PLAYBACK_ONLY
         caller.uid == ownUid -> ControllerAccess.FULL
         // Headset buttons and Bluetooth arrive from system uids that may not report as trusted.
         caller.isTrusted || caller.uid in 0 until FIRST_APPLICATION_UID -> ControllerAccess.PLAYBACK_ONLY

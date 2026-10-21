@@ -11,9 +11,11 @@ import app.sitara.music.core.designsystem.sitaraImageLoader
 import app.sitara.music.core.model.CachedLyrics
 import app.sitara.music.core.model.Listen
 import app.sitara.music.core.model.SavedQueue
+import app.sitara.music.core.model.SearchFilter
 import app.sitara.music.core.model.SitaraSettings
 import app.sitara.music.core.model.Track
 import app.sitara.music.core.player.DownloadDependencies
+import app.sitara.music.core.player.LibraryContent
 import app.sitara.music.core.player.PlaybackDependencies
 import app.sitara.music.core.player.PlayerController
 import app.sitara.music.core.player.SongDownloads
@@ -69,6 +71,30 @@ class SitaraApplication :
     override val playbackSettings get() = settings.settings
     val player by lazy { PlayerController(this, appScope) }
 
+    override val libraryContent: LibraryContent by lazy {
+        object : LibraryContent {
+            override suspend fun recentlyPlayed() = library.history.recent(RECENT_IN_CAR).first()
+
+            override suspend fun likedSongs() = library.likedSongs.tracks.first()
+
+            override suspend fun downloadedSongs() = songDownloads.downloaded()
+
+            override suspend fun playlists() = library.playlists.all.first()
+
+            override suspend fun playlistSongs(id: Long) = library.playlists.playlist(id).first()?.tracks.orEmpty()
+
+            override suspend fun savedAlbums() = library.saved.albums.first()
+
+            override suspend fun savedArtists() = library.saved.artists.first()
+
+            override suspend fun albumSongs(id: String) = youtube.album(id)?.tracks.orEmpty()
+
+            override suspend fun artistSongs(id: String) = youtube.artist(id)?.topSongs.orEmpty()
+
+            override suspend fun searchSongs(query: String) = youtube.search(query, SearchFilter.SONGS).tracks
+        }
+    }
+
     override fun newImageLoader(context: Context) = sitaraImageLoader(context)
 
     override fun onListened(listen: Listen) = writeLibrary { library.history.recordUnlessPaused(listen, settings.settings) }
@@ -99,5 +125,9 @@ class SitaraApplication :
     override fun onCreate() {
         super.onCreate()
         installNewPipe()
+    }
+
+    private companion object {
+        const val RECENT_IN_CAR = 100
     }
 }

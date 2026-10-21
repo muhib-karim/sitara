@@ -22,12 +22,18 @@ import androidx.media3.exoplayer.ExoPlayer
 import androidx.media3.exoplayer.audio.AudioSink
 import androidx.media3.exoplayer.audio.DefaultAudioSink
 import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
+import androidx.media3.session.LibraryResult
+import androidx.media3.session.MediaLibraryService
+import androidx.media3.session.MediaLibraryService.LibraryParams
+import androidx.media3.session.MediaLibraryService.MediaLibrarySession
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSession.MediaItemsWithStartPosition
-import androidx.media3.session.MediaSessionService
 import androidx.media3.session.SessionCommand
+import androidx.media3.session.SessionError
 import androidx.media3.session.SessionResult
 import app.sitara.music.core.model.EqualiserSettings
+import app.sitara.music.core.model.Track
+import com.google.common.collect.ImmutableList
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
 import com.google.common.util.concurrent.SettableFuture
@@ -47,16 +53,19 @@ import kotlinx.coroutines.launch
 
 /**
  * Owns the ExoPlayer and the [PlaybackEngine], so the queue, auto-advance and the sleep timer
- * keep working after every screen is gone. Exposed through a MediaSession whose connections
- * are filtered by [ControllerPolicy]. ExoPlayer handles audio focus (ducking, pausing for a call and
- * resuming after it) and pauses when headphones or Bluetooth disconnect. The queue is saved as it
+ * keep working after every screen is gone. Exposed through a media library session whose connections
+ * are filtered by [ControllerPolicy]; a car browses the library through [LibraryBrowser] and plays from it.
+ * ExoPlayer handles audio focus (ducking, pausing for a call and resuming after it) and pauses when
+ * headphones or Bluetooth disconnect. The queue is saved as it
  * changes and restored, paused, when the service starts again after the process died.
  */
 @OptIn(UnstableApi::class, ExperimentalCoroutinesApi::class)
-class PlaybackService : MediaSessionService() {
+class PlaybackService : MediaLibraryService() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
-    internal var session: MediaSession? = null
+    internal var session: MediaLibrarySession? = null
         private set
+    internal val callback = SessionCallback()
+    private lateinit var libraryBrowser: LibraryBrowser
     private var engine: PlaybackEngine? = null
     private var currentLiked = false
     private lateinit var dependencies: PlaybackDependencies
@@ -85,6 +94,7 @@ class PlaybackService : MediaSessionService() {
         super.onCreate()
         val dependencies = application as PlaybackDependencies
         this.dependencies = dependencies
+        libraryBrowser = LibraryBrowser(dependencies.libraryContent)
         val streams = PrefetchingStreamResolver(dependencies.streamResolver, scope, ElapsedRealtimeTimeSource)
         lateinit var port: Media3PlayerPort
         val stream = ResolvingDataSource.Factory(DefaultDataSource.Factory(this), StreamUriResolver(streams) { port.track(it) })
@@ -130,7 +140,7 @@ class PlaybackService : MediaSessionService() {
         }
         player.addListener(EngineListener(engine))
         this.engine = engine
-        session = MediaSession.Builder(this, player).setCallback(ConnectionPolicyCallback()).build()
+        session = MediaLibrarySession.Builder(this, player, callback).build()
         PlaybackEngineRegistry.attach(engine)
         scope.launch {
             restoreSavedQueue(engine)
@@ -208,7 +218,7 @@ class PlaybackService : MediaSessionService() {
         return length > 0 && isCached(key, 0, length)
     }
 
-    override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaSession? = session
+    override fun onGetSession(controllerInfo: MediaSession.ControllerInfo): MediaLibrarySession? = session
 
     override fun onTaskRemoved(rootIntent: Intent?) {
         val player = session?.player
@@ -273,7 +283,32 @@ class PlaybackService : MediaSessionService() {
         }
     }
 
-    private inner class ConnectionPolicyCallback : MediaSession.Callback {
+    /** Runs a library request on the main thread; a catalogue that cannot be reached becomes an error the car shows. */
+    private fun <T> library(request: suspend () -> LibraryResult<T>): ListenableFuture<LibraryResult<T>> {
+        val result = SettableFuture.create<LibraryResult<T>>()
+        scope.launch {
+            result.set(
+                try {
+                    request()
+                } catch (e: CancellationException) {
+                    result.cancel(false)
+                    throw e
+                } catch (e: Exception) {
+                    LibraryResult.ofError(SessionError(SessionError.ERROR_IO, CATALOGUE_UNREACHABLE))
+                },
+            )
+        }
+        return result
+    }
+
+    /** What a car's pick plays: a song's list from that song, or by voice the songs a search finds. */
+    private suspend fun queueFor(item: MediaItem): Pair<List<Track>, Int>? {
+        val query = item.requestMetadata.searchQuery
+        if (item.mediaId.isEmpty() && query != null) return libraryBrowser.voiceQueue(query).takeIf { it.isNotEmpty() }?.let { it to 0 }
+        return (BrowseId.parse(item.mediaId) as? BrowseId.Song)?.let { libraryBrowser.queueFor(it) }
+    }
+
+    internal inner class SessionCallback : MediaLibrarySession.Callback {
         override fun onConnect(session: MediaSession, controller: MediaSession.ControllerInfo): MediaSession.ConnectionResult {
             val identity = ControllerIdentity(
                 packageName = controller.packageName,
@@ -289,6 +324,14 @@ class PlaybackService : MediaSessionService() {
                         Player.Commands.Builder().addAll(*ControllerPolicy.PLAYBACK_COMMANDS.toIntArray()).build(),
                     )
                     .setAvailableSessionCommands(SessionActions.commands)
+                    .build()
+                ControllerAccess.BROWSE -> MediaSession.ConnectionResult.AcceptedResultBuilder(session)
+                    .setAvailablePlayerCommands(
+                        Player.Commands.Builder().addAll(*ControllerPolicy.BROWSE_COMMANDS.toIntArray()).build(),
+                    )
+                    .setAvailableSessionCommands(
+                        MediaSession.ConnectionResult.DEFAULT_SESSION_AND_LIBRARY_COMMANDS.buildUpon().addSessionCommands(SessionActions.commands.commands).build(),
+                    )
                     .build()
                 ControllerAccess.REJECT -> MediaSession.ConnectionResult.reject()
             }
@@ -324,11 +367,96 @@ class PlaybackService : MediaSessionService() {
         ): ListenableFuture<SessionResult> =
             Futures.immediateFuture(SessionResult(if (onSessionAction(customCommand.customAction)) SessionResult.RESULT_SUCCESS else SessionResult.RESULT_ERROR_NOT_SUPPORTED))
 
+        override fun onGetLibraryRoot(
+            session: MediaLibrarySession,
+            browser: MediaSession.ControllerInfo,
+            params: LibraryParams?,
+        ): ListenableFuture<LibraryResult<MediaItem>> = Futures.immediateFuture(LibraryResult.ofItem(libraryBrowser.root.toMediaItem(), params))
+
+        override fun onGetItem(
+            session: MediaLibrarySession,
+            browser: MediaSession.ControllerInfo,
+            mediaId: String,
+        ): ListenableFuture<LibraryResult<MediaItem>> = library<MediaItem> {
+            val item = BrowseId.parse(mediaId)?.let { libraryBrowser.item(it) }
+            if (item == null) LibraryResult.ofError(SessionError.ERROR_BAD_VALUE) else LibraryResult.ofItem(item.toMediaItem(), null)
+        }
+
+        override fun onGetChildren(
+            session: MediaLibrarySession,
+            browser: MediaSession.ControllerInfo,
+            parentId: String,
+            page: Int,
+            pageSize: Int,
+            params: LibraryParams?,
+        ): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> = library<ImmutableList<MediaItem>> {
+            val children = BrowseId.parse(parentId)?.let { libraryBrowser.children(it) }
+            if (children == null) LibraryResult.ofError(SessionError.ERROR_BAD_VALUE) else LibraryResult.ofItemList(children.page(page, pageSize).map { it.toMediaItem() }, params)
+        }
+
+        override fun onSearch(
+            session: MediaLibrarySession,
+            browser: MediaSession.ControllerInfo,
+            query: String,
+            params: LibraryParams?,
+        ): ListenableFuture<LibraryResult<Void>> = library<Void> {
+            session.notifySearchResultChanged(browser, query, libraryBrowser.search(query).size, params)
+            LibraryResult.ofVoid()
+        }
+
+        override fun onGetSearchResult(
+            session: MediaLibrarySession,
+            browser: MediaSession.ControllerInfo,
+            query: String,
+            page: Int,
+            pageSize: Int,
+            params: LibraryParams?,
+        ): ListenableFuture<LibraryResult<ImmutableList<MediaItem>>> = library<ImmutableList<MediaItem>> {
+            LibraryResult.ofItemList(libraryBrowser.search(query).page(page, pageSize).map { it.toMediaItem() }, params)
+        }
+
+        /**
+         * A car picked a song (or asked by voice): the engine queues it, as it does every queue, and the session is handed
+         * the engine's own playlist back, as for playback resumption.
+         */
+        override fun onSetMediaItems(
+            mediaSession: MediaSession,
+            controller: MediaSession.ControllerInfo,
+            mediaItems: MutableList<MediaItem>,
+            startIndex: Int,
+            startPositionMs: Long,
+        ): ListenableFuture<MediaItemsWithStartPosition> {
+            val result = SettableFuture.create<MediaItemsWithStartPosition>()
+            scope.launch {
+                val picked = mediaItems.firstOrNull()
+                val queue = try {
+                    picked?.let { queueFor(it) }
+                } catch (e: CancellationException) {
+                    throw e
+                } catch (e: Exception) {
+                    null
+                }
+                val engine = engine
+                if (queue == null || engine == null) {
+                    result.setException(IllegalArgumentException("Nothing to play for ${picked?.mediaId}"))
+                    return@launch
+                }
+                engine.play(queue.first, queue.second)
+                val player = mediaSession.player
+                result.set(MediaItemsWithStartPosition(List(player.mediaItemCount, player::getMediaItemAt), player.currentMediaItemIndex, C.TIME_UNSET))
+            }
+            return result
+        }
+
         /** The app queues through the engine, never through the session, so no controller may add items. */
         override fun onAddMediaItems(
             mediaSession: MediaSession,
             controller: MediaSession.ControllerInfo,
             mediaItems: MutableList<MediaItem>,
         ): ListenableFuture<MutableList<MediaItem>> = Futures.immediateFailedFuture(UnsupportedOperationException("Sitara does not accept external media items"))
+    }
+
+    private companion object {
+        const val CATALOGUE_UNREACHABLE = "Can’t reach YouTube Music right now. Downloads play with no connection."
     }
 }

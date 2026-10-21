@@ -98,6 +98,13 @@ class SongDownloads(
 
     fun removeAll() = DownloadService.sendRemoveAllDownloads(context, SitaraDownloadService::class.java, false)
 
+    /** Songs downloaded in full, newest first, read from the download index so they are right before [songs] has loaded. */
+    suspend fun downloaded(): List<Track> = withContext(Dispatchers.IO) {
+        manager.downloadIndex.getDownloads(Download.STATE_COMPLETED).use { cursor ->
+            buildList { while (cursor.moveToNext()) add(cursor.download) }
+        }
+    }.sortedByDescending { it.startTimeMs }.mapNotNull { DownloadedTrack.decode(it.request.data) }
+
     /** Starts the service so downloads left unfinished when the process ended carry on; call while the app is in the foreground. */
     fun resumeUnfinished() = DownloadService.start(context, SitaraDownloadService::class.java)
 
