@@ -12,10 +12,10 @@ SCREENS = {
     "home": "Good evening",
     "player": "Collapse player",
     "lyrics": "Sitara, light the dark",
-    "library": "Night Drive",
+    "library": "Liked songs",
     "mini": "Open player",
     "settings": "Appearance",
-    "search": "Try a search",
+    "search": "Recent searches",
 }
 
 
