@@ -87,7 +87,7 @@ internal fun StatsShareSheet(stats: ListeningStats, range: StatsRange, onDismiss
  * the range, time heard, the top artist and the top five songs. TalkBack reads it as one summary.
  */
 @Composable
-internal fun StatsShareCard(stats: ListeningStats, range: StatsRange, modifier: Modifier = Modifier) {
+fun StatsShareCard(stats: ListeningStats, range: StatsRange, modifier: Modifier = Modifier) {
     val top = stats.topSongs.take(CARD_SONGS)
     val artist = stats.topArtists.firstOrNull()
     val heading = "${range.label} on Sitara"

@@ -2,6 +2,7 @@ package app.sitara.music
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -18,12 +19,14 @@ import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollToIndex
 import androidx.compose.ui.test.performScrollToKey
+import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeLeft
 import androidx.compose.ui.test.swipeUp
 import androidx.compose.ui.unit.Density
 import androidx.test.core.app.ApplicationProvider
+import app.sitara.music.core.designsystem.SitaraSpacing
 import app.sitara.music.core.designsystem.SitaraTheme
 import app.sitara.music.core.model.AccentColor
 import app.sitara.music.core.model.DarkMode
@@ -32,6 +35,7 @@ import app.sitara.music.core.model.EqualiserPreset
 import app.sitara.music.core.model.EqualiserSettings
 import app.sitara.music.core.model.Library
 import app.sitara.music.core.model.LibraryLayout
+import app.sitara.music.core.model.ListeningStats
 import app.sitara.music.core.model.PlaybackTuning
 import app.sitara.music.core.model.SearchFilter
 import app.sitara.music.core.model.SearchResults
@@ -49,6 +53,7 @@ import app.sitara.music.feature.library.LibraryState
 import app.sitara.music.feature.library.SavedIds
 import app.sitara.music.feature.library.SavedLibrary
 import app.sitara.music.feature.library.SongActions
+import app.sitara.music.feature.library.StatsShareCard
 import app.sitara.music.feature.library.StatsState
 import app.sitara.music.feature.player.EqualiserPanel
 import app.sitara.music.feature.player.LyricsState
@@ -67,6 +72,7 @@ import app.sitara.music.source.fake.SampleCatalog
 import coil3.SingletonImageLoader
 import coil3.annotation.DelicateCoilApi
 import com.github.takahirom.roborazzi.captureRoboImage
+import java.time.ZoneOffset
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.runBlocking
@@ -136,6 +142,7 @@ class ScreenshotTest {
         filter: SearchFilter = SearchFilter.SONGS,
         detail: DetailState? = null,
         route: DetailRoute? = null,
+        pages: DetailPages? = null,
         saved: LibraryState = LibraryState.Ready(sampleSavedLibrary(library)),
         homeFeed: HomeFeed = home,
         savedIds: SavedIds = SavedIds(),
@@ -161,7 +168,7 @@ class ScreenshotTest {
                     search = search,
                     player = playerState.copy(equaliser = equaliser),
                     actions = PlayerActions.None,
-                    details = detail?.let(::FixedPage) ?: SampleDetailPages(source),
+                    details = pages ?: detail?.let(::FixedPage) ?: SampleDetailPages(source),
                     onQueryChange = {},
                     onSearchFilterChange = {},
                     onRetrySearch = {},
@@ -355,6 +362,20 @@ class ScreenshotTest {
                 .associate { (track, state) -> track.id to state },
         ),
     )
+    @Test fun statsDark() = shot("stats", dark = true, tab = Tab.LIBRARY, route = DetailRoute.Stats)
+    @Test fun statsLight() = shot("stats", dark = false, tab = Tab.LIBRARY, route = DetailRoute.Stats)
+    @Test fun statsTopArtistsAndAlbums() = shot("stats_top_artists", dark = true, tab = Tab.LIBRARY, route = DetailRoute.Stats) {
+        compose.onNodeWithTag("stats-content").performScrollToNode(hasText("Top albums"))
+    }
+    @Test fun statsEmpty() = shot(
+        "stats_empty", dark = true, tab = Tab.LIBRARY, route = DetailRoute.Stats,
+        pages = object : DetailPages by SampleDetailPages(source) {
+            override fun stats(range: StatsRange) = MutableStateFlow<StatsState>(StatsState.Ready(ListeningStats.of(emptyList(), emptyList(), ZoneOffset.UTC)))
+        },
+    )
+    @Test fun statsShareCard() = sheet("stats_share_card") {
+        StatsShareCard(sampleListeningStats(StatsRange.WEEK), StatsRange.WEEK, Modifier.padding(SitaraSpacing.Gutter))
+    }
     @Test fun addToPlaylistSheet() = sheet("add_to_playlist") { AddToPlaylist(Fixtures.playlist.tracks.first(), sampleSavedLibrary(library).playlists, {}, {}) }
 
     // Sheets open in a dialog window; their content is captured on the sheet's own surface colour.
