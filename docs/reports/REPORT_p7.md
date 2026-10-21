@@ -95,7 +95,14 @@ finds it however long the page is), and Library still shows "Liked songs".
 
 ## CI
 
-FINAL_RUNS
+Green on `eb82c1f`, the last code commit, on top of every P7 and widget commit:
+- **CI** 39573956302: ktlint, unit tests (parsers, scorer, importer, controller, quality, formats), Room schema
+  check, screenshot comparison, debug APK.
+- **Secret scan** 39573956409.
+- **Device screens** 39573956418: the API 34 captures, plus the widget placement check on the minified build.
+
+P7 alone was green at `fed0c3e` (CI 39566449584, Secret scan 39566449657, Device screens 39566449527) before the
+widget fix started.
 
 Pushed in small batches, tests first: the engine tests with the engine, two compile and lint fixes, the import UI
 tests with the UI, the quality tests with the quality code, two fixes, then the baselines and docs.
@@ -120,6 +127,49 @@ Notes:
   39565698457 recorded the baselines.
 - **Device screens.** Runs on intermediate commits were cancelled or superseded by newer pushes; only the run on the
   final commit counts.
+
+## Widget fix (priority addendum)
+
+Found on a real Pixel launcher after the 0.9.6 release: the release build's home-screen widget, once placed, stayed on
+Glance's loading spinner for minutes and never drew, with no Glance error in logcat. The picker preview also showed the
+two-row layout squeezed into the 4 × 1 box, with the play button cut off.
+
+- **Reproduced first** (`6a35130`, `fc57f11`, `14b494b`). A new check in the Device screens workflow builds the
+  minified (R8) release APK, signed with the debug key, and installs it on the API 34 emulator. It grants bind
+  permission (`appwidget grantbind`) and runs `WidgetCheckInstrumentation`, a plain `Instrumentation` in Java with no
+  test library. That instrumentation binds Sitara's provider through an `AppWidgetHost` at the 4 × 1 size, waits up to
+  10 s for "Play something", saves a picture of the placed widget, and prints WIDGET DRAWN or WIDGET CHECK FAILED.
+  The workflow keeps the result, the picture and logcat as artifacts. On the 0.9.6 code: "WIDGET CHECK FAILED: still
+  loading after 10000 ms" (Device screens 39570187961).
+- **Cause, from that run's logcat.** `WM-InputMerger: Trouble instantiating androidx.work.OverwritingInputMerger …
+  has no zero argument constructor`, then `WM-WorkerWrapper: Could not create Input Merger`. WorkManager creates the
+  input merger by reflection before it runs any worker, and Glance draws app widgets in a WorkManager job
+  (`SessionWorker`). WorkManager's own consumer rule keeps `InputMerger` subclasses, but under R8's full mode (AGP 9's
+  default) a class-only keep no longer keeps the no-argument constructor. So the session never started, the launcher
+  kept the loading layout, and Glance had nothing to log. Debug builds and Robolectric tests were not minified, so they
+  never showed it.
+- **Fix** (`9717b6c`). `app/proguard-rules.pro` keeps `public <init>()` of every `androidx.work.InputMerger`
+  subclass. It also keeps Glance's `ActionCallback` implementations' no-argument constructors, which Glance creates the
+  same way when a widget button is tapped. That second rule is a precaution: the check does not tap buttons. Device
+  screens 39572246142: "WIDGET DRAWN in 500 ms", with the picture in
+  [docs/screenshots/widget_placed_release.png](../screenshots/widget_placed_release.png). It shows Material You colours,
+  since wallpaper colours are on by default.
+- **Regression checks.** The placement check runs on every push to main. A workflow step also fails if R8's mapping
+  stops listing `OverwritingInputMerger.<init>()`.
+- **Preview.** `widget_preview.xml` is now a 300 × 72 dp picture of the one-row widget (cover, title and artist,
+  previous, play on the accent disc, next), every control inside the frame. `android:previewLayout` (API 31+) was not
+  added, since nothing here can check how launchers render it.
+- **Mistakes along the way, caught by CI.**
+  - The first check used AndroidJUnitRunner. R8 needed a `-dontwarn` for Error Prone's annotations (`fc57f11`), and
+    the runner then crashed because the minified app had dropped `androidx.tracing`. A plain Instrumentation replaced it
+    (`14b494b`).
+  - `testBuildType = "release"` made AGP 9 create unit-test tasks only for release, so CI's
+    `:app:verifyRoborazziDebug` disappeared (CI 39572246269). The default came back, and the check now drives the
+    minified app with the debug test APK, since its code uses nothing from the app (`eb82c1f`).
+- **Not verified:**
+  - the fixed release build on a real launcher (Pixel, One UI);
+  - the now-playing state on a placed widget (the check covers the nothing-playing state);
+  - the precautionary ActionCallback rule, through a button tap in a minified build.
 
 ## Not verified
 
