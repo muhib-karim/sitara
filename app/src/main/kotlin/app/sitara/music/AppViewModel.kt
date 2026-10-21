@@ -152,8 +152,9 @@ class AppViewModel(private val app: SitaraApplication) :
     private val radio = MutableStateFlow(RadioStatus.READY)
 
     private val lyricsRetries = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    private val lyricsPicks = MutableSharedFlow<String>(extraBufferCapacity = 1)
 
-    // Looked up when a song starts; a retry looks up the same song again.
+    // Looked up when a song starts; a retry looks up the same song again, a pick shows another source's lyrics at once and is kept for the song.
     private val lyrics: StateFlow<LyricsState> = player.state.map { it.queue.current }.distinctUntilChangedBy { it?.id }
         .flatMapLatest<Track?, LyricsState> { track ->
             if (track == null) {
@@ -161,7 +162,15 @@ class AppViewModel(private val app: SitaraApplication) :
             } else {
                 lyricsRetries.onStart { emit(Unit) }.transformLatest {
                     emit(LyricsState.Loading)
-                    emit(lookUpLyrics(track))
+                    val found = lookUpLyrics(track)
+                    emit(found)
+                    if (found is LyricsState.Found) {
+                        lyricsPicks.collect { id ->
+                            val match = found.matches.firstOrNull { it.providerId == id } ?: return@collect
+                            emit(found.copy(lyrics = match.lyrics))
+                            app.lyrics.choose(track, id)
+                        }
+                    }
                 }
             }
         }
@@ -221,6 +230,7 @@ class AppViewModel(private val app: SitaraApplication) :
             shuffled = s.queue.shuffled,
             repeatMode = s.queue.repeatMode,
             lyrics = l,
+            lyricsSources = app.lyrics.names,
             sleepTimer = when (timer) {
                 SleepTimerState.Off -> SleepTimerStatus.Off
                 SleepTimerState.EndOfTrack -> SleepTimerStatus.EndOfTrack
@@ -311,7 +321,7 @@ class AppViewModel(private val app: SitaraApplication) :
     private suspend fun <T : Any> browse(page: suspend BrowseSource.() -> T?): T = app.youtube.page() ?: throw NoSuchElementException("No catalogue has this page")
 
     private suspend fun lookUpLyrics(track: Track): LyricsState = try {
-        app.lyrics.lookUp(track).firstOrNull()?.let { LyricsState.Found(it.lyrics) } ?: LyricsState.NotFound
+        app.lyrics.lookUp(track).takeIf { it.isNotEmpty() }?.let { LyricsState.Found(it.first().lyrics, it) } ?: LyricsState.NotFound
     } catch (e: CancellationException) {
         throw e
     } catch (e: Exception) {
@@ -319,7 +329,17 @@ class AppViewModel(private val app: SitaraApplication) :
     }
 
     override fun retryLyrics() {
-        if (lyrics.value == LyricsState.Failed) lyricsRetries.tryEmit(Unit)
+        val track = player.state.value.queue.current ?: return
+        if (lyrics.value != LyricsState.Failed && lyrics.value != LyricsState.NotFound) return
+        // A source that found nothing is not asked again for a week unless its answer is forgotten first.
+        viewModelScope.launch {
+            app.library.lyrics.forgetMisses(track.id)
+            lyricsRetries.emit(Unit)
+        }
+    }
+
+    override fun chooseLyrics(providerId: String) {
+        lyricsPicks.tryEmit(providerId)
     }
 
     override fun startRadio() {

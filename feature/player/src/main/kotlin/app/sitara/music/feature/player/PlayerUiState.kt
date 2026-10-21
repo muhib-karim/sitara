@@ -6,6 +6,7 @@ import app.sitara.music.core.model.PlaybackTuning
 import app.sitara.music.core.model.RepeatMode
 import app.sitara.music.core.model.StreamFormat
 import app.sitara.music.core.model.Track
+import app.sitara.music.source.lyrics.LyricsMatch
 
 /** Everything the player surfaces render; produced by the app from the media controller. */
 data class PlayerUiState(
@@ -19,6 +20,8 @@ data class PlayerUiState(
     val shuffled: Boolean = false,
     val repeatMode: RepeatMode = RepeatMode.OFF,
     val lyrics: LyricsState = LyricsState.NotFound,
+    /** Every lyrics source the app asks, by name, in the order they are asked. */
+    val lyricsSources: List<String> = emptyList(),
     val sleepTimer: SleepTimerStatus = SleepTimerStatus.Off,
     val radio: RadioStatus = RadioStatus.READY,
     /** Whether the current track is in Liked songs. */
@@ -41,7 +44,8 @@ data class PlayerUiState(
 sealed interface LyricsState {
     data object Loading : LyricsState
 
-    data class Found(val lyrics: Lyrics) : LyricsState
+    /** [lyrics] are shown; [matches] are every source's lyrics for the song, best first. */
+    data class Found(val lyrics: Lyrics, val matches: List<LyricsMatch> = listOf(LyricsMatch(lyrics.source.orEmpty(), lyrics))) : LyricsState
 
     data object NotFound : LyricsState
 
@@ -99,8 +103,11 @@ interface PlayerActions {
     /** Puts the Up next song removed last back where it was. */
     fun undoRemoveUpNext()
 
-    /** Looks up the current song's lyrics again after a failure. */
+    /** Looks up the current song's lyrics again after a failure, or asks the sources that found none again. */
     fun retryLyrics()
+
+    /** Shows the current song's lyrics from the source [providerId] from now on. */
+    fun chooseLyrics(providerId: String)
 
     fun setEqualiser(equaliser: EqualiserSettings)
 
@@ -134,6 +141,7 @@ interface PlayerActions {
         override fun removeUpNext(index: Int) = Unit
         override fun undoRemoveUpNext() = Unit
         override fun retryLyrics() = Unit
+        override fun chooseLyrics(providerId: String) = Unit
         override fun setEqualiser(equaliser: EqualiserSettings) = Unit
         override fun openSystemEqualiser() = Unit
         override fun setTrimDb(db: Int) = Unit

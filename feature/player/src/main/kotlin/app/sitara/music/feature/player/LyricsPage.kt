@@ -58,11 +58,12 @@ private const val LINE_CONTENT_TYPE = "lyric"
  * Synced lyrics: the active line stays white and in focus and the list follows it; tapping a line seeks. Scrolling by
  * hand stops the following until "Back to current line" resumes it.
  * Plain lyrics have no timing, so they are shown as static text with no highlight, scrolling or seeking.
- * Both end with a credit to where they came from.
+ * Both end with a credit to where they came from. With none found, the sources asked are named and can be asked again.
  */
 @Composable
 fun LyricsPage(
     state: LyricsState,
+    sources: List<String>,
     positionMs: Long,
     contentColor: Color,
     onSeek: (Long) -> Unit,
@@ -71,13 +72,22 @@ fun LyricsPage(
 ) {
     when (state) {
         LyricsState.Loading -> LyricsMessage("Looking for lyrics…", contentColor, modifier)
-        LyricsState.NotFound -> LyricsMessage("No lyrics found", contentColor, modifier)
+        LyricsState.NotFound -> LyricsMessage(notFoundText(sources), contentColor, modifier) {
+            PillButton("Try again", onRetry, Modifier.padding(top = 16.dp))
+        }
         LyricsState.Failed -> LyricsMessage("Lyrics didn’t load. Check your connection, then try again.", contentColor, modifier) {
             PillButton("Try again", onRetry, Modifier.padding(top = 16.dp))
         }
         is LyricsState.Found ->
             if (state.lyrics.synced) SyncedLyrics(state.lyrics, positionMs, contentColor, onSeek, modifier) else PlainLyrics(state.lyrics, contentColor, modifier)
     }
+}
+
+/** "No lyrics found in LRCLIB or YouTube Music". */
+private fun notFoundText(sources: List<String>): String = when (sources.size) {
+    0 -> "No lyrics found"
+    1 -> "No lyrics found in ${sources[0]}"
+    else -> "No lyrics found in ${sources.dropLast(1).joinToString(", ")} or ${sources.last()}"
 }
 
 @Composable

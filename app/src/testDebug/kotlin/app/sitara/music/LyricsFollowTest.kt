@@ -45,7 +45,7 @@ class LyricsFollowTest {
 
     private fun render() = compose.setContent {
         SitaraTheme(SitaraSettings(reducedMotion = true)) {
-            LyricsPage(LyricsState.Found(lyrics), position, Color.White, { seeks += it }, {}, Modifier.height(320.dp).testTag("lyrics"))
+            LyricsPage(LyricsState.Found(lyrics), emptyList(), position, Color.White, { seeks += it }, {}, Modifier.height(320.dp).testTag("lyrics"))
         }
     }
 
