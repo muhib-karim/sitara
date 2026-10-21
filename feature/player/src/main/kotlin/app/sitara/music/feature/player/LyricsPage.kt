@@ -61,7 +61,7 @@ private const val LINE_CONTENT_TYPE = "lyric"
  * Synced lyrics: the active line stays white and in focus and the list follows it; tapping a line seeks. Scrolling by
  * hand stops the following until "Back to current line" resumes it.
  * Plain lyrics have no timing, so they are shown as static text with no highlight, scrolling or seeking.
- * While Translate is on, each line's translation sits under it. Both end with a credit to where they came from. With none found, the sources asked are named and can be asked again.
+ * Lines in right-to-left scripts (Urdu, Arabic) start at the right edge. While Translate is on, each line's translation sits under it. Both end with a credit to where they came from. With none found, the sources asked are named and can be asked again.
  */
 @Composable
 fun LyricsPage(
@@ -133,7 +133,21 @@ private class LinePicking(val selection: IntRange?, val onChange: (IntRange?) ->
 @Composable
 private fun TranslatedLine(text: String?, contentColor: Color) {
     if (text.isNullOrEmpty()) return
-    Text(text, style = TranslationStyle, color = contentColor.copy(alpha = 0.72f), modifier = Modifier.padding(top = 4.dp))
+    Text(text, style = TranslationStyle, color = contentColor.copy(alpha = 0.72f), modifier = Modifier.fillMaxWidth().padding(top = 4.dp))
+}
+
+/**
+ * Whether [text] reads right to left (Urdu, Arabic, Hebrew): its first character with a strong direction does. Text
+ * lays such a line out right to left and starts it at the right edge on its own; this tells the focus scale where to grow from.
+ */
+internal fun isRightToLeft(text: String): Boolean {
+    for (char in text) {
+        when (Character.getDirectionality(char)) {
+            Character.DIRECTIONALITY_RIGHT_TO_LEFT, Character.DIRECTIONALITY_RIGHT_TO_LEFT_ARABIC -> return true
+            Character.DIRECTIONALITY_LEFT_TO_RIGHT -> return false
+        }
+    }
+    return false
 }
 
 /** "Lyrics from LRCLIB", under the last line. */
@@ -167,7 +181,7 @@ private fun PlainLyrics(lyrics: Lyrics, translation: List<String>?, contentColor
                     .graphicsLayer { alpha = if (picking.selection == null || i in picking.selection) 1f else ArtworkScrim.InactiveLyric }
                     .padding(horizontal = 28.dp, vertical = 6.dp),
             ) {
-                Text(line.text, style = PlainStyle, color = contentColor)
+                Text(line.text, style = PlainStyle, color = contentColor, modifier = Modifier.fillMaxWidth())
                 TranslatedLine(translation?.getOrNull(i), contentColor)
             }
         }
@@ -203,6 +217,7 @@ private fun SyncedLyrics(lyrics: Lyrics, translation: List<String>?, positionMs:
             contentPadding = PaddingValues(top = 24.dp, bottom = viewportHeight * 0.65f),
         ) {
             itemsIndexed(lyrics.lines, key = { i, _ -> i }, contentType = { _, _ -> LINE_CONTENT_TYPE }) { i, line ->
+                val rtl = isRightToLeft(line.text)
                 // While picking, the picked lines are the ones in focus.
                 val focused = picking.selection?.contains(i) ?: (i == active)
                 val distance = if (isPicking || active < 0) (if (focused) 0 else 2) else abs(i - active)
@@ -220,13 +235,14 @@ private fun SyncedLyrics(lyrics: Lyrics, translation: List<String>?, positionMs:
                             scaleX = scale
                             scaleY = scale
                             this.alpha = alpha
-                            transformOrigin = TransformOrigin(0f, 0.5f)
+                            // A right-to-left line grows from its right edge, where it starts.
+                            transformOrigin = TransformOrigin(if (rtl) 1f else 0f, 0.5f)
                         }
                         // Softer the further a line is from the one being sung; static, so reduced motion keeps it.
                         .blur((distance * 1.2f).coerceAtMost(3f).dp),
                 ) {
-                    Column {
-                        Text(line.text, style = LineStyle, color = contentColor)
+                    Column(Modifier.fillMaxWidth()) {
+                        Text(line.text, style = LineStyle, color = contentColor, modifier = Modifier.fillMaxWidth())
                         TranslatedLine(translation?.getOrNull(i), contentColor)
                     }
                 }
