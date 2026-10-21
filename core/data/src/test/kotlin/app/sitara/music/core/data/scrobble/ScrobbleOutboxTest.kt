@@ -41,7 +41,7 @@ class ScrobbleOutboxTest {
         }
     }
 
-    private fun play(n: Int, startedAtMs: Long = 1_000_000L + n * 300_000L) = Scrobble("t$n", "Song $n", "Artist", "Album", 200_000, startedAtMs)
+    private fun play(n: Int, startedAtMs: Long = now - 86_400_000L + n * 300_000L) = Scrobble("t$n", "Song $n", "Artist", "Album", 200_000, startedAtMs)
 
     private val lb = ScrobbleService.LISTENBRAINZ
     private val lastFm = ScrobbleService.LASTFM
@@ -51,8 +51,8 @@ class ScrobbleOutboxTest {
 
     @Test
     fun `the same play reported again is kept once`() = runTest {
-        outbox.add(play(1), setOf(lb))
-        outbox.add(play(1), setOf(lb))
+        assertEquals(true, outbox.add(play(1), setOf(lb)))
+        assertEquals("nothing new", false, outbox.add(play(1), setOf(lb)))
         assertEquals(1, outbox.pendingCount(lb).first())
     }
 

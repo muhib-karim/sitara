@@ -35,7 +35,7 @@ data class ScrobbleEntity(
 @Dao
 interface ScrobbleDao {
     @Insert(onConflict = OnConflictStrategy.IGNORE)
-    suspend fun insert(rows: List<ScrobbleEntity>)
+    suspend fun insert(rows: List<ScrobbleEntity>): List<Long>
 
     @Query("SELECT * FROM scrobble_outbox WHERE service = :service AND sent_at IS NULL ORDER BY started_at, track_id LIMIT :limit")
     suspend fun pending(service: String, limit: Int): List<ScrobbleEntity>
@@ -65,10 +65,11 @@ interface ScrobbleDao {
  * same start time, which the services take as the same listen.
  */
 class ScrobbleOutbox internal constructor(private val dao: ScrobbleDao, private val clock: () -> Long = System::currentTimeMillis) {
-    /** Keeps [scrobble] for each of [services]; one already kept (the same play reported again) stays as it is. */
-    suspend fun add(scrobble: Scrobble, services: Collection<ScrobbleService>) {
+    /** Keeps [scrobble] for each of [services]; one already kept (the same play reported again) stays as it is. True when anything new was kept. */
+    suspend fun add(scrobble: Scrobble, services: Collection<ScrobbleService>): Boolean {
         dao.deleteSentBefore(clock() - KEEP_SENT_MS)
-        dao.insert(services.map { scrobble.toEntity(it) })
+        // Room answers -1 for each row the conflict strategy ignored.
+        return dao.insert(services.map { scrobble.toEntity(it) }).any { it != -1L }
     }
 
     fun pendingCount(service: ScrobbleService): Flow<Int> = dao.pendingCount(service.name)
