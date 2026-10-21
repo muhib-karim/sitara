@@ -14,6 +14,7 @@ class DetailRouteTest {
             DetailRoute.Album("al-afterglow"),
             DetailRoute.LikedSongs,
             DetailRoute.UserPlaylist(7),
+            DetailRoute.Mood("ggMPOg1uX2NXUkgxdW0zUHJp", "R&B | Soul: 90s"),
         )
 
         assertEquals(routes, routes.map { decodeDetailRoute(it.encode()) })
@@ -31,5 +32,7 @@ class DetailRouteTest {
         assertNull(decodeDetailRoute("artist"))
         assertNull(decodeDetailRoute(""))
         assertNull(decodeDetailRoute("mine:not-a-number"))
+        assertNull(decodeDetailRoute("mood:ggMPOg1uX2NXUkgxdW0zUHJp"))
+        assertNull(decodeDetailRoute("mood:|Blues"))
     }
 }

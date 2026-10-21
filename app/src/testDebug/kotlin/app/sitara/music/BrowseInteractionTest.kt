@@ -398,11 +398,26 @@ class BrowseInteractionTest {
         val retried = mutableListOf<DetailRoute>()
         val failing = object : DetailPages {
             override fun state(route: DetailRoute) = MutableStateFlow<DetailState>(DetailState.Failed)
+            override fun moodPage(route: DetailRoute.Mood) = MutableStateFlow<FeedState>(FeedState.Failed)
             override fun retry(route: DetailRoute) { retried += route }
         }
         render(details = failing, initialDetail = route)
         compose.onNodeWithText("Try again").performClick()
         assertEquals(listOf(route), retried)
+    }
+
+    @Test fun failedMoodPageSaysWhichAndRetriesItself() {
+        val route = DetailRoute.Mood("sample:mood:Jazz", "Jazz")
+        val retried = mutableListOf<DetailRoute>()
+        val failing = object : DetailPages {
+            override fun state(route: DetailRoute) = MutableStateFlow<DetailState>(DetailState.Failed)
+            override fun moodPage(route: DetailRoute.Mood) = MutableStateFlow<FeedState>(FeedState.Failed)
+            override fun retry(route: DetailRoute) { retried += route }
+        }
+        render(details = failing, initialDetail = route)
+        compose.onNodeWithText("Jazz didn’t load. Check your connection, then try again.").assertIsDisplayed()
+        compose.onNodeWithText("Try again").performClick()
+        assertEquals(listOf<DetailRoute>(route), retried)
     }
 
     @Test fun searchFiltersSwitchTheResultKindAndOpenPages() {
@@ -430,16 +445,6 @@ class BrowseInteractionTest {
         compose.onNodeWithContentDescription("${picks[4].title} by ${picks[4].artist}").performClick()
         assertEquals(picks, queue)
         assertEquals(4, index)
-    }
-
-    @Test fun searchSuggestionsAreActions() {
-        var query = ""
-        render(Tab.SEARCH, onQuery = { query = it })
-        compose.onNodeWithTag("search-content").performScrollToIndex(4)
-        compose.onNodeWithText("Jazz piano").performClick()
-        assertEquals("Jazz piano", query)
-        compose.onNodeWithContentDescription("Clear search").performClick()
-        assertEquals("", query)
     }
 
     @Test fun failedSearchOffersRetry() {

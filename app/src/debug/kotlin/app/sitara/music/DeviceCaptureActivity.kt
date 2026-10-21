@@ -24,6 +24,8 @@ import app.sitara.music.core.model.SitaraSettings
 import app.sitara.music.feature.home.HomeFeed
 import app.sitara.music.feature.library.LibraryState
 import app.sitara.music.feature.library.SavedLibrary
+import app.sitara.music.feature.search.MoodsState
+import app.sitara.music.feature.search.SearchLanding
 import app.sitara.music.feature.search.SearchState
 import app.sitara.music.source.fake.FakeMusicSource
 import app.sitara.music.source.fake.SampleCatalog
@@ -46,14 +48,14 @@ class DeviceCaptureActivity : ComponentActivity() {
     }
 }
 
-private data class CaptureCatalog(val home: HomeFeed, val library: SavedLibrary, val lyrics: Lyrics)
+private data class CaptureCatalog(val home: HomeFeed, val library: SavedLibrary, val lyrics: Lyrics, val moods: MoodsState)
 
 @Composable
 private fun CaptureScreen(screen: String, dark: Boolean, reduced: Boolean) {
     val source = remember { FakeMusicSource() }
     val catalog by produceState<CaptureCatalog?>(null, source) {
         val saved = sampleSavedLibrary(source.library())
-        value = CaptureCatalog(sampleHomeFeed(source.home(), saved), saved, source.lyrics(SampleCatalog.tracks.first())!!)
+        value = CaptureCatalog(sampleHomeFeed(source.home(), saved), saved, source.lyrics(SampleCatalog.tracks.first())!!, MoodsState.Ready(source.moods()))
     }
     val ready = catalog ?: return
     val player = remember(ready) { DemoPlayer(SampleCatalog.tracks, ready.lyrics) }
@@ -61,6 +63,7 @@ private fun CaptureScreen(screen: String, dark: Boolean, reduced: Boolean) {
     var query by remember { mutableStateOf("") }
     var filter by remember { mutableStateOf(SearchFilter.SONGS) }
     val results by produceState(SearchResults.empty(), query, filter) { value = source.search(query, filter) }
+    val suggestions by produceState(emptyList<String>(), query) { value = source.suggestions(query).filterNot { it.equals(query.trim(), ignoreCase = true) } }
     val details = remember(source) { SampleDetailPages(source) }
     Box(Modifier.fillMaxSize().semantics { contentDescription = "Device capture: $screen" }) {
         SitaraShell(
@@ -88,6 +91,7 @@ private fun CaptureScreen(screen: String, dark: Boolean, reduced: Boolean) {
             playerExpanded = screen == "player" || screen == "lyrics",
             playerPage = if (screen == "lyrics") 1 else 0,
             greetingText = "Good evening",
+            searchLanding = SearchLanding(listOf("Lumen Drift", "night drive"), suggestions, ready.moods),
         )
     }
 }

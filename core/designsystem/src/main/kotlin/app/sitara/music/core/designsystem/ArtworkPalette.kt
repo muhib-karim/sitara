@@ -28,6 +28,7 @@ object ArtworkPalette {
     private const val WHITE = 0xFFFFFFFF.toInt()
     private const val NEAR_BLACK = 0xFF080808.toInt()
     private const val BLACK = 0xFF000000.toInt()
+    private const val BLACK = 0xFF000000.toInt()
 
     /** [colors]: the cover's most common colour first, then the one to accent with. */
     fun themeFrom(colors: List<Int>, dark: Boolean): ArtworkTheme {
@@ -95,6 +96,9 @@ object ArtworkPalette {
     }
 
     private fun bestOn(color: Int): Int = if (contrast(color, WHITE) >= contrast(color, NEAR_BLACK)) WHITE else NEAR_BLACK
+
+    /** Text colour for a solid [block]: pure black or white, whichever contrasts more; one of the two always reaches 4.58:1. */
+    fun inkOn(block: Int): Int = if (contrast(block, WHITE) >= contrast(block, BLACK)) WHITE else BLACK
 
     fun relativeLuminance(argb: Int): Double {
         fun channel(c: Int): Double {

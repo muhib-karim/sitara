@@ -26,6 +26,17 @@ class ArtworkPaletteTest {
     }
 
     @Test
+    fun `ink on any colour block is black or white, whichever reads at 4_5 to 1 or better`() {
+        for (hue in 0 until 360 step 10) for (lightness in listOf(0.1f, 0.3f, 0.45f, 0.5f, 0.55f, 0.7f, 0.9f)) {
+            val block = ArtworkPalette.fromHsl(hue.toFloat(), 0.7f, lightness)
+            val ink = ArtworkPalette.inkOn(block)
+            assertTrue(ink == 0xFF000000.toInt() || ink == 0xFFFFFFFF.toInt())
+            assertTrue("hue $hue at $lightness: ${ArtworkPalette.contrast(block, ink)}", ArtworkPalette.contrast(block, ink) >= 4.5)
+        }
+        assertEquals(0xFF000000.toInt(), ArtworkPalette.inkOn(0xFF777777.toInt()))
+    }
+
+    @Test
     fun `hsl round trips`() {
         for (c in listOf(gold, grey, indigo, 0xFFFF0000.toInt(), 0xFF00FF00.toInt())) {
             val (h, s, l) = ArtworkPalette.toHsl(c)

@@ -1,15 +1,18 @@
 package app.sitara.music.core.designsystem
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -17,6 +20,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -35,6 +39,19 @@ fun SectionHeader(title: String, modifier: Modifier = Modifier, subtitle: String
             action()
         }
     }
+}
+
+/** A quiet text button in the accent for a section header ("More", "Clear all"); [description] is what TalkBack reads instead. */
+@Composable
+fun HeaderAction(label: String, onClick: () -> Unit, modifier: Modifier = Modifier, description: String? = null) {
+    Text(
+        label,
+        style = MaterialTheme.typography.labelLarge,
+        color = MaterialTheme.colorScheme.primary,
+        modifier = modifier.defaultMinSize(minWidth = SitaraSpacing.TouchTarget, minHeight = SitaraSpacing.TouchTarget).clip(CircleShape)
+            .clickable(role = Role.Button, onClick = onClick).semantics { if (description != null) contentDescription = description }
+            .padding(horizontal = 12.dp, vertical = 14.dp),
+    )
 }
 
 // The title leads; an optional subtitle follows as quiet supporting text, never as a label above it.

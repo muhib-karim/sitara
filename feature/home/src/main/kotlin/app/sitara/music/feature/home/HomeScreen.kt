@@ -1,11 +1,9 @@
 package app.sitara.music.feature.home
 
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -18,7 +16,6 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -29,15 +26,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.contentDescription
-import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import app.sitara.music.core.designsystem.ArtworkTile
 import app.sitara.music.core.designsystem.EmptyCollectionArtwork
 import app.sitara.music.core.designsystem.GlassSurface
+import app.sitara.music.core.designsystem.HeaderAction
 import app.sitara.music.core.designsystem.LargeTitle
 import app.sitara.music.core.designsystem.PillButton
 import app.sitara.music.core.designsystem.SectionHeader
@@ -85,20 +79,8 @@ fun HomeScreen(
     val ready = online.feed as? FeedState.Ready
 
     // Keys carry the mood, so the shelves of another mood start unscrolled instead of inheriting a row's position.
-    fun LazyListScope.feedShelf(index: Int, shelf: HomeShelf) {
-        item(key = "feed-h-${mood?.title}-$index", contentType = "header") {
-            SectionHeader(
-                shelf.title, Modifier.padding(top = 12.dp), subtitle = shelf.strapline?.let(::sentenceCase),
-                action = shelf.more?.let { link -> @Composable { MoreButton(shelf.title) { onShelfLink(link) } } },
-            )
-        }
-        item(key = "feed-${mood?.title}-$index", contentType = shelf.layout) {
-            when (shelf.layout) {
-                ShelfLayout.SONG_ROWS -> QuickPicks(remember(shelf) { shelf.items.songs() }, onPlay, onTrackMenu)
-                ShelfLayout.CAROUSEL -> FeedCarousel("feed-$index", shelf.items, onPlay, onTrackMenu, onAlbum, onPlaylist, onArtist)
-            }
-        }
-    }
+    fun LazyListScope.feedShelf(index: Int, shelf: HomeShelf) =
+        feedShelf("${mood?.title}-$index", index, shelf, onPlay, onTrackMenu, onAlbum, onPlaylist, onArtist, onShelfLink)
 
     LazyColumn(modifier.fillMaxSize().testTag("home-content"), state = listState, contentPadding = contentPadding) {
         item(key = "title") { LargeTitle(greeting) }
@@ -196,6 +178,32 @@ private val SavedCollection.key: String get() = when (this) {
 
 private fun songCount(count: Int) = if (count == 1) "1 song" else "$count songs"
 
+/** Shelf [index] of a catalogue feed: its header with a More link where there is one, then song rows or a carousel. */
+internal fun LazyListScope.feedShelf(
+    key: String,
+    index: Int,
+    shelf: HomeShelf,
+    onPlay: (List<Track>, Int) -> Unit,
+    onTrackMenu: (Track) -> Unit,
+    onAlbum: (Album) -> Unit,
+    onPlaylist: (Playlist) -> Unit,
+    onArtist: (Artist) -> Unit,
+    onShelfLink: (ShelfLink) -> Unit,
+) {
+    item(key = "feed-h-$key", contentType = "header") {
+        SectionHeader(
+            shelf.title, Modifier.padding(top = 12.dp), subtitle = shelf.strapline?.let(::sentenceCase),
+            action = shelf.more?.let { link -> @Composable { HeaderAction("More", { onShelfLink(link) }, description = "More from ${shelf.title}") } },
+        )
+    }
+    item(key = "feed-$key", contentType = shelf.layout) {
+        when (shelf.layout) {
+            ShelfLayout.SONG_ROWS -> QuickPicks(remember(shelf) { shelf.items.songs() }, onPlay, onTrackMenu)
+            ShelfLayout.CAROUSEL -> FeedCarousel("feed-$index", shelf.items, onPlay, onTrackMenu, onAlbum, onPlaylist, onArtist)
+        }
+    }
+}
+
 private fun LazyListScope.trackShelf(key: String, title: String, tracks: List<Track>, onPlay: (List<Track>, Int) -> Unit, onTrackMenu: (Track) -> Unit) {
     if (tracks.isEmpty()) return
     item(key = "h-$key") { SectionHeader(title, modifier = Modifier.padding(top = 12.dp)) }
@@ -260,18 +268,6 @@ private fun MoodChips(chips: List<MoodChip>, onSelect: (MoodChip) -> Unit) {
 }
 
 @Composable
-private fun MoreButton(shelf: String, onClick: () -> Unit) {
-    Text(
-        "More",
-        style = MaterialTheme.typography.labelLarge,
-        color = MaterialTheme.colorScheme.primary,
-        modifier = Modifier.defaultMinSize(minWidth = SitaraSpacing.TouchTarget, minHeight = SitaraSpacing.TouchTarget).clip(CircleShape)
-            .clickable(role = Role.Button, onClick = onClick).semantics { contentDescription = "More from $shelf" }
-            .padding(horizontal = 12.dp, vertical = 14.dp),
-    )
-}
-
-@Composable
 private fun OfflineNotice(onRetry: () -> Unit) {
     GlassSurface(Modifier.padding(horizontal = SitaraSpacing.Gutter, vertical = 8.dp).fillMaxWidth(), shape = RoundedCornerShape(SitaraRadius.Artwork)) {
         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
@@ -286,7 +282,7 @@ private fun OfflineNotice(onRetry: () -> Unit) {
 }
 
 @Composable
-private fun HomeMessage(text: String) {
+internal fun HomeMessage(text: String) {
     Text(text, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(horizontal = SitaraSpacing.Gutter, vertical = 8.dp))
 }
 

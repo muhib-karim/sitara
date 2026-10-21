@@ -21,6 +21,7 @@ import app.sitara.music.core.player.QueueState
 import app.sitara.music.core.player.SleepTimerState
 import app.sitara.music.core.player.hasSystemEqualiser
 import app.sitara.music.core.player.systemEqualiserPanel
+import app.sitara.music.feature.home.FeedState
 import app.sitara.music.feature.home.HomeActions
 import app.sitara.music.feature.home.HomeFeed
 import app.sitara.music.feature.home.OnlineHomeLoader
@@ -35,8 +36,13 @@ import app.sitara.music.feature.player.PlayerActions
 import app.sitara.music.feature.player.PlayerUiState
 import app.sitara.music.feature.player.RadioStatus
 import app.sitara.music.feature.player.SleepTimerStatus
+import app.sitara.music.feature.search.MoodsState
+import app.sitara.music.feature.search.SearchActions
+import app.sitara.music.feature.search.SearchLanding
 import app.sitara.music.feature.search.SearchState
 import app.sitara.music.feature.search.searchStates
+import app.sitara.music.feature.search.searchSuggestions
+import app.sitara.music.feature.search.withRecentSearch
 import app.sitara.music.source.api.BrowseSource
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -66,6 +72,7 @@ class AppViewModel(private val app: SitaraApplication) :
     ViewModel(),
     PlayerActions,
     LibraryActions,
+    SearchActions,
     DetailPages {
     private val player = app.player
 
@@ -73,8 +80,11 @@ class AppViewModel(private val app: SitaraApplication) :
 
     /** Mood chips, more shelves and Try again on Home. */
     val homeActions: HomeActions = onlineHome
+    val settings: StateFlow<SitaraSettings> = app.settings.settings.stateIn(viewModelScope, SharingStarted.Eagerly, SitaraSettings())
     val query = MutableStateFlow("")
-    val searchFilter = MutableStateFlow(SearchFilter.SONGS)
+
+    /** The filter used last, kept in the settings so Search opens on it again. */
+    val searchFilter: StateFlow<SearchFilter> = settings.map { it.searchFilter }.stateIn(viewModelScope, SharingStarted.Eagerly, SearchFilter.SONGS)
     private val searchRetries = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
     private val tabRequests = Channel<Tab>(Channel.CONFLATED)
     private var pendingShare: SharedRequest? = null
@@ -83,7 +93,30 @@ class AppViewModel(private val app: SitaraApplication) :
     val requestedTabs: Flow<Tab> = tabRequests.receiveAsFlow()
     val search: StateFlow<SearchState> = searchStates(query, searchRetries, debounceMs = 300, searchFilter) { q, filter -> app.youtube.search(q, filter) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SearchState.Idle)
-    val settings: StateFlow<SitaraSettings> = app.settings.settings.stateIn(viewModelScope, SharingStarted.Eagerly, SitaraSettings())
+
+    private val moodRetries = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+
+    // Asked for once, when the shell first shows; again only on Try again.
+    private val moods: Flow<MoodsState> = moodRetries.onStart { emit(Unit) }.transformLatest {
+        emit(MoodsState.Loading)
+        emit(
+            try {
+                MoodsState.Ready(app.youtube.moods())
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                MoodsState.Failed
+            },
+        )
+    }
+
+    /** Recent searches and Moods & genres for an empty Search, suggestions while typing. */
+    val searchLanding: StateFlow<SearchLanding> = combine(
+        settings.map { it.recentSearches }.distinctUntilChanged(),
+        searchSuggestions(query, debounceMs = 200, recent = { settings.value.recentSearches }) { app.youtube.suggestions(it) },
+        moods,
+        ::SearchLanding,
+    ).stateIn(viewModelScope, SharingStarted.Lazily, SearchLanding())
 
     private val radio = MutableStateFlow(RadioStatus.READY)
 
@@ -130,6 +163,7 @@ class AppViewModel(private val app: SitaraApplication) :
     // Opened pages, so going back or rotating does not load them again; a screen keeps its page's flow, so none is dropped.
     // shortcut: kept for the life of the view model; evict pages that are off the back stack if sessions browse hundreds.
     private val pages = mutableMapOf<DetailRoute, MutableStateFlow<DetailState>>()
+    private val moodPages = mutableMapOf<DetailRoute.Mood, MutableStateFlow<FeedState>>()
 
     // The listener's own pages follow the store live; they hold no network state to retry.
     private val ownPages = mutableMapOf<DetailRoute, StateFlow<DetailState>>()
@@ -187,8 +221,25 @@ class AppViewModel(private val app: SitaraApplication) :
     private fun Flow<DetailState>.ownPage(): StateFlow<DetailState> =
         catch { emit(DetailState.Failed) }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), DetailState.Loading)
 
+    override fun moodPage(route: DetailRoute.Mood): StateFlow<FeedState> =
+        moodPages.getOrPut(route) { MutableStateFlow<FeedState>(FeedState.Loading).also { loadMood(route, it) } }
+
     override fun retry(route: DetailRoute) {
-        pages[route]?.let { load(route, it) }
+        if (route is DetailRoute.Mood) moodPages[route]?.let { loadMood(route, it) } else pages[route]?.let { load(route, it) }
+    }
+
+    private fun loadMood(route: DetailRoute.Mood, into: MutableStateFlow<FeedState>) {
+        viewModelScope.launch {
+            into.value = FeedState.Loading
+            into.value = try {
+                // shortcut: the first page only; page on scroll if mood pages ever come with continuations (none seen in October 2026).
+                FeedState.Ready(app.youtube.moodPage(route.params).shelves, continuation = null)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                FeedState.Failed
+            }
+        }
     }
 
     private fun load(route: DetailRoute, into: MutableStateFlow<DetailState>) {
@@ -200,6 +251,7 @@ class AppViewModel(private val app: SitaraApplication) :
                     is DetailRoute.Album -> DetailState.AlbumReady(browse { album(route.id) })
                     is DetailRoute.Playlist -> DetailState.PlaylistReady(browse { playlist(route.id) })
                     DetailRoute.LikedSongs, is DetailRoute.UserPlaylist -> error("Own pages are not loaded from a catalogue")
+                    is DetailRoute.Mood -> error("A mood page is a feed: see moodPage")
                 }
             } catch (e: CancellationException) {
                 throw e
@@ -264,6 +316,26 @@ class AppViewModel(private val app: SitaraApplication) :
 
     fun retrySearch() {
         searchRetries.tryEmit(Unit)
+    }
+
+    fun setSearchFilter(filter: SearchFilter) {
+        viewModelScope.launch { app.settings.update { it.copy(searchFilter = filter) } }
+    }
+
+    override fun saveSearch(query: String) {
+        viewModelScope.launch { app.settings.update { it.copy(recentSearches = it.recentSearches.withRecentSearch(query)) } }
+    }
+
+    override fun removeRecentSearch(query: String) {
+        viewModelScope.launch { app.settings.update { it.copy(recentSearches = it.recentSearches - query) } }
+    }
+
+    override fun clearRecentSearches() {
+        viewModelScope.launch { app.settings.update { it.copy(recentSearches = emptyList()) } }
+    }
+
+    override fun retryMoods() {
+        moodRetries.tryEmit(Unit)
     }
 
     fun updateSettings(s: SitaraSettings) {

@@ -66,6 +66,7 @@ import app.sitara.music.core.model.Track
 import app.sitara.music.feature.home.HomeActions
 import app.sitara.music.feature.home.HomeFeed
 import app.sitara.music.feature.home.HomeScreen
+import app.sitara.music.feature.home.MoodScreen
 import app.sitara.music.feature.library.AddToPlaylist
 import app.sitara.music.feature.library.DetailScreen
 import app.sitara.music.feature.library.LibraryActions
@@ -78,6 +79,8 @@ import app.sitara.music.feature.player.PlayerActions
 import app.sitara.music.feature.player.PlayerSheet
 import app.sitara.music.feature.player.PlayerUiState
 import app.sitara.music.feature.player.equaliserSummary
+import app.sitara.music.feature.search.SearchActions
+import app.sitara.music.feature.search.SearchLanding
 import app.sitara.music.feature.search.SearchScreen
 import app.sitara.music.feature.search.SearchState
 import app.sitara.music.feature.settings.SettingsScreen
@@ -104,6 +107,7 @@ fun SitaraRoot(vm: AppViewModel, systemReducedMotion: Boolean) {
     val query by vm.query.collectAsState()
     val searchFilter by vm.searchFilter.collectAsState()
     val search by vm.search.collectAsState()
+    val searchLanding by vm.searchLanding.collectAsState()
     val downloads by vm.downloads.collectAsState()
     SitaraShell(
         settings = settings.let { if (systemReducedMotion) it.copy(reducedMotion = true) else it },
@@ -119,7 +123,7 @@ fun SitaraRoot(vm: AppViewModel, systemReducedMotion: Boolean) {
         libraryActions = vm,
         details = vm,
         onQueryChange = { vm.query.value = it },
-        onSearchFilterChange = { vm.searchFilter.value = it },
+        onSearchFilterChange = vm::setSearchFilter,
         onRetrySearch = vm::retrySearch,
         homeActions = vm.homeActions,
         onPlay = vm::play,
@@ -128,6 +132,8 @@ fun SitaraRoot(vm: AppViewModel, systemReducedMotion: Boolean) {
         tabRequests = vm.requestedTabs,
         downloads = downloads,
         onRemoveAllDownloads = vm::removeAllDownloads,
+        searchLanding = searchLanding,
+        searchActions = vm,
     )
 }
 
@@ -162,6 +168,8 @@ fun SitaraShell(
     homeActions: HomeActions = HomeActions.None,
     downloads: List<SongDownload> = emptyList(),
     onRemoveAllDownloads: () -> Unit = {},
+    searchLanding: SearchLanding = SearchLanding(),
+    searchActions: SearchActions = SearchActions.None,
 ) {
     var tab by rememberSaveable { mutableStateOf(if (initialSettingsOpen) Tab.SETTINGS else initialTab) }
     var detailStack by rememberSaveable(stateSaver = DetailStackSaver) { mutableStateOf(listOfNotNull(initialDetail)) }
@@ -215,7 +223,27 @@ fun SitaraShell(
                 val openArtist: (Artist) -> Unit = { open(DetailRoute.Artist(it.id)) }
                 // The stack depth keeps two visits to the same page apart, each with its own scroll position.
                 browseState.SaveableStateProvider(route?.let { "${detailStack.size}-${it.encode()}" } ?: "tab-${tab.name}") {
-                    if (route != null) {
+                    val onShelfLink: (ShelfLink) -> Unit = { link ->
+                        when (link) {
+                            is ShelfLink.ToPlaylist -> open(DetailRoute.Playlist(link.id))
+                            is ShelfLink.ToArtist -> open(DetailRoute.Artist(link.id))
+                        }
+                    }
+                    if (route is DetailRoute.Mood) {
+                        val state by remember(details, route) { details.moodPage(route) }.collectAsState()
+                        MoodScreen(
+                            route.title, state,
+                            onBack = { detailStack = detailStack.dropLast(1) },
+                            onRetry = { details.retry(route) },
+                            onPlay = onPlay,
+                            onTrackMenu = openMenu,
+                            onAlbum = openAlbum,
+                            onPlaylist = { open(DetailRoute.Playlist(it.id)) },
+                            onArtist = openArtist,
+                            onShelfLink = onShelfLink,
+                            contentPadding = contentPadding,
+                        )
+                    } else if (route != null) {
                         val state by remember(details, route) { details.state(route) }.collectAsState()
                         DetailScreen(
                             state, settings, savedIds, libraryActions,
@@ -235,18 +263,13 @@ fun SitaraShell(
                                 onPlaylist = { open(DetailRoute.Playlist(it.id)) },
                                 onArtist = openArtist,
                                 onOwnPlaylist = { open(DetailRoute.UserPlaylist(it.id)) },
-                                onShelfLink = { link ->
-                                    when (link) {
-                                        is ShelfLink.ToPlaylist -> open(DetailRoute.Playlist(link.id))
-                                        is ShelfLink.ToArtist -> open(DetailRoute.Artist(link.id))
-                                    }
-                                },
+                                onShelfLink = onShelfLink,
                                 contentPadding = contentPadding,
                             )
                             Tab.SEARCH -> SearchScreen(
-                                query, onQueryChange, searchFilter, onSearchFilterChange, search, onRetrySearch,
-                                listOf("Lo-fi beats", "Jazz piano", "Classical focus"), onPlay,
-                                openAlbum, openArtist, { open(DetailRoute.Playlist(it.id)) }, openMenu, contentPadding = contentPadding,
+                                query, onQueryChange, searchFilter, onSearchFilterChange, search, onRetrySearch, searchLanding, searchActions,
+                                onPlay, openAlbum, openArtist, onPlaylist = { open(DetailRoute.Playlist(it.id)) },
+                                onMood = { open(DetailRoute.Mood(it.params, it.title)) }, onTrackMenu = openMenu, contentPadding = contentPadding,
                             )
                             Tab.LIBRARY -> LibraryScreen(
                                 library, downloads, onPlay,

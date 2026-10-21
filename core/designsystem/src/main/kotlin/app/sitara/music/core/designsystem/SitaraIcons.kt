@@ -108,6 +108,13 @@ object SitaraIcons {
             }
         }
     }
+    val Recent = icon("recent", filled = false) {
+        moveTo(4f, 12f); arcTo(8f, 8f, 0f, true, true, 20f, 12f); arcTo(8f, 8f, 0f, true, true, 4f, 12f)
+        moveTo(12f, 7.5f); lineTo(12f, 12f); lineTo(15f, 14f)
+    }
+    val Sort = icon("sort", filled = false) {
+        moveTo(4f, 7f); lineTo(20f, 7f); moveTo(4f, 12f); lineTo(15f, 12f); moveTo(4f, 17f); lineTo(10f, 17f)
+    }
     private val heart: PathBuilder.() -> Unit = {
         moveTo(12f, 20f); curveTo(8f, 17f, 3f, 13f, 3f, 8f)
         curveTo(3f, 3f, 9f, 2f, 12f, 7f); curveTo(15f, 2f, 21f, 3f, 21f, 8f)

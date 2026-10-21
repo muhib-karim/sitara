@@ -52,6 +52,8 @@ import app.sitara.music.feature.player.SleepTimerOptions
 import app.sitara.music.feature.player.SleepTimerStatus
 import app.sitara.music.feature.player.SongVolume
 import app.sitara.music.feature.player.SpeedAndPitch
+import app.sitara.music.feature.search.MoodsState
+import app.sitara.music.feature.search.SearchLanding
 import app.sitara.music.feature.search.SearchState
 import app.sitara.music.source.fake.FakeMusicSource
 import app.sitara.music.source.fake.SampleCatalog
@@ -107,6 +109,8 @@ class ScreenshotTest {
             .reduce { all, more -> all.copy(tracks = all.tracks + more.tracks, albums = all.albums + more.albums, artists = all.artists + more.artists) }
     }
 
+    private val searchLanding = SearchLanding(recent = listOf("Lumen Drift", "night drive", "jazz piano"), moods = MoodsState.Ready(runBlocking { source.moods() }))
+
     private fun shot(
         name: String,
         dark: Boolean,
@@ -128,6 +132,7 @@ class ScreenshotTest {
         savedIds: SavedIds = SavedIds(),
         downloads: List<SongDownload> = emptyList(),
         equaliser: EqualiserSettings = EqualiserSettings(),
+        landing: SearchLanding = searchLanding,
         beforeCapture: () -> Unit = {},
     ) {
         val settings = SitaraSettings(themeMode = mode, darkMode = if (dark) DarkMode.DARK else DarkMode.LIGHT, reducedMotion = reduced)
@@ -157,6 +162,7 @@ class ScreenshotTest {
                     greetingText = "Good evening",
                     savedIds = savedIds,
                     downloads = downloads,
+                    searchLanding = landing,
                 )
             }
         }
@@ -325,6 +331,10 @@ class ScreenshotTest {
 
     @Test fun searchIdleDark() = shot("search_idle", dark = true, tab = Tab.SEARCH)
     @Test fun searchIdleLight() = shot("search_idle", dark = false, tab = Tab.SEARCH)
+    @Test fun searchNoRecentSearches() = shot("search_no_recent", dark = true, tab = Tab.SEARCH, landing = searchLanding.copy(recent = emptyList()))
+    @Test fun searchMoodsLoading() = shot("search_moods_loading", dark = true, tab = Tab.SEARCH, landing = searchLanding.copy(moods = MoodsState.Loading))
+    @Test fun searchSuggestions() = shot("search_suggestions", dark = true, tab = Tab.SEARCH, query = "Lu", landing = searchLanding.copy(suggestions = runBlocking { source.suggestions("Lu") }))
+    @Test fun moodPage() = shot("mood_page", dark = true, tab = Tab.SEARCH, route = DetailRoute.Mood("sample:mood:Jazz", "Jazz"))
     @Test fun searchFailed() = shot("search_failed", dark = true, tab = Tab.SEARCH, query = "lofi", search = SearchState.Failed("lofi"))
     @Test fun searchGrouped() = shot("search_grouped", dark = true, tab = Tab.SEARCH, query = "Lumen Drift")
 
@@ -396,6 +406,8 @@ internal class FixedPage(state: DetailState) : DetailPages {
     private val flow = MutableStateFlow(state)
 
     override fun state(route: DetailRoute): StateFlow<DetailState> = flow
+
+    override fun moodPage(route: DetailRoute.Mood): StateFlow<FeedState> = error("A fixed page is a catalogue or own page, not a mood")
 
     override fun retry(route: DetailRoute) = Unit
 }

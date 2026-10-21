@@ -22,6 +22,9 @@ import kotlinx.coroutines.runBlocking
 internal class SampleDetailPages(private val source: FakeMusicSource = FakeMusicSource()) : DetailPages {
     override fun state(route: DetailRoute): StateFlow<DetailState> = MutableStateFlow(runBlocking { load(route) })
 
+    override fun moodPage(route: DetailRoute.Mood): StateFlow<FeedState> =
+        MutableStateFlow(runBlocking { source.moodPage(route.params).let { FeedState.Ready(it.shelves, it.continuation) } })
+
     override fun retry(route: DetailRoute) = Unit
 
     private suspend fun load(route: DetailRoute): DetailState = when (route) {
@@ -31,6 +34,7 @@ internal class SampleDetailPages(private val source: FakeMusicSource = FakeMusic
         DetailRoute.LikedSongs -> DetailState.LikedReady(source.library().likedTracks)
         is DetailRoute.UserPlaylist -> source.library().playlists.getOrNull(route.id.toInt() - 1)
             ?.let { DetailState.UserPlaylistReady(UserPlaylist(route.id, it.title, it.tracks)) } ?: DetailState.Gone
+        is DetailRoute.Mood -> error("A mood page is a feed: see moodPage")
     } ?: DetailState.Failed
 }
 
