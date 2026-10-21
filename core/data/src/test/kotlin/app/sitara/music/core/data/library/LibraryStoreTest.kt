@@ -8,7 +8,9 @@ import app.sitara.music.core.model.Artwork
 import app.sitara.music.core.model.Listen
 import app.sitara.music.core.model.PlayCount
 import app.sitara.music.core.model.PlaylistSummary
+import app.sitara.music.core.model.SongTotal
 import app.sitara.music.core.model.Track
+import java.time.ZoneOffset
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.test.runTest
 import org.junit.After
@@ -87,6 +89,31 @@ class LibraryStoreTest {
         val history = RoomPlayHistory(db.playHistory())
         repeat(600) { history.record(listen(it % 7)) }
         assertEquals(600, history.counts.first().sumOf { it.plays })
+    }
+
+    @Test
+    fun `stats count the plays since the range began, with each song's latest details`() = runTest {
+        val history = RoomPlayHistory(db.playHistory())
+        history.record(Listen(song(1), startedAtMs = 500, listenedMs = 60_000))
+        history.record(Listen(song(1), startedAtMs = 2_000, listenedMs = 30_000))
+        val renamed = song(1).copy(title = "Song 1 (Live)")
+        history.record(Listen(renamed, startedAtMs = 3_000, listenedMs = 45_000))
+        history.record(Listen(song(2), startedAtMs = 2_500, listenedMs = 120_000))
+
+        val stats = history.stats(sinceMs = 1_000, zone = ZoneOffset.UTC).first()
+
+        assertEquals("the play at 500 is before the range", 3, stats.plays)
+        assertEquals(195_000L, stats.listenedMs)
+        assertEquals(listOf(SongTotal(renamed, 2, 75_000, 3_000), SongTotal(song(2), 1, 120_000, 2_500)), stats.topSongs)
+        assertEquals(195_000L, stats.listenedByHour[0])
+    }
+
+    @Test
+    fun `plays kept before time heard was are left out of stats`() = runTest {
+        val history = RoomPlayHistory(db.playHistory())
+        db.playHistory().insert(PlayEntity(track = song(1).toColumns(), playedAt = 2_000, listenedMs = null))
+        assertTrue(history.stats(sinceMs = 0, zone = ZoneOffset.UTC).first().isEmpty)
+        assertEquals("they still show in Recently played", listOf(song(1)), history.recent(5).first())
     }
 
     @Test
