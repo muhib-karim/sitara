@@ -16,6 +16,7 @@ SCREENS = {
     "mini": "Open player",
     "settings": "Appearance",
     "search": "Recent searches",
+    "phone": "Second Light",
 }
 
 
@@ -75,6 +76,16 @@ def bounds(root, label):
 def hidden_under_dock(row, dock):
     """Whether a row's bottom edge reaches below the top of the dock (the mini player is the dock's top part)."""
     return row[3] > dock[1]
+
+
+def check_local_index(root):
+    """The fixture files, indexed through MediaStore: each song once (a copy sits in a second folder), the untagged file under its name."""
+    # Each song row describes itself as "<title> by <artist>"; its More button names the title too, so rows are matched whole.
+    rows = [node.get("content-desc") for node in root.iter("node")]
+    for row in ("Saffron Morning by Tara Lane", "Second Light by Tara Lane", "field recording 03 by Unknown artist"):
+        found = rows.count(row)
+        if found != 1:
+            raise RuntimeError(f"{row} is listed {found} times on On this phone, not once")
 
 
 def swipe_up():
@@ -162,6 +173,8 @@ def main():
             if screen == "settings":
                 hierarchy = scroll_to_end(screen)
             save(name, hierarchy)
+            if screen == "phone":
+                check_local_index(ET.fromstring(hierarchy))
             if screen == "settings":
                 root = ET.fromstring(hierarchy)
                 row, dock = bounds(root, "Storage used"), bounds(root, "Open player")

@@ -11,9 +11,13 @@ import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import app.sitara.music.core.model.Album
 import app.sitara.music.core.model.Artist
+import app.sitara.music.core.data.local.folderName
+import app.sitara.music.core.data.local.hasMusicPermission
+import app.sitara.music.core.data.local.keepFolder
 import app.sitara.music.core.model.EqualiserSettings
 import app.sitara.music.core.model.LibraryLayout
 import app.sitara.music.core.model.LibrarySort
+import app.sitara.music.core.model.LocalFolder
 import app.sitara.music.core.model.ListeningStats
 import app.sitara.music.core.model.PlaylistSummary
 import app.sitara.music.core.model.SearchFilter
@@ -21,6 +25,7 @@ import app.sitara.music.core.model.SitaraSettings
 import app.sitara.music.core.model.SongDownload
 import app.sitara.music.core.model.StatsRange
 import app.sitara.music.core.model.Track
+import app.sitara.music.core.model.isLocal
 import app.sitara.music.core.model.toDownload
 import app.sitara.music.core.player.QueueState
 import app.sitara.music.core.player.SleepTimerState
@@ -34,6 +39,8 @@ import app.sitara.music.feature.home.homeFeed
 import app.sitara.music.feature.library.DetailState
 import app.sitara.music.feature.library.LibraryActions
 import app.sitara.music.feature.library.LibraryState
+import app.sitara.music.feature.library.LocalActions
+import app.sitara.music.feature.library.LocalLibraryState
 import app.sitara.music.feature.library.SavedIds
 import app.sitara.music.feature.library.SavedLibrary
 import app.sitara.music.feature.library.StatsState
@@ -85,6 +92,7 @@ class AppViewModel(private val app: SitaraApplication) :
     PlayerActions,
     LibraryActions,
     SearchActions,
+    LocalActions,
     DetailPages {
     private val player = app.player
 
@@ -180,6 +188,14 @@ class AppViewModel(private val app: SitaraApplication) :
         .stateIn(viewModelScope, SharingStarted.Eagerly, LyricsState.NotFound)
 
     val downloads: StateFlow<List<SongDownload>> = app.songDownloads.songs
+
+    private val musicAccess = MutableStateFlow(app.hasMusicPermission())
+    private val scanning = MutableStateFlow(false)
+
+    /** Library → On this phone, and the songs Search finds on the phone. */
+    val local: StateFlow<LocalLibraryState> = combine(app.library.local.songs, app.library.local.folders, musicAccess, scanning, ::LocalLibraryState)
+        .catch { emit(LocalLibraryState(musicAccess = musicAccess.value)) }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, LocalLibraryState(musicAccess = musicAccess.value))
 
     val savedIds: StateFlow<SavedIds> = combine(
         app.library.likedSongs.ids, app.library.saved.albumIds, app.library.saved.artistIds, downloads.map { songs -> songs.associate { it.track.id to it.state } },
@@ -277,6 +293,7 @@ class AppViewModel(private val app: SitaraApplication) :
         viewModelScope.launch { queue.distinctUntilChangedBy { it.currentEntry?.uid }.collect { radio.value = RadioStatus.READY } }
         // Like a radio station, playback carries on past the end of the queue with related songs.
         viewModelScope.launch { queue.filter { it.runningOut }.distinctUntilChangedBy { it.currentEntry?.uid }.collectLatest(::extendWithRadio) }
+        rescan()
     }
 
     override fun state(route: DetailRoute): StateFlow<DetailState> = when (route) {
@@ -332,6 +349,7 @@ class AppViewModel(private val app: SitaraApplication) :
                     DetailRoute.Stats -> error("Stats have their own state: see stats")
                     DetailRoute.Import -> error("Import has its own state: see imports")
                     DetailRoute.Scrobbling -> error("Scrobbling has its own state: see scrobbling")
+                    DetailRoute.OnThisPhone, is DetailRoute.LocalGroup -> error("Songs on the phone have their own state: see local")
                 }
             } catch (e: CancellationException) {
                 throw e
@@ -395,7 +413,8 @@ class AppViewModel(private val app: SitaraApplication) :
     }
 
     private suspend fun extendWithRadio(queue: QueueState) {
-        val seed = queue.current ?: return
+        // A song on the phone has no catalogue entry to find similar songs from.
+        val seed = queue.current?.takeIf { !it.isLocal } ?: return
         radio.value = RadioStatus.LOADING
         val queued = queue.items.mapTo(HashSet()) { it.id }
         val picks = try {
@@ -541,6 +560,48 @@ class AppViewModel(private val app: SitaraApplication) :
     }
 
     fun removeAllDownloads() = app.songDownloads.removeAll()
+
+    override fun rescan() {
+        viewModelScope.launch { scanLocal { app.library.local.rescan() } }
+    }
+
+    override fun addFolder(uri: String) {
+        viewModelScope.launch {
+            scanLocal {
+                val tree = Uri.parse(uri)
+                app.contentResolver.keepFolder(tree)
+                app.library.local.addFolder(uri, app.contentResolver.folderName(tree))
+            }
+        }
+    }
+
+    override fun relinkFolder(folder: LocalFolder, uri: String) {
+        viewModelScope.launch {
+            scanLocal {
+                val tree = Uri.parse(uri)
+                app.contentResolver.keepFolder(tree)
+                if (uri != folder.uri) app.library.local.removeFolder(folder.uri)
+                app.library.local.addFolder(uri, app.contentResolver.folderName(tree))
+            }
+        }
+    }
+
+    override fun removeFolder(folder: LocalFolder) = app.writeLibrary { app.library.local.removeFolder(folder.uri) }
+
+    // Access to the phone's music is checked each time: it may have changed in the system's settings.
+    private suspend fun scanLocal(work: suspend () -> Unit) {
+        scanning.value = true
+        try {
+            musicAccess.value = app.hasMusicPermission()
+            work()
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            toast("Some music on this phone couldn’t be read")
+        } finally {
+            scanning.value = false
+        }
+    }
 
     fun clearListeningHistory() = app.writeLibrary { app.library.history.clear() }
 

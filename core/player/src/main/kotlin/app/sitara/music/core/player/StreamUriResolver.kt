@@ -6,6 +6,7 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DataSpec
 import androidx.media3.datasource.ResolvingDataSource
 import app.sitara.music.core.model.Track
+import app.sitara.music.core.model.localUri
 import app.sitara.music.source.api.StreamResolver
 import java.io.IOException
 import java.io.InterruptedIOException
@@ -13,7 +14,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.runBlocking
 
 /**
- * Turns `sitara://track/<id>` into a real stream URL on the player's loader thread.
+ * Turns `sitara://track/<id>` into a real stream URL on the player's loader thread, or a song on the phone into its content URI.
  * Failures become [IOException]s, which ExoPlayer reports as playback errors instead of crashing.
  */
 @OptIn(UnstableApi::class)
@@ -27,6 +28,8 @@ class StreamUriResolver(
         if (uri.scheme != StreamPolicy.TRACK_SCHEME) return dataSpec
         val id = uri.lastPathSegment ?: throw IOException("No track id in $uri")
         val track = trackFor(id) ?: throw IOException("Track $id is not in the queue")
+        // A song on the phone plays from its file; the queue gate above keeps foreign content URIs out.
+        track.localUri?.let { return dataSpec.withUri(Uri.parse(it)) }
         val stream = try {
             runBlocking { resolver.resolve(track) }
         } catch (e: InterruptedException) {

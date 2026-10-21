@@ -25,6 +25,19 @@ fun ContentResolver.keepsFolder(tree: String): Boolean = persistedUriPermissions
 /** Keeps read access to a folder from the system picker across restarts. */
 fun ContentResolver.keepFolder(tree: Uri) = takePersistableUriPermission(tree, Intent.FLAG_GRANT_READ_URI_PERMISSION)
 
+/** A picked folder's name as its provider shows it, else the last part of its path. */
+fun ContentResolver.folderName(tree: Uri): String {
+    val id = DocumentsContract.getTreeDocumentId(tree)
+    val shown = try {
+        query(DocumentsContract.buildDocumentUriUsingTree(tree, id), arrayOf(DocumentsContract.Document.COLUMN_DISPLAY_NAME), null, null, null)
+            ?.use { if (it.moveToFirst()) it.getString(0) else null }
+    } catch (e: SecurityException) {
+        null
+    }
+    // External storage ids read "primary:Music/Albums".
+    return shown?.takeIf { it.isNotBlank() } ?: id.substringAfterLast('/').substringAfter(':').ifEmpty { "Phone storage" }
+}
+
 /** The phone's music as MediaStore lists it, tags included. */
 internal class MediaStoreAudio(private val context: Context) : AudioReader {
     override fun files(): List<AudioFile> {

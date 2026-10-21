@@ -2,6 +2,7 @@ package app.sitara.music.source.scrobble
 
 import app.sitara.music.core.model.Scrobble
 import app.sitara.music.core.model.Track
+import app.sitara.music.core.model.localUriOf
 import app.sitara.music.source.api.ScrobbleClient
 import app.sitara.music.source.api.SendOutcome
 import com.grack.nanojson.JsonObject
@@ -43,10 +44,10 @@ class ListenBrainzClient(private val token: String, private val http: OkHttpClie
             if (timed) writer.value("listened_at", play.startedAtMs / 1_000)
             writer.`object`("track_metadata").value("artist_name", play.artist).value("track_name", play.title)
             if (play.album.isNotBlank()) writer.value("release_name", play.album)
-            writer.`object`("additional_info")
-                .value("duration_ms", play.durationMs)
-                .value("origin_url", "https://music.youtube.com/watch?v=${play.trackId}")
-                .value("media_player", "Sitara")
+            writer.`object`("additional_info").value("duration_ms", play.durationMs)
+            // A song on the phone played from a file, not from a page anyone else can open.
+            if (localUriOf(play.trackId) == null) writer.value("origin_url", "https://music.youtube.com/watch?v=${play.trackId}")
+            writer.value("media_player", "Sitara")
                 .value("submission_client", "Sitara")
                 .end().end().end()
         }

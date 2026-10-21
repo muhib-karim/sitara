@@ -54,6 +54,7 @@ import app.sitara.music.core.designsystem.dragHandle
 import app.sitara.music.core.designsystem.rememberReorderState
 import app.sitara.music.core.designsystem.reorderableRow
 import app.sitara.music.core.model.Track
+import app.sitara.music.core.model.isLocal
 import kotlinx.coroutines.launch
 
 /** The queue page: Start radio, Save as playlist, Up next with Undo after a removal, and the transport. */
@@ -85,7 +86,8 @@ internal fun UpNextPage(state: PlayerUiState, actions: PlayerActions, onNowPlayi
             verticalArrangement = Arrangement.spacedBy(8.dp),
             itemVerticalAlignment = Alignment.CenterVertically,
         ) {
-            RadioControl(state.radio, actions::startRadio)
+            // Radio starts from a catalogue song; a song on the phone has none to start from.
+            if (state.track?.isLocal != true) RadioControl(state.radio, actions::startRadio)
             if (state.upNext.isNotEmpty()) PillButton("Save as playlist", { onSaveQueue(listOf(track) + state.upNext) }, primary = false)
         }
         Box(Modifier.weight(1f).fillMaxWidth()) {

@@ -1,6 +1,11 @@
 package app.sitara.music
 
+import android.app.Activity
+import android.content.Intent
+import android.net.Uri
+import android.provider.Settings
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
@@ -54,6 +59,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LifecycleResumeEffect
+import app.sitara.music.core.data.local.musicPermission
 import app.sitara.music.core.designsystem.ScrollEdge
 import app.sitara.music.core.designsystem.SitaraIcons
 import app.sitara.music.core.designsystem.SitaraSheet
@@ -61,6 +67,8 @@ import app.sitara.music.core.designsystem.SitaraSpacing
 import app.sitara.music.core.designsystem.SitaraTheme
 import app.sitara.music.core.model.Album
 import app.sitara.music.core.model.Artist
+import app.sitara.music.core.model.LibrarySort
+import app.sitara.music.core.model.LocalFolder
 import app.sitara.music.core.model.PlaylistSummary
 import app.sitara.music.core.model.SearchFilter
 import app.sitara.music.core.model.ShelfLink
@@ -68,6 +76,7 @@ import app.sitara.music.core.model.SitaraSettings
 import app.sitara.music.core.model.SongDownload
 import app.sitara.music.core.model.StatsRange
 import app.sitara.music.core.model.Track
+import app.sitara.music.core.model.matching
 import app.sitara.music.feature.home.HomeActions
 import app.sitara.music.feature.home.HomeFeed
 import app.sitara.music.feature.home.HomeScreen
@@ -80,10 +89,15 @@ import app.sitara.music.feature.library.ImportState
 import app.sitara.music.feature.library.LibraryActions
 import app.sitara.music.feature.library.LibraryScreen
 import app.sitara.music.feature.library.LibraryState
+import app.sitara.music.feature.library.LocalActions
+import app.sitara.music.feature.library.LocalGroupScreen
+import app.sitara.music.feature.library.LocalLibraryState
+import app.sitara.music.feature.library.LocalScreen
 import app.sitara.music.feature.library.PlaylistNameSheet
 import app.sitara.music.feature.library.SavedIds
 import app.sitara.music.feature.library.SongActions
 import app.sitara.music.feature.library.StatsScreen
+import app.sitara.music.feature.library.groups
 import app.sitara.music.feature.player.EqualiserScreen
 import app.sitara.music.feature.player.PlayerActions
 import app.sitara.music.feature.player.PlayerSheet
@@ -125,6 +139,7 @@ fun SitaraRoot(vm: AppViewModel, systemReducedMotion: Boolean) {
     val downloads by vm.downloads.collectAsState()
     val imports by vm.imports.state.collectAsState()
     val scrobbling by vm.scrobbling.state.collectAsState()
+    val local by vm.local.collectAsState()
     SitaraShell(
         settings = settings.let { if (systemReducedMotion) it.copy(reducedMotion = true) else it },
         home = home,
@@ -157,6 +172,8 @@ fun SitaraRoot(vm: AppViewModel, systemReducedMotion: Boolean) {
         importRequests = vm.requestedImport,
         scrobbling = scrobbling,
         scrobblingActions = vm.scrobbling,
+        local = local,
+        localActions = vm,
     )
 }
 
@@ -200,6 +217,8 @@ fun SitaraShell(
     importRequests: Flow<Unit> = emptyFlow(),
     scrobbling: ScrobblingState = ScrobblingState(),
     scrobblingActions: ScrobblingActions = ScrobblingActions.None,
+    local: LocalLibraryState = LocalLibraryState(),
+    localActions: LocalActions = LocalActions.None,
 ) {
     var tab by rememberSaveable { mutableStateOf(if (initialSettingsOpen) Tab.SETTINGS else initialTab) }
     var detailStack by rememberSaveable(stateSaver = DetailStackSaver) { mutableStateOf(listOfNotNull(initialDetail)) }
@@ -232,6 +251,19 @@ fun SitaraShell(
     }
     // The system file picker: no storage permission, and the app reads only the file the listener picks.
     val pickPlaylistFile = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> uri?.let { importActions.importFile(it.toString()) } }
+    // The system folder picker grants read access to the folder alone; Sitara keeps that grant across restarts.
+    var relinking by remember { mutableStateOf<LocalFolder?>(null) }
+    val pickFolder = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri ->
+        val folder = relinking
+        relinking = null
+        if (uri != null) folder?.let { localActions.relinkFolder(it, uri.toString()) } ?: localActions.addFolder(uri.toString())
+    }
+    val activity = LocalActivity.current
+    val askMusicAccess = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+        // Once the system stops asking (denied for good), only Sitara's page in the system settings can grant it.
+        if (!granted && activity != null && !activity.shouldShowRequestPermissionRationale(musicPermission)) activity.openAppSettings()
+        localActions.rescan()
+    }
     BackHandler(enabled = detailStack.isNotEmpty() || tab == Tab.SETTINGS) {
         when {
             detailStack.isNotEmpty() -> detailStack = detailStack.dropLast(1)
@@ -305,6 +337,29 @@ fun SitaraShell(
                             onPauseOrDispose {}
                         }
                         ScrobblingScreen(scrobbling, scrobblingActions, onBack = { detailStack = detailStack.dropLast(1) }, contentPadding = contentPadding)
+                    } else if (route == DetailRoute.OnThisPhone) {
+                        // Read again on every return too: access may just have been granted in the system's settings.
+                        LifecycleResumeEffect(Unit) {
+                            localActions.rescan()
+                            onPauseOrDispose {}
+                        }
+                        LocalScreen(
+                            local, settings.libraryLayout, settings.librarySort, (library as? LibraryState.Ready)?.library?.counts.orEmpty(),
+                            onBack = { detailStack = detailStack.dropLast(1) },
+                            onPlay = onPlay,
+                            onShuffle = onShuffle,
+                            onTrackMenu = openMenu,
+                            onGroup = { kind, group -> open(DetailRoute.LocalGroup(kind, group.key)) },
+                            onAllowAccess = { askMusicAccess.launch(musicPermission) },
+                            onChooseFolder = { pickFolder.launch(null) },
+                            onRelink = { relinking = it; pickFolder.launch(Uri.parse(it.uri)) },
+                            actions = localActions,
+                            library = libraryActions,
+                            contentPadding = contentPadding,
+                        )
+                    } else if (route is DetailRoute.LocalGroup) {
+                        val group = remember(local.songs, route) { local.songs.groups(route.kind, LibrarySort.RECENTLY_ADDED).firstOrNull { it.key == route.key } }
+                        LocalGroupScreen(group, onBack = { detailStack = detailStack.dropLast(1) }, onPlay = onPlay, onShuffle = onShuffle, onTrackMenu = openMenu, contentPadding = contentPadding)
                     } else if (route != null) {
                         val state by remember(details, route) { details.state(route) }.collectAsState()
                         DetailScreen(
@@ -332,12 +387,14 @@ fun SitaraShell(
                                 query, onQueryChange, searchFilter, onSearchFilterChange, search, onRetrySearch, searchLanding, searchActions,
                                 onPlay, openAlbum, openArtist, onPlaylist = { open(DetailRoute.Playlist(it.id)) },
                                 onMood = { open(DetailRoute.Mood(it.params, it.title)) }, onTrackMenu = openMenu, contentPadding = contentPadding,
+                                onThisPhone = remember(query, local.songs) { local.songs.matching(query) },
                             )
                             Tab.LIBRARY -> LibraryScreen(
                                 library, downloads, settings.libraryLayout, settings.librarySort, onPlay,
                                 onLikedSongs = { open(DetailRoute.LikedSongs) },
                                 onStats = { open(DetailRoute.Stats) },
                                 onImport = { open(DetailRoute.Import) },
+                                onOnThisPhone = { open(DetailRoute.OnThisPhone) },
                                 onPlaylist = { open(DetailRoute.UserPlaylist(it.id)) },
                                 onAlbum = openAlbum,
                                 onArtist = openArtist,
@@ -346,6 +403,7 @@ fun SitaraShell(
                                 onFindMusic = { tab = Tab.SEARCH },
                                 library = libraryActions,
                                 contentPadding = contentPadding,
+                                localSongs = local.songs.size,
                             )
                             Tab.SETTINGS -> if (equaliserOpen) {
                                 EqualiserScreen(
@@ -482,3 +540,6 @@ private fun greeting(): String {
         else -> "Good evening"
     }
 }
+
+/** Sitara's page in the system settings, where a permission the system no longer asks for can be granted. */
+private fun Activity.openAppSettings() = startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", packageName, null)))

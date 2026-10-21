@@ -47,6 +47,7 @@ internal class SampleDetailPages(private val source: FakeMusicSource = FakeMusic
         DetailRoute.Stats -> error("Stats have their own state: see stats")
         DetailRoute.Import -> error("Import has its own state")
         DetailRoute.Scrobbling -> error("Scrobbling has its own state")
+        DetailRoute.OnThisPhone, is DetailRoute.LocalGroup -> error("Songs on the phone have their own state")
     } ?: DetailState.Failed
 }
 

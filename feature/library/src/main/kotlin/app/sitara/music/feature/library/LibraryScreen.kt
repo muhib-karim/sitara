@@ -95,6 +95,7 @@ fun LibraryScreen(
     onLikedSongs: () -> Unit,
     onStats: () -> Unit,
     onImport: () -> Unit,
+    onOnThisPhone: () -> Unit,
     onPlaylist: (PlaylistSummary) -> Unit,
     onAlbum: (Album) -> Unit,
     onArtist: (Artist) -> Unit,
@@ -104,6 +105,8 @@ fun LibraryScreen(
     library: LibraryActions,
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(),
+    /** Songs found on the phone, or null before the phone's music is read. */
+    localSongs: Int? = null,
 ) {
     var kind by rememberSaveable { mutableStateOf(LibraryKind.PLAYLISTS) }
     var naming by rememberSaveable { mutableStateOf(false) }
@@ -112,7 +115,7 @@ fun LibraryScreen(
     if (naming) {
         PlaylistNameSheet("New playlist", "", "Create", onConfirm = { naming = false; onNewPlaylist(it) }, onDismiss = { naming = false })
     }
-    if (sorting) SortSheet(kind, order, library::setLibrarySort) { sorting = false }
+    if (sorting) SortSheet("Order ${kind.label.lowercase()} by", kind.sorts, order, library::setLibrarySort) { sorting = false }
     BoxWithConstraints(modifier.fillMaxSize()) {
         // As many 150 dp covers as fit between the gutters, two at least.
         val columns = ((maxWidth - SitaraSpacing.Gutter * 2 + TileGap) / (TileWidth + TileGap)).toInt().coerceAtLeast(2)
@@ -121,8 +124,8 @@ fun LibraryScreen(
             when (state) {
                 LibraryState.Loading -> item(key = "loading", contentType = "skeleton") { LibrarySkeleton(columns) }
                 LibraryState.Failed -> item(key = "failed") { LibraryMessage("Your library couldn’t be read. Restart Sitara to try again.") }
-                is LibraryState.Ready -> if (state.library.isEmpty && downloads.isEmpty()) {
-                    item(key = "empty") { EmptyLibrary(onFindMusic, onImport) }
+                is LibraryState.Ready -> if (state.library.isEmpty && downloads.isEmpty() && (localSongs ?: 0) == 0) {
+                    item(key = "empty") { EmptyLibrary(onFindMusic, onImport, onOnThisPhone) }
                 } else {
                     val saved = state.library
                     item(key = "pinned") {
@@ -134,6 +137,12 @@ fun LibraryScreen(
                     item(key = "stats") {
                         PinnedTile(
                             SitaraIcons.Stats, "Your stats", "Top songs, artists and when you listen", onStats,
+                            Modifier.padding(horizontal = SitaraSpacing.Gutter, vertical = 4.dp).fillMaxWidth(),
+                        )
+                    }
+                    item(key = "on-this-phone") {
+                        PinnedTile(
+                            SitaraIcons.Phone, "On this phone", localSongs?.takeIf { it > 0 }?.let(::songCount) ?: "Songs and folders on your phone", onOnThisPhone,
                             Modifier.padding(horizontal = SitaraSpacing.Gutter, vertical = 4.dp).fillMaxWidth(),
                         )
                     }
@@ -212,7 +221,7 @@ fun LibraryScreen(
 private val SavedLibrary.isEmpty: Boolean get() = liked.isEmpty() && recent.isEmpty() && playlists.isEmpty() && albums.isEmpty() && artists.isEmpty()
 
 /** [values] as a grid of [columns] covers a row, or as rows when [columns] is null; [emptyText] says how to fill an empty kind. */
-private fun <T> LazyListScope.collection(
+internal fun <T> LazyListScope.collection(
     values: List<T>,
     columns: Int?,
     emptyText: String,
@@ -232,18 +241,26 @@ private fun <T> LazyListScope.collection(
     }
 }
 
-private fun Modifier.libraryRow() = padding(horizontal = SitaraSpacing.Gutter).testTag(ROW_TAG)
+internal fun Modifier.libraryRow() = padding(horizontal = SitaraSpacing.Gutter).testTag(ROW_TAG)
 
 private const val TILE_TAG = "library-tile"
-private const val ROW_TAG = "library-row"
+internal const val ROW_TAG = "library-row"
 internal val TileWidth = 150.dp
 internal val TileGap = 12.dp
 
 /** The order (when this kind has more than one), New playlist on playlists, and grid or list (not for downloads, which are rows). */
 @Composable
 private fun Controls(kind: LibraryKind, order: LibrarySort, layout: LibraryLayout, onSort: () -> Unit, onNewPlaylist: () -> Unit, onLayout: (LibraryLayout) -> Unit) {
+    OrderAndLayout(kind.sorts.size > 1, order, layout.takeIf { kind != LibraryKind.DOWNLOADS }, onSort, onLayout) {
+        if (kind == LibraryKind.PLAYLISTS) PillButton("New playlist", onNewPlaylist, primary = false)
+    }
+}
+
+/** The order button when there is a choice, then [action] and the grid or list switch when [layout] applies. */
+@Composable
+internal fun OrderAndLayout(sortable: Boolean, order: LibrarySort, layout: LibraryLayout?, onSort: () -> Unit, onLayout: (LibraryLayout) -> Unit, action: @Composable () -> Unit = {}) {
     Row(Modifier.fillMaxWidth().padding(start = 8.dp, end = 8.dp, top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
-        if (kind.sorts.size > 1) {
+        if (sortable) {
             Row(
                 Modifier.defaultMinSize(minHeight = SitaraSpacing.TouchTarget).clip(CircleShape)
                     .clickable(role = Role.Button, onClickLabel = "Change the order", onClick = onSort)
@@ -256,8 +273,8 @@ private fun Controls(kind: LibraryKind, order: LibrarySort, layout: LibraryLayou
             }
         }
         Spacer(Modifier.weight(1f))
-        if (kind == LibraryKind.PLAYLISTS) PillButton("New playlist", onNewPlaylist, primary = false)
-        if (kind != LibraryKind.DOWNLOADS) {
+        action()
+        if (layout != null) {
             val grid = layout == LibraryLayout.GRID
             IconButton(onClick = { onLayout(if (grid) LibraryLayout.LIST else LibraryLayout.GRID) }) {
                 Icon(if (grid) SitaraIcons.List else SitaraIcons.Grid, if (grid) "Show as a list" else "Show as a grid", tint = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -267,14 +284,14 @@ private fun Controls(kind: LibraryKind, order: LibrarySort, layout: LibraryLayou
 }
 
 @Composable
-private fun SortSheet(kind: LibraryKind, order: LibrarySort, onSort: (LibrarySort) -> Unit, onDismiss: () -> Unit) {
+internal fun SortSheet(title: String, sorts: List<LibrarySort>, order: LibrarySort, onSort: (LibrarySort) -> Unit, onDismiss: () -> Unit) {
     SitaraSheet(onDismiss) { close ->
         Column(Modifier.fillMaxWidth().navigationBarsPadding().padding(vertical = 8.dp).selectableGroup()) {
             Text(
-                "Order ${kind.label.lowercase()} by", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface,
+                title, style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.padding(horizontal = SitaraSpacing.Gutter, vertical = 8.dp),
             )
-            kind.sorts.forEach { option ->
+            sorts.forEach { option ->
                 Row(
                     Modifier.fillMaxWidth().defaultMinSize(minHeight = 56.dp)
                         .selectable(option == order, role = Role.RadioButton) { close { onSort(option) } }
@@ -291,7 +308,7 @@ private fun SortSheet(kind: LibraryKind, order: LibrarySort, onSort: (LibrarySor
 
 /** Liked songs or Downloads, always at the top, with how many songs each holds. */
 @Composable
-private fun PinnedTile(icon: ImageVector, title: String, detail: String, onClick: () -> Unit, modifier: Modifier) {
+internal fun PinnedTile(icon: ImageVector, title: String, detail: String, onClick: () -> Unit, modifier: Modifier) {
     Row(
         modifier.clip(RoundedCornerShape(SitaraRadius.Tile)).background(MaterialTheme.colorScheme.surfaceContainerHigh)
             .clickable(role = Role.Button, onClick = onClick).semantics(mergeDescendants = true) {}.padding(12.dp),
@@ -325,7 +342,7 @@ internal fun FannedCovers() {
 
 /** A fresh library: three fanned covers in the theme's colours, what fills it, and one way to start. */
 @Composable
-private fun EmptyLibrary(onFindMusic: () -> Unit, onImport: () -> Unit) {
+private fun EmptyLibrary(onFindMusic: () -> Unit, onImport: () -> Unit, onOnThisPhone: () -> Unit) {
     Column(
         Modifier.fillMaxWidth().padding(horizontal = SitaraSpacing.Gutter, vertical = 32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -334,11 +351,12 @@ private fun EmptyLibrary(onFindMusic: () -> Unit, onImport: () -> Unit) {
         FannedCovers()
         Text("Your library starts here", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface)
         Text(
-            "Like songs, save albums and artists, make playlists and download for offline. They all gather here.",
+            "Like songs, save albums and artists, make playlists, download for offline and play the music on your phone. They all gather here.",
             style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center,
         )
         PillButton("Find music", onFindMusic, Modifier.padding(top = 8.dp))
         PillButton("Import a playlist", onImport, primary = false)
+        PillButton("Music on this phone", onOnThisPhone, primary = false)
     }
 }
 

@@ -183,6 +183,15 @@ object SitaraIcons {
         moveTo(4f, 7f); lineTo(12f, 7f); moveTo(4f, 12f); lineTo(12f, 12f); moveTo(4f, 17f); lineTo(10f, 17f)
         moveTo(18f, 4f); lineTo(18f, 17f); moveTo(14.5f, 13.5f); lineTo(18f, 17f); lineTo(21.5f, 13.5f)
     }
+    val Phone = icon("phone", filled = false) {
+        moveTo(9f, 3f); lineTo(15f, 3f); quadTo(17f, 3f, 17f, 5f); lineTo(17f, 19f); quadTo(17f, 21f, 15f, 21f)
+        lineTo(9f, 21f); quadTo(7f, 21f, 7f, 19f); lineTo(7f, 5f); quadTo(7f, 3f, 9f, 3f); close()
+        moveTo(11f, 18f); lineTo(13f, 18f)
+    }
+    val Folder = icon("folder", filled = false) {
+        moveTo(3.5f, 7f); quadTo(3.5f, 5f, 5.5f, 5f); lineTo(9.5f, 5f); lineTo(11.5f, 7.5f); lineTo(18.5f, 7.5f); quadTo(20.5f, 7.5f, 20.5f, 9.5f)
+        lineTo(20.5f, 17f); quadTo(20.5f, 19f, 18.5f, 19f); lineTo(5.5f, 19f); quadTo(3.5f, 19f, 3.5f, 17f); close()
+    }
     val Stats = icon("stats", filled = false) {
         moveTo(5f, 20f); lineTo(5f, 13f)
         moveTo(10f, 20f); lineTo(10f, 5f)

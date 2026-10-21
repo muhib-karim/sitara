@@ -109,6 +109,8 @@ fun SearchScreen(
     onTrackMenu: (Track) -> Unit,
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(),
+    /** Songs on the phone that match the query, listed first with a badge; they need no connection. */
+    onThisPhone: List<Track> = emptyList(),
 ) {
     val field = remember { FocusRequester() }
     val focus = LocalFocusManager.current
@@ -143,6 +145,11 @@ fun SearchScreen(
             }
             val current = query.trim()
             val kept = { actions.saveSearch(current) }
+            if (filter == SearchFilter.SONGS) {
+                itemsIndexed(onThisPhone, key = { _, track -> "phone-${track.id}" }) { index, track ->
+                    TrackRow(track, { kept(); onPlay(onThisPhone, index) }, onMore = { onTrackMenu(track) }) { OnThisPhoneBadge() }
+                }
+            }
             when {
                 state is SearchState.Loaded && state.query == current && state.filter == filter -> searchResults(
                     state.results, filter,
@@ -397,4 +404,17 @@ private fun SearchMessage(message: String) {
         message, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyLarge,
         modifier = Modifier.padding(SitaraSpacing.Gutter),
     )
+}
+
+/** Marks a search result that is a file on the phone rather than a catalogue song. */
+@Composable
+private fun OnThisPhoneBadge() {
+    Row(
+        Modifier.padding(start = 8.dp).clip(CircleShape).background(MaterialTheme.colorScheme.primary.copy(alpha = 0.14f)).padding(horizontal = 8.dp, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(4.dp),
+    ) {
+        Icon(SitaraIcons.Phone, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(14.dp))
+        Text("On this phone", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary, maxLines = 1)
+    }
 }

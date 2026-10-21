@@ -1,6 +1,7 @@
 package app.sitara.music.core.player
 
 import app.sitara.music.core.model.Track
+import app.sitara.music.core.model.isLocal
 import app.sitara.music.source.api.ResolvedStream
 import app.sitara.music.source.api.StreamResolver
 import java.util.concurrent.atomic.AtomicReference
@@ -34,6 +35,7 @@ class PrefetchingStreamResolver(
     private val slot = AtomicReference<Prepared?>(null)
 
     fun prepare(track: Track) {
+        if (track.isLocal) return
         val current = slot.get()
         if (current != null && current.trackId == track.id && current.fresh) return
         val lookup = scope.async {

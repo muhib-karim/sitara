@@ -39,6 +39,7 @@ import app.sitara.music.core.designsystem.SitaraSpacing
 import app.sitara.music.core.model.DownloadState
 import app.sitara.music.core.model.PlaylistSummary
 import app.sitara.music.core.model.Track
+import app.sitara.music.core.model.isLocal
 
 /** What can be done with one song: like it, queue it, put it in a playlist, or download it ([download] is where its download stands). */
 @Composable
@@ -59,10 +60,13 @@ fun SongActions(
         SheetAction(SitaraIcons.Next, "Play next", onPlayNext)
         SheetAction(SitaraIcons.Queue, "Add to queue", onAddToQueue)
         SheetAction(SitaraIcons.Add, "Add to playlist", onAddToPlaylist)
-        when (download) {
-            null, DownloadState.FAILED -> SheetAction(SitaraIcons.Download, "Download", onDownload)
-            DownloadState.DOWNLOADED -> SheetAction(SitaraIcons.Delete, "Remove download", onRemoveDownload)
-            else -> SheetAction(SitaraIcons.Close, "Cancel download", onRemoveDownload)
+        // A song on the phone is already a file; there is nothing to download.
+        if (!track.isLocal) {
+            when (download) {
+                null, DownloadState.FAILED -> SheetAction(SitaraIcons.Download, "Download", onDownload)
+                DownloadState.DOWNLOADED -> SheetAction(SitaraIcons.Delete, "Remove download", onRemoveDownload)
+                else -> SheetAction(SitaraIcons.Close, "Cancel download", onRemoveDownload)
+            }
         }
     }
 }
