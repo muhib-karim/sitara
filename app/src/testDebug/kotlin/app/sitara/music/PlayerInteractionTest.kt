@@ -13,7 +13,6 @@ import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertWidthIsAtLeast
 import androidx.compose.ui.test.click
-import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasTestTag
@@ -159,11 +158,13 @@ class PlayerInteractionTest {
         render(expanded = true, failed = true)
 
         compose.onNodeWithText("Couldn’t play this song").assertIsDisplayed()
-        val screen = compose.onRoot().getBoundsInRoot()
+        val screenBottom = compose.onRoot().fetchSemanticsNode().size.height
         val notInDock = !hasAnyAncestor(hasTestTag("playback-dock"))
         listOf("Seek", "Shuffle", "Previous track", "Try again", "Next track", "Repeat").forEach { label ->
-            val bounds = compose.onNode(hasContentDescription(label) and notInDock).getBoundsInRoot()
-            assertTrue("$label ends at ${bounds.bottom}, below the screen's ${screen.bottom}", bounds.bottom <= screen.bottom)
+            // Unclipped: bounds in root are cut to the scrolling page, so a control below the fold would still look on screen.
+            val node = compose.onNode(hasContentDescription(label) and notInDock).fetchSemanticsNode()
+            val bottom = node.positionInRoot.y + node.size.height
+            assertTrue("$label ends at $bottom px, below the screen's $screenBottom px", bottom <= screenBottom)
         }
     }
 
