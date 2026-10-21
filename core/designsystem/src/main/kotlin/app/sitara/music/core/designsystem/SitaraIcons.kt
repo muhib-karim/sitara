@@ -96,6 +96,7 @@ object SitaraIcons {
     val Close = icon("close", filled = false) {
         moveTo(6f, 6f); lineTo(18f, 18f); moveTo(18f, 6f); lineTo(6f, 18f)
     }
+    val Check = icon("check", filled = false) { moveTo(5f, 12.5f); lineTo(10f, 17.5f); lineTo(19f, 7f) }
     val List = icon("list", filled = false) {
         for (y in listOf(6f, 12f, 18f)) {
             moveTo(4f, y); lineTo(5f, y); moveTo(10f, y); lineTo(20f, y)

@@ -18,6 +18,7 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipeDown
 import androidx.compose.ui.unit.dp
 import app.sitara.music.core.designsystem.SitaraTheme
+import app.sitara.music.core.model.SitaraSettings
 import app.sitara.music.feature.player.LyricsPage
 import app.sitara.music.feature.player.LyricsState
 import app.sitara.music.source.fake.FakeMusicSource
@@ -43,7 +44,7 @@ class LyricsFollowTest {
     private val seeks = mutableListOf<Long>()
 
     private fun render() = compose.setContent {
-        SitaraTheme(reducedMotion = true) {
+        SitaraTheme(SitaraSettings(reducedMotion = true)) {
             LyricsPage(LyricsState.Found(lyrics), position, Color.White, { seeks += it }, {}, Modifier.height(320.dp).testTag("lyrics"))
         }
     }

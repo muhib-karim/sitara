@@ -203,7 +203,7 @@ fun SitaraShell(
             else -> tab = Tab.HOME
         }
     }
-    SitaraTheme(settings.themeMode, settings.darkMode, settings.reducedMotion) {
+    SitaraTheme(settings, nowPlaying = player.track?.artwork) {
         val haze = rememberHazeState()
         val navBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
         val fontScale = LocalDensity.current.fontScale

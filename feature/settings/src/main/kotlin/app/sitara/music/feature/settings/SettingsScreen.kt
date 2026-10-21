@@ -1,21 +1,28 @@
 package app.sitara.music.feature.settings
 
+import android.os.Build
 import androidx.compose.foundation.background
+import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.defaultMinSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.selection.toggleable
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -35,14 +42,20 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.graphics.luminance
+import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
 import app.sitara.music.core.common.formatBytes
+import app.sitara.music.core.designsystem.ArtworkPalette
 import app.sitara.music.core.designsystem.GlassIconButton
 import app.sitara.music.core.designsystem.LargeTitle
 import app.sitara.music.core.designsystem.PillButton
@@ -50,10 +63,11 @@ import app.sitara.music.core.designsystem.SectionHeader
 import app.sitara.music.core.designsystem.SitaraIcons
 import app.sitara.music.core.designsystem.SitaraRadius
 import app.sitara.music.core.designsystem.SitaraSpacing
+import app.sitara.music.core.designsystem.accentTone
+import app.sitara.music.core.model.AccentColor
 import app.sitara.music.core.model.DarkMode
 import app.sitara.music.core.model.SitaraSettings
 import app.sitara.music.core.model.SongDownload
-import app.sitara.music.core.model.ThemeMode
 import kotlin.math.roundToInt
 
 @Composable
@@ -73,25 +87,8 @@ fun SettingsScreen(
             GlassIconButton(SitaraIcons.Back, "Back", onBack, Modifier.padding(start = 12.dp, top = 8.dp))
             LargeTitle("Settings")
         }
-        item(key = "colour") {
-            SettingsGroup("Colour", selection = true) {
-                Choice("From artwork", settings.themeMode == ThemeMode.ARTWORK) { onChange(settings.copy(themeMode = ThemeMode.ARTWORK)) }
-                InsetDivider()
-                // Wallpaper colours require Android 12; hide the option where it cannot work.
-                if (android.os.Build.VERSION.SDK_INT >= 31) {
-                    Choice("Wallpaper accent", settings.themeMode == ThemeMode.DYNAMIC) { onChange(settings.copy(themeMode = ThemeMode.DYNAMIC)) }
-                    InsetDivider()
-                }
-                Choice("AMOLED black", settings.themeMode == ThemeMode.AMOLED) { onChange(settings.copy(themeMode = ThemeMode.AMOLED)) }
-            }
-        }
         item(key = "appearance") {
-            SettingsGroup("Appearance", selection = true) {
-                listOf(DarkMode.SYSTEM to "Follow system", DarkMode.LIGHT to "Light", DarkMode.DARK to "Dark").forEachIndexed { index, (mode, label) ->
-                    if (index > 0) InsetDivider()
-                    Choice(label, settings.darkMode == mode) { onChange(settings.copy(darkMode = mode)) }
-                }
-            }
+            AppearanceSettings(settings, onChange)
         }
         item(key = "motion") {
             SettingsGroup("Motion") {
@@ -111,6 +108,119 @@ fun SettingsScreen(
         }
         item(key = "downloads") {
             DownloadSettings(settings, onChange, downloads, onRemoveAllDownloads)
+        }
+    }
+}
+
+@Composable
+private fun AppearanceSettings(settings: SitaraSettings, onChange: (SitaraSettings) -> Unit) {
+    // Wallpaper colours need Android 12; below it the option is hidden and the picked accent always applies.
+    val wallpaperAvailable = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+    val wallpaper = wallpaperAvailable && settings.dynamicColor
+    val pick: (AccentColor) -> Unit = { onChange(settings.copy(accent = it, dynamicColor = false)) }
+    SettingsGroup("Appearance") {
+        AppearancePreview()
+        Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp).selectableGroup(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            listOf(DarkMode.SYSTEM to "System", DarkMode.LIGHT to "Light", DarkMode.DARK to "Dark").forEach { (mode, label) ->
+                Segment(label, settings.darkMode == mode, Modifier.weight(1f)) { onChange(settings.copy(darkMode = mode)) }
+            }
+        }
+        InsetDivider()
+        SwitchRow("Pure black", "Black instead of dark grey in the dark theme, and Now Playing without the cover’s blur", settings.pureBlack) {
+            onChange(settings.copy(pureBlack = it))
+        }
+        if (wallpaperAvailable) {
+            InsetDivider()
+            SwitchRow("Wallpaper colours", "The accent comes from your wallpaper", settings.dynamicColor) { onChange(settings.copy(dynamicColor = it)) }
+        }
+        InsetDivider()
+        Column(Modifier.selectableGroup()) {
+            Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp)) {
+                Text("Accent", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+                Text(
+                    if (wallpaper) "From your wallpaper now. Pick a colour to use it instead." else "Buttons, highlights and the selected tab",
+                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
+            val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f
+            Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                AccentColor.entries.forEach { accent ->
+                    accentTone(accent, dark)?.let { tone -> Swatch(accent.label, tone, selected = !wallpaper && settings.accent == accent) { pick(accent) } }
+                }
+            }
+            Choice(
+                AccentColor.ARTWORK.label, !wallpaper && settings.accent == AccentColor.ARTWORK,
+                description = "Follows the cover of the song that’s playing; saffron when nothing plays",
+            ) { pick(AccentColor.ARTWORK) }
+        }
+        InsetDivider()
+        SwitchRow("Use artwork colours across the app", "Backgrounds, cards and chips take a tint from the cover of the song that’s playing", settings.artworkColorsAcrossApp) {
+            onChange(settings.copy(artworkColorsAcrossApp = it))
+        }
+    }
+}
+
+/** A still picture of the chosen colours: the page, a card, chips and a playing song. One node for TalkBack, with nothing to press. */
+@Composable
+private fun AppearancePreview() {
+    val colors = MaterialTheme.colorScheme
+    Column(
+        Modifier.padding(16.dp).fillMaxWidth().clip(RoundedCornerShape(SitaraRadius.Tile)).background(colors.background).padding(12.dp)
+            .testTag("appearance-preview").clearAndSetSemantics { contentDescription = "Preview of the chosen colours" },
+        verticalArrangement = Arrangement.spacedBy(12.dp),
+    ) {
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            listOf("Chill" to true, "Focus" to false, "Party" to false).forEach { (label, selected) ->
+                Text(
+                    label, style = MaterialTheme.typography.labelLarge, color = if (selected) colors.onPrimary else colors.onSurfaceVariant,
+                    modifier = Modifier.clip(CircleShape).background(if (selected) colors.primary else colors.surfaceContainerHigh).padding(horizontal = 14.dp, vertical = 8.dp),
+                )
+            }
+        }
+        Column(
+            Modifier.fillMaxWidth().clip(RoundedCornerShape(SitaraRadius.Tile)).background(colors.surfaceContainerHigh).padding(12.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(Modifier.size(48.dp).clip(RoundedCornerShape(SitaraRadius.Cover)).background(Brush.linearGradient(listOf(colors.primary, colors.surfaceContainerHighest))))
+                Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
+                    Text("Song title", style = MaterialTheme.typography.titleMedium, color = colors.onSurface)
+                    Text("Artist", style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
+                }
+                Box(Modifier.size(40.dp).clip(CircleShape).background(colors.primary), contentAlignment = Alignment.Center) {
+                    Icon(SitaraIcons.Play, null, tint = colors.onPrimary, modifier = Modifier.size(20.dp))
+                }
+            }
+            Box(Modifier.fillMaxWidth().height(4.dp).clip(CircleShape).background(colors.surfaceContainerHighest)) {
+                Box(Modifier.fillMaxWidth(0.4f).fillMaxHeight().background(colors.primary))
+            }
+        }
+    }
+}
+
+@Composable
+private fun Segment(label: String, selected: Boolean, modifier: Modifier, onClick: () -> Unit) {
+    val colors = MaterialTheme.colorScheme
+    Box(
+        modifier.heightIn(min = SitaraSpacing.TouchTarget).clip(CircleShape).background(if (selected) colors.primary else colors.surfaceContainerHigh)
+            .selectable(selected, role = Role.RadioButton, onClick = onClick).padding(horizontal = 8.dp, vertical = 12.dp),
+        contentAlignment = Alignment.Center,
+    ) {
+        Text(label, style = MaterialTheme.typography.labelLarge, color = if (selected) colors.onPrimary else colors.onSurface)
+    }
+}
+
+/** A 48 dp accent swatch; the chosen one is ringed and ticked, so the choice does not rest on colour alone. */
+@Composable
+private fun Swatch(label: String, tone: Color, selected: Boolean, onClick: () -> Unit) {
+    Box(
+        Modifier.size(SitaraSpacing.TouchTarget).clip(CircleShape).selectable(selected, role = Role.RadioButton, onClick = onClick)
+            .semantics { contentDescription = label },
+        contentAlignment = Alignment.Center,
+    ) {
+        if (selected) Box(Modifier.size(46.dp).border(2.dp, MaterialTheme.colorScheme.onSurface, CircleShape))
+        Box(Modifier.size(36.dp).clip(CircleShape).background(tone), contentAlignment = Alignment.Center) {
+            if (selected) Icon(SitaraIcons.Check, null, tint = Color(ArtworkPalette.inkOn(tone.toArgb())), modifier = Modifier.size(20.dp))
         }
     }
 }
@@ -210,13 +320,12 @@ private fun SwitchRow(title: String, description: String, checked: Boolean, onCh
 }
 
 @Composable
-private fun SettingsGroup(title: String, selection: Boolean = false, content: @Composable ColumnScope.() -> Unit) {
+private fun SettingsGroup(title: String, content: @Composable ColumnScope.() -> Unit) {
     Column(Modifier.padding(bottom = 20.dp)) {
         SectionHeader(title)
         Column(
             Modifier.padding(horizontal = SitaraSpacing.Gutter).fillMaxWidth()
-                .clip(RoundedCornerShape(SitaraRadius.Tile)).background(MaterialTheme.colorScheme.surfaceContainer)
-                .then(if (selection) Modifier.selectableGroup() else Modifier),
+                .clip(RoundedCornerShape(SitaraRadius.Tile)).background(MaterialTheme.colorScheme.surfaceContainer),
             content = content,
         )
     }
@@ -228,16 +337,16 @@ private fun InsetDivider() {
 }
 
 @Composable
-private fun Choice(label: String, selected: Boolean, onClick: () -> Unit) {
+private fun Choice(label: String, selected: Boolean, description: String? = null, onClick: () -> Unit) {
     Row(
         Modifier.fillMaxWidth().defaultMinSize(minHeight = 56.dp)
             .selectable(selected, role = Role.RadioButton, onClick = onClick).padding(horizontal = 16.dp, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(
-            label, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface,
-            modifier = Modifier.weight(1f).padding(end = 12.dp),
-        )
+        Column(Modifier.weight(1f).padding(end = 12.dp)) {
+            Text(label, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface)
+            description?.let { Text(it, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant) }
+        }
         RadioButton(
             selected, onClick = null,
             colors = RadioButtonDefaults.colors(

@@ -1,20 +1,26 @@
 package app.sitara.music.core.data
 
+import app.sitara.music.core.model.AccentColor
 import app.sitara.music.core.model.DarkMode
 import app.sitara.music.core.model.EqualiserSettings
 import app.sitara.music.core.model.LibraryLayout
 import app.sitara.music.core.model.LibrarySort
 import app.sitara.music.core.model.SearchFilter
 import app.sitara.music.core.model.SitaraSettings
-import app.sitara.music.core.model.ThemeMode
 
 /**
  * Settings <-> flat string map. Unknown or corrupt values fall back to defaults
  * instead of crashing, so a bad backup or an old version never bricks the app.
  */
 object SettingsCodec {
-    const val THEME = "theme_mode"
     const val DARK = "dark_mode"
+    const val PURE_BLACK = "pure_black"
+    const val DYNAMIC_COLOR = "dynamic_color"
+    const val ACCENT = "accent"
+    const val ARTWORK_ACROSS_APP = "artwork_colors_across_app"
+
+    /** Up to 0.9.3: DYNAMIC, ARTWORK or AMOLED; read only to carry AMOLED over to [PURE_BLACK]. */
+    const val LEGACY_THEME = "theme_mode"
     const val REDUCED_MOTION = "reduced_motion"
     const val CROSSFADE = "crossfade_seconds"
     const val NORMALISE = "normalisation"
@@ -31,8 +37,11 @@ object SettingsCodec {
     const val LIBRARY_SORT = "library_sort"
 
     fun encode(s: SitaraSettings): Map<String, String> = mapOf(
-        THEME to s.themeMode.name,
         DARK to s.darkMode.name,
+        PURE_BLACK to s.pureBlack.toString(),
+        DYNAMIC_COLOR to s.dynamicColor.toString(),
+        ACCENT to s.accent.name,
+        ARTWORK_ACROSS_APP to s.artworkColorsAcrossApp.toString(),
         REDUCED_MOTION to s.reducedMotion.toString(),
         CROSSFADE to s.crossfadeSeconds.toString(),
         NORMALISE to s.normalisation.toString(),
@@ -52,9 +61,14 @@ object SettingsCodec {
 
     fun decode(map: Map<String, String>): SitaraSettings {
         val d = SitaraSettings()
+        // AMOLED was always black, whatever the light or dark choice; until the new keys are written it stays so.
+        val amoled = PURE_BLACK !in map && map[LEGACY_THEME] == "AMOLED"
         return SitaraSettings(
-            themeMode = map[THEME]?.let { v -> ThemeMode.entries.firstOrNull { it.name == v } } ?: d.themeMode,
-            darkMode = map[DARK]?.let { v -> DarkMode.entries.firstOrNull { it.name == v } } ?: d.darkMode,
+            darkMode = if (amoled) DarkMode.DARK else map[DARK]?.let { v -> DarkMode.entries.firstOrNull { it.name == v } } ?: d.darkMode,
+            pureBlack = amoled || (map[PURE_BLACK]?.toBooleanStrictOrNull() ?: d.pureBlack),
+            dynamicColor = map[DYNAMIC_COLOR]?.toBooleanStrictOrNull() ?: d.dynamicColor,
+            accent = map[ACCENT]?.let { v -> AccentColor.entries.firstOrNull { it.name == v } } ?: d.accent,
+            artworkColorsAcrossApp = map[ARTWORK_ACROSS_APP]?.toBooleanStrictOrNull() ?: d.artworkColorsAcrossApp,
             reducedMotion = map[REDUCED_MOTION]?.toBooleanStrictOrNull() ?: d.reducedMotion,
             crossfadeSeconds = map[CROSSFADE]?.toIntOrNull()?.coerceIn(0, SitaraSettings.MAX_CROSSFADE_SECONDS) ?: d.crossfadeSeconds,
             normalisation = map[NORMALISE]?.toBooleanStrictOrNull() ?: d.normalisation,

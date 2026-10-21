@@ -58,7 +58,6 @@ import app.sitara.music.core.designsystem.reorderableRow
 import app.sitara.music.core.model.Album
 import app.sitara.music.core.model.ArtistPage
 import app.sitara.music.core.model.Artwork
-import app.sitara.music.core.model.DarkMode
 import app.sitara.music.core.model.DownloadState
 import app.sitara.music.core.model.Playlist
 import app.sitara.music.core.model.SitaraSettings
@@ -311,8 +310,8 @@ private fun DetailHeader(
     round: Boolean = false,
     actions: @Composable () -> Unit = {},
 ) {
-    // The shared listening stage supplies atmosphere, reduced-motion and AMOLED behavior.
-    SitaraTheme(settings.themeMode, DarkMode.DARK, settings.reducedMotion) {
+    // The shared listening stage supplies atmosphere, reduced-motion and pure black behaviour; the accent follows this page's cover.
+    SitaraTheme(settings, nowPlaying = artwork, dark = true) {
         Box(Modifier.fillMaxWidth().padding(horizontal = SitaraSpacing.Gutter).clip(RoundedCornerShape(SitaraRadius.Artwork))) {
             ArtworkBackdrop(artwork, Modifier.matchParentSize())
             Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {

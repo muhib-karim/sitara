@@ -25,6 +25,7 @@ import androidx.compose.ui.test.swipeUp
 import androidx.compose.ui.unit.Density
 import androidx.test.core.app.ApplicationProvider
 import app.sitara.music.core.designsystem.SitaraTheme
+import app.sitara.music.core.model.AccentColor
 import app.sitara.music.core.model.DarkMode
 import app.sitara.music.core.model.DownloadState
 import app.sitara.music.core.model.EqualiserPreset
@@ -36,7 +37,6 @@ import app.sitara.music.core.model.SearchFilter
 import app.sitara.music.core.model.SearchResults
 import app.sitara.music.core.model.SitaraSettings
 import app.sitara.music.core.model.SongDownload
-import app.sitara.music.core.model.ThemeMode
 import app.sitara.music.core.model.UserPlaylist
 import app.sitara.music.feature.home.FeedState
 import app.sitara.music.feature.home.HomeFeed
@@ -124,7 +124,9 @@ class ScreenshotTest {
         settingsOpen: Boolean = false,
         expanded: Boolean = false,
         page: Int = 0,
-        mode: ThemeMode = ThemeMode.ARTWORK,
+        pureBlack: Boolean = false,
+        accent: AccentColor = AccentColor.SAFFRON,
+        artworkAcrossApp: Boolean = false,
         reduced: Boolean = true,
         fontScale: Float = 1f,
         playerState: PlayerUiState = playing,
@@ -141,7 +143,11 @@ class ScreenshotTest {
         libraryLayout: LibraryLayout = LibraryLayout.GRID,
         beforeCapture: () -> Unit = {},
     ) {
-        val settings = SitaraSettings(themeMode = mode, darkMode = if (dark) DarkMode.DARK else DarkMode.LIGHT, reducedMotion = reduced, libraryLayout = libraryLayout)
+        val settings = SitaraSettings(
+            darkMode = if (dark) DarkMode.DARK else DarkMode.LIGHT, pureBlack = pureBlack, accent = accent, artworkColorsAcrossApp = artworkAcrossApp,
+            // Robolectric has no wallpaper to take colours from; the shots show Sitara's own accents.
+            dynamicColor = false, reducedMotion = reduced, libraryLayout = libraryLayout,
+        )
         compose.setContent {
             CompositionLocalProvider(LocalDensity provides Density(LocalDensity.current.density, fontScale)) {
                 SitaraShell(
@@ -182,7 +188,7 @@ class ScreenshotTest {
 
     @Test fun homeWithoutQueue() = shot("home_empty_queue", dark = true, playerState = PlayerUiState())
 
-    @Test fun playerAmoled() = shot("player_amoled", dark = true, expanded = true, mode = ThemeMode.AMOLED)
+    @Test fun playerAmoled() = shot("player_amoled", dark = true, expanded = true, pureBlack = true)
 
     @Test fun playerBlur() = shot("player_blur", dark = true, expanded = true, reduced = false)
 
@@ -337,7 +343,7 @@ class ScreenshotTest {
     // Sheets open in a dialog window; their content is captured on the sheet's own surface colour.
     private fun sheet(name: String, content: @Composable () -> Unit) {
         compose.setContent {
-            SitaraTheme(ThemeMode.ARTWORK, DarkMode.DARK, reducedMotion = true) {
+            SitaraTheme(SitaraSettings(dynamicColor = false, reducedMotion = true), dark = true) {
                 Box(Modifier.background(MaterialTheme.colorScheme.surfaceContainerLow)) { content() }
             }
         }

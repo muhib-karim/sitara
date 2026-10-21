@@ -5,14 +5,29 @@ import kotlin.math.roundToInt
 
 enum class RepeatMode { OFF, ALL, ONE }
 
-enum class ThemeMode { DYNAMIC, ARTWORK, AMOLED }
-
 enum class DarkMode { SYSTEM, LIGHT, DARK }
+
+/** The app's accent: a fixed colour, or [ARTWORK], which follows the cover of the song that is playing. */
+enum class AccentColor(val label: String) {
+    SAFFRON("Saffron"),
+    ROSE("Rose"),
+    VIOLET("Violet"),
+    BLUE("Blue"),
+    TEAL("Teal"),
+    GREEN("Green"),
+    ARTWORK("From artwork"),
+}
 
 /** User preferences. Defaults are the values a fresh install starts with. */
 data class SitaraSettings(
-    val themeMode: ThemeMode = ThemeMode.ARTWORK,
     val darkMode: DarkMode = DarkMode.SYSTEM,
+    /** Black instead of dark grey in the dark theme, and a Now Playing without the cover's blur. */
+    val pureBlack: Boolean = false,
+    /** The wallpaper's accent (Material You, Android 12 and later) instead of [accent]. */
+    val dynamicColor: Boolean = true,
+    val accent: AccentColor = AccentColor.SAFFRON,
+    /** Backgrounds, cards and chips take a tint from the cover of the song that is playing. */
+    val artworkColorsAcrossApp: Boolean = false,
     val reducedMotion: Boolean = false,
     val crossfadeSeconds: Int = 0,
     val normalisation: Boolean = true,

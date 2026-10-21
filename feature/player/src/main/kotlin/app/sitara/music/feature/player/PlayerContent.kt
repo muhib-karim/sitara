@@ -70,7 +70,6 @@ import app.sitara.music.core.designsystem.rememberCoverLook
 import app.sitara.music.core.designsystem.rememberReorderState
 import app.sitara.music.core.designsystem.reorderableRow
 import app.sitara.music.core.designsystem.sitaraColorScheme
-import app.sitara.music.core.model.ThemeMode
 import app.sitara.music.core.model.Track
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
@@ -102,7 +101,7 @@ internal fun FullPlayer(
     }
     val look = rememberCoverLook(track.artwork)
     val theme = rememberArtworkTheme(track.artwork, look = look)
-    val stage = sitaraColorScheme(if (wash) ThemeMode.ARTWORK else ThemeMode.AMOLED, dark = true)
+    val stage = sitaraColorScheme(dark = true, pureBlack = !wash)
     // The artwork theme's accent passes AA against the stage, so controls and highlights take it as primary.
     val accent = animateArtworkColor(theme.accent, "stage accent")
     val onAccent = animateArtworkColor(theme.onAccent, "stage on accent")
