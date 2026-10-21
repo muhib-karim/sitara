@@ -32,6 +32,9 @@ sealed interface DetailRoute {
 
     /** An album, artist or folder of songs on the phone, by its key among its [kind]. */
     data class LocalGroup(val kind: LocalKind, val key: String) : DetailRoute
+
+    /** Settings → Backup and restore. */
+    data object Backup : DetailRoute
 }
 
 /** "kind:id", the form a route is saved in across process death. */
@@ -49,6 +52,7 @@ fun DetailRoute.encode(): String = when (this) {
     DetailRoute.OnThisPhone -> "local:phone"
     // The kind never holds a "|", the key may.
     is DetailRoute.LocalGroup -> "localgroup:${kind.name}|$key"
+    DetailRoute.Backup -> "backup:file"
 }
 
 fun decodeDetailRoute(saved: String): DetailRoute? {
@@ -64,6 +68,7 @@ fun decodeDetailRoute(saved: String): DetailRoute? {
         "mine" -> id.toLongOrNull()?.let(DetailRoute::UserPlaylist)
         "mood" -> DetailRoute.Mood(id.substringBefore('|').ifEmpty { return null }, id.substringAfter('|', "").ifEmpty { return null })
         "local" -> DetailRoute.OnThisPhone
+        "backup" -> DetailRoute.Backup
         "localgroup" -> LocalKind.entries.firstOrNull { it.name == id.substringBefore('|') && it != LocalKind.SONGS }
             ?.let { DetailRoute.LocalGroup(it, id.substringAfter('|', "").ifEmpty { return null }) }
         else -> null

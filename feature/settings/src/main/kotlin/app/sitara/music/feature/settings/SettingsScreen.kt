@@ -86,6 +86,7 @@ fun SettingsScreen(
     onOpenStats: () -> Unit = {},
     onClearHistory: () -> Unit = {},
     onImportPlaylist: () -> Unit = {},
+    onOpenBackup: () -> Unit = {},
     scrobblingSummary: String = "Off",
     onOpenScrobbling: () -> Unit = {},
     contentPadding: PaddingValues = PaddingValues(),
@@ -120,6 +121,8 @@ fun SettingsScreen(
         item(key = "library") {
             SettingsGroup("Library") {
                 LinkRow("Import playlist", "Link or file", onImportPlaylist)
+                InsetDivider()
+                LinkRow("Backup and restore", "To a file", onOpenBackup)
             }
         }
         item(key = "history") {

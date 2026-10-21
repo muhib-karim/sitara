@@ -9,16 +9,16 @@ import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
-import app.sitara.music.core.model.Album
-import app.sitara.music.core.model.Artist
 import app.sitara.music.core.data.local.folderName
 import app.sitara.music.core.data.local.hasMusicPermission
 import app.sitara.music.core.data.local.keepFolder
+import app.sitara.music.core.model.Album
+import app.sitara.music.core.model.Artist
 import app.sitara.music.core.model.EqualiserSettings
 import app.sitara.music.core.model.LibraryLayout
 import app.sitara.music.core.model.LibrarySort
-import app.sitara.music.core.model.LocalFolder
 import app.sitara.music.core.model.ListeningStats
+import app.sitara.music.core.model.LocalFolder
 import app.sitara.music.core.model.PlaylistSummary
 import app.sitara.music.core.model.SearchFilter
 import app.sitara.music.core.model.SitaraSettings
@@ -130,6 +130,9 @@ class AppViewModel(private val app: SitaraApplication) :
             toast("No browser to open Last.fm in")
         }
     }
+
+    /** Settings → Backup and restore; a backup or restore under way outlives the page. */
+    val backups = Backups(viewModelScope, app.library.backups, app.settings, app.contentResolver)
 
     /** Requests to open Import playlist (a shared playlist link), buffered until the UI collects them. */
     val requestedImport: Flow<Unit> = importRequests.receiveAsFlow()
@@ -350,6 +353,7 @@ class AppViewModel(private val app: SitaraApplication) :
                     DetailRoute.Import -> error("Import has its own state: see imports")
                     DetailRoute.Scrobbling -> error("Scrobbling has its own state: see scrobbling")
                     DetailRoute.OnThisPhone, is DetailRoute.LocalGroup -> error("Songs on the phone have their own state: see local")
+                    DetailRoute.Backup -> error("Backup and restore has its own state: see backups")
                 }
             } catch (e: CancellationException) {
                 throw e

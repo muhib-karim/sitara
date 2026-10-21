@@ -107,6 +107,9 @@ import app.sitara.music.feature.search.SearchActions
 import app.sitara.music.feature.search.SearchLanding
 import app.sitara.music.feature.search.SearchScreen
 import app.sitara.music.feature.search.SearchState
+import app.sitara.music.feature.settings.BackupActions
+import app.sitara.music.feature.settings.BackupScreen
+import app.sitara.music.feature.settings.BackupStatus
 import app.sitara.music.feature.settings.ScrobblingActions
 import app.sitara.music.feature.settings.ScrobblingScreen
 import app.sitara.music.feature.settings.ScrobblingState
@@ -114,6 +117,7 @@ import app.sitara.music.feature.settings.SettingsScreen
 import app.sitara.music.feature.settings.SignInStep
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
+import java.time.LocalDate
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 
@@ -140,6 +144,7 @@ fun SitaraRoot(vm: AppViewModel, systemReducedMotion: Boolean) {
     val imports by vm.imports.state.collectAsState()
     val scrobbling by vm.scrobbling.state.collectAsState()
     val local by vm.local.collectAsState()
+    val backup by vm.backups.state.collectAsState()
     SitaraShell(
         settings = settings.let { if (systemReducedMotion) it.copy(reducedMotion = true) else it },
         home = home,
@@ -174,6 +179,8 @@ fun SitaraRoot(vm: AppViewModel, systemReducedMotion: Boolean) {
         scrobblingActions = vm.scrobbling,
         local = local,
         localActions = vm,
+        backup = backup,
+        backupActions = vm.backups,
     )
 }
 
@@ -219,6 +226,8 @@ fun SitaraShell(
     scrobblingActions: ScrobblingActions = ScrobblingActions.None,
     local: LocalLibraryState = LocalLibraryState(),
     localActions: LocalActions = LocalActions.None,
+    backup: BackupStatus = BackupStatus.Idle,
+    backupActions: BackupActions = BackupActions.None,
 ) {
     var tab by rememberSaveable { mutableStateOf(if (initialSettingsOpen) Tab.SETTINGS else initialTab) }
     var detailStack by rememberSaveable(stateSaver = DetailStackSaver) { mutableStateOf(listOfNotNull(initialDetail)) }
@@ -258,6 +267,8 @@ fun SitaraShell(
         relinking = null
         if (uri != null) folder?.let { localActions.relinkFolder(it, uri.toString()) } ?: localActions.addFolder(uri.toString())
     }
+    val createBackup = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument(BACKUP_TYPE)) { uri -> uri?.let { backupActions.backUp(it.toString()) } }
+    val openBackup = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> uri?.let { backupActions.restore(it.toString()) } }
     val activity = LocalActivity.current
     val askMusicAccess = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         // Once the system stops asking (denied for good), only Sitara's page in the system settings can grant it.
@@ -337,6 +348,15 @@ fun SitaraShell(
                             onPauseOrDispose {}
                         }
                         ScrobblingScreen(scrobbling, scrobblingActions, onBack = { detailStack = detailStack.dropLast(1) }, contentPadding = contentPadding)
+                    } else if (route == DetailRoute.Backup) {
+                        BackupScreen(
+                            backup,
+                            onBackUp = { createBackup.launch("sitara-backup-${LocalDate.now()}.json") },
+                            // Some file apps label .json files as plain text or bytes.
+                            onRestore = { openBackup.launch(arrayOf(BACKUP_TYPE, "text/plain", "application/octet-stream")) },
+                            onBack = { detailStack = detailStack.dropLast(1) },
+                            contentPadding = contentPadding,
+                        )
                     } else if (route == DetailRoute.OnThisPhone) {
                         // Read again on every return too: access may just have been granted in the system's settings.
                         LifecycleResumeEffect(Unit) {
@@ -419,6 +439,7 @@ fun SitaraShell(
                                     onOpenStats = { open(DetailRoute.Stats) },
                                     onClearHistory = onClearHistory,
                                     onImportPlaylist = { open(DetailRoute.Import) },
+                                    onOpenBackup = { open(DetailRoute.Backup) },
                                     scrobblingSummary = scrobbling.summary,
                                     onOpenScrobbling = { open(DetailRoute.Scrobbling) },
                                 )
@@ -543,3 +564,5 @@ private fun greeting(): String {
 
 /** Sitara's page in the system settings, where a permission the system no longer asks for can be granted. */
 private fun Activity.openAppSettings() = startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS, Uri.fromParts("package", packageName, null)))
+
+private const val BACKUP_TYPE = "application/json"

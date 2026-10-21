@@ -1,6 +1,7 @@
 package app.sitara.music.core.data.library
 
 import android.content.Context
+import app.sitara.music.core.data.backup.LibraryBackups
 import app.sitara.music.core.data.imports.ImportCatalogue
 import app.sitara.music.core.data.imports.PlaylistImporter
 import app.sitara.music.core.data.local.localIndex
@@ -18,6 +19,7 @@ class LibraryStore(context: Context) {
     val songGain: SongGainRepository = RoomSongGain(database.songGain())
     val scrobbles = ScrobbleOutbox(database.scrobbles())
     val local = context.localIndex(database.local())
+    val backups = LibraryBackups(database.backup())
 
     /** Imports into [playlists] that look songs up in [catalogue]. */
     fun importer(catalogue: ImportCatalogue) = PlaylistImporter(database.imports(), catalogue)

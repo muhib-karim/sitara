@@ -5,6 +5,7 @@ import androidx.room.AutoMigration
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
+import app.sitara.music.core.data.backup.BackupDao
 import app.sitara.music.core.data.imports.ImportCandidateEntity
 import app.sitara.music.core.data.imports.ImportDao
 import app.sitara.music.core.data.imports.ImportJobEntity
@@ -47,6 +48,8 @@ abstract class SitaraDatabase : RoomDatabase() {
     abstract fun scrobbles(): ScrobbleDao
 
     abstract fun local(): LocalDao
+
+    abstract fun backup(): BackupDao
 
     companion object {
         fun open(context: Context): SitaraDatabase = Room.databaseBuilder(context, SitaraDatabase::class.java, "sitara.db").build()
