@@ -39,6 +39,8 @@ import app.sitara.music.core.model.Library
 import app.sitara.music.core.model.LibraryLayout
 import app.sitara.music.core.model.ListeningStats
 import app.sitara.music.core.model.PlaybackTuning
+import app.sitara.music.core.model.ScrobbleAccount
+import app.sitara.music.core.model.ScrobbleService
 import app.sitara.music.core.model.SearchFilter
 import app.sitara.music.core.model.SearchResults
 import app.sitara.music.core.model.SitaraSettings
@@ -71,6 +73,10 @@ import app.sitara.music.feature.player.SpeedAndPitch
 import app.sitara.music.feature.search.MoodsState
 import app.sitara.music.feature.search.SearchLanding
 import app.sitara.music.feature.search.SearchState
+import app.sitara.music.feature.settings.ScrobbleServiceState
+import app.sitara.music.feature.settings.ScrobblingState
+import app.sitara.music.feature.settings.SignInProblem
+import app.sitara.music.feature.settings.SignInStep
 import app.sitara.music.source.fake.FakeMusicSource
 import app.sitara.music.source.fake.SampleCatalog
 import coil3.SingletonImageLoader
@@ -155,6 +161,7 @@ class ScreenshotTest {
         landing: SearchLanding = searchLanding,
         libraryLayout: LibraryLayout = LibraryLayout.GRID,
         imports: ImportState = ImportState.Start(),
+        scrobbling: ScrobblingState = ScrobblingState(),
         beforeCapture: () -> Unit = {},
     ) {
         val settings = SitaraSettings(
@@ -190,6 +197,7 @@ class ScreenshotTest {
                     downloads = downloads,
                     searchLanding = landing,
                     imports = imports,
+                    scrobbling = scrobbling,
                 )
             }
         }
@@ -198,6 +206,39 @@ class ScreenshotTest {
     }
 
     @Test fun miniPlayerDark() = shot("mini_player", dark = true)
+
+    // Last sent on an earlier day, so the words do not depend on when the test runs.
+    private val listenBrainz = ScrobbleServiceState(
+        ScrobbleService.LISTENBRAINZ, ScrobbleAccount(ScrobbleService.LISTENBRAINZ, "orchidlane"), pending = 3, lastSentAt = 1_792_521_720_000,
+    )
+    private val connected = ScrobblingState(services = listOf(listenBrainz, ScrobbleServiceState(ScrobbleService.LASTFM)))
+    private val signIn = ScrobblingState(
+        services = listOf(
+            ScrobbleServiceState(ScrobbleService.LISTENBRAINZ, signIn = SignInStep.Failed(SignInProblem.REFUSED)),
+            ScrobbleServiceState(ScrobbleService.LASTFM, ScrobbleAccount(ScrobbleService.LASTFM, "orchidlane", signInNeeded = true), pending = 12),
+        ),
+    )
+
+    @Test fun scrobblingDark() = shot("scrobbling", dark = true, tab = Tab.SETTINGS, route = DetailRoute.Scrobbling, scrobbling = connected)
+    @Test fun scrobblingLight() = shot("scrobbling", dark = false, tab = Tab.SETTINGS, route = DetailRoute.Scrobbling, scrobbling = connected)
+    @Test fun scrobblingPureBlack() = shot("scrobbling_amoled", dark = true, pureBlack = true, tab = Tab.SETTINGS, route = DetailRoute.Scrobbling, scrobbling = connected)
+    @Test fun scrobblingLargeText() = shot("scrobbling_large_text", dark = true, fontScale = 2f, tab = Tab.SETTINGS, route = DetailRoute.Scrobbling, scrobbling = connected)
+    @Test fun scrobblingLibraryOnly() = shot(
+        "scrobbling_library_only", dark = true, tab = Tab.SETTINGS, route = DetailRoute.Scrobbling,
+        scrobbling = connected.copy(services = listOf(listenBrainz.copy(account = listenBrainz.account!!.copy(libraryOnly = true), pending = 0), ScrobbleServiceState(ScrobbleService.LASTFM))),
+    )
+    @Test fun scrobblingSignIn() = shot("scrobbling_sign_in", dark = true, tab = Tab.SETTINGS, route = DetailRoute.Scrobbling, scrobbling = signIn)
+    @Test fun scrobblingInBrowser() = shot(
+        "scrobbling_in_browser", dark = true, tab = Tab.SETTINGS, route = DetailRoute.Scrobbling,
+        scrobbling = ScrobblingState(services = listOf(ScrobbleServiceState(ScrobbleService.LISTENBRAINZ), ScrobbleServiceState(ScrobbleService.LASTFM, signIn = SignInStep.InBrowser))),
+    )
+    @Test fun scrobblingWithoutLastFmKey() = shot(
+        "scrobbling_no_key", dark = true, tab = Tab.SETTINGS, route = DetailRoute.Scrobbling,
+        scrobbling = ScrobblingState(services = listOf(ScrobbleServiceState(ScrobbleService.LISTENBRAINZ), ScrobbleServiceState(ScrobbleService.LASTFM, available = false))),
+    )
+    @Test fun settingsHistory() = shot("settings_history", dark = true, settingsOpen = true, scrobbling = connected) {
+        compose.onNodeWithTag("settings-content").performScrollToKey("history")
+    }
 
     @Test fun miniPlayerLight() = shot("mini_player", dark = false)
 
