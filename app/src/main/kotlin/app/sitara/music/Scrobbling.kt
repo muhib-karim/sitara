@@ -19,6 +19,9 @@ import app.sitara.music.core.model.scrobbleTargets
 import app.sitara.music.core.model.toScrobble
 import app.sitara.music.source.api.ScrobbleClient
 import app.sitara.music.source.api.SendOutcome
+import app.sitara.music.source.scrobble.LastFmAuth
+import app.sitara.music.source.scrobble.LastFmClient
+import app.sitara.music.source.scrobble.LastFmKeys
 import app.sitara.music.source.scrobble.ListenBrainzClient
 import app.sitara.music.source.scrobble.SignIn
 import app.sitara.music.source.scrobble.checkListenBrainzToken
@@ -34,12 +37,14 @@ class Scrobbling(
     private val context: Context,
     val accounts: ScrobbleAccounts,
     val outbox: ScrobbleOutbox,
+    /** Null in a build made without a Last.fm API key. */
+    private val lastFmKeys: LastFmKeys?,
     private val inLibrary: suspend (Track) -> Boolean,
 ) {
     /** Whether this build can use [service]. */
     fun available(service: ScrobbleService) = when (service) {
         ScrobbleService.LISTENBRAINZ -> true
-        ScrobbleService.LASTFM -> false
+        ScrobbleService.LASTFM -> lastFmKeys != null
     }
 
     /** Tells each signed-in service what started playing, unless scrobbling is paused. */
@@ -94,6 +99,23 @@ class Scrobbling(
         return result
     }
 
+    /** Starts Last.fm's web sign-in: the token and the page where the listener allows it; null when Last.fm cannot be reached. */
+    suspend fun startLastFmSignIn(): Pair<String, String>? {
+        val auth = LastFmAuth(lastFmKeys ?: return null)
+        val token = auth.requestToken() ?: return null
+        return token to auth.browserUrl(token)
+    }
+
+    /** Connects Last.fm once the listener allowed [token] in the browser. */
+    suspend fun finishLastFmSignIn(token: String): SignIn {
+        val result = LastFmAuth(lastFmKeys ?: return SignIn.Refused).session(token)
+        if (result is SignIn.Done) {
+            accounts.connect(ScrobbleService.LASTFM, result.userName, result.secret)
+            send(now = true)
+        }
+        return result
+    }
+
     /** Forgets [service]'s sign-in and the plays waiting for it. */
     suspend fun disconnect(service: ScrobbleService) {
         accounts.disconnect(service)
@@ -105,7 +127,7 @@ class Scrobbling(
         val secret = accounts.secret(service) ?: return null
         return when (service) {
             ScrobbleService.LISTENBRAINZ -> ListenBrainzClient(secret)
-            ScrobbleService.LASTFM -> null
+            ScrobbleService.LASTFM -> lastFmKeys?.let { LastFmClient(it, secret) }
         }
     }
 

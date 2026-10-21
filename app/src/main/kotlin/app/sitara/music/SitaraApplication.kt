@@ -105,9 +105,10 @@ class SitaraApplication :
     override val playbackSettings get() = settings.settings
     val player by lazy { PlayerController(this, appScope) }
 
-    /** Last.fm and ListenBrainz; a song is in the library when it is liked or in a playlist. */
+    /** Last.fm (when the build has its API key) and ListenBrainz; a song is in the library when it is liked or in a playlist. */
     val scrobbling by lazy {
-        Scrobbling(this, ScrobbleAccounts(this), library.scrobbles) { track ->
+        val lastFmKeys = LastFmKeys(BuildConfig.LASTFM_API_KEY, BuildConfig.LASTFM_SHARED_SECRET).takeIf { it.apiKey.isNotBlank() && it.secret.isNotBlank() }
+        Scrobbling(this, ScrobbleAccounts(this), library.scrobbles, lastFmKeys) { track ->
             track.id in library.likedSongs.ids.first() || library.playlists.inAnyPlaylist(track.id)
         }
     }

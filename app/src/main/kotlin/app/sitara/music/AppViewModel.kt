@@ -112,7 +112,13 @@ class AppViewModel(private val app: SitaraApplication) :
     private val importRequests = Channel<Unit>(Channel.CONFLATED)
 
     /** Settings → Scrobbling; a sign-in in progress outlives the page. */
-    val scrobbling = ScrobblingSettings(viewModelScope, app.scrobbling)
+    val scrobbling = ScrobblingSettings(viewModelScope, app.scrobbling) { url ->
+        try {
+            app.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
+        } catch (e: ActivityNotFoundException) {
+            toast("No browser to open Last.fm in")
+        }
+    }
 
     /** Requests to open Import playlist (a shared playlist link), buffered until the UI collects them. */
     val requestedImport: Flow<Unit> = importRequests.receiveAsFlow()

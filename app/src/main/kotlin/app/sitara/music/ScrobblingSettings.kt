@@ -20,8 +20,16 @@ import kotlinx.coroutines.launch
 
 /** The Scrobbling page's state, from the accounts, the outbox and sign-ins in progress, and its actions. */
 @OptIn(ExperimentalCoroutinesApi::class)
-class ScrobblingSettings(private val scope: CoroutineScope, private val scrobbling: Scrobbling) : ScrobblingActions {
+class ScrobblingSettings(
+    private val scope: CoroutineScope,
+    private val scrobbling: Scrobbling,
+    /** Opens Last.fm's sign-in page in the browser. */
+    private val openUrl: (String) -> Unit,
+) : ScrobblingActions {
     private val steps = MutableStateFlow(mapOf<ScrobbleService, SignInStep>())
+
+    // The token Last.fm's page is allowing, while the listener is there.
+    private var lastFmToken: String? = null
 
     val state: StateFlow<ScrobblingState> = scrobbling.accounts.setup.flatMapLatest { setup ->
         val perService = ScrobbleService.entries.map { service ->
@@ -41,11 +49,25 @@ class ScrobblingSettings(private val scope: CoroutineScope, private val scrobbli
 
     override fun connectListenBrainz(token: String) = signIn(ScrobbleService.LISTENBRAINZ) { scrobbling.connectListenBrainz(token) }
 
-    override fun signInToLastFm() = Unit
+    override fun signInToLastFm() {
+        step(ScrobbleService.LASTFM, SignInStep.Checking)
+        scope.launch {
+            val (token, url) = scrobbling.startLastFmSignIn() ?: return@launch step(ScrobbleService.LASTFM, SignInStep.Failed(SignInProblem.OFFLINE))
+            lastFmToken = token
+            step(ScrobbleService.LASTFM, SignInStep.InBrowser)
+            openUrl(url)
+        }
+    }
 
-    override fun finishLastFmSignIn() = Unit
+    override fun finishLastFmSignIn() {
+        val token = lastFmToken ?: return
+        signIn(ScrobbleService.LASTFM) { scrobbling.finishLastFmSignIn(token).also { if (it !is SignIn.Waiting) lastFmToken = null } }
+    }
 
-    override fun cancelSignIn(service: ScrobbleService) = step(service, SignInStep.Idle)
+    override fun cancelSignIn(service: ScrobbleService) {
+        if (service == ScrobbleService.LASTFM) lastFmToken = null
+        step(service, SignInStep.Idle)
+    }
 
     override fun sendNow() = scrobbling.send(now = true)
 

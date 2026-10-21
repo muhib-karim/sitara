@@ -37,6 +37,9 @@ jobs:
           SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
           SIGNING_KEY_ALIAS: ${{ secrets.SIGNING_KEY_ALIAS }}
           SIGNING_KEY_PASSWORD: ${{ secrets.SIGNING_KEY_PASSWORD }}
+          # The release's Last.fm API account; a release built without these secrets has no Last.fm.
+          LASTFM_API_KEY: ${{ secrets.LASTFM_API_KEY }}
+          LASTFM_SHARED_SECRET: ${{ secrets.LASTFM_SHARED_SECRET }}
         run: gradle :app:assembleRelease --stacktrace
       - name: Collect artifacts
         run: |

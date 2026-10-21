@@ -4,6 +4,9 @@ plugins {
     alias(libs.plugins.roborazzi)
 }
 
+// The app's Last.fm API account, from a Gradle property or the environment (a CI secret), never committed; without it the build has no Last.fm.
+fun lastFm(name: String): String = providers.gradleProperty(name).orElse(providers.environmentVariable(name)).getOrElse("")
+
 android {
     namespace = "app.sitara.music"
     compileSdk = 37
@@ -15,6 +18,8 @@ android {
         versionCode = 19
         versionName = "0.9.7"
         testInstrumentationRunner = "app.sitara.music.WidgetCheckInstrumentation"
+        buildConfigField("String", "LASTFM_API_KEY", "\"${lastFm("LASTFM_API_KEY")}\"")
+        buildConfigField("String", "LASTFM_SHARED_SECRET", "\"${lastFm("LASTFM_SHARED_SECRET")}\"")
     }
 
     signingConfigs {
@@ -47,7 +52,10 @@ android {
         isCoreLibraryDesugaringEnabled = true
     }
 
-    buildFeatures { compose = true }
+    buildFeatures {
+        compose = true
+        buildConfig = true
+    }
 
     testOptions { unitTests { isIncludeAndroidResources = true } }
 }

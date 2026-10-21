@@ -33,6 +33,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.saveable.rememberSaveableStateHolder
@@ -52,6 +53,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.LifecycleResumeEffect
 import app.sitara.music.core.designsystem.ScrollEdge
 import app.sitara.music.core.designsystem.SitaraIcons
 import app.sitara.music.core.designsystem.SitaraSheet
@@ -95,6 +97,7 @@ import app.sitara.music.feature.settings.ScrobblingActions
 import app.sitara.music.feature.settings.ScrobblingScreen
 import app.sitara.music.feature.settings.ScrobblingState
 import app.sitara.music.feature.settings.SettingsScreen
+import app.sitara.music.feature.settings.SignInStep
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
 import kotlinx.coroutines.flow.Flow
@@ -295,6 +298,12 @@ fun SitaraShell(
                             contentPadding = contentPadding,
                         )
                     } else if (route == DetailRoute.Scrobbling) {
+                        // Coming back from Last.fm's page in the browser finishes its sign-in; once per return, not per state change.
+                        val inBrowser by rememberUpdatedState(scrobbling.services.any { it.signIn == SignInStep.InBrowser })
+                        LifecycleResumeEffect(Unit) {
+                            if (inBrowser) scrobblingActions.finishLastFmSignIn()
+                            onPauseOrDispose {}
+                        }
                         ScrobblingScreen(scrobbling, scrobblingActions, onBack = { detailStack = detailStack.dropLast(1) }, contentPadding = contentPadding)
                     } else if (route != null) {
                         val state by remember(details, route) { details.state(route) }.collectAsState()
