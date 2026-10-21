@@ -1,12 +1,14 @@
 package app.sitara.music.feature.player
 
 import androidx.compose.animation.core.animateFloatAsState
-import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.interaction.DragInteraction
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -71,6 +73,9 @@ fun LyricsPage(
     onRetry: () -> Unit,
     modifier: Modifier = Modifier,
     translation: List<String>? = null,
+    selection: IntRange? = null,
+    onSelectionChange: (IntRange?) -> Unit = {},
+    onShare: () -> Unit = {},
 ) {
     when (state) {
         LyricsState.Loading -> LyricsMessage("Looking for lyrics…", contentColor, modifier)
@@ -80,12 +85,21 @@ fun LyricsPage(
         LyricsState.Failed -> LyricsMessage("Lyrics didn’t load. Check your connection, then try again.", contentColor, modifier) {
             PillButton("Try again", onRetry, Modifier.padding(top = 16.dp))
         }
-        is LyricsState.Found ->
+        is LyricsState.Found -> Box(modifier.fillMaxSize()) {
+            val picking = LinePicking(selection, onSelectionChange)
             if (state.lyrics.synced) {
-                SyncedLyrics(state.lyrics, translation, positionMs, contentColor, onSeek, modifier)
+                SyncedLyrics(state.lyrics, translation, positionMs, contentColor, onSeek, picking)
             } else {
-                PlainLyrics(state.lyrics, translation, contentColor, modifier)
+                PlainLyrics(state.lyrics, translation, contentColor, picking)
             }
+            if (selection != null) {
+                Row(Modifier.align(Alignment.BottomCenter).padding(bottom = 24.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                    PillButton("Cancel", { onSelectionChange(null) }, primary = false)
+                    val count = selection.last - selection.first + 1
+                    PillButton(if (count == 1) "Share 1 line" else "Share $count lines", onShare)
+                }
+            }
+        }
     }
 }
 
@@ -101,6 +115,17 @@ private fun LyricsMessage(text: String, contentColor: Color, modifier: Modifier,
     Column(modifier.fillMaxSize().padding(32.dp)) {
         Text(text, color = contentColor.copy(alpha = 0.7f))
         action()
+    }
+}
+
+/** The lines picked for a share card, null when none are; a long press on a line starts picking from it. */
+private class LinePicking(val selection: IntRange?, val onChange: (IntRange?) -> Unit) {
+    fun longPress(line: Int) = onChange(line..line)
+
+    /** A tap while picking moves the run ([extendSelection]); false when not picking, so the tap does what it normally does. */
+    fun tap(line: Int): Boolean {
+        onChange(extendSelection(selection ?: return false, line))
+        return true
     }
 }
 
@@ -124,8 +149,8 @@ private fun SourceCredit(source: String?, contentColor: Color) {
 }
 
 @Composable
-private fun PlainLyrics(lyrics: Lyrics, translation: List<String>?, contentColor: Color, modifier: Modifier) {
-    LazyColumn(modifier.fillMaxSize().fadingEdges(), contentPadding = PaddingValues(top = 24.dp, bottom = 240.dp)) {
+private fun PlainLyrics(lyrics: Lyrics, translation: List<String>?, contentColor: Color, picking: LinePicking) {
+    LazyColumn(Modifier.fillMaxSize().fadingEdges(), contentPadding = PaddingValues(top = 24.dp, bottom = 240.dp)) {
         item(contentType = "caption") {
             Text(
                 "These lyrics are not time-synced",
@@ -135,7 +160,13 @@ private fun PlainLyrics(lyrics: Lyrics, translation: List<String>?, contentColor
             )
         }
         itemsIndexed(lyrics.lines, key = { i, _ -> i }, contentType = { _, _ -> LINE_CONTENT_TYPE }) { i, line ->
-            Column(Modifier.padding(horizontal = 28.dp, vertical = 6.dp)) {
+            // Plain lines have nothing to seek to: a tap starts picking lines for a card, like a long press.
+            Column(
+                Modifier.fillMaxWidth()
+                    .combinedClickable(onClickLabel = "Pick for a lyric card", onLongClick = { picking.longPress(i) }) { if (!picking.tap(i)) picking.longPress(i) }
+                    .graphicsLayer { alpha = if (picking.selection == null || i in picking.selection) 1f else ArtworkScrim.InactiveLyric }
+                    .padding(horizontal = 28.dp, vertical = 6.dp),
+            ) {
                 Text(line.text, style = PlainStyle, color = contentColor)
                 TranslatedLine(translation?.getOrNull(i), contentColor)
             }
@@ -145,7 +176,7 @@ private fun PlainLyrics(lyrics: Lyrics, translation: List<String>?, contentColor
 }
 
 @Composable
-private fun SyncedLyrics(lyrics: Lyrics, translation: List<String>?, positionMs: Long, contentColor: Color, onSeek: (Long) -> Unit, modifier: Modifier) {
+private fun SyncedLyrics(lyrics: Lyrics, translation: List<String>?, positionMs: Long, contentColor: Color, onSeek: (Long) -> Unit, picking: LinePicking) {
     val active = LyricsCursor.activeLineIndex(lyrics, positionMs)
     val listState = rememberLazyListState()
     val reduced = LocalReducedMotion.current
@@ -154,15 +185,17 @@ private fun SyncedLyrics(lyrics: Lyrics, translation: List<String>?, positionMs:
     LaunchedEffect(listState) {
         listState.interactionSource.interactions.collect { if (it is DragInteraction.Start) following = false }
     }
-    LaunchedEffect(lyrics, active, reduced, following) {
-        if (following && active >= 0) {
+    // Picking lines for a card holds the list still.
+    val isPicking = picking.selection != null
+    LaunchedEffect(lyrics, active, reduced, following, isPicking) {
+        if (following && !isPicking && active >= 0) {
             // Await measurement, then keep enough preceding context above the active line.
             val viewport = snapshotFlow { listState.layoutInfo.viewportSize.height }.first { it > 0 }
             val offset = -(viewport * 0.35f).toInt()
             if (reduced) listState.scrollToItem(active, offset) else listState.animateScrollToItem(active, offset)
         }
     }
-    BoxWithConstraints(modifier.fillMaxSize()) {
+    BoxWithConstraints(Modifier.fillMaxSize()) {
         val viewportHeight = maxHeight
         LazyColumn(
             Modifier.fillMaxSize().fadingEdges(),
@@ -170,13 +203,17 @@ private fun SyncedLyrics(lyrics: Lyrics, translation: List<String>?, positionMs:
             contentPadding = PaddingValues(top = 24.dp, bottom = viewportHeight * 0.65f),
         ) {
             itemsIndexed(lyrics.lines, key = { i, _ -> i }, contentType = { _, _ -> LINE_CONTENT_TYPE }) { i, line ->
-                val distance = if (active < 0) 2 else abs(i - active)
-                val scale by animateFloatAsState(if (i == active) 1.04f else 1f, SitaraMotion.orReduced(reduced, SitaraMotion.fade(SitaraMotion.LYRIC_FOCUS_MS)), label = "lineScale")
-                val alpha by animateFloatAsState(if (i == active) 1f else ArtworkScrim.InactiveLyric, SitaraMotion.orReduced(reduced, SitaraMotion.fade(SitaraMotion.LYRIC_FOCUS_MS)), label = "lineAlpha")
+                // While picking, the picked lines are the ones in focus.
+                val focused = picking.selection?.contains(i) ?: (i == active)
+                val distance = if (isPicking || active < 0) (if (focused) 0 else 2) else abs(i - active)
+                val scale by animateFloatAsState(if (focused) 1.04f else 1f, SitaraMotion.orReduced(reduced, SitaraMotion.fade(SitaraMotion.LYRIC_FOCUS_MS)), label = "lineScale")
+                val alpha by animateFloatAsState(if (focused) 1f else ArtworkScrim.InactiveLyric, SitaraMotion.orReduced(reduced, SitaraMotion.fade(SitaraMotion.LYRIC_FOCUS_MS)), label = "lineAlpha")
                 Box(
                     Modifier
                         .fillMaxWidth()
-                        .clickable(role = Role.Button) { onSeek(line.startMs) }
+                        .combinedClickable(role = Role.Button, onLongClickLabel = "Pick for a lyric card", onLongClick = { picking.longPress(i) }) {
+                            if (!picking.tap(i)) onSeek(line.startMs)
+                        }
                         .semantics { selected = i == active }
                         .padding(horizontal = 28.dp, vertical = 10.dp)
                         .graphicsLayer {
@@ -196,7 +233,7 @@ private fun SyncedLyrics(lyrics: Lyrics, translation: List<String>?, positionMs:
             }
             item(contentType = "credit") { SourceCredit(lyrics.source, contentColor) }
         }
-        if (!following) {
+        if (!following && !isPicking) {
             PillButton("Back to current line", { following = true }, Modifier.align(Alignment.BottomCenter).padding(bottom = 24.dp))
         }
     }

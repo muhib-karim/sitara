@@ -31,6 +31,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import app.sitara.music.core.designsystem.GlassIconButton
 import app.sitara.music.core.designsystem.GlassSurface
 import app.sitara.music.core.designsystem.PillButton
 import app.sitara.music.core.designsystem.SitaraColors
@@ -43,11 +44,12 @@ import app.sitara.music.source.lyrics.TranslationProblem
 import java.util.Locale
 
 /**
- * Above found lyrics: which source they came from, as a chip that opens every source's match, and Translate. While
+ * Above found lyrics: which source they came from, as a chip that opens every source's match, Translate, and Share,
+ * which starts picking lines for a card at the one being sung. While
  * Translate is on, a line under them says how the translation is going and which language it is into.
  */
 @Composable
-internal fun LyricsToolbar(state: PlayerUiState, actions: PlayerActions, modifier: Modifier = Modifier) {
+internal fun LyricsToolbar(state: PlayerUiState, actions: PlayerActions, onShare: () -> Unit, modifier: Modifier = Modifier) {
     val found = state.lyrics as? LyricsState.Found ?: return
     var picking by rememberSaveable { mutableStateOf(false) }
     Column(modifier.fillMaxWidth()) {
@@ -55,6 +57,7 @@ internal fun LyricsToolbar(state: PlayerUiState, actions: PlayerActions, modifie
             SourceChip(found.lyrics, { picking = true }, Modifier.weight(1f, fill = false))
             Spacer(Modifier.weight(0.01f))
             TranslateToggle(state.translation != TranslationState.Off, actions::toggleTranslation)
+            GlassIconButton(SitaraIcons.Share, "Share lyrics", onShare, tint = SitaraColors.StageContent)
         }
         TranslationStatus(state.translation, actions)
     }

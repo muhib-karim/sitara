@@ -31,6 +31,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -60,6 +61,7 @@ import app.sitara.music.core.designsystem.rememberArtworkTheme
 import app.sitara.music.core.designsystem.rememberCoverLook
 import app.sitara.music.core.designsystem.sitaraColorScheme
 import app.sitara.music.core.model.Track
+import app.sitara.music.source.lyrics.LyricsCursor
 import dev.chrisbanes.haze.hazeSource
 import dev.chrisbanes.haze.rememberHazeState
 import kotlinx.coroutines.launch
@@ -242,21 +244,43 @@ private fun TrackHeading(
 
 @Composable
 private fun LyricsPanel(state: PlayerUiState, actions: PlayerActions, onMore: () -> Unit) {
+    // Lines picked for a share card, and whether the card editor is open; both start over with other lyrics.
+    var selection by remember(state.lyrics) { mutableStateOf<IntRange?>(null) }
+    var sharing by remember(state.lyrics) { mutableStateOf(false) }
+    val startSharing = {
+        val found = state.lyrics as? LyricsState.Found
+        if (found != null) LyricsCursor.activeLineIndex(found.lyrics, state.positionMs).coerceAtLeast(0).let { selection = it..it }
+    }
+    val lyrics: @Composable (Modifier) -> Unit = { modifier ->
+        LyricsPage(
+            state.lyrics, state.lyricsSources, state.positionMs, SitaraColors.StageContent, actions::seekTo, actions::retryLyrics, modifier, state.translatedLines,
+            selection, { selection = it }, { sharing = true },
+        )
+    }
+    val found = state.lyrics as? LyricsState.Found
+    val picked = selection
+    if (sharing && found != null && picked != null && state.track != null) {
+        val credit = "Lyrics from " + listOfNotNull(found.lyrics.source, found.lyrics.licensor).joinToString(" · ")
+        LyricShareSheet(found.lyrics.lines.slice(picked).map { it.text }, state.track, credit) {
+            sharing = false
+            selection = null
+        }
+    }
     BoxWithConstraints(Modifier.fillMaxSize()) {
         if (maxWidth > maxHeight) {
             Row(Modifier.fillMaxSize().padding(horizontal = 24.dp)) {
                 Column(Modifier.weight(1f)) {
                     TrackHeading(state, Modifier.padding(vertical = 8.dp), compact = true, onLike = actions::toggleLike, onMore = onMore)
-                    LyricsToolbar(state, actions)
-                    LyricsPage(state.lyrics, state.lyricsSources, state.positionMs, SitaraColors.StageContent, actions::seekTo, actions::retryLyrics, Modifier.weight(1f), state.translatedLines)
+                    LyricsToolbar(state, actions, startSharing)
+                    lyrics(Modifier.weight(1f))
                 }
                 PlayerControls(state, actions, Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(start = 24.dp, top = 12.dp))
             }
         } else {
             Column(Modifier.fillMaxSize()) {
                 TrackHeading(state, Modifier.padding(horizontal = 24.dp, vertical = 12.dp), compact = true, onLike = actions::toggleLike, onMore = onMore)
-                LyricsToolbar(state, actions, Modifier.padding(horizontal = 24.dp))
-                LyricsPage(state.lyrics, state.lyricsSources, state.positionMs, SitaraColors.StageContent, actions::seekTo, actions::retryLyrics, Modifier.weight(1f), state.translatedLines)
+                LyricsToolbar(state, actions, startSharing, Modifier.padding(horizontal = 24.dp))
+                lyrics(Modifier.weight(1f))
                 PlayerControls(state, actions, Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
             }
         }

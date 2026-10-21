@@ -1,9 +1,5 @@
 package app.sitara.music.feature.library
 
-import android.content.ClipData
-import android.content.Context
-import android.content.Intent
-import android.graphics.Bitmap
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -38,7 +34,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.core.content.FileProvider
 import app.sitara.music.core.common.formatListening
 import app.sitara.music.core.designsystem.ArtworkBackdrop
 import app.sitara.music.core.designsystem.ArtworkImage
@@ -48,12 +43,10 @@ import app.sitara.music.core.designsystem.SitaraIcons
 import app.sitara.music.core.designsystem.SitaraRadius
 import app.sitara.music.core.designsystem.SitaraSheet
 import app.sitara.music.core.designsystem.SitaraSpacing
+import app.sitara.music.core.designsystem.shareImage
 import app.sitara.music.core.model.ListeningStats
 import app.sitara.music.core.model.StatsRange
-import java.io.File
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 
 /** The card shows this many top songs. */
 private const val CARD_SONGS = 5
@@ -68,7 +61,7 @@ internal fun StatsShareSheet(stats: ListeningStats, range: StatsRange, onDismiss
         Column(Modifier.verticalScroll(rememberScrollState()).padding(start = SitaraSpacing.Gutter, end = SitaraSpacing.Gutter, bottom = 24.dp)) {
             Row(Modifier.fillMaxWidth().padding(bottom = 16.dp), verticalAlignment = Alignment.CenterVertically) {
                 Text("Share your stats", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
-                PillButton("Share image", { scope.launch { shareStatsCard(context, card.toImageBitmap().asAndroidBitmap()); close {} } })
+                PillButton("Share image", { scope.launch { shareImage(context, card.toImageBitmap().asAndroidBitmap(), "sitara-stats.png", "Share your stats"); close {} } })
             }
             StatsShareCard(
                 stats, range,
@@ -135,21 +128,4 @@ fun StatsShareCard(stats: ListeningStats, range: StatsRange, modifier: Modifier 
             }
         }
     }
-}
-
-/**
- * Offers [image] to the share sheet as a PNG: written to the cache, so no storage permission is needed, and handed out
- * through the app's FileProvider ("<package>.files", declared in the app's manifest) with read access for the chosen app only.
- */
-suspend fun shareStatsCard(context: Context, image: Bitmap) {
-    val file = File(context.cacheDir, "shared/sitara-stats.png")
-    withContext(Dispatchers.IO) {
-        file.parentFile?.mkdirs()
-        file.outputStream().use { image.compress(Bitmap.CompressFormat.PNG, 100, it) }
-    }
-    val uri = FileProvider.getUriForFile(context, "${context.packageName}.files", file)
-    val send = Intent(Intent.ACTION_SEND).setType("image/png").putExtra(Intent.EXTRA_STREAM, uri).addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-    // The clip lets the share sheet show the image in its preview.
-    send.clipData = ClipData.newRawUri(null, uri)
-    context.startActivity(Intent.createChooser(send, "Share your stats"))
 }
