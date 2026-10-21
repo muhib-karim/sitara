@@ -1,12 +1,15 @@
 package app.sitara.music.feature.player
 
+import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
@@ -17,15 +20,22 @@ import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
+import androidx.compose.material3.SliderDefaults
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
+import androidx.compose.ui.geometry.Offset
+import androidx.compose.ui.geometry.lerp
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.layout
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -34,6 +44,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Constraints
+import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import app.sitara.music.core.designsystem.GlassIconButton
 import app.sitara.music.core.designsystem.LargeTitle
@@ -121,19 +132,12 @@ fun EqualiserPanel(
                     ChoicePill(preset.label, selected = equaliser.enabled && equaliser.preset == preset) { onChange(equaliser.withPreset(preset)) }
                 }
             }
-            BandSliders(equaliser, onChange, Modifier.padding(top = 20.dp))
-            SliderHeading("Preamp", decibelLabel(equaliser.preampDb), Modifier.padding(top = 16.dp))
-            Slider(
-                value = equaliser.preampDb.toFloat(),
-                onValueChange = { it.roundToInt().let { db -> if (db != equaliser.preampDb) onChange(equaliser.withPreamp(db)) } },
-                valueRange = -EqualiserSettings.MAX_GAIN_DB.toFloat()..EqualiserSettings.MAX_GAIN_DB.toFloat(),
-                steps = 2 * EqualiserSettings.MAX_GAIN_DB - 1,
-                colors = accentSlider(),
-                modifier = Modifier.semantics {
-                    contentDescription = "Preamp"
-                    stateDescription = decibelLabel(equaliser.preampDb)
-                },
-            )
+            // Off, the bands and preamp dim: they still show the curve, and moving one switches the equaliser on.
+            Column(Modifier.alpha(if (equaliser.enabled) 1f else 0.38f)) {
+                BandSliders(equaliser, onChange, Modifier.padding(top = 20.dp))
+                SliderHeading("Preamp", decibelLabel(equaliser.preampDb), Modifier.padding(top = 16.dp))
+                Fader(equaliser.preampDb, { onChange(equaliser.withPreamp(it)) }, "Preamp", vertical = false, Modifier.fillMaxWidth())
+            }
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text(
                     "Lower the preamp if loud songs sound squashed: a limiter keeps boosts from clipping.",
@@ -172,22 +176,65 @@ private fun BandSlider(band: Int, db: Int, onChange: (Int) -> Unit, modifier: Mo
             decibelLabel(db), style = MaterialTheme.typography.labelSmall.copy(fontFeatureSettings = "tnum"), color = MaterialTheme.colorScheme.onSurface,
             maxLines = 1, softWrap = false, modifier = Modifier.clearAndSetSemantics {},
         )
-        Slider(
-            value = db.toFloat(),
-            onValueChange = { it.roundToInt().let { picked -> if (picked != db) onChange(picked) } },
-            valueRange = -EqualiserSettings.MAX_GAIN_DB.toFloat()..EqualiserSettings.MAX_GAIN_DB.toFloat(),
-            steps = 2 * EqualiserSettings.MAX_GAIN_DB - 1,
-            colors = accentSlider(),
-            // The height is the fader's length, so it goes outside the turn.
-            modifier = Modifier.height(BandHeight).vertical().semantics {
-                contentDescription = bandLabel(band)
-                stateDescription = decibelLabel(db)
-            },
-        )
+        Fader(db, onChange, bandLabel(band), vertical = true, Modifier.height(BandHeight))
         Text(
             bandLabel(band), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1, softWrap = false, textAlign = TextAlign.Center, modifier = Modifier.clearAndSetSemantics {},
         )
+    }
+}
+
+/**
+ * A gain fader in the app's slim style: a thin track with a 0 dB mark at its centre, filled from that mark towards
+ * [db] (up or right for a boost, down or left for a cut, nothing at 0 dB) under a round thumb. A transparent Slider
+ * on top keeps the touch target, keys and the TalkBack name ([label]) and value.
+ */
+@Composable
+private fun Fader(db: Int, onChange: (Int) -> Unit, label: String, vertical: Boolean, modifier: Modifier) {
+    val fill = MaterialTheme.colorScheme.primary
+    val track = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.16f)
+    val zero = MaterialTheme.colorScheme.onSurfaceVariant
+    val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
+    val max = EqualiserSettings.MAX_GAIN_DB
+    Box(modifier, contentAlignment = Alignment.Center) {
+        Slider(
+            value = db.toFloat(),
+            onValueChange = { it.roundToInt().let { picked -> if (picked != db) onChange(picked) } },
+            valueRange = -max.toFloat()..max.toFloat(),
+            steps = 2 * max - 1,
+            colors = SliderDefaults.colors(
+                thumbColor = Color.Transparent,
+                activeTrackColor = Color.Transparent,
+                inactiveTrackColor = Color.Transparent,
+                activeTickColor = Color.Transparent,
+                inactiveTickColor = Color.Transparent,
+            ),
+            // Vertical, the height is the fader's length, so it goes outside the turn.
+            modifier = (if (vertical) Modifier.fillMaxHeight().vertical() else Modifier.fillMaxWidth()).semantics {
+                contentDescription = label
+                stateDescription = decibelLabel(db)
+            },
+        )
+        Canvas(Modifier.matchParentSize()) {
+            val inset = 12.dp.toPx()
+            val low = when {
+                vertical -> Offset(size.width / 2f, size.height - inset)
+                rtl -> Offset(size.width - inset, size.height / 2f)
+                else -> Offset(inset, size.height / 2f)
+            }
+            val high = when {
+                vertical -> Offset(size.width / 2f, inset)
+                rtl -> Offset(inset, size.height / 2f)
+                else -> Offset(size.width - inset, size.height / 2f)
+            }
+            val centre = lerp(low, high, 0.5f)
+            val thumb = lerp(low, high, (db + max) / (2f * max))
+            val across = if (vertical) Offset(7.dp.toPx(), 0f) else Offset(0f, 7.dp.toPx())
+            drawLine(track, low, high, 4.dp.toPx(), StrokeCap.Round)
+            drawLine(zero, centre - across, centre + across, 2.dp.toPx(), StrokeCap.Round)
+            if (db != 0) drawLine(fill, centre, thumb, 4.dp.toPx(), StrokeCap.Round)
+            drawCircle(fill, 8.dp.toPx(), thumb)
+        }
     }
 }
 
