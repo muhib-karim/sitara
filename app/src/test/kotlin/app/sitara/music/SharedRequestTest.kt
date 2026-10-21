@@ -64,4 +64,18 @@ class SharedRequestTest {
         assertNull(autoplayTrack(wrongSong, acceptance))
         assertNull(autoplayTrack(other, SharedRequest("jazz")))
     }
+
+    @Test
+    fun openedOrSharedPlaylistLinksGoToImportAsACleanLink() {
+        val clean = "https://music.youtube.com/playlist?list=PL123abc"
+        assertEquals(clean, sharedPlaylistLink(view, "https://www.youtube.com/playlist?list=PL123abc&si=AbC", null))
+        assertEquals(clean, sharedPlaylistLink(send, null, "My road trip mix https://music.youtube.com/playlist?list=PL123abc&si=AbC"))
+    }
+
+    @Test
+    fun aSongPlayedFromAPlaylistStillPlaysTheSong() {
+        assertNull(sharedPlaylistLink(view, "https://www.youtube.com/watch?v=x7kGuhlXmFI&list=PL123abc", null))
+        assertNull(sharedPlaylistLink(send, null, "Niye Jabe Ki Xefer"))
+        assertNull(sharedPlaylistLink("android.intent.action.EDIT", "https://music.youtube.com/playlist?list=PL123abc", null))
+    }
 }

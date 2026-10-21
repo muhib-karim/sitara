@@ -33,6 +33,8 @@ import app.sitara.music.core.model.DarkMode
 import app.sitara.music.core.model.DownloadState
 import app.sitara.music.core.model.EqualiserPreset
 import app.sitara.music.core.model.EqualiserSettings
+import app.sitara.music.core.model.ImportProblem
+import app.sitara.music.core.model.ImportResult
 import app.sitara.music.core.model.Library
 import app.sitara.music.core.model.LibraryLayout
 import app.sitara.music.core.model.ListeningStats
@@ -49,6 +51,7 @@ import app.sitara.music.feature.home.OnlineHome
 import app.sitara.music.feature.home.TrendingState
 import app.sitara.music.feature.library.AddToPlaylist
 import app.sitara.music.feature.library.DetailState
+import app.sitara.music.feature.library.ImportState
 import app.sitara.music.feature.library.LibraryState
 import app.sitara.music.feature.library.SavedIds
 import app.sitara.music.feature.library.SavedLibrary
@@ -150,6 +153,7 @@ class ScreenshotTest {
         equaliser: EqualiserSettings = EqualiserSettings(),
         landing: SearchLanding = searchLanding,
         libraryLayout: LibraryLayout = LibraryLayout.GRID,
+        imports: ImportState = ImportState.Start(),
         beforeCapture: () -> Unit = {},
     ) {
         val settings = SitaraSettings(
@@ -184,6 +188,7 @@ class ScreenshotTest {
                     savedIds = savedIds,
                     downloads = downloads,
                     searchLanding = landing,
+                    imports = imports,
                 )
             }
         }
@@ -376,6 +381,24 @@ class ScreenshotTest {
     @Test fun statsShareCard() = sheet("stats_share_card") {
         StatsShareCard(sampleListeningStats(StatsRange.WEEK), StatsRange.WEEK, Modifier.padding(SitaraSpacing.Gutter))
     }
+    @Test fun importStartDark() = shot("import_start", dark = true, tab = Tab.LIBRARY, route = DetailRoute.Import)
+    @Test fun importStartLight() = shot("import_start", dark = false, tab = Tab.LIBRARY, route = DetailRoute.Import)
+    @Test fun importStartProblem() = shot(
+        "import_start_problem", dark = true, tab = Tab.LIBRARY, route = DetailRoute.Import,
+        imports = ImportState.Start("https://example.com/my-mix", unfinished = Fixtures.importMatching, problem = ImportProblem.LINK_NOT_RECOGNISED),
+    )
+    @Test fun importMatching() = shot("import_matching", dark = true, tab = Tab.LIBRARY, route = DetailRoute.Import, imports = ImportState.Running(Fixtures.importMatching))
+    @Test fun importReviewDark() = shot("import_review", dark = true, tab = Tab.LIBRARY, route = DetailRoute.Import, imports = ImportState.Running(Fixtures.importReview))
+    @Test fun importReviewLight() = shot("import_review", dark = false, tab = Tab.LIBRARY, route = DetailRoute.Import, imports = ImportState.Running(Fixtures.importReview))
+    @Test fun importReviewLargeText() = shot(
+        "import_review_large_text", dark = true, tab = Tab.LIBRARY, route = DetailRoute.Import, fontScale = 2f, imports = ImportState.Running(Fixtures.importReview),
+    ) {
+        compose.onNodeWithTag("import-content").performScrollToKey("review-4")
+    }
+    @Test fun importDone() = shot(
+        "import_done", dark = true, tab = Tab.LIBRARY, route = DetailRoute.Import,
+        imports = ImportState.Done(ImportResult(playlistId = 1, name = "Road trip", added = 109, updated = false), leftOut = 11),
+    )
     @Test fun addToPlaylistSheet() = sheet("add_to_playlist") { AddToPlaylist(Fixtures.playlist.tracks.first(), sampleSavedLibrary(library).playlists, {}, {}) }
 
     // Sheets open in a dialog window; their content is captured on the sheet's own surface colour.

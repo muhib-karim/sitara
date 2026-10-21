@@ -5,8 +5,12 @@ import app.sitara.music.core.model.Artist
 import app.sitara.music.core.model.ArtistPage
 import app.sitara.music.core.model.Artwork
 import app.sitara.music.core.model.DownloadState
+import app.sitara.music.core.model.ImportJob
+import app.sitara.music.core.model.ImportReviewRow
+import app.sitara.music.core.model.MatchState
 import app.sitara.music.core.model.Playlist
 import app.sitara.music.core.model.SongDownload
+import app.sitara.music.core.model.SourceSong
 import app.sitara.music.core.model.Track
 
 /** Hand-built pages shaped like YouTube Music data (no year on albums, channel and playlist ids), with invented names. */
@@ -59,4 +63,21 @@ internal object Fixtures {
     }
 
     val downloadStates = downloads.associate { it.track.id to it.state }
+
+    private val coverVersion = song("fixture0005", "Harbour Lights (Live)", 251, ember).copy(artist = "Kite Parade")
+
+    /** An import of a 120-song file, 37 songs looked up so far. */
+    val importMatching = ImportJob(
+        id = 1, name = "Road trip", pending = 83, matched = 31, uncertain = 4, notFound = 2, skipped = 0, updatesPlaylist = false, review = emptyList(),
+    )
+
+    /** The same import looked up to the end, with three songs to check: undecided, taken and skipped. */
+    val importReview = importMatching.copy(
+        pending = 0, matched = 109, uncertain = 1, notFound = 9, skipped = 1,
+        review = listOf(
+            ImportReviewRow(4, SourceSong("Harbour Lights", "Orchid Lane"), MatchState.UNCERTAIN, coverVersion, listOf(coverVersion, songs[1])),
+            ImportReviewRow(17, SourceSong("Slow Comet (Radio Edit)", "Orchid Lane"), MatchState.MATCHED, songs[2], listOf(songs[2])),
+            ImportReviewRow(52, SourceSong("Monsoon Letter", "Orchid Lanes"), MatchState.SKIPPED, songs[3], listOf(songs[3], songs[0])),
+        ),
+    )
 }
