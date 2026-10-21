@@ -25,9 +25,14 @@ class ControllerPolicyTest {
     @Test
     fun `system surfaces get playback controls only`() {
         assertEquals(ControllerAccess.PLAYBACK_ONLY, ControllerPolicy.access(caller("app.sitara.music", uid = ownUid, notification = true), ownUid))
-        assertEquals(ControllerAccess.PLAYBACK_ONLY, ControllerPolicy.access(caller("com.google.android.projection.gearhead", car = true), ownUid))
         assertEquals(ControllerAccess.PLAYBACK_ONLY, ControllerPolicy.access(caller("com.android.bluetooth", trusted = true), ownUid))
         assertEquals(ControllerAccess.PLAYBACK_ONLY, ControllerPolicy.access(caller("com.android.bluetooth", uid = 1_002), ownUid))
+    }
+
+    @Test
+    fun `the car may browse the library as well as control playback`() {
+        assertEquals(ControllerAccess.BROWSE, ControllerPolicy.access(caller("com.google.android.projection.gearhead", car = true), ownUid))
+        assertEquals(ControllerAccess.BROWSE, ControllerPolicy.access(caller("com.android.car.media", uid = 1_000, trusted = true, car = true), ownUid))
     }
 
     @Test

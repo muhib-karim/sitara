@@ -5,18 +5,29 @@ import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.content.pm.ResolveInfo
 import android.media.audiofx.AudioEffect
+import android.os.Bundle
 import android.os.Looper
 import androidx.annotation.OptIn
+import androidx.media3.common.C
+import androidx.media3.common.MediaItem
+import androidx.media3.common.MediaLibraryInfo
+import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.database.StandaloneDatabaseProvider
 import androidx.media3.datasource.cache.Cache
 import androidx.media3.datasource.cache.NoOpCacheEvictor
 import androidx.media3.datasource.cache.SimpleCache
 import androidx.media3.session.CommandButton
+import androidx.media3.session.MediaSession
+import androidx.media3.session.SessionCommand
+import androidx.media3.session.SessionError
+import app.sitara.music.core.model.Album
+import app.sitara.music.core.model.Artist
 import app.sitara.music.core.model.Artwork
 import app.sitara.music.core.model.EqualiserPreset
 import app.sitara.music.core.model.EqualiserSettings
 import app.sitara.music.core.model.Listen
+import app.sitara.music.core.model.PlaylistSummary
 import app.sitara.music.core.model.RepeatMode
 import app.sitara.music.core.model.SavedQueue
 import app.sitara.music.core.model.SitaraSettings
@@ -78,6 +89,31 @@ class PlaybackServiceTest {
 
         override fun saveQueue(queue: SavedQueue) {
             saves += queue
+        }
+
+        var likedTracks = emptyList<Track>()
+
+        // The library as the car sees it; the catalogue is out of reach, as on a CI runner.
+        override val libraryContent = object : LibraryContent {
+            override suspend fun recentlyPlayed() = emptyList<Track>()
+
+            override suspend fun likedSongs() = likedTracks
+
+            override suspend fun downloadedSongs() = emptyList<Track>()
+
+            override suspend fun playlists() = emptyList<PlaylistSummary>()
+
+            override suspend fun playlistSongs(id: Long) = emptyList<Track>()
+
+            override suspend fun savedAlbums() = emptyList<Album>()
+
+            override suspend fun savedArtists() = emptyList<Artist>()
+
+            override suspend fun albumSongs(id: String): List<Track> = throw IOException("offline")
+
+            override suspend fun artistSongs(id: String): List<Track> = throw IOException("offline")
+
+            override suspend fun searchSongs(query: String): List<Track> = throw IOException("offline")
         }
     }
 
@@ -184,6 +220,73 @@ class PlaybackServiceTest {
         shadowOf(Looper.getMainLooper()).idle()
         assertFalse(controller.get().onSessionAction(SessionActions.LIKE))
         assertEquals(emptySet<String>(), (RuntimeEnvironment.getApplication() as TestApp).liked.value)
+        controller.destroy()
+    }
+
+    private fun car(): MediaSession.ControllerInfo = MediaSession.ControllerInfo.createTestOnlyControllerInfo(
+        "com.google.android.projection.gearhead", 0, 10_456, MediaLibraryInfo.VERSION_INT, 0, false, Bundle.EMPTY, true,
+    )
+
+    @Test
+    fun `the car may browse, pick songs, like and shuffle, but the queue is still the app's`() {
+        val controller = Robolectric.buildService(PlaybackService::class.java).create()
+        shadowOf(Looper.getMainLooper()).idle()
+        val service = controller.get()
+        val result = service.callback.onConnect(checkNotNull(service.session), car())
+        assertTrue(result.isAccepted)
+        assertTrue(result.availableSessionCommands.contains(SessionCommand.COMMAND_CODE_LIBRARY_GET_CHILDREN))
+        assertTrue(result.availableSessionCommands.contains(SessionCommand.COMMAND_CODE_LIBRARY_SEARCH))
+        assertTrue(result.availableSessionCommands.contains(SessionCommand(SessionActions.LIKE, Bundle.EMPTY)))
+        assertTrue(result.availableSessionCommands.contains(SessionCommand(SessionActions.SHUFFLE, Bundle.EMPTY)))
+        assertTrue(result.availablePlayerCommands.contains(Player.COMMAND_SET_MEDIA_ITEM))
+        assertTrue(result.availablePlayerCommands.contains(Player.COMMAND_PLAY_PAUSE))
+        assertFalse(result.availablePlayerCommands.contains(Player.COMMAND_CHANGE_MEDIA_ITEMS))
+        controller.destroy()
+    }
+
+    @Test
+    fun `the car lists liked songs as playable items with their artist and cover`() {
+        val app = RuntimeEnvironment.getApplication() as TestApp
+        app.likedTracks = songs
+        val controller = Robolectric.buildService(PlaybackService::class.java).create()
+        shadowOf(Looper.getMainLooper()).idle()
+        val service = controller.get()
+
+        val future = service.callback.onGetChildren(checkNotNull(service.session), car(), BrowseId.Liked.mediaId, 0, 2, null)
+        idleUntil { future.isDone }
+        val items = checkNotNull(future.get().value)
+        assertEquals("the first page", listOf(BrowseId.Song(BrowseId.Liked, "id1").mediaId, BrowseId.Song(BrowseId.Liked, "id2").mediaId), items.map { it.mediaId })
+        val metadata = items[0].mediaMetadata
+        assertEquals("Song 1", metadata.title.toString())
+        assertEquals("Artist 1", metadata.artist.toString())
+        assertEquals("https://i.example.org/1.jpg", metadata.artworkUri.toString())
+        assertEquals(true, metadata.isPlayable)
+        assertEquals(false, metadata.isBrowsable)
+
+        val unknown = service.callback.onGetChildren(checkNotNull(service.session), car(), "nowhere", 0, 10, null)
+        idleUntil { unknown.isDone }
+        assertEquals(SessionError.ERROR_BAD_VALUE, unknown.get().resultCode)
+        controller.destroy()
+    }
+
+    @Test
+    fun `a song picked in the car plays its list from that song`() {
+        val app = RuntimeEnvironment.getApplication() as TestApp
+        app.likedTracks = songs
+        val controller = Robolectric.buildService(PlaybackService::class.java).create()
+        shadowOf(Looper.getMainLooper()).idle()
+        val service = controller.get()
+
+        val picked = MediaItem.Builder().setMediaId(BrowseId.Song(BrowseId.Liked, "id2").mediaId).build()
+        val future = service.callback.onSetMediaItems(checkNotNull(service.session), car(), mutableListOf(picked), C.INDEX_UNSET, C.TIME_UNSET)
+        idleUntil { future.isDone }
+
+        val queue = checkNotNull(PlaybackEngineRegistry.engine.value).state.value.queue
+        assertEquals(songs, queue.items)
+        assertEquals(songs[1], queue.current)
+        val handedBack = future.get()
+        assertEquals("the session is handed the engine's own playlist", queue.entries.map { it.uid.toString() }, handedBack.mediaItems.map { it.mediaId })
+        assertEquals(1, handedBack.startIndex)
         controller.destroy()
     }
 
