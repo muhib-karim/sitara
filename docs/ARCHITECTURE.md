@@ -2,7 +2,7 @@
 
 This document describes how Sitara is put together: the module map, how data moves from a music source to the screen, how playback is wired to Media3, how stream lookups fall back, and how the code is tested and shipped.
 
-> Status: polish slice 5 (after Phase C slice 3). Home (YouTube Music's own Home, with the trending chart in its place when it fails), search with suggestions and Moods & genres, artist/album/playlist pages, radio and streams are live (YouTube through NewPipeExtractor); lyrics come from LRCLIB; the library, the play queue and fetched lyrics are stored on the device with Room; downloaded songs live in a Media3 cache and play offline; playback levels loudness, can crossfade, joins songs gapless, changes speed and pitch and can skip silence; covers load through Coil and colour the player, and, if the listener chooses, the whole app. The app contains no sample data; the sample catalogue is a test and debug fixture. Modules marked *planned* do not exist yet.
+> Status: polish slice 6 (after Phase C slice 3). Home (YouTube Music's own Home, with the trending chart in its place when it fails), search with suggestions and Moods & genres, artist/album/playlist pages, radio and streams are live (YouTube through NewPipeExtractor); lyrics come from LRCLIB; the library, the play queue and fetched lyrics are stored on the device with Room; downloaded songs live in a Media3 cache and play offline; playback levels loudness, can crossfade, joins songs gapless, changes speed and pitch and can skip silence; covers load through Coil and colour the player, and, if the listener chooses, the whole app; Android Auto browses the library through a media library service, and a Glance widget shows what plays on the home screen. The app contains no sample data; the sample catalogue is a test and debug fixture. Modules marked *planned* do not exist yet.
 
 ## Goals
 
@@ -15,11 +15,11 @@ This document describes how Sitara is put together: the module map, how data mov
 
 | Module | Kind | Responsibility |
 | --- | --- | --- |
-| `:app` | Android application | Activity, app shell (glass tab bar, mini player dock, detail back stack of typed `DetailRoute`s), dependency wiring |
+| `:app` | Android application | Activity, app shell (glass tab bar, mini player dock, detail back stack of typed `DetailRoute`s), dependency wiring (including `LibraryContent` for the car, from Room, the download index and YouTube Music), the home-screen widget (`widget/`: Jetpack Glance, `WidgetState` and its throttled redraws, cover colours, action callbacks) |
 | `:core:model` | Pure Kotlin | Domain types: `Track`, `Album`, `Artist`, `Playlist`, `Queue`, `LyricsLine`, `LyricsWord`; `Listen`, `StatsRange` (local-midnight bounds) and `ListeningStats` (top songs, artists, albums, time heard by hour) |
 | `:core:common` | Pure Kotlin | Result types, coroutine dispatchers, time and formatting helpers |
 | `:core:data` | Android library | DataStore-backed settings (theme, motion, sound, Wi-Fi-only downloads, the search filter and recent searches, Library's layout and order); the on-device store (`LibraryStore`): repositories for liked songs, play history (every play that counted, with its start and time heard; plays per song; listening stats for a range), saved albums and artists, playlists, the saved play queue, the lyrics cache and per-song volume trims, implemented with Room, whose schema is exported to `core/data/schemas` |
-| `:core:player` | Android library | `PlaybackService` (Media3 session + ExoPlayer), `PlaybackEngine`, `PlayerController` facade, queue engine and its save/restore, controller/stream policies, the notification's Like, Shuffle and Repeat (`SessionActions`, custom session commands for system surfaces only), radio-tagged queue entries and Undo of a removal, `ListeningTracker` (time heard per entry on the monotonic clock; a play counts after 30 s or half the song), sleep timer, `PrefetchingStreamResolver` (the next song's stream, looked up ahead); `SongDownloads` and `SitaraDownloadService` (Media3 downloads); `LoudnessLeveller` in a Media3 audio processor; `Crossfader` and its timing rules |
+| `:core:player` | Android library | `PlaybackService` (Media3 media library session + ExoPlayer; `LibraryBrowser` turns stable media ids into the car's browse tree, pages and search; `WordedErrors` words a failed song's error for system surfaces), `PlaybackEngine`, `PlayerController` facade, queue engine and its save/restore, controller/stream policies, the notification's Like, Shuffle and Repeat (`SessionActions`, custom session commands for system surfaces only), radio-tagged queue entries and Undo of a removal, `ListeningTracker` (time heard per entry on the monotonic clock; a play counts after 30 s or half the song), sleep timer, `PrefetchingStreamResolver` (the next song's stream, looked up ahead); `SongDownloads` and `SitaraDownloadService` (Media3 downloads); `LoudnessLeveller` in a Media3 audio processor; `Crossfader` and its timing rules |
 | `:core:designsystem` | Android library | Theme (six tuned accents, or the wallpaper's or the cover's walked to 4.5:1 on every surface; surfaces tinted from the playing cover; pure black), colour roles, `SitaraMotion`, glass surfaces, typography, icons, shared components; covers: the Coil image loader (memory and disk cache), cover URLs sized to their slot, square crops of video thumbnails, the cover analysis (main and vibrant colours, the brightest blurred colour, a 12 px copy for phones without blur), its contrast-checked themes for the stage and the dock, and the stage backdrop whose shade is worked out per cover |
 | `:source:api` | Pure Kotlin | Contracts: `SearchSource`, `SearchSuggestionSource`, `ChartsSource`, `HomeFeedSource`, `MoodsSource`, `MusicSource`, `BrowseSource` (artist, album, playlist pages), `RadioSource`, `StreamResolver`, `LyricsProvider`, `HealthCheck` |
 | `:source:fake` | Pure Kotlin | Deterministic sample catalogue whose `sample:cover/` images the debug image loader draws from their colours: a fixture for tests, screenshots and the debug capture screen (`debugImplementation` only, never in a release build) |
@@ -205,6 +205,20 @@ sequenceDiagram
   gapless change or ends the fade on time. The tail's leveller starts from the main player's level.
 - **Lyrics** are parsed into timed lines and words, keeping the original text and syllables. The UI derives the active
   line and the karaoke character sweep from the position; unsynced lyrics are shown as static text.
+- **Android Auto** connects to `PlaybackService`, a `MediaLibraryService` (the manifest also lists the platform's
+  `MediaBrowserService` action, and the app declares itself a car media app). `ControllerPolicy` gives the car `BROWSE`
+  access: transport, the library commands and setting one media item; the notification keeps `PLAYBACK_ONLY`.
+  `LibraryBrowser` (pure Kotlin) maps media ids such as `liked`, `album/<id>` and `song/<parent>/<track>` (segments
+  URL-encoded) to `LibraryContent`, pages lists, reuses a catalogue answer for the song picked from it, and answers an
+  empty search when YouTube Music cannot be reached. A picked song goes to the engine (`play(list, index)`), and the
+  session is handed the engine's own playlist back, as for playback resumption. Like and Shuffle reach the car as the
+  session's media button preferences, the same buttons as the notification.
+- **The home-screen widget** (`:app`, Glance) reads `SitaraApplication.widgetStates`: the engine's state with the
+  heart and whether a saved queue exists, passed through `shownWidgetStates`, which lets a change of song, play state,
+  heart or failure through at once and position only in 15 s steps, and has the engine report its position every 15 s
+  while playing. `updateAll` runs only with a widget placed. Buttons are Glance action callbacks that drive the engine
+  on the main thread; with no player running, play goes to Media3's `MediaButtonReceiver`, which starts the service in
+  the foreground and resumes the saved queue through `onPlaybackResumption`.
 
 ### Downloads
 

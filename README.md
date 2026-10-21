@@ -55,7 +55,7 @@ Existing clients cover the basics well. Sitara aims for the things that make an 
 - **Motion you can feel.** Transitions ride springs. The cover travels from the unified dock to the player on a shared-element spring. Reduced motion uses instant transitions.
 - **Colour from the music.** Now Playing and Lyrics sit on the cover itself, blurred across the screen and washed in its colour, shaded only as far as the text needs to stay at 4.5:1. Its vibrant colour accents the stage, the mini player and the open tab. Elsewhere the accent is yours: your wallpaper's (Material You), one of six tuned accents or the playing cover's, and the cover can tint the whole app. Every accent is checked at 4.5:1 on every surface. Pure black removes the wash.
 - **Lyrics as the hero.** Large, heavy Inter Display lyrics, a crisp white active line, context dimmed and blurred by distance, and tap-to-seek; scroll away to read ahead and one tap brings you back to the current line. Transliteration for Bangla, Hindi and Urdu is planned so everyone can sing along.
-- **Playback that outlives the screen.** The queue, auto-advance and sleep timer live in the playback service, so the notification, Bluetooth and Android Auto controls keep working when the app is closed.
+- **Playback that outlives the screen.** The queue, auto-advance and sleep timer live in the playback service, so the notification, Bluetooth, the home-screen widget and Android Auto keep working when the app is closed. In the car you browse your library, downloads and search.
 - **Sound that flows.** Songs play at a similar volume, and can crossfade into each other while albums stay gapless. A 10-band equaliser shapes them, or hands the sound to your phone's own.
 - **Offline when you need it.** Download songs, albums and playlists, on Wi-Fi only unless you allow mobile data.
 - **Reliable by design.** Stream sources sit behind an interface with automatic fallback, and only the app and system surfaces may control the media session.
@@ -90,6 +90,8 @@ Planned, not built yet: *Sitara Sync* (end-to-end encrypted sync through storage
 | | Speed 0.5× to 2× and pitch ±6 semitones, set independently from a compact control in Now Playing, for the session; lyrics keep time at any speed | 🧪 |
 | | Background playback service: the whole queue is a Media3 playlist; notification and lock screen show title, artist and cover with previous, next and seek, plus Like (filled when liked), Shuffle and Repeat; audio focus, pause when headphones disconnect, headset and Bluetooth buttons; keeps playing when the app is swiped away | 🧪 |
 | | The queue, current song and position are saved and come back after the app is closed or killed; a headset play button resumes them | 🧪 |
+| **Everywhere** | Android Auto: Recently played, Liked songs, Downloads and Library (playlists, saved albums, saved artists) to browse, covers as a grid and songs as a list, search and voice ("play … on Sitara"), Like and Shuffle on the car's player; downloads play with no connection; a song that can't play says so in words | 🧪 |
+| | Home-screen widget, 4 × 1: cover, song, artist, previous, play/pause, next; resized to two rows it adds the heart and a progress line; cover colours (text at 4.5:1) or your wallpaper's; a tap opens Now Playing; Play something resumes your last queue or opens Home; redrawn only on change, nothing while paused | 🧪 |
 | **Sound** | Normalise loudness (on by default): gentle levelling toward −14 LUFS, at most +6 dB, peaks kept under −1 dBFS | 🧪 |
 | | Gapless: the next song's stream is looked up while the current one plays, so songs join without inserted silence | 🧪 |
 | | Crossfade, Off or 1 to 12 s; songs from one album stay gapless | 🧪 |
@@ -105,7 +107,7 @@ Planned, not built yet: *Sitara Sync* (end-to-end encrypted sync through storage
 | | Artist, album and playlist pages with Play all and Shuffle | 🧪 |
 | | Radio: Start radio from Up next, and a queue about to run out continues with related songs | 🧪 |
 | **Later** | Resolver health checks, local files, import, backup and restore | Not started |
-| **Accounts** | Account library sync, scrobbling, widgets, Android Auto, Cast | Phase C |
+| **Accounts** | Account library sync, scrobbling, Cast | Phase C |
 | | Sitara Sync, LAN remote control, smart offline | Phase C |
 | **Premium** | Animated canvas, automix, lyric translation and transliteration, Wear OS remote, TV layout | Phase D |
 
@@ -131,6 +133,8 @@ Planned, not built yet: *Sitara Sync* (end-to-end encrypted sync through storage
 - Handing the sound to the phone's equaliser relies on that equaliser following Android's audio effect announcements; some vendors' equalisers may not, and it has not been checked on a phone yet. The built-in equaliser's sound has been measured in tests, not yet listened to on a phone.
 - A song's volume trim is picked up as the song starts, so its first moment may glide from the previous song's level.
 - Covers are cached on the device, and the cache can drop old covers when storage runs low; a downloaded song played offline then shows its generated cover instead.
+- Android Auto and the widget have been tested on the JVM, not yet on a car head unit, the Desktop Head Unit or a real launcher. Android Auto may not show covers in browse lists, because the browse items carry web image addresses and Auto asks for content addresses there (the playing song's cover shows either way).
+- The widget's progress line moves in 15-second steps, so it can trail the song by up to 15 seconds.
 - An unofficial client can break when YouTube changes; fixes land in `:source:youtube`.
 
 ## Architecture

@@ -2,7 +2,7 @@
 
 How Sitara compares with the four apps it is measured against, updated with every release. Competitor columns come from their public documentation and release notes; **Y** = has it, **~** = partial or depends on version or setup, **—** = not offered, **?** = not documented. A Sitara entry says the release that shipped it, or the Phase C slice planned for it ([PHASE_C_PLAN.md](PHASE_C_PLAN.md)).
 
-Last updated: polish slice 5 (target v0.9.5, on `main`; the owner tags).
+Last updated: polish slice 6 (target v0.9.6, on `main`; the owner tags).
 
 | Capability | BitChord | Metrolist | Meld | ReVanced | Sitara |
 |---|:---:|:---:|:---:|:---:|---|
@@ -37,8 +37,8 @@ Last updated: polish slice 5 (target v0.9.5, on `main`; the owner tags).
 | Lyric translation | Y | Y | ~ | — | c6 |
 | Lyric share cards | Y | — | — | — | c6 |
 | Beat-aware automix | ~ | — | — | — | c7 |
-| Widgets | Y | Y | Y | Y | c8 |
-| Android Auto | Y | Y | ~ | Y | c8 |
+| Widgets | Y | Y | Y | Y | v0.9.6 (one now-playing widget, 4 × 1 resizable to 4 × 2 with the heart and progress; not yet checked on a real launcher) |
+| Android Auto | Y | Y | ~ | Y | v0.9.6 (library, downloads offline, search and voice, Like and Shuffle; not yet checked in a car or the Desktop Head Unit) |
 | Last.fm / ListenBrainz | Y/Y | Y/— | Y/— | — | c8 |
 | Playlist imports (YouTube, Spotify, M3U/CSV) | Y | ~ | Y | — | c9 |
 | Audio quality per network, codec readout | Y | — | — | ~ | c9 |

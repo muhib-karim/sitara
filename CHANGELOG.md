@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+Polish slice 6: everywhere the music goes.
+
+### Added
+
+- Android Auto: Sitara shows up as a media app in the car. Four tabs, Recently played, Liked songs, Downloads and Library (your playlists, saved albums and saved artists), with covers as a grid and songs as a list. Search in the car finds songs, and "play … on Sitara" plays what it finds (no query plays your liked songs). Picking a song plays its list from that song. Downloads play with no connection. Like and Shuffle are on the car's player screen next to the transport. Offline, a search in the car comes back empty and an album or artist page says it can't reach YouTube Music.
+- A home-screen widget, four columns by one row: cover, song and artist with previous, play/pause and next. Make it two rows tall and it adds the heart and a progress line. It takes the playing cover's colours, or your wallpaper's when wallpaper colours are on. A tap opens Now Playing. With nothing playing, Play something picks up your last queue (or opens Home when there is none).
+
+### Changed
+
+- When a song can't be played, the notification, lock screen, Bluetooth displays and the car now say "Couldn't play this song. Try again, skip it, or play a download." instead of a technical error, and play and skip keep working there.
+- The widget redraws only when the song, play state, heart or a failure changes, and moves its progress line in 15-second steps while music plays. Nothing runs for it while paused, and nothing starts for it until a widget is placed. No new permissions.
+
 ## [0.9.5] - 2026-10-21
 
 Polish slice 5: your stats.
