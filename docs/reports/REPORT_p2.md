@@ -87,7 +87,7 @@ one Home with a different edge would break the consistency the goal asks for. Ca
 | `cb47482` | Home UI, loader, placeholders, offline | CI 39526458220 | red: the 6 loader tests ran in `backgroundScope`, which `advanceUntilIdle()` does not drive, and a full-width swipe passed Quick picks page two; Record screenshots 39526464850 red for the same test |
 | `8065250` | those two tests fixed | CI 39526995726 | unit tests green; ktlint red (a comment's indent); screenshots stale as expected; Record screenshots 39526995408 green |
 | `d29de87` | tile subtitle clip, loading covers | CI 39527528905 | only the 22 stale or new Home/Library/mini-player baselines red; Record screenshots 39527535797 green (88 baselines) |
-| baselines + docs | this commit | FINAL_RUNS | |
+| `73c4680` | baselines + docs | CI 39528071646, Secret scan 39528071716, Device screens 39528071679, Pages 39528071711 | all green; Device screens passed first time (no infrastructure flake to rerun) |
 
 The recorded baselines were inspected before committing: Home dark and light, loading dark and light, offline,
 mood and the scrolled shelves. Inspection found the tile clip that cut the first letter of every tile's subtitle
