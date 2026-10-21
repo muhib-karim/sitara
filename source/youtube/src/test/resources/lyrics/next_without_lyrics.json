@@ -1,0 +1,43 @@
+{
+ "contents": {
+  "singleColumnMusicWatchNextResultsRenderer": {
+   "tabbedRenderer": {
+    "watchNextTabbedResultsRenderer": {
+     "tabs": [
+      {
+       "tabRenderer": {
+        "title": "Up next"
+       }
+      },
+      {
+       "tabRenderer": {
+        "title": "Lyrics",
+        "unselectable": true
+       }
+      },
+      {
+       "tabRenderer": {
+        "title": "Comments"
+       }
+      },
+      {
+       "tabRenderer": {
+        "title": "Related",
+        "endpoint": {
+         "browseEndpoint": {
+          "browseId": "MPTRt_bhuEtLF1qfp-3",
+          "browseEndpointContextSupportedConfigs": {
+           "browseEndpointContextMusicConfig": {
+            "pageType": "MUSIC_PAGE_TYPE_TRACK_RELATED"
+           }
+          }
+         }
+        }
+       }
+      }
+     ]
+    }
+   }
+  }
+ }
+}

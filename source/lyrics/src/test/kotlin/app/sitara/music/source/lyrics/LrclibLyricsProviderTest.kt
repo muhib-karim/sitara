@@ -2,6 +2,7 @@ package app.sitara.music.source.lyrics
 
 import app.sitara.music.core.model.Artwork
 import app.sitara.music.core.model.CachedLyrics
+import app.sitara.music.core.model.LyricsSong
 import app.sitara.music.core.model.Track
 import java.io.IOException
 import kotlinx.coroutines.test.runTest
@@ -60,6 +61,19 @@ class LrclibLyricsProviderTest {
         assertEquals(5_000, lyrics.lines[0].endMs)
         assertEquals(214_000, lyrics.lines[1].endMs)
         assertEquals("LRCLIB", lyrics.source)
+    }
+
+    @Test
+    fun `keeps the song LRCLIB matched, with its length, with the lyrics and in the cache`() = runTest {
+        answers["/api/get"] = 200 to json("[00:01.00]Paper lanterns", null, duration = 215.0)
+
+        val lyrics = provider.lyrics(song)!!
+        sent.clear()
+
+        assertEquals("LRCLIB", provider.name)
+        assertEquals(LyricsSong("Paper Lanterns", "Orchid Lane", 215_000), lyrics.matched)
+        assertEquals(lyrics, provider.lyrics(song))
+        assertTrue(sent.isEmpty(), "the second answer comes from the cache")
     }
 
     @Test
