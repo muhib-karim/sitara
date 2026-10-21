@@ -76,7 +76,15 @@ InnerTune have stats screens; Sitara had none.
 
 ## CI
 
-FILL_CI
+Green on `f58d949` (the baselines and docs commit, on top of every code commit):
+- **CI** 39549796485: ktlint, unit tests, Room schema check, screenshot comparison against the new baselines, debug APK.
+- **Secret scan** 39549796460.
+- **Device screens** 39549796408 (API 34 emulator).
+
+Baselines came from **Record screenshots** 39549354884: 105 shots, 5 new (Stats light and dark, top artists and
+albums, a range without plays, the share card) and 9 changed (the Library tile shifts Library's shots; the Listening
+history group shifts Settings' scrolled shots). All were inspected before commit. The device capture script needed no
+change: Library still waits for its pinned Liked songs, and Settings still scrolls to its last row.
 
 Notes:
 - **The v4 schema.** Room's schema 4 can only be exported by a build. CI 39546503878 exported it, and `29a38d6`
