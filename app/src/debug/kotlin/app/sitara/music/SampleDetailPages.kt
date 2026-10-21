@@ -38,7 +38,7 @@ internal class SampleDetailPages(private val source: FakeMusicSource = FakeMusic
 internal fun sampleSavedLibrary(sample: Library) = SavedLibrary(
     liked = sample.likedTracks,
     recent = sample.playlists.flatMap { it.tracks }.distinctBy { it.id }.take(8),
-    playlists = sample.playlists.mapIndexed { index, playlist -> PlaylistSummary(index + 1L, playlist.title, playlist.tracks.size, playlist.artwork) },
+    playlists = sample.playlists.mapIndexed { index, playlist -> PlaylistSummary(index + 1L, playlist.title, playlist.tracks.size, playlist.tracks.map { it.artwork }.distinct().take(4)) },
     albums = sample.albums,
     artists = sample.artists,
 )

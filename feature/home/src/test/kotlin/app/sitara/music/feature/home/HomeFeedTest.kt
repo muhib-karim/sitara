@@ -26,8 +26,8 @@ class HomeFeedTest {
     }
 
     @Test fun jumpBackInListsPlaylistsWithSongsThenSavedAlbums() {
-        val road = PlaylistSummary(1, "Road", songCount = 3, artwork = art)
-        val draft = PlaylistSummary(2, "Draft", songCount = 0, artwork = null)
+        val road = PlaylistSummary(1, "Road", songCount = 3, covers = listOf(art))
+        val draft = PlaylistSummary(2, "Draft", songCount = 0, covers = emptyList())
         val album = Album("al", "Album", "Artist", null, art, emptyList())
 
         val feed = homeFeed(OnlineHome(), emptyList(), emptyList(), playlists = listOf(road, draft), albums = listOf(album))

@@ -32,6 +32,9 @@ abstract class PlayHistoryDao {
     @Insert
     abstract suspend fun insert(play: PlayEntity)
 
+    @Query("SELECT track_id, track_artist_id AS artist_id, MAX(played_at) AS last_played_at, COUNT(*) AS plays FROM play_history GROUP BY track_id")
+    abstract fun counts(): Flow<List<PlayCountRow>>
+
     @Query("DELETE FROM play_history WHERE id NOT IN (SELECT id FROM play_history ORDER BY id DESC LIMIT :keep)")
     abstract suspend fun trim(keep: Int)
 
@@ -74,13 +77,15 @@ abstract class PlaylistDao {
     @Query(
         """
         SELECT p.id, p.name,
-            (SELECT COUNT(*) FROM playlist_entries e WHERE e.playlist_id = p.id) AS song_count,
-            (SELECT e.track_artwork_colors FROM playlist_entries e WHERE e.playlist_id = p.id ORDER BY e.position LIMIT 1) AS cover_colors,
-            (SELECT e.track_artwork_url FROM playlist_entries e WHERE e.playlist_id = p.id ORDER BY e.position LIMIT 1) AS cover_url
+            (SELECT COUNT(*) FROM playlist_entries e WHERE e.playlist_id = p.id) AS song_count
         FROM playlists p ORDER BY p.updated_at DESC, p.id DESC
         """,
     )
     abstract fun summaries(): Flow<List<PlaylistSummaryRow>>
+
+    // shortcut: reads every entry's cover for the library list; take the first few per playlist in SQL if playlists grow to thousands of songs.
+    @Query("SELECT playlist_id, track_artwork_colors AS colors, track_artwork_url AS url FROM playlist_entries ORDER BY playlist_id, position")
+    abstract fun covers(): Flow<List<PlaylistCoverRow>>
 
     @Query("SELECT * FROM playlists WHERE id = :id")
     abstract fun playlist(id: Long): Flow<PlaylistEntity?>

@@ -4,6 +4,7 @@ import app.sitara.music.core.model.Album
 import app.sitara.music.core.model.Artist
 import app.sitara.music.core.model.Artwork
 import app.sitara.music.core.model.CachedLyrics
+import app.sitara.music.core.model.PlayCount
 import app.sitara.music.core.model.PlaylistSummary
 import app.sitara.music.core.model.RepeatMode
 import app.sitara.music.core.model.SavedQueue
@@ -30,6 +31,8 @@ class RoomPlayHistory(
 ) : PlayHistoryRepository {
     override fun recent(limit: Int): Flow<List<Track>> = dao.recent(limit).map { rows -> rows.map { it.track.toTrack() } }
 
+    override val counts: Flow<List<PlayCount>> = dao.counts().map { rows -> rows.map { PlayCount(it.trackId, it.artistId, it.lastPlayedAt, it.plays) } }
+
     override suspend fun record(track: Track) = dao.record(PlayEntity(track = track.toColumns(), playedAt = clock()), keep = limit)
 
     companion object {
@@ -55,9 +58,13 @@ class RoomSavedCollections(private val dao: SavedDao, private val clock: () -> L
     }
 }
 
+// A playlist with this many different covers shows them as a 2 x 2 collage.
+private const val COLLAGE_COVERS = 4
+
 class RoomPlaylists(private val dao: PlaylistDao, private val clock: () -> Long = System::currentTimeMillis) : PlaylistRepository {
-    override val all: Flow<List<PlaylistSummary>> = dao.summaries().map { rows ->
-        rows.map { PlaylistSummary(it.id, it.name, it.songCount, it.coverColors?.let { colors -> Artwork(decodeColors(colors), it.coverUrl) }) }
+    override val all: Flow<List<PlaylistSummary>> = combine(dao.summaries(), dao.covers()) { rows, covers ->
+        val byPlaylist = covers.groupBy({ it.playlistId }) { Artwork(decodeColors(it.colors), it.url) }
+        rows.map { PlaylistSummary(it.id, it.name, it.songCount, byPlaylist[it.id].orEmpty().distinct().take(COLLAGE_COVERS)) }
     }
 
     override fun playlist(id: Long): Flow<UserPlaylist?> = combine(dao.playlist(id), dao.entries(id)) { playlist, entries ->

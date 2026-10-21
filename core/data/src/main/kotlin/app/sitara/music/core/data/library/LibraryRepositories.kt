@@ -3,6 +3,7 @@ package app.sitara.music.core.data.library
 import app.sitara.music.core.model.Album
 import app.sitara.music.core.model.Artist
 import app.sitara.music.core.model.CachedLyrics
+import app.sitara.music.core.model.PlayCount
 import app.sitara.music.core.model.PlaylistSummary
 import app.sitara.music.core.model.SavedQueue
 import app.sitara.music.core.model.Track
@@ -21,6 +22,9 @@ interface LikedSongsRepository {
 interface PlayHistoryRepository {
     /** Each song once, most recently played first. */
     fun recent(limit: Int): Flow<List<Track>>
+
+    /** Each kept song's plays and last play, in no particular order. */
+    val counts: Flow<List<PlayCount>>
 
     suspend fun record(track: Track)
 }

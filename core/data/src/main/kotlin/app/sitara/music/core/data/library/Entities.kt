@@ -83,13 +83,26 @@ data class PlaylistEntryEntity(
     @ColumnInfo(name = "added_at") val addedAt: Long,
 )
 
-/** A library row for a playlist: its size and the cover of its first song. */
+/** A library row for a playlist: its name and size. */
 data class PlaylistSummaryRow(
     val id: Long,
     val name: String,
     @ColumnInfo(name = "song_count") val songCount: Int,
-    @ColumnInfo(name = "cover_colors") val coverColors: String?,
-    @ColumnInfo(name = "cover_url") val coverUrl: String?,
+)
+
+/** One song's cover in a playlist, in playlist order. */
+data class PlaylistCoverRow(
+    @ColumnInfo(name = "playlist_id") val playlistId: Long,
+    val colors: String,
+    val url: String?,
+)
+
+/** A song's plays in the kept history. */
+data class PlayCountRow(
+    @ColumnInfo(name = "track_id") val trackId: String,
+    @ColumnInfo(name = "artist_id") val artistId: String?,
+    @ColumnInfo(name = "last_played_at") val lastPlayedAt: Long,
+    val plays: Int,
 )
 
 // Packed ARGB ints as decimal text: "-6587393,42".

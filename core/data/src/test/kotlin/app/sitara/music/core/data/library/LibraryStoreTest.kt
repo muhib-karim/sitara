@@ -5,6 +5,7 @@ import androidx.test.core.app.ApplicationProvider
 import app.sitara.music.core.model.Album
 import app.sitara.music.core.model.Artist
 import app.sitara.music.core.model.Artwork
+import app.sitara.music.core.model.PlayCount
 import app.sitara.music.core.model.PlaylistSummary
 import app.sitara.music.core.model.Track
 import kotlinx.coroutines.flow.first
@@ -68,6 +69,17 @@ class LibraryStoreTest {
     }
 
     @Test
+    fun `play counts give each kept song its plays and when it last played`() = runTest {
+        val history = RoomPlayHistory(db.playHistory(), clock, limit = 4)
+        listOf(1, 2, 1, 3, 1).forEach { history.record(song(it)) }
+        // Plays kept: 2, 1, 3, 1. Each play takes the next clock tick, from 1000.
+        assertEquals(
+            setOf(PlayCount("id1", "UC1", lastPlayedAt = 1004, plays = 2), PlayCount("id2", "UC2", 1001, 1), PlayCount("id3", "UC3", 1003, 1)),
+            history.counts.first().toSet(),
+        )
+    }
+
+    @Test
     fun `saved albums and artists keep their details and can be removed`() = runTest {
         val saved = RoomSavedCollections(db.saved(), clock)
         val album = Album("OLAK1", "Paper Lanterns", "Orchid Lane", null, Artwork(listOf(1, 2), "https://example.org/a.jpg"), emptyList(), "UC1")
@@ -120,7 +132,7 @@ class LibraryStoreTest {
     }
 
     @Test
-    fun `the library lists playlists by last change with count and first cover`() = runTest {
+    fun `the library lists playlists by last change with count and covers`() = runTest {
         val playlists = RoomPlaylists(db.playlists(), clock)
         val empty = playlists.create("Empty")
         val mix = playlists.create("Mix")
@@ -128,12 +140,22 @@ class LibraryStoreTest {
         playlists.add(mix, song(2))
 
         assertEquals(
-            listOf(PlaylistSummary(mix, "Mix", 2, song(1).artwork), PlaylistSummary(empty, "Empty", 0, null)),
+            listOf(PlaylistSummary(mix, "Mix", 2, listOf(song(1).artwork, song(2).artwork)), PlaylistSummary(empty, "Empty", 0, emptyList())),
             playlists.all.first(),
         )
 
         playlists.rename(empty, "Renamed")
         assertEquals("Renamed", playlists.all.first().first().name)
+    }
+
+    @Test
+    fun `a playlist's covers are its first four different ones, in playlist order`() = runTest {
+        val playlists = RoomPlaylists(db.playlists(), clock)
+        val id = playlists.create("Mix")
+        val twin = song(9).copy(artwork = song(2).artwork)
+        listOf(song(1), song(2), twin, song(3), song(4), song(5)).forEach { playlists.add(id, it) }
+
+        assertEquals(listOf(1, 2, 3, 4).map { song(it).artwork }, playlists.all.first().single().covers)
     }
 
     @Test

@@ -2,6 +2,9 @@ package app.sitara.music.core.data
 
 import app.sitara.music.core.model.DarkMode
 import app.sitara.music.core.model.EqualiserSettings
+import app.sitara.music.core.model.LibraryLayout
+import app.sitara.music.core.model.LibrarySort
+import app.sitara.music.core.model.SearchFilter
 import app.sitara.music.core.model.SitaraSettings
 import app.sitara.music.core.model.ThemeMode
 
@@ -22,6 +25,10 @@ object SettingsCodec {
     const val EQ_BANDS = "equaliser_bands"
     const val EQ_PREAMP = "equaliser_preamp"
     const val EQ_SYSTEM = "equaliser_system"
+    const val SEARCH_FILTER = "search_filter"
+    const val RECENT_SEARCHES = "recent_searches"
+    const val LIBRARY_LAYOUT = "library_layout"
+    const val LIBRARY_SORT = "library_sort"
 
     fun encode(s: SitaraSettings): Map<String, String> = mapOf(
         THEME to s.themeMode.name,
@@ -36,6 +43,11 @@ object SettingsCodec {
         EQ_BANDS to s.equaliser.bandsDb.joinToString(","),
         EQ_PREAMP to s.equaliser.preampDb.toString(),
         EQ_SYSTEM to s.equaliser.useSystem.toString(),
+        SEARCH_FILTER to s.searchFilter.name,
+        // One search per line: a search is kept on a single line (withRecentSearch).
+        RECENT_SEARCHES to s.recentSearches.joinToString("\n"),
+        LIBRARY_LAYOUT to s.libraryLayout.name,
+        LIBRARY_SORT to s.librarySort.name,
     )
 
     fun decode(map: Map<String, String>): SitaraSettings {
@@ -55,6 +67,10 @@ object SettingsCodec {
                 preampDb = map[EQ_PREAMP]?.toIntOrNull()?.coerceIn(-GAIN, GAIN) ?: d.equaliser.preampDb,
                 useSystem = map[EQ_SYSTEM]?.toBooleanStrictOrNull() ?: d.equaliser.useSystem,
             ),
+            searchFilter = map[SEARCH_FILTER]?.let { v -> SearchFilter.entries.firstOrNull { it.name == v } } ?: d.searchFilter,
+            recentSearches = map[RECENT_SEARCHES]?.lines()?.filter { it.isNotBlank() } ?: d.recentSearches,
+            libraryLayout = map[LIBRARY_LAYOUT]?.let { v -> LibraryLayout.entries.firstOrNull { it.name == v } } ?: d.libraryLayout,
+            librarySort = map[LIBRARY_SORT]?.let { v -> LibrarySort.entries.firstOrNull { it.name == v } } ?: d.librarySort,
         )
     }
 

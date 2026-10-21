@@ -3,6 +3,9 @@ package app.sitara.music.core.data
 import app.sitara.music.core.model.DarkMode
 import app.sitara.music.core.model.EqualiserPreset
 import app.sitara.music.core.model.EqualiserSettings
+import app.sitara.music.core.model.LibraryLayout
+import app.sitara.music.core.model.LibrarySort
+import app.sitara.music.core.model.SearchFilter
 import app.sitara.music.core.model.SitaraSettings
 import app.sitara.music.core.model.ThemeMode
 import org.junit.Assert.assertEquals
@@ -15,6 +18,8 @@ class SettingsCodecTest {
         val s = SitaraSettings(
             ThemeMode.AMOLED, DarkMode.DARK, reducedMotion = true, crossfadeSeconds = 6, normalisation = false, targetLufs = -16f, downloadOnWifiOnly = false, skipSilence = true,
             equaliser = EqualiserSettings(enabled = true, bandsDb = listOf(-12, -7, 0, 1, 2, 3, 4, 5, 11, 12), preampDb = -5, useSystem = true),
+            searchFilter = SearchFilter.PLAYLISTS, recentSearches = listOf("lo-fi beats", "Jazz, piano"),
+            libraryLayout = LibraryLayout.LIST, librarySort = LibrarySort.MOST_PLAYED,
         )
         assertEquals(s, SettingsCodec.decode(SettingsCodec.encode(s)))
     }
@@ -58,6 +63,21 @@ class SettingsCodecTest {
     }
 
     @Test
+    fun `search starts on Songs with no recent searches, and Library as a grid of what was added last`() {
+        val s = SettingsCodec.decode(emptyMap())
+        assertEquals(SearchFilter.SONGS, s.searchFilter)
+        assertEquals(emptyList<String>(), s.recentSearches)
+        assertEquals(LibraryLayout.GRID, s.libraryLayout)
+        assertEquals(LibrarySort.RECENTLY_ADDED, s.librarySort)
+    }
+
+    @Test
+    fun `no recent searches round trip as none, and blank lines are not searches`() {
+        assertEquals(emptyList<String>(), SettingsCodec.decode(SettingsCodec.encode(SitaraSettings())).recentSearches)
+        assertEquals(listOf("a", "b"), SettingsCodec.decode(mapOf(SettingsCodec.RECENT_SEARCHES to "a\n\n  \nb")).recentSearches)
+    }
+
+    @Test
     fun `corrupt values fall back or clamp`() {
         val s = SettingsCodec.decode(
             mapOf(
@@ -65,12 +85,18 @@ class SettingsCodecTest {
                 SettingsCodec.REDUCED_MOTION to "yes",
                 SettingsCodec.CROSSFADE to "99",
                 SettingsCodec.TARGET_LUFS to "3",
+                SettingsCodec.SEARCH_FILTER to "VIDEOS",
+                SettingsCodec.LIBRARY_LAYOUT to "TILES",
+                SettingsCodec.LIBRARY_SORT to "",
             ),
         )
         assertEquals(ThemeMode.ARTWORK, s.themeMode)
         assertEquals(false, s.reducedMotion)
         assertEquals(12, s.crossfadeSeconds)
         assertEquals(-14f, s.targetLufs)
+        assertEquals(SearchFilter.SONGS, s.searchFilter)
+        assertEquals(LibraryLayout.GRID, s.libraryLayout)
+        assertEquals(LibrarySort.RECENTLY_ADDED, s.librarySort)
     }
 
     @Test

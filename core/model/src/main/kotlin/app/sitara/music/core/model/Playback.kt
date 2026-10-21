@@ -22,6 +22,12 @@ data class SitaraSettings(
     /** The player skips silent stretches (Media3 silence skipping in the audio chain). */
     val skipSilence: Boolean = false,
     val equaliser: EqualiserSettings = EqualiserSettings(),
+    /** The search filter used last, so Search opens on it again. */
+    val searchFilter: SearchFilter = SearchFilter.SONGS,
+    /** Searches the listener made, newest first. */
+    val recentSearches: List<String> = emptyList(),
+    val libraryLayout: LibraryLayout = LibraryLayout.GRID,
+    val librarySort: LibrarySort = LibrarySort.RECENTLY_ADDED,
 ) {
     init {
         require(crossfadeSeconds in 0..MAX_CROSSFADE_SECONDS) { "crossfade out of range: $crossfadeSeconds" }
@@ -73,3 +79,17 @@ data class PlaybackTuning(val speed: Float = 1f, val semitones: Int = 0) {
         const val MAX_SEMITONES = 6
     }
 }
+
+/** How Library lays out a collection: covers in a grid, or rows. */
+enum class LibraryLayout { GRID, LIST }
+
+/** How Library orders a collection. Not every kind offers every order: a playlist has no plays of its own. */
+enum class LibrarySort(val label: String) {
+    RECENTLY_ADDED("Recently added"),
+    RECENTLY_PLAYED("Recently played"),
+    A_TO_Z("A to Z"),
+    MOST_PLAYED("Most played"),
+}
+
+/** How often a song was played in the kept history and when it last played, for ordering Library by plays. */
+data class PlayCount(val trackId: String, val artistId: String?, val lastPlayedAt: Long, val plays: Int)

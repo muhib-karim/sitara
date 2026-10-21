@@ -89,13 +89,16 @@ data class Library(
     val likedTracks: List<Track>,
 )
 
-/** A playlist the listener made on this device, as the library lists it; [artwork] is its first song's. */
+/** A playlist the listener made on this device, as the library lists it; [covers] are its first four different song covers. */
 data class PlaylistSummary(
     val id: Long,
     val name: String,
     val songCount: Int,
-    val artwork: Artwork?,
-)
+    val covers: List<Artwork>,
+) {
+    /** Its first song's cover. */
+    val artwork: Artwork? get() = covers.firstOrNull()
+}
 
 /** A listener's own playlist with its songs in order. */
 data class UserPlaylist(
