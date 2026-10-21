@@ -37,6 +37,9 @@ import androidx.compose.ui.unit.dp
 import app.sitara.music.core.model.DarkMode
 import app.sitara.music.core.model.EqualiserPreset
 import app.sitara.music.core.model.EqualiserSettings
+import app.sitara.music.core.model.Lyrics
+import app.sitara.music.core.model.LyricsLine
+import app.sitara.music.core.model.LyricsSong
 import app.sitara.music.core.model.PlaybackTuning
 import app.sitara.music.core.model.SearchFilter
 import app.sitara.music.core.model.SitaraSettings
@@ -51,6 +54,7 @@ import app.sitara.music.feature.player.SleepTimerStatus
 import app.sitara.music.feature.search.SearchState
 import app.sitara.music.source.fake.FakeMusicSource
 import app.sitara.music.source.fake.SampleCatalog
+import app.sitara.music.source.lyrics.LyricsMatch
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
@@ -80,6 +84,7 @@ class PlayerInteractionTest {
         upNextFromRadio: Int = 0,
         libraryActions: LibraryActions = LibraryActions.None,
         lyricsState: LyricsState? = null,
+        lyricsSources: List<String> = emptyList(),
         tuning: PlaybackTuning = PlaybackTuning(),
         sleepTimer: SleepTimerStatus = SleepTimerStatus.Off,
         failed: Boolean = false,
@@ -102,6 +107,7 @@ class PlayerInteractionTest {
                 search = SearchState.Idle,
                 player = PlayerUiState(
                     track = track, durationMs = durationMs, lyrics = lyricsState ?: LyricsState.Found(lyrics), positionMs = 15_300, upNext = upNext, upNextFromRadio = upNextFromRadio, tuning = tuning, sleepTimer = sleepTimer, failed = failed,
+                    lyricsSources = lyricsSources,
                     equaliser = equaliser, systemEqualiser = systemEqualiser, trimDb = trimDb,
                 ),
                 actions = actions,
@@ -383,6 +389,55 @@ class PlayerInteractionTest {
         compose.onNodeWithContentDescription("More options").performClick()
         compose.onNodeWithText("Add to playlist").performClick()
         compose.onNodeWithText("No playlists yet. Name one above and this song starts it.").assertIsDisplayed()
+    }
+
+    private val lyricsSources = listOf("LRCLIB", "YouTube Music")
+    private val track = SampleCatalog.tracks.first()
+    private val synced = runBlocking { FakeMusicSource().lyrics(track)!! }
+        .copy(source = "LRCLIB", matched = LyricsSong(track.title, track.artist, track.durationMs + 3_000))
+    private val plain = Lyrics(
+        listOf(LyricsLine(0, 0, "Paper lanterns over the river"), LyricsLine(0, 0, "We carried the night in our hands"), LyricsLine(0, 0, "And the morning came anyway")),
+        synced = false, source = "YouTube Music", licensor = "Musixmatch", matched = LyricsSong(track.title, track.artist, track.durationMs),
+    )
+
+    @Test
+    fun theSourceChipOpensEveryMatchAndPickingOneSwitchesToIt() {
+        val picked = mutableListOf<String>()
+        val matches = listOf(LyricsMatch("lrclib", synced), LyricsMatch("youtube-music", plain))
+        render(expanded = true, page = 1, durationMs = track.durationMs, lyricsSources = lyricsSources, lyricsState = LyricsState.Found(synced, matches), actions = object : PlayerActions by PlayerActions.None {
+            override fun chooseLyrics(providerId: String) { picked += providerId }
+        })
+
+        compose.onNodeWithText("Source: LRCLIB, synced").performClick()
+
+        compose.onNodeWithText("Synced · ${synced.lines.size} lines · 3 s longer").assertIsDisplayed()
+        compose.onNodeWithText("Plain · 3 lines · same length").assertIsDisplayed()
+        compose.onNodeWithText("Paper lanterns over the river\nWe carried the night in our hands").assertIsDisplayed()
+        compose.onNodeWithText("YouTube Music · Musixmatch").performClick()
+        assertEquals(listOf("youtube-music"), picked)
+        compose.waitForIdle()
+        compose.onNodeWithText("Plain · 3 lines · same length").assertDoesNotExist()
+    }
+
+    @Test
+    fun thePickerNamesASourceWithNoLyricsForTheSong() {
+        render(expanded = true, page = 1, lyricsSources = lyricsSources, lyricsState = LyricsState.Found(synced, listOf(LyricsMatch("lrclib", synced))))
+
+        compose.onNodeWithText("Source: LRCLIB, synced").performClick()
+
+        compose.onNodeWithText("YouTube Music has no lyrics for this song").assertIsDisplayed()
+    }
+
+    @Test
+    fun noLyricsNamesEverySourceAskedAndTryAgainAsksThemAgain() {
+        var retries = 0
+        render(expanded = true, page = 1, lyricsSources = lyricsSources, lyricsState = LyricsState.NotFound, actions = object : PlayerActions by PlayerActions.None {
+            override fun retryLyrics() { retries++ }
+        })
+
+        compose.onNodeWithText("No lyrics found in LRCLIB or YouTube Music").assertIsDisplayed()
+        compose.onNodeWithText("Try again").performClick()
+        assertEquals(1, retries)
     }
 
     @Test
