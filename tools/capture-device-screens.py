@@ -77,10 +77,24 @@ def hidden_under_dock(row, dock):
     return row[3] > dock[1]
 
 
-def scroll_to_end(screen):
-    for _ in range(4):
-        adb("shell", "input", "swipe", "540", "1700", "540", "500", "300")
+def swipe_up():
+    adb("shell", "input", "swipe", "540", "1700", "540", "500", "300")
     time.sleep(1)
+
+
+def scroll_to_end(screen):
+    """
+    Swipes until the last Settings row shows, then once more: the row is listed as soon as its top edge appears,
+    maybe behind the dock, and the dock check needs the page at its end. How far a fling goes depends on the emulator.
+    """
+    for _ in range(10):
+        swipe_up()
+        try:
+            wait_for_screen(screen, "Storage used", timeout=2)
+            break
+        except RuntimeError:
+            pass
+    swipe_up()
     return wait_for_screen(screen, "Storage used")
 
 
