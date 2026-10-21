@@ -78,7 +78,8 @@ class LastFmClient(keys: LastFmKeys, private val sessionKey: String, http: OkHtt
     private val api = LastFmApi(keys, http, baseUrl)
 
     override suspend fun nowPlaying(track: Track): SendOutcome {
-        val params = mutableMapOf("artist" to track.artist, "track" to track.title, "duration" to (track.durationMs / 1_000).toString())
+        val params = mutableMapOf("artist" to track.artist, "track" to track.title)
+        if (track.durationMs > 0) params["duration"] = (track.durationMs / 1_000).toString()
         if (track.album.isNotBlank()) params["album"] = track.album
         return outcome(api.call("track.updateNowPlaying", params + ("sk" to sessionKey)))
     }
