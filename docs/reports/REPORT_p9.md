@@ -64,7 +64,8 @@ The device-capture wait text for Lyrics ("Sitara, light the dark") still shows, 
 
 ## CI
 
-Final runs on the docs commit: see the closing note below, added once they finished.
+Green on `5dd3bb6` (code, baselines, docs and the ktlint fix): CI 39625459475, Secret scan 39625459520, Device
+screens 39625459157.
 
 Red runs on the way, each fixed in the next push:
 - CI 39618813543 (`5abc501`): two older store tests still called the one-key lyrics cache (`9f98706`). The hand-written
@@ -73,6 +74,8 @@ Red runs on the way, each fixed in the next push:
 - Record screenshots 39620005964 (the same) and 39621380980 (`d7a084b`): the translation flow was inferred as
   `Flow<Off>` (`1c5ebde`).
 - Record screenshots 39622073951 (`1c5ebde`) passed; inspecting it found the left-aligned Urdu card (`e806e46`).
+- CI 39624113589 (`6585b30`, the docs commit): ktlint, one import out of order in `LibraryRepositories.kt` (`5dd3bb6`);
+  every changed file's imports were then checked in order before pushing.
 - Push-triggered runs arrived minutes late and out of order this session, so several intermediate runs were cancelled
   by newer pushes before they reported.
 
