@@ -347,6 +347,18 @@ class PlayerInteractionTest {
     }
 
     @Test
+    fun lyricsHeaderLikesTheSongAndOpensMoreOptions() {
+        var likes = 0
+        render(expanded = true, page = 1, actions = object : PlayerActions by PlayerActions.None {
+            override fun toggleLike() { likes++ }
+        })
+        compose.onNodeWithContentDescription("Like").performClick()
+        assertEquals(1, likes)
+        compose.onNodeWithContentDescription("More options").performClick()
+        compose.onNodeWithText("Add to playlist").assertIsDisplayed()
+    }
+
+    @Test
     fun nowPlayingEqualiserPicksPresetsAndMovesBandsWithAnnouncedGains() {
         val picked = mutableListOf<EqualiserSettings>()
         render(expanded = true, actions = object : PlayerActions by PlayerActions.None {

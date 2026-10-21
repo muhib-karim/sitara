@@ -19,7 +19,7 @@ val InterDisplay = FontFamily(
     Font(R.font.inter_display_extrabold, FontWeight.ExtraBold),
 )
 
-val LyricStyle = TextStyle(fontFamily = InterDisplay, fontSize = 30.sp, lineHeight = 35.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = (-0.6).sp)
+val LyricStyle = TextStyle(fontFamily = InterDisplay, fontSize = 32.sp, lineHeight = 37.sp, fontWeight = FontWeight.ExtraBold, letterSpacing = (-0.6).sp)
 val SectionStyle = TextStyle(fontFamily = InterDisplay, fontSize = 20.sp, lineHeight = 26.sp, fontWeight = FontWeight.Bold, letterSpacing = (-0.4).sp)
 
 val SitaraTypography = Typography(

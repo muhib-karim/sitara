@@ -133,7 +133,7 @@ internal fun FullPlayer(
                     HorizontalPager(pager, Modifier.weight(1f), userScrollEnabled = true) { page ->
                         when (page) {
                             0 -> PlayingPage(state, theme, actions, artworkModifier, onQueue = { selectPage(2) }, onArtist = onArtist, onMore = { moreOpen = true })
-                            1 -> LyricsPanel(state, actions)
+                            1 -> LyricsPanel(state, actions, onMore = { moreOpen = true })
                             else -> Column(Modifier.fillMaxSize()) {
                                 Row(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
                                     Text("Up next", style = MaterialTheme.typography.headlineMedium, color = SitaraColors.StageContent, modifier = Modifier.weight(1f))
@@ -230,7 +230,7 @@ private fun TrackHeading(
     val track = state.track ?: return
     Row(modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         if (compact) {
-            ArtworkImage(track.artwork, Modifier.size(44.dp), cornerRadius = SitaraRadius.Cover)
+            ArtworkImage(track.artwork, Modifier.size(48.dp), cornerRadius = SitaraRadius.Cover)
             Spacer(Modifier.width(12.dp))
         }
         Column(Modifier.weight(1f)) {
@@ -257,19 +257,19 @@ private fun TrackHeading(
 }
 
 @Composable
-private fun LyricsPanel(state: PlayerUiState, actions: PlayerActions) {
+private fun LyricsPanel(state: PlayerUiState, actions: PlayerActions, onMore: () -> Unit) {
     BoxWithConstraints(Modifier.fillMaxSize()) {
         if (maxWidth > maxHeight) {
             Row(Modifier.fillMaxSize().padding(horizontal = 24.dp)) {
                 Column(Modifier.weight(1f)) {
-                    TrackHeading(state, Modifier.padding(vertical = 8.dp), compact = true)
+                    TrackHeading(state, Modifier.padding(vertical = 8.dp), compact = true, onLike = actions::toggleLike, onMore = onMore)
                     LyricsPage(state.lyrics, state.positionMs, SitaraColors.StageContent, actions::seekTo, actions::retryLyrics, Modifier.weight(1f))
                 }
                 PlayerControls(state, actions, Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(start = 24.dp, top = 12.dp))
             }
         } else {
             Column(Modifier.fillMaxSize()) {
-                TrackHeading(state, Modifier.padding(horizontal = 24.dp, vertical = 12.dp), compact = true)
+                TrackHeading(state, Modifier.padding(horizontal = 24.dp, vertical = 12.dp), compact = true, onLike = actions::toggleLike, onMore = onMore)
                 LyricsPage(state.lyrics, state.positionMs, SitaraColors.StageContent, actions::seekTo, actions::retryLyrics, Modifier.weight(1f))
                 PlayerControls(state, actions, Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
             }

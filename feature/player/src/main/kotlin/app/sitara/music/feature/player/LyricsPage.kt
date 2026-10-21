@@ -159,7 +159,8 @@ private fun SyncedLyrics(lyrics: Lyrics, positionMs: Long, contentColor: Color, 
                             this.alpha = alpha
                             transformOrigin = TransformOrigin(0f, 0.5f)
                         }
-                        .blur(if (reduced || distance == 0) 0.dp else distance.coerceAtMost(2).dp),
+                        // Softer the further a line is from the one being sung; static, so reduced motion keeps it.
+                        .blur((distance * 1.2f).coerceAtMost(3f).dp),
                 ) {
                     Text(line.text, style = LineStyle, color = contentColor)
                 }
