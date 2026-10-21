@@ -33,7 +33,7 @@ class ListeningStatsTest {
     @Test
     fun `this month and this year follow the phone's time zone`() {
         assertEquals(ms(berlin, 2026, 4, 1), StatsRange.MONTH.startMs(now, berlin, DayOfWeek.MONDAY))
-        assertEquals("the same moment is still March in New York", ms(newYork, 2026, 3, 1), StatsRange.MONTH.startMs(now, newYork, DayOfWeek.MONDAY))
+        assertEquals(ms(newYork, 2026, 3, 1), StatsRange.MONTH.startMs(now, newYork, DayOfWeek.MONDAY), "the same moment is still March in New York")
         assertEquals(ms(berlin, 2026, 1, 1), StatsRange.YEAR.startMs(now, berlin, DayOfWeek.MONDAY))
         assertEquals(0L, StatsRange.ALL_TIME.startMs(now, berlin, DayOfWeek.MONDAY))
     }
@@ -113,7 +113,7 @@ class ListeningStatsTest {
         assertEquals(24, byHour.size)
         assertEquals(90_000L, byHour[7])
         assertEquals(45_000L, byHour[23])
-        assertEquals("New York sees the same plays six hours earlier", 90_000L, ListeningStats.of(emptyList(), listens, newYork).listenedByHour[1])
+        assertEquals(90_000L, ListeningStats.of(emptyList(), listens, newYork).listenedByHour[1], "New York sees the same plays six hours earlier")
     }
 
     @Test
