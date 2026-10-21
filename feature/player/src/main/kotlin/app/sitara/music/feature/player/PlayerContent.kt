@@ -65,6 +65,7 @@ import app.sitara.music.core.designsystem.TrackRow
 import app.sitara.music.core.designsystem.animateArtworkColor
 import app.sitara.music.core.designsystem.dragHandle
 import app.sitara.music.core.designsystem.rememberArtworkTheme
+import app.sitara.music.core.designsystem.rememberCoverLook
 import app.sitara.music.core.designsystem.rememberReorderState
 import app.sitara.music.core.designsystem.reorderableRow
 import app.sitara.music.core.designsystem.sitaraColorScheme
@@ -98,7 +99,8 @@ internal fun FullPlayer(
     fun selectPage(page: Int) {
         scope.launch { if (reduced) pager.scrollToPage(page) else pager.animateScrollToPage(page) }
     }
-    val theme = rememberArtworkTheme(track.artwork)
+    val look = rememberCoverLook(track.artwork)
+    val theme = rememberArtworkTheme(track.artwork, look = look)
     val stage = sitaraColorScheme(if (wash) ThemeMode.ARTWORK else ThemeMode.AMOLED, dark = true)
     // The artwork theme's accent passes AA against the stage, so controls and highlights take it as primary.
     val accent = animateArtworkColor(theme.accent, "stage accent")
@@ -106,7 +108,7 @@ internal fun FullPlayer(
     MaterialTheme(colorScheme = if (wash) stage.copy(primary = accent, onPrimary = onAccent) else stage) {
         CompositionLocalProvider(LocalGlassHaze provides backdrop) {
             Box(Modifier.fillMaxSize()) {
-                ArtworkBackdrop(track.artwork, Modifier.fillMaxSize().hazeSource(backdrop), theme)
+                ArtworkBackdrop(track.artwork, Modifier.fillMaxSize().hazeSource(backdrop), look, theme)
                 Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
                     Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
                         GlassIconButton(SitaraIcons.ChevronDown, "Collapse player", onCollapse)

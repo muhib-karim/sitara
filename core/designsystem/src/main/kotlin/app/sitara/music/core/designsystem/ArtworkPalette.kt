@@ -27,6 +27,7 @@ data class CoverColors(val swatches: List<Int>, val brightest: Int)
 object ArtworkPalette {
     private const val WHITE = 0xFFFFFFFF.toInt()
     private const val NEAR_BLACK = 0xFF080808.toInt()
+    private const val BLACK = 0xFF000000.toInt()
 
     /** [colors]: the cover's most common colour first, then the one to accent with. */
     fun themeFrom(colors: List<Int>, dark: Boolean): ArtworkTheme {
@@ -64,6 +65,27 @@ object ArtworkPalette {
     /** [artwork]'s theme: from its [cover] once loaded, else (no cover, offline, failed) from the artwork's own colours. */
     fun coverTheme(artwork: Artwork, cover: CoverColors?, dark: Boolean): ArtworkTheme =
         themeFrom(cover?.swatches?.takeIf { it.isNotEmpty() } ?: artwork.colors, dark)
+
+    /**
+     * The least black scrim the stage needs so [text] reads at AA wherever the blurred cover shows its [brightest]
+     * colour: the theme's wash is under the scrim and the accent glow over it, as the backdrop draws them. Never below
+     * [ArtworkScrim.Floor], so a dark cover's own colour still carries the stage.
+     */
+    fun stageScrim(brightest: Int, theme: ArtworkTheme, text: Int): Float {
+        var scrim = ArtworkScrim.Floor
+        while (scrim < 1f && contrast(text, stageBrightest(brightest, theme, scrim)) < 4.5) scrim += 0.02f
+        return scrim.coerceAtMost(1f)
+    }
+
+    /** The brightest colour the stage shows over a cover whose blur peaks at [brightest], under a [scrim] of black. */
+    fun stageBrightest(brightest: Int, theme: ArtworkTheme, scrim: Float): Int =
+        over(theme.accent, ArtworkScrim.Glow, over(BLACK, scrim, over(theme.backdropTop, ArtworkScrim.Wash, brightest)))
+
+    /** [top] at [alpha] over the opaque [bottom], blended in sRGB as the canvas does. */
+    private fun over(top: Int, alpha: Float, bottom: Int): Int {
+        fun channel(shift: Int) = ((((top shr shift) and 0xFF) * alpha + ((bottom shr shift) and 0xFF) * (1f - alpha)) + 0.5f).toInt().coerceIn(0, 255)
+        return (0xFF shl 24) or (channel(16) shl 16) or (channel(8) shl 8) or channel(0)
+    }
 
     private fun chroma(color: Int): Float {
         val r = (color shr 16) and 0xFF

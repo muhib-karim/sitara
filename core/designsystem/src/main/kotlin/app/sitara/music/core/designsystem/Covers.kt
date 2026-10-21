@@ -78,12 +78,16 @@ internal fun coverColorsOf(bitmap: Bitmap): CoverColors {
 
 private const val OPAQUE = 0xFF000000.toInt()
 
+/** The small, software-decoded read of [artwork]'s cover the palette is taken from; null when it has none. */
+internal fun paletteRequest(context: Context, artwork: Artwork): ImageRequest? =
+    coverRequest(context, artwork, crossfade = false)?.newBuilder()?.size(PALETTE_PX)?.allowHardware(false)?.build()
+
 private val coverLooks = LruCache<Artwork, CoverLook>(32)
 
 /** [artwork]'s look, or null when there is no cover or it cannot load. */
 private suspend fun loadCoverLook(context: Context, artwork: Artwork): CoverLook? {
     coverLooks[artwork]?.let { return it }
-    val request = coverRequest(context, artwork, crossfade = false)?.newBuilder()?.size(PALETTE_PX)?.allowHardware(false)?.build() ?: return null
+    val request = paletteRequest(context, artwork) ?: return null
     val loader = SingletonImageLoader.get(context)
     val result = loader.execute(request) as? SuccessResult ?: return null
     // Where the loader decodes: off the main thread in the app, inline in screenshot tests.
