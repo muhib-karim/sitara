@@ -12,8 +12,8 @@ android {
         applicationId = "app.sitara.music"
         minSdk = 26
         targetSdk = 36
-        versionCode = 14
-        versionName = "0.9.2"
+        versionCode = 15
+        versionName = "0.9.3"
     }
 
     signingConfigs {
