@@ -18,6 +18,7 @@ import app.sitara.music.feature.player.SleepTimerStatus
 internal class DemoPlayer(private var original: List<Track>, lyrics: Lyrics) : PlayerActions {
     private var queue = original
     private var index = 0
+    private var removed: Pair<Int, Track>? = null
     var state by mutableStateOf(
         PlayerUiState(
             track = original.first(),
@@ -69,7 +70,12 @@ internal class DemoPlayer(private var original: List<Track>, lyrics: Lyrics) : P
         if (from in state.upNext.indices && to in state.upNext.indices) editQueue { add(index + 1 + to, removeAt(index + 1 + from)) }
     }
     override fun removeUpNext(index: Int) {
-        if (index in state.upNext.indices) editQueue { removeAt(this@DemoPlayer.index + 1 + index) }
+        if (index in state.upNext.indices) editQueue { removed = index to removeAt(this@DemoPlayer.index + 1 + index) }
+    }
+    override fun undoRemoveUpNext() {
+        val (at, track) = removed ?: return
+        removed = null
+        editQueue { add((index + 1 + at).coerceAtMost(size), track) }
     }
     // The demo's lyrics are built in, so they never fail.
     override fun retryLyrics() = Unit
