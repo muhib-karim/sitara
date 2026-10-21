@@ -11,7 +11,6 @@ import androidx.annotation.OptIn
 import androidx.media3.common.C
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaLibraryInfo
-import androidx.media3.common.PlaybackException
 import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.database.StandaloneDatabaseProvider
@@ -295,14 +294,22 @@ class PlaybackServiceTest {
     }
 
     @Test
-    fun `a song that could not be played tells the car so in words, and only while it is the current one`() {
-        val queue = QueueState().setQueue(songs)
-        val failed = PlaybackSnapshot(queue = queue, failedUid = queue.currentEntry!!.uid)
-        val error = checkNotNull(playbackError(failed))
-        assertEquals("Couldn’t play this song. Try again, skip it, or play a download.", error.message)
-        assertEquals(PlaybackException.ERROR_CODE_IO_UNSPECIFIED, error.errorCode)
-        assertEquals("skipped past it", null, playbackError(failed.copy(queue = queue.skipNext())))
-        assertEquals(null, playbackError(PlaybackSnapshot(queue = queue)))
+    fun `a song that could not be played tells the car and the lock screen so in words, and they can still try again or skip`() {
+        val app = RuntimeEnvironment.getApplication() as TestApp
+        app.saved = SavedQueue(songs, currentIndex = 0, positionMs = 0, repeatMode = RepeatMode.OFF)
+        val controller = Robolectric.buildService(PlaybackService::class.java).create()
+        shadowOf(Looper.getMainLooper()).idle()
+        val service = controller.get()
+        val shown = checkNotNull(service.session).player
+
+        // Streams never resolve in tests, as when YouTube refuses one; ExoPlayer tries the load a few times first.
+        checkNotNull(PlaybackEngineRegistry.engine.value).togglePlay()
+        idleUntil(timeoutMs = 20_000) { shown.playerError != null }
+        assertEquals("Couldn’t play this song. Try again, skip it, or play a download.", shown.playerError?.message)
+        assertEquals(service.player.playerError?.errorCode, shown.playerError?.errorCode)
+        assertTrue(shown.isCommandAvailable(Player.COMMAND_PLAY_PAUSE))
+        assertTrue(shown.isCommandAvailable(Player.COMMAND_SEEK_TO_NEXT))
+        controller.destroy()
     }
 
     @Test
@@ -327,8 +334,8 @@ class PlaybackServiceTest {
     }
 
     /** Runs the main looper until [done], while ExoPlayer's playback thread works in the background. */
-    private fun idleUntil(done: () -> Boolean) {
-        val deadline = System.currentTimeMillis() + 5_000
+    private fun idleUntil(timeoutMs: Long = 5_000, done: () -> Boolean) {
+        val deadline = System.currentTimeMillis() + timeoutMs
         while (!done() && System.currentTimeMillis() < deadline) {
             shadowOf(Looper.getMainLooper()).idle()
             Thread.sleep(10)
