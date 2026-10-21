@@ -6,6 +6,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+Polish slice 4: make it yours.
+
+### Added
+
+- Settings → Appearance, with a live preview card at the top that shows the page, a card, chips and a playing song in the colours you pick.
+- Theme: System, Light or Dark.
+- Pure black: black instead of dark grey in the dark theme, and a black Now Playing without the cover's blur. The old "AMOLED black" choice carries over to it.
+- Wallpaper colours (Material You) on Android 12 and later, on by default; turn it off to use your own accent.
+- Accents: Saffron, Rose, Violet, Blue, Teal or Green, each tuned for light and dark, or From artwork, which follows the cover of the song that's playing. Every accent is checked to read at 4.5:1 on every background, card and chip, in both themes, and is darkened or lightened until it does.
+- Use artwork colours across the app: backgrounds, cards and chips take a tint from the playing song's cover, not only Now Playing. Text stays at 4.5:1 on them.
+- The media notification and lock screen get Like (a filled heart when the song is liked), Shuffle and Repeat buttons beside play and skip, which show their state and work from there. How many of them show at once, and their colours, are up to the phone.
+- Up next: swipe a song left to remove it, or use its ×; either way an Undo puts it back where it was.
+- Dragging a song in Up next or in a playlist ticks the phone's haptics once for each row it passes.
+- Save as playlist in Up next makes a new playlist of the playing song and everything up next, in order.
+- Songs that radio adds (Start radio, or a queue running out) show under "Up next from radio". Songs you queue go ahead of them, shuffle keeps them apart, and each part reorders within itself.
+- TalkBack: Remove from the queue, Move up and Move down on every Up next song; accent swatches name their colour and say which is chosen.
+
+### Changed
+
+- A playlist name (New playlist, Save as playlist) is saved from the keyboard's Done key or a hardware Enter too, and the keyboard closes itself.
+
 ## [0.9.3] - 2026-10-21
 
 Polish slice 3: Search and Library that look alive.

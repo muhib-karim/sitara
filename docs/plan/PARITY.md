@@ -2,7 +2,7 @@
 
 How Sitara compares with the four apps it is measured against, updated with every release. Competitor columns come from their public documentation and release notes; **Y** = has it, **~** = partial or depends on version or setup, **—** = not offered, **?** = not documented. A Sitara entry says the release that shipped it, or the Phase C slice planned for it ([PHASE_C_PLAN.md](PHASE_C_PLAN.md)).
 
-Last updated: polish slice 3 (target v0.9.3, on `main`; the owner tags).
+Last updated: polish slice 4 (target v0.9.4, on `main`; the owner tags).
 
 | Capability | BitChord | Metrolist | Meld | ReVanced | Sitara |
 |---|:---:|:---:|:---:|:---:|---|
@@ -15,12 +15,13 @@ Last updated: polish slice 3 (target v0.9.3, on `main`; the owner tags).
 | Background playback and system media controls | Y | Y | Y | Y | v0.5.0 |
 | Queue restored after the app is killed | ? | ? | ? | ? | v0.5.0 |
 | Likes, playlists and history on the device | Y | Y | Y | Y | v0.4.0 |
-| Queue reorder, play next, remove | Y | Y | Y | Y | v0.4.0 |
+| Queue reorder, play next, remove | Y | Y | Y | Y | v0.4.0; Undo, swipe to remove, haptic reorder, Save as playlist and radio's own section in v0.9.4 |
 | Offline downloads | Y | Y | Y | ~ | v0.6.0 (no storage cap yet) |
 | Synced lyrics | Y | Y | Y | Y | v0.5.0 (LRCLIB) |
 | Loudness normalisation | — | Y | Y | — | v0.6.0 |
 | Crossfade | Y | Y | Y | — | v0.6.0 |
-| Real artwork in the app, artwork-coloured player | Y | ~ | ~ | Y | v0.7.0; lock screen and notification since v0.5.0 |
+| Real artwork in the app, artwork-coloured player | Y | ~ | ~ | Y | v0.7.0; lock screen and notification since v0.5.0; artwork colours across the whole app in v0.9.4 |
+| Like, shuffle and repeat on the notification and lock screen | ? | ? | ? | ? | v0.9.4 (not yet checked on a phone) |
 | Lyrics manual scroll with return to current line | ? | ? | ? | ? | v0.7.0 |
 | Gapless playback | Y | ~ | ~ | ? | v0.8.0 (next stream looked up ahead; not yet checked on a phone) |
 | Speed and independent pitch | Y/— | Y/Y | Y/Y | ? | v0.8.0 (0.5× to 2×, ±6 semitones) |
@@ -42,7 +43,7 @@ Last updated: polish slice 3 (target v0.9.3, on `main`; the owner tags).
 | Audio quality per network, codec readout | Y | — | — | ~ | c9 |
 | Palette presets, QR sharing | Y | Y | Y | — | c10 |
 | App translations and right-to-left layout | ~ | Y | ~ | Y | c10 |
-| Dynamic, light, dark and black themes | Y | Y | Y | limited | v0.1.0 |
+| Dynamic, light, dark and black themes | Y | Y | Y | limited | v0.1.0; Appearance with pure black, six accents or the cover's, and a live preview in v0.9.4 |
 | Google account library sync | Y | Y | Y | Y | Later, if permitted access allows |
 | Cast, listen together, Wear, Discord presence | Y | Y | ~ | ~ | Later |
 

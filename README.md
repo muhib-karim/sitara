@@ -53,7 +53,7 @@
 Existing clients cover the basics well. Sitara aims for the things that make an app feel *finished*:
 
 - **Motion you can feel.** Transitions ride springs. The cover travels from the unified dock to the player on a shared-element spring. Reduced motion uses instant transitions.
-- **Colour from the music.** Now Playing and Lyrics sit on the cover itself, blurred across the screen and washed in its colour, shaded only as far as the text needs to stay at 4.5:1. Its vibrant colour accents the stage, the mini player and the open tab; the rest of the app keeps its saffron (or Material You) accent. AMOLED removes the wash.
+- **Colour from the music.** Now Playing and Lyrics sit on the cover itself, blurred across the screen and washed in its colour, shaded only as far as the text needs to stay at 4.5:1. Its vibrant colour accents the stage, the mini player and the open tab. Elsewhere the accent is yours: your wallpaper's (Material You), one of six tuned accents or the playing cover's, and the cover can tint the whole app. Every accent is checked at 4.5:1 on every surface. Pure black removes the wash.
 - **Lyrics as the hero.** Large, heavy Inter Display lyrics, a crisp white active line, context dimmed and blurred by distance, and tap-to-seek; scroll away to read ahead and one tap brings you back to the current line. Transliteration for Bangla, Hindi and Urdu is planned so everyone can sing along.
 - **Playback that outlives the screen.** The queue, auto-advance and sleep timer live in the playback service, so the notification, Bluetooth and Android Auto controls keep working when the app is closed.
 - **Sound that flows.** Songs play at a similar volume, and can crossfade into each other while albums stay gapless. A 10-band equaliser shapes them, or hands the sound to your phone's own.
@@ -84,10 +84,10 @@ Planned, not built yet: *Sitara Sync* (end-to-end encrypted sync through storage
 | | The cover blurred behind Now Playing and Lyrics (Android 12+; a stretched low-resolution copy on older phones), with a colour wash, an accent glow and a shade worked out per cover so text stays at 4.5:1 | ✅ |
 | | Thick scrubber that grows under the finger and stays, still, on a song that cannot play; round glass shuffle, repeat, like and more buttons; Playing / Lyrics / Up next pager | ✅ |
 | | Queue: unique entries, shuffle with order restore, repeat off / all / one | ✅ |
-| | Play next and Add to queue from any song; reorder and remove in Up next | 🧪 |
+| | Play next and Add to queue from any song; in Up next, drag to reorder (a haptic tick per row), swipe or × to remove with Undo, Save as playlist, and radio's songs in a section of their own behind yours; TalkBack Move up, Move down and Remove | 🧪 |
 | | Sleep timer from a sheet: 15 min to 1 h presets, any number of minutes up to 3 h, or the end of this song; +5 or +15 min while it counts; on a monotonic clock | ✅ |
 | | Speed 0.5× to 2× and pitch ±6 semitones, set independently from a compact control in Now Playing, for the session; lyrics keep time at any speed | 🧪 |
-| | Background playback service: the whole queue is a Media3 playlist; notification and lock screen show title, artist and cover with previous, next and seek; audio focus, pause when headphones disconnect, headset and Bluetooth buttons; keeps playing when the app is swiped away | 🧪 |
+| | Background playback service: the whole queue is a Media3 playlist; notification and lock screen show title, artist and cover with previous, next and seek, plus Like (filled when liked), Shuffle and Repeat; audio focus, pause when headphones disconnect, headset and Bluetooth buttons; keeps playing when the app is swiped away | 🧪 |
 | | The queue, current song and position are saved and come back after the app is closed or killed; a headset play button resumes them | 🧪 |
 | **Sound** | Normalise loudness (on by default): gentle levelling toward −14 LUFS, at most +6 dB, peaks kept under −1 dBFS | 🧪 |
 | | Gapless: the next song's stream is looked up while the current one plays, so songs join without inserted silence | 🧪 |
@@ -97,7 +97,7 @@ Planned, not built yet: *Sitara Sync* (end-to-end encrypted sync through storage
 | | Volume for this song: −6 to +6 dB, kept with the song | 🧪 |
 | **Lyrics** | Synced lyrics from LRCLIB in large heavy type under a compact header (cover, title, artist, Like, More) that follow the song and seek on tap; scrolling by hand pauses following until "Back to current line"; plain lyrics when nothing is synced; "No lyrics found" otherwise; cached on the device | 🧪 |
 | | LRC and enhanced LRC parsing (offsets, repeated timestamps, word timing) | ✅ |
-| **Settings** | Theme: dynamic, artwork or AMOLED black; light / dark; reduced motion | ✅ |
+| **Settings** | Appearance with a live preview: System / Light / Dark, Pure black, wallpaper colours (Android 12+, on by default), six accents or From artwork, artwork colours across the app; reduced motion | ✅ |
 | **Source** | Live YouTube Music search (songs, albums, artists, playlists) with loading, empty, error and retry states (NewPipeExtractor) | 🧪 |
 | | Playback: best audio-only stream (opus or m4a) | 🧪 |
 | | Links: paste a YouTube Music, YouTube or youtu.be link into Search, or share it to Sitara, to play that song. Tapping a link opens Sitara once it is allowed under Android's "Open by default" settings | 🧪 |
