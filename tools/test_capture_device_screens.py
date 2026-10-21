@@ -114,3 +114,28 @@ class AnrDialogTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class LocalIndexCheckTest(unittest.TestCase):
+    def test_the_fixtures_indexed_once_each_with_the_untagged_file_named_after_itself(self):
+        root = ET.fromstring(
+            '<hierarchy><node content-desc="Saffron Morning by Tara Lane"/><node content-desc="More options for Saffron Morning"/>'
+            '<node content-desc="Second Light by Tara Lane"/><node content-desc="field recording 03 by Unknown artist"/></hierarchy>'
+        )
+        capture.check_local_index(root)
+
+    def test_a_duplicate_listed_twice_fails(self):
+        root = ET.fromstring(
+            '<hierarchy><node content-desc="Saffron Morning by Tara Lane"/><node content-desc="Saffron Morning by Tara Lane"/>'
+            '<node content-desc="Second Light by Tara Lane"/><node content-desc="field recording 03 by Unknown artist"/></hierarchy>'
+        )
+        with self.assertRaisesRegex(RuntimeError, "Saffron Morning by Tara Lane is listed 2 times"):
+            capture.check_local_index(root)
+
+    def test_a_file_without_tags_must_fall_back_to_its_name_and_an_unknown_artist(self):
+        root = ET.fromstring(
+            '<hierarchy><node content-desc="Saffron Morning by Tara Lane"/><node content-desc="Second Light by Tara Lane"/>'
+            '<node content-desc="field recording 03 by &lt;unknown&gt;"/></hierarchy>'
+        )
+        with self.assertRaisesRegex(RuntimeError, "field recording 03 by Unknown artist"):
+            capture.check_local_index(root)

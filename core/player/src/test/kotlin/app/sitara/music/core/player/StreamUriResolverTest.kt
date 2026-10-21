@@ -5,8 +5,10 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.DataSpec
 import app.sitara.music.core.model.Artwork
 import app.sitara.music.core.model.Track
+import app.sitara.music.core.model.localTrackId
 import app.sitara.music.source.api.ResolvedStream
 import app.sitara.music.source.api.StreamResolver
+import java.io.IOException
 import java.io.InterruptedIOException
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CountDownLatch
@@ -97,6 +99,33 @@ class StreamUriResolverTest {
             loader.interrupt()
             loader.join(5_000)
         }
+    }
+
+    @Test
+    fun `a song on the phone plays from its content uri without a lookup`() {
+        val uri = "content://com.android.externalstorage.documents/tree/primary%3AMusic/document/primary%3AMusic%2F01%20Song.mp3"
+        val local = Track(localTrackId(uri), "Song", "Artist", "Album", 1_000, Artwork(listOf(0)))
+        val resolver = StreamUriResolver(
+            object : StreamResolver {
+                override val id = "never"
+
+                override suspend fun resolve(track: Track): ResolvedStream = error("a song on the phone needs no lookup")
+            },
+            trackFor = { id -> local.takeIf { it.id == id } },
+        )
+
+        val resolved = resolver.resolveDataSpec(spec(local.id))
+
+        assertEquals(uri, resolved.uri.toString())
+        assertEquals(128L, resolved.position)
+        assertEquals(256L, resolved.length)
+    }
+
+    @Test
+    fun `a song on the phone that is not in the queue is refused`() {
+        val resolver = resolver { stream(it.id) }
+
+        assertThrows(IOException::class.java) { resolver.resolveDataSpec(spec(localTrackId("content://media/external/audio/media/9"))) }
     }
 
     @Test

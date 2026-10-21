@@ -1,5 +1,6 @@
 package app.sitara.music
 
+import app.sitara.music.feature.library.LocalKind
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
@@ -18,6 +19,9 @@ class DetailRouteTest {
             DetailRoute.Stats,
             DetailRoute.Import,
             DetailRoute.Scrobbling,
+            DetailRoute.OnThisPhone,
+            DetailRoute.LocalGroup(LocalKind.ALBUMS, "orbit"),
+            DetailRoute.LocalGroup(LocalKind.FOLDERS, "Music/Live | Bootlegs"),
         )
 
         assertEquals(routes, routes.map { decodeDetailRoute(it.encode()) })
@@ -37,5 +41,7 @@ class DetailRouteTest {
         assertNull(decodeDetailRoute("mine:not-a-number"))
         assertNull(decodeDetailRoute("mood:ggMPOg1uX2NXUkgxdW0zUHJp"))
         assertNull(decodeDetailRoute("mood:|Blues"))
+        assertNull(decodeDetailRoute("localgroup:SONGS|x"))
+        assertNull(decodeDetailRoute("localgroup:ALBUMS|"))
     }
 }

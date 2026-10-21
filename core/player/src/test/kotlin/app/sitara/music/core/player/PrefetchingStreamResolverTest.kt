@@ -2,6 +2,7 @@ package app.sitara.music.core.player
 
 import app.sitara.music.core.model.Artwork
 import app.sitara.music.core.model.Track
+import app.sitara.music.core.model.localTrackId
 import app.sitara.music.source.api.ResolvedStream
 import app.sitara.music.source.api.StreamResolver
 import java.io.IOException
@@ -50,6 +51,15 @@ class PrefetchingStreamResolverTest {
 
         assertEquals(stream("t1"), streams.resolve(t(1)))
         assertEquals(listOf("t1"), asked)
+    }
+
+    @Test
+    fun `a song on the phone is never looked up ahead`() = runTest {
+        val streams = prefetching()
+        streams.prepare(t(1).copy(id = localTrackId("content://media/external/audio/media/7")))
+        runCurrent()
+
+        assertEquals(emptyList<String>(), asked)
     }
 
     @Test

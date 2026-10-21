@@ -3,6 +3,7 @@ package app.sitara.music.source.scrobble
 import app.sitara.music.core.model.Artwork
 import app.sitara.music.core.model.Scrobble
 import app.sitara.music.core.model.Track
+import app.sitara.music.core.model.localTrackId
 import app.sitara.music.source.api.SendOutcome
 import com.grack.nanojson.JsonObject
 import com.grack.nanojson.JsonParser
@@ -72,6 +73,17 @@ class ListenBrainzClientTest {
         assertEquals(214_000L, info.getLong("duration_ms"))
         assertEquals("https://music.youtube.com/watch?v=x7kGuhlXmFI", info.getString("origin_url"))
         assertEquals("Sitara", info.getString("submission_client"))
+    }
+
+    @Test
+    fun `a song on the phone is sent without a link to where it played`() = runTest {
+        server.answer(200, """{"status":"ok"}""")
+
+        client.submit(listOf(play.copy(trackId = localTrackId("content://media/external/audio/media/42"))))
+
+        val info = server.requests.single().json().getArray("payload").getObject(0).getObject("track_metadata").getObject("additional_info")
+        assertFalse(info.has("origin_url"))
+        assertEquals("Sitara", info.getString("media_player"))
     }
 
     @Test
