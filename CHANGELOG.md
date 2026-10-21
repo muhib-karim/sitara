@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+Polish slice 1: the stage and the shell.
+
+### Added
+
+- Now Playing and Lyrics sit on the song's cover, blurred across the whole screen (Android 12 and later; a stretched low-resolution copy on older phones), washed in its colour with a soft glow in its accent. How dark the stage gets depends on the cover: a dark cover keeps its colour, a white one gets enough shade that every line of text stays at 4.5:1 contrast or better.
+- The dock folds while you scroll on: the tabs give way to just the open one, beside the song, in a single row. Scrolling back or tapping that tab brings the tabs back. Pages keep their place either way.
+
+### Changed
+
+- The accent of Now Playing, the mini player and the open tab comes from the cover's most vibrant colour (its muted one when nothing in it is vibrant), and the stage's wash from its main colour, crossfading when the song changes.
+- The mini player and the tabs are one floating glass pill, tinted with the cover's accent, with an accent progress line under the song.
+- Lyrics are larger and heavier (32 sp extra bold). The line being sung is white; the others are dimmed and softened the further they are from it. The lyrics header shows the cover, title and artist with round Like and More buttons.
+- The seek bar is thicker and grows under the finger; when a song cannot play it stays in place, still, above Try again and Skip. Shuffle and repeat are round glass buttons, and the title is set extra bold over a medium-weight artist line.
+- Equaliser faders are slimmer, with a round thumb, and fill from the 0 dB line (up for a boost, down for a cut), so a flat equaliser shows nothing lit. The faders dim while the equaliser is off.
+- Glass blur stays on with Reduce motion, since it does not move.
+
 ## [0.9.0] - 2026-10-20
 
 Phase C, slice 3: sound II.

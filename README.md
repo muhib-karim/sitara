@@ -32,8 +32,9 @@
 > can edit, radio and a sleep timer; keep liked songs, playlists and saved albums on the device; see what is trending
 > on YouTube Charts; sing along with synced lyrics from LRCLIB; download songs to play offline, with loudness levelling
 > and crossfade (`0.6.0`). Phase C brought real covers, a player coloured by the cover and freely scrolled lyrics
-> (`0.7.0`); on `main` for `0.8.0`: gapless joins, speed and pitch, skip silence, and a sleep timer of any length that
-> you can extend. Releases are on the [Releases](https://github.com/muhib-karim/sitara/releases) page.
+> (`0.7.0`), then gapless joins, speed and pitch, skip silence and a sleep timer you can extend (`0.8.0`), and an
+> equaliser (`0.9.0`). On `main`: a stage blurred from the cover, hero lyrics and a floating glass dock. Releases are
+> on the [Releases](https://github.com/muhib-karim/sitara/releases) page.
 
 ## Screenshots
 
@@ -41,7 +42,7 @@
 
 | Home | Player | Lyrics | Downloads | Sound | Equaliser |
 | :---: | :---: | :---: | :---: | :---: | :---: |
-| <img src="docs/screenshots/home_dark.png" alt="Home with the trending chart, recently played and jump back in" width="160"> | <img src="docs/screenshots/player_dark.png" alt="Full player with artwork, slim scrubber, controls, the speed and sleep timer buttons and the More menu button" width="160"> | <img src="docs/screenshots/lyrics_dark.png" alt="Synced karaoke lyrics with the LRCLIB credit" width="160"> | <img src="docs/screenshots/downloads_dark.png" alt="Library downloads with progress, waiting for Wi-Fi, failed and downloaded songs" width="160"> | <img src="docs/screenshots/sound_dark.png" alt="Sound settings with the equaliser, normalise loudness, skip silence and the crossfade slider" width="160"> | <img src="docs/screenshots/equaliser_dark.png" alt="Equaliser with presets, ten band faders and their gains" width="160"> |
+| <img src="docs/screenshots/home_dark.png" alt="Home with the trending chart, recently played and jump back in over the floating glass dock" width="160"> | <img src="docs/screenshots/player_dark.png" alt="Now Playing on the blurred cover: artwork, title, round glass buttons, thick scrubber and controls" width="160"> | <img src="docs/screenshots/lyrics_dark.png" alt="Hero lyrics on the blurred cover: the sung line in white, the others dimmed and blurred, under a compact header" width="160"> | <img src="docs/screenshots/downloads_dark.png" alt="Library downloads with progress, waiting for Wi-Fi, failed and downloaded songs" width="160"> | <img src="docs/screenshots/sound_dark.png" alt="Sound settings with the equaliser, normalise loudness, skip silence and the crossfade slider" width="160"> | <img src="docs/screenshots/equaliser_dark.png" alt="Equaliser with presets, ten band faders and their gains" width="160"> |
 
 <sub>Recorded by the Record screenshots workflow (Roborazzi on Robolectric) from hand-built fixtures shaped like a listener's library; release builds contain no sample data. Light versions and more screens live in docs/screenshots.</sub>
 
@@ -52,8 +53,8 @@
 Existing clients cover the basics well. Sitara aims for the things that make an app feel *finished*:
 
 - **Motion you can feel.** Transitions ride springs. The cover travels from the unified dock to the player on a shared-element spring. Reduced motion uses instant transitions.
-- **Colour from the music.** The cover's own palette colours the listening stage and its controls, contrast-checked to stay readable; the rest of the app keeps its saffron (or Material You) accent. AMOLED removes the wash.
-- **Lyrics as the hero.** Heavy Inter Display lyrics, a crisp active line, distance-softened context and tap-to-seek; scroll away to read ahead and one tap brings you back to the current line. Transliteration for Bangla, Hindi and Urdu is planned so everyone can sing along.
+- **Colour from the music.** Now Playing and Lyrics sit on the cover itself, blurred across the screen and washed in its colour, shaded only as far as the text needs to stay at 4.5:1. Its vibrant colour accents the stage, the mini player and the open tab; the rest of the app keeps its saffron (or Material You) accent. AMOLED removes the wash.
+- **Lyrics as the hero.** Large, heavy Inter Display lyrics, a crisp white active line, context dimmed and blurred by distance, and tap-to-seek; scroll away to read ahead and one tap brings you back to the current line. Transliteration for Bangla, Hindi and Urdu is planned so everyone can sing along.
 - **Playback that outlives the screen.** The queue, auto-advance and sleep timer live in the playback service, so the notification, Bluetooth and Android Auto controls keep working when the app is closed.
 - **Sound that flows.** Songs play at a similar volume, and can crossfade into each other while albums stay gapless. A 10-band equaliser shapes them, or hands the sound to your phone's own.
 - **Offline when you need it.** Download songs, albums and playlists, on Wi-Fi only unless you allow mobile data.
@@ -67,18 +68,19 @@ Planned, not built yet: *Sitara Sync* (end-to-end encrypted sync through storage
 
 | Area | Feature | Status |
 | --- | --- | :---: |
-| **Shell** | Unified glass dock with four destinations and edge-to-edge layout | ✅ |
+| **Shell** | One floating glass pill for the mini player and the four tabs, tinted with the cover's accent; it folds into a single row while you scroll on and unfolds when you scroll back or tap the open tab; edge-to-edge layout | ✅ |
 | | Home: trending songs from YouTube Charts for your country (loading, error and Try again), then Recently played, Jump back in and From your likes from your library | 🧪 |
 | **Library** | Liked songs, saved albums and artists, recently played (latest 500 plays), stored on the device (Room) | 🧪 |
 | | Your own playlists: create, rename, delete, drag to reorder, remove songs; Add to playlist from any song or the player | 🧪 |
 | **Offline** | Download a song from its menu, or Download all on an album, a playlist or Liked songs; downloaded songs play with no connection and carry a badge | 🧪 |
 | | Downloads in the Library: progress, waiting for Wi-Fi, failed with retry, cancel and delete; downloads finish in the background with a notification | 🧪 |
 | | Settings: Download on Wi-Fi only (on by default), storage used, Remove all downloads | 🧪 |
-| **Player** | Mini player in the navigation dock: swipe up to open, sideways to skip | 🧪 |
+| **Player** | Mini player in the navigation dock with an accent progress line: tap or swipe up to open, sideways to skip | 🧪 |
 | | Shared artwork transition, white play disc and custom timeline | 🧪 |
 | | Real covers on every screen, fetched sized to fit their slot and cached in memory and on disk; YouTube video thumbnails cropped square; the generated gradient while loading or offline | 🧪 |
-| | Now Playing and the mini player coloured from the cover, highlight contrast at least 4.5:1, fading between songs | 🧪 |
-| | Artwork backdrop, scrubber, Playing / Lyrics / Up next pager | ✅ |
+| | Now Playing and the mini player coloured from the cover (accent from its vibrant colour, wash from its main one), highlight contrast at least 4.5:1, fading between songs | 🧪 |
+| | The cover blurred behind Now Playing and Lyrics (Android 12+; a stretched low-resolution copy on older phones), with a colour wash, an accent glow and a shade worked out per cover so text stays at 4.5:1 | ✅ |
+| | Thick scrubber that grows under the finger and stays, still, on a song that cannot play; round glass shuffle, repeat, like and more buttons; Playing / Lyrics / Up next pager | ✅ |
 | | Queue: unique entries, shuffle with order restore, repeat off / all / one | ✅ |
 | | Play next and Add to queue from any song; reorder and remove in Up next | 🧪 |
 | | Sleep timer from a sheet: 15 min to 1 h presets, any number of minutes up to 3 h, or the end of this song; +5 or +15 min while it counts; on a monotonic clock | ✅ |
@@ -89,9 +91,9 @@ Planned, not built yet: *Sitara Sync* (end-to-end encrypted sync through storage
 | | Gapless: the next song's stream is looked up while the current one plays, so songs join without inserted silence | 🧪 |
 | | Crossfade, Off or 1 to 12 s; songs from one album stay gapless | 🧪 |
 | | Skip silence (off by default) | 🧪 |
-| | Equaliser: 10 bands (31 Hz to 16 kHz, ±12 dB), preamp, ten presets and your own bands, applied while playing with a limiter against clipping; or the phone's own equaliser where it has one, never both | 🧪 |
+| | Equaliser: 10 bands (31 Hz to 16 kHz, ±12 dB) on faders that fill from 0 dB, preamp, ten presets and your own bands, applied while playing with a limiter against clipping; or the phone's own equaliser where it has one, never both | 🧪 |
 | | Volume for this song: −6 to +6 dB, kept with the song | 🧪 |
-| **Lyrics** | Synced lyrics from LRCLIB that follow the song and seek on tap; scrolling by hand pauses following until "Back to current line"; plain lyrics when nothing is synced; "No lyrics found" otherwise; cached on the device | 🧪 |
+| **Lyrics** | Synced lyrics from LRCLIB in large heavy type under a compact header (cover, title, artist, Like, More) that follow the song and seek on tap; scrolling by hand pauses following until "Back to current line"; plain lyrics when nothing is synced; "No lyrics found" otherwise; cached on the device | 🧪 |
 | | LRC and enhanced LRC parsing (offsets, repeated timestamps, word timing) | ✅ |
 | **Settings** | Theme: dynamic, artwork or AMOLED black; light / dark; reduced motion | ✅ |
 | **Source** | Live YouTube Music search (songs, albums, artists, playlists) with loading, empty, error and retry states (NewPipeExtractor) | 🧪 |
