@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.9.2] - 2026-10-21
+
 Polish slice 2: a Home that fills the screen.
 
 ### Added
@@ -241,7 +243,8 @@ Phase A: foundation, plus the first UI redesign.
 - GitHub Actions workflows: CI (ktlint, unit tests, screenshot tests, debug APK artifact), release on `v*` tags with SHA256SUMS, GitHub Pages site, gitleaks scanning and a manual screenshot refresh workflow.
 - Project documentation: README, architecture and design system guides, contributing guide, code of conduct, security policy and the project website.
 
-[Unreleased]: https://github.com/muhib-karim/sitara/compare/v0.9.1...HEAD
+[Unreleased]: https://github.com/muhib-karim/sitara/compare/v0.9.2...HEAD
+[0.9.2]: https://github.com/muhib-karim/sitara/compare/v0.9.1...v0.9.2
 [0.9.1]: https://github.com/muhib-karim/sitara/compare/v0.9.0...v0.9.1
 [0.9.0]: https://github.com/muhib-karim/sitara/compare/v0.8.3...v0.9.0
 [0.8.3]: https://github.com/muhib-karim/sitara/compare/v0.8.2...v0.8.3
