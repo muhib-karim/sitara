@@ -60,7 +60,8 @@ fun ArtworkTile(
     onLongClick: (() -> Unit)? = null,
 ) {
     Column(
-        modifier.clip(RoundedCornerShape(SitaraRadius.Tile))
+        // Only the top corners round: a full round clip cut the first letter of the subtitle's last line.
+        modifier.clip(RoundedCornerShape(topStart = SitaraRadius.Tile, topEnd = SitaraRadius.Tile))
             .combinedClickable(enabled = enabled, role = Role.Button, onClick = onClick, onLongClickLabel = onLongClick?.let { "More options" }, onLongClick = onLongClick)
             .semantics(mergeDescendants = true) {},
         verticalArrangement = Arrangement.spacedBy(4.dp),

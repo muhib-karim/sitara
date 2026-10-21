@@ -31,10 +31,10 @@ class OnlineHomeLoaderTest {
     private val nextPages = mutableListOf<String>()
     private var charts = 0
 
+    // The test's own scope: advanceUntilIdle() runs its tasks, and runTest waits for the loader's requests to finish.
     private fun TestScope.loader(
         first: suspend (MoodChip?) -> HomePage = { HomePage(listOf(relax, focus), listOf(shelf("Quick picks")), "page-2") },
         next: suspend (String) -> HomePage = { HomePage(emptyList(), listOf(shelf("New releases")), null) },
-    // The test's own scope: advanceUntilIdle() runs its tasks, and runTest waits for the loader's requests to finish.
     ) = OnlineHomeLoader(
         this,
         firstPage = { firstPages += it; first(it) },

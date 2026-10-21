@@ -17,6 +17,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
@@ -77,7 +78,11 @@ internal fun CarouselSkeleton() {
     val pulse = pulse()
     Column(Modifier.padding(top = 12.dp).clearAndSetSemantics {}) {
         HeadingBone(pulse)
-        Row(Modifier.padding(horizontal = SitaraSpacing.Gutter, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(CardGap)) {
+        // Unbounded, so the third cover keeps its size and runs off the edge like a real carousel instead of shrinking.
+        Row(
+            Modifier.fillMaxWidth().wrapContentWidth(Alignment.Start, unbounded = true).padding(horizontal = SitaraSpacing.Gutter, vertical = 8.dp),
+            horizontalArrangement = Arrangement.spacedBy(CardGap),
+        ) {
             repeat(3) {
                 Column(Modifier.width(CardWidth), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Bone(pulse, Modifier.fillMaxWidth().aspectRatio(1f), RoundedCornerShape(SitaraRadius.Tile))
