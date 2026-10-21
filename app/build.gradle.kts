@@ -14,7 +14,11 @@ android {
         targetSdk = 36
         versionCode = 18
         versionName = "0.9.6"
+        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
+
+    // The one instrumented test (placing the widget) runs against the minified build, where the release-only bug was.
+    testBuildType = "release"
 
     signingConfigs {
         create("release") {
@@ -102,4 +106,7 @@ dependencies {
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.glance.appwidget.testing)
     testImplementation(libs.glance.testing)
+
+    androidTestImplementation(libs.androidx.test.runner)
+    androidTestImplementation(libs.androidx.test.ext.junit)
 }
