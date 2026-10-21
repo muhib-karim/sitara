@@ -58,7 +58,7 @@ class SongGainStoreTest {
 
         val liked = RoomLikedSongs(db.likedSongs()).tracks.first()
         assertEquals(listOf("Kept song"), liked.map { it.title })
-        assertEquals("kept lyrics", RoomLyricsCache(db.lyricsCache()).get("kept")?.plain)
+        assertEquals("kept lyrics", RoomLyricsCache(db.lyricsCache()).get("kept", "lrclib")?.plain)
         val gains = RoomSongGain(db.songGain())
         gains.setTrimDb("kept", 3)
         assertEquals(3, gains.trimDb("kept").first())

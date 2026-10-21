@@ -85,11 +85,11 @@ class PlaybackStoreTest {
         val notFound = CachedLyrics(synced = null, plain = null, fetchedAtMs = 1_000)
         val found = CachedLyrics(synced = "[00:01.00]Hello", plain = "Hello", fetchedAtMs = 2_000)
 
-        cache.put("id1", notFound)
-        assertEquals(notFound, cache.get("id1"))
-        assertNull(cache.get("id2"))
+        cache.put("id1", "lrclib", notFound)
+        assertEquals(notFound, cache.get("id1", "lrclib"))
+        assertNull(cache.get("id2", "lrclib"))
 
-        cache.put("id1", found)
-        assertEquals(found, cache.get("id1"))
+        cache.put("id1", "lrclib", found)
+        assertEquals(found, cache.get("id1", "lrclib"))
     }
 }
