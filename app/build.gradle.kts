@@ -14,10 +14,10 @@ android {
         targetSdk = 36
         versionCode = 18
         versionName = "0.9.6"
-        testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        testInstrumentationRunner = "app.sitara.music.WidgetCheckInstrumentation"
     }
 
-    // The one instrumented test (placing the widget) runs against the minified build, where the release-only bug was.
+    // The one instrumented check (placing the widget) runs against the minified build, where the release-only bug was.
     testBuildType = "release"
 
     signingConfigs {
@@ -37,7 +37,6 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            testProguardFiles("proguard-test-rules.pro")
             if (System.getenv("SITARA_KEYSTORE_PATH") != null) {
                 signingConfig = signingConfigs.getByName("release")
             }
@@ -107,7 +106,4 @@ dependencies {
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.glance.appwidget.testing)
     testImplementation(libs.glance.testing)
-
-    androidTestImplementation(libs.androidx.test.runner)
-    androidTestImplementation(libs.androidx.test.ext.junit)
 }

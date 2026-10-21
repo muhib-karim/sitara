@@ -1,77 +1,90 @@
 package app.sitara.music;
 
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
-
+import android.app.Activity;
 import android.app.Instrumentation;
 import android.appwidget.AppWidgetHost;
 import android.appwidget.AppWidgetHostView;
 import android.appwidget.AppWidgetManager;
-import android.appwidget.AppWidgetProviderInfo;
 import android.content.ComponentName;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
-import androidx.test.ext.junit.runners.AndroidJUnit4;
-import androidx.test.platform.app.InstrumentationRegistry;
 import java.io.File;
 import java.io.FileOutputStream;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.concurrent.atomic.AtomicReference;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import java.io.IOException;
 
 /**
  * Places the home-screen widget the way a launcher does (an AppWidgetHost binding Sitara's provider) in the build under
  * test, which CI makes minified like a release, and waits for it to leave Glance's loading layout and offer Play
- * something. Needs the bind permission: adb shell appwidget grantbind --package app.sitara.music.
- * Written in Java so the test APK needs none of the app's (minified) Kotlin runtime.
+ * something. Prints "WIDGET DRAWN" or "WIDGET CHECK FAILED" for {@code am instrument -w}, and keeps a picture of the
+ * placed widget. Needs the bind permission: adb shell appwidget grantbind --package app.sitara.music.
+ * A plain Instrumentation in Java: the test APK then needs nothing from the app's minified code or libraries.
  */
-@RunWith(AndroidJUnit4.class)
-public class WidgetPlacementTest {
+public class WidgetCheckInstrumentation extends Instrumentation {
     private static final String RECEIVER = "app.sitara.music.widget.SitaraWidgetReceiver";
     private static final int HOST_ID = 7_297;
     private static final long TIMEOUT_MS = 10_000;
     private static final int WIDTH_DP = 300;
     private static final int HEIGHT_DP = 72;
 
-    @Test
-    public void aPlacedWidgetDrawsPlaySomethingWithinTenSeconds() throws Exception {
-        Instrumentation instrumentation = InstrumentationRegistry.getInstrumentation();
-        Context context = instrumentation.getTargetContext();
+    @Override
+    public void onCreate(Bundle arguments) {
+        super.onCreate(arguments);
+        start();
+    }
+
+    @Override
+    public void onStart() {
+        Bundle report = new Bundle();
+        boolean drawn = false;
+        try {
+            long ms = placeAndWait();
+            drawn = ms >= 0;
+            report.putString(REPORT_KEY_STREAMRESULT, drawn ? "WIDGET DRAWN in " + ms + " ms\n" : "WIDGET CHECK FAILED: still loading after " + TIMEOUT_MS + " ms\n");
+        } catch (Throwable t) {
+            report.putString(REPORT_KEY_STREAMRESULT, "WIDGET CHECK FAILED: " + Log.getStackTraceString(t) + "\n");
+        }
+        finish(drawn ? Activity.RESULT_OK : Activity.RESULT_CANCELED, report);
+    }
+
+    /** Milliseconds until Play something showed, or -1 when it did not within the timeout. */
+    private long placeAndWait() throws Exception {
+        Context context = getTargetContext();
         AppWidgetManager manager = AppWidgetManager.getInstance(context);
         AppWidgetHost host = new AppWidgetHost(context, HOST_ID);
-        AtomicReference<AppWidgetHostView> view = new AtomicReference<>();
-        AtomicInteger id = new AtomicInteger();
-        instrumentation.runOnMainSync(() -> {
+        AppWidgetHostView[] view = new AppWidgetHostView[1];
+        int[] id = new int[1];
+        boolean[] bound = new boolean[1];
+        runOnMainSync(() -> {
             host.startListening();
-            id.set(host.allocateAppWidgetId());
+            id[0] = host.allocateAppWidgetId();
             Bundle size = new Bundle();
             size.putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, WIDTH_DP);
             size.putInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH, WIDTH_DP);
             size.putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, HEIGHT_DP);
             size.putInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, HEIGHT_DP);
-            assertTrue("bind permission (appwidget grantbind)", manager.bindAppWidgetIdIfAllowed(id.get(), new ComponentName(context, RECEIVER), size));
-            AppWidgetProviderInfo info = manager.getAppWidgetInfo(id.get());
-            view.set(host.createView(context, id.get(), info));
+            bound[0] = manager.bindAppWidgetIdIfAllowed(id[0], new ComponentName(context, RECEIVER), size);
+            if (bound[0]) view[0] = host.createView(context, id[0], manager.getAppWidgetInfo(id[0]));
         });
+        if (!bound[0]) throw new IllegalStateException("No bind permission: run adb shell appwidget grantbind --package app.sitara.music");
         try {
-            long deadline = System.currentTimeMillis() + TIMEOUT_MS;
-            AtomicBoolean drawn = new AtomicBoolean();
-            while (!drawn.get() && System.currentTimeMillis() < deadline) {
+            long start = System.currentTimeMillis();
+            boolean[] drawn = new boolean[1];
+            while (!drawn[0] && System.currentTimeMillis() - start < TIMEOUT_MS) {
                 Thread.sleep(250);
-                instrumentation.runOnMainSync(() -> drawn.set(hasText(view.get(), "Play something")));
+                runOnMainSync(() -> drawn[0] = hasText(view[0], "Play something"));
             }
-            instrumentation.runOnMainSync(() -> save(view.get(), new File(context.getExternalFilesDir(null), "widget-placed.png")));
-            if (!drawn.get()) fail("The widget still shows Glance's loading layout after " + TIMEOUT_MS + " ms");
+            long took = System.currentTimeMillis() - start;
+            runOnMainSync(() -> save(view[0], new File(context.getExternalFilesDir(null), "widget-placed.png")));
+            return drawn[0] ? took : -1;
         } finally {
-            instrumentation.runOnMainSync(() -> {
-                host.deleteAppWidgetId(id.get());
+            runOnMainSync(() -> {
+                host.deleteAppWidgetId(id[0]);
                 host.stopListening();
             });
         }
@@ -99,8 +112,8 @@ public class WidgetPlacementTest {
         view.draw(new Canvas(bitmap));
         try (FileOutputStream out = new FileOutputStream(file)) {
             bitmap.compress(Bitmap.CompressFormat.PNG, 100, out);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
+        } catch (IOException e) {
+            Log.w("WidgetCheck", "Could not save the widget's picture", e);
         }
     }
 }
