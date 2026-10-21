@@ -1,8 +1,11 @@
 package app.sitara.music
 
 import android.app.Application
+import android.appwidget.AppWidgetManager
+import android.content.ComponentName
 import android.content.Context
 import android.util.Log
+import androidx.glance.appwidget.updateAll
 import androidx.media3.datasource.cache.Cache
 import app.sitara.music.core.data.SettingsRepository
 import app.sitara.music.core.data.library.LibraryStore
@@ -17,6 +20,7 @@ import app.sitara.music.core.model.Track
 import app.sitara.music.core.player.DownloadDependencies
 import app.sitara.music.core.player.LibraryContent
 import app.sitara.music.core.player.PlaybackDependencies
+import app.sitara.music.core.player.PlaybackEngineRegistry
 import app.sitara.music.core.player.PlayerController
 import app.sitara.music.core.player.SongDownloads
 import app.sitara.music.source.api.LyricsProvider
@@ -26,15 +30,29 @@ import app.sitara.music.source.lyrics.lrclibLyrics
 import app.sitara.music.source.youtube.YouTubeMusicSource
 import app.sitara.music.source.youtube.installNewPipe
 import app.sitara.music.source.youtube.youTubeStreamResolver
+import app.sitara.music.widget.SitaraWidget
+import app.sitara.music.widget.SitaraWidgetReceiver
+import app.sitara.music.widget.WidgetState
+import app.sitara.music.widget.shownWidgetStates
+import app.sitara.music.widget.widgetState
 import coil3.SingletonImageLoader
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.SharingStarted
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 /** Keeps [listen] unless the listener paused listening history; the setting is read at the moment of the play. */
@@ -46,6 +64,7 @@ internal suspend fun PlayHistoryRepository.recordUnlessPaused(listen: Listen, se
  * Dependencies are wired by hand (see ADR 0001). Home's chart, search, detail pages, radio and streams come from
  * YouTube, lyrics from LRCLIB, covers through Coil; the library, the play queue, fetched lyrics and downloaded songs are stored on the device.
  */
+@OptIn(ExperimentalCoroutinesApi::class)
 class SitaraApplication :
     Application(),
     PlaybackDependencies,
@@ -70,6 +89,33 @@ class SitaraApplication :
     override val downloadCache: Cache get() = songDownloads.cache
     override val playbackSettings get() = settings.settings
     val player by lazy { PlayerController(this, appScope) }
+
+    /** What the home-screen widget shows, changing only when that is worth drawing (see shownWidgetStates). */
+    val widgetStates: StateFlow<WidgetState> by lazy {
+        val snapshots = PlaybackEngineRegistry.engine.flatMapLatest { it?.state ?: flowOf(null) }
+        val liked = snapshots.map { it?.queue?.current?.id }.distinctUntilChanged()
+            .flatMapLatest { id -> id?.let(::isLiked) ?: flowOf(false) }
+            .catch { emit(false) }
+        val canResume = snapshots.map { it?.queue?.current == null }.distinctUntilChanged()
+            .flatMapLatest { idle -> flow { emit(idle && savedQueue() != null) } }
+            .catch { emit(false) }
+        val states = combine(snapshots, liked, canResume) { snapshot, heart, resumable -> widgetState(snapshot, heart, resumable) }
+            .stateIn(appScope, SharingStarted.Eagerly, WidgetState.Idle(canResume = false))
+        shownWidgetStates(states) { PlaybackEngineRegistry.engine.value?.refresh() }.stateIn(appScope, SharingStarted.Eagerly, states.value)
+    }
+
+    private val widgetUpdates by lazy {
+        appScope.launch {
+            widgetStates.collect { if (hasWidgets()) SitaraWidget().updateAll(this@SitaraApplication) }
+        }
+    }
+
+    private fun hasWidgets() = AppWidgetManager.getInstance(this).getAppWidgetIds(ComponentName(this, SitaraWidgetReceiver::class.java)).isNotEmpty()
+
+    /** Redraws the home-screen widgets as the player changes; called at start when one is placed and whenever one is drawn. */
+    fun followPlayerOnWidgets() {
+        widgetUpdates.start()
+    }
 
     override val libraryContent: LibraryContent by lazy {
         object : LibraryContent {
@@ -125,6 +171,8 @@ class SitaraApplication :
     override fun onCreate() {
         super.onCreate()
         installNewPipe()
+        // With no widget on the home screen, nothing follows the player for one.
+        if (hasWidgets()) followPlayerOnWidgets()
     }
 
     private companion object {

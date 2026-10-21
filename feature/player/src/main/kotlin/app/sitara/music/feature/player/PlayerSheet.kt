@@ -29,6 +29,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberUpdatedState
@@ -65,6 +66,8 @@ import app.sitara.music.core.designsystem.animateArtworkColor
 import app.sitara.music.core.designsystem.rememberArtworkTheme
 import app.sitara.music.core.model.Track
 import kotlin.math.abs
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emptyFlow
 
 /** One dock, one artwork element: expansion carries the cover into the listening stage. */
 @Composable
@@ -74,6 +77,8 @@ fun PlayerSheet(
     bottomReserved: Dp,
     modifier: Modifier = Modifier,
     initiallyExpanded: Boolean = false,
+    /** Each one opens Now Playing (the home-screen widget asks this way). */
+    expandRequests: Flow<Unit> = emptyFlow(),
     initialPage: Int = 0,
     haze: dev.chrisbanes.haze.HazeState? = null,
     folded: Boolean = false,
@@ -91,6 +96,7 @@ fun PlayerSheet(
     val open = expanded && track != null
     PlayerSystemBars(open)
     BackHandler(enabled = open) { expanded = false }
+    LaunchedEffect(expandRequests) { expandRequests.collect { expanded = true } }
     SharedTransitionLayout(modifier.fillMaxSize()) {
         AnimatedContent(
             targetState = open,

@@ -34,6 +34,12 @@ class MainActivity : ComponentActivity() {
     }
 
     private fun open(intent: Intent) {
+        if (intent.getBooleanExtra(EXTRA_OPEN_PLAYER, false)) vm.openPlayer()
         sharedRequest(intent.action, intent.dataString, intent.getCharSequenceExtra(Intent.EXTRA_TEXT)?.toString())?.let(vm::open)
+    }
+
+    companion object {
+        /** Set by the home-screen widget: open Now Playing. */
+        const val EXTRA_OPEN_PLAYER = "app.sitara.music.extra.OPEN_PLAYER"
     }
 }

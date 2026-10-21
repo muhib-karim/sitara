@@ -47,6 +47,18 @@
                 <data android:mimeType="text/plain" />
             </intent-filter>
         </activity>
+        <!-- The home-screen widget; Glance draws it, and its buttons run in the app. -->
+        <receiver
+            android:name=".widget.SitaraWidgetReceiver"
+            android:exported="true"
+            android:label="@string/widget_name">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/sitara_widget_info" />
+        </receiver>
         <!-- Lists Sitara as a media app in Android Auto; it browses and plays through PlaybackService. -->
         <meta-data
             android:name="com.google.android.gms.car.application"

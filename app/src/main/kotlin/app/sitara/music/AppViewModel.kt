@@ -95,10 +95,14 @@ class AppViewModel(private val app: SitaraApplication) :
     val searchFilter: StateFlow<SearchFilter> = settings.map { it.searchFilter }.stateIn(viewModelScope, SharingStarted.Eagerly, SearchFilter.SONGS)
     private val searchRetries = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
     private val tabRequests = Channel<Tab>(Channel.CONFLATED)
+    private val playerRequests = Channel<Unit>(Channel.CONFLATED)
     private var pendingShare: SharedRequest? = null
 
     /** Tabs the shell should switch to, buffered until the UI collects them. */
     val requestedTabs: Flow<Tab> = tabRequests.receiveAsFlow()
+
+    /** Requests to open Now Playing (from the home-screen widget), buffered until the UI collects them. */
+    val requestedPlayer: Flow<Unit> = playerRequests.receiveAsFlow()
     val search: StateFlow<SearchState> = searchStates(query, searchRetries, debounceMs = 300, searchFilter) { q, filter -> app.youtube.search(q, filter) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SearchState.Idle)
 
@@ -315,6 +319,10 @@ class AppViewModel(private val app: SitaraApplication) :
         }
         player.appendRadio(picks)
         radio.value = if (picks.isEmpty()) RadioStatus.UNAVAILABLE else RadioStatus.READY
+    }
+
+    fun openPlayer() {
+        playerRequests.trySend(Unit)
     }
 
     /** Shows a shared link or text in Search; a linked song starts playing as soon as it resolves. */

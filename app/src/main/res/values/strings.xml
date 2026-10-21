@@ -1,3 +1,5 @@
 <resources>
     <string name="app_name">Sitara</string>
+    <string name="widget_name">Now playing</string>
+    <string name="widget_description">The song that plays, with play, pause and skip. Two rows tall, it adds the heart and a progress line.</string>
 </resources>

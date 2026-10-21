@@ -97,6 +97,20 @@ private suspend fun loadCoverLook(context: Context, artwork: Artwork): CoverLook
     }.also { coverLooks.put(artwork, it) }
 }
 
+/** A software copy of a cover with its colours, for surfaces drawn outside the app (the home-screen widget). */
+class CoverArt(val bitmap: Bitmap, val colors: CoverColors)
+
+/** [artwork]'s cover [px] across, decoded to a plain bitmap another process can draw; null when it has none or it cannot load. */
+suspend fun loadCoverArt(context: Context, artwork: Artwork, px: Int): CoverArt? {
+    val request = coverRequest(context, artwork, crossfade = false)?.newBuilder()?.size(px)?.allowHardware(false)?.build() ?: return null
+    val loader = SingletonImageLoader.get(context)
+    val result = loader.execute(request) as? SuccessResult ?: return null
+    return withContext(loader.defaults.decoderCoroutineContext) {
+        val bitmap = result.image.toBitmap()
+        CoverArt(bitmap, coverColorsOf(bitmap))
+    }
+}
+
 /**
  * [artwork]'s look once its cover has loaded, null when it cannot (offline, no cover). Looks already read are there on the
  * first frame; otherwise the previous track's look holds until the next is known, so the stage changes colour once per track.

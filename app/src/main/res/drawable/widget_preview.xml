@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- The widget picker's picture of the two-row widget: cover, title and artist, the heart, a progress line and the transport. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="300dp"
+    android:height="140dp"
+    android:viewportWidth="300"
+    android:viewportHeight="140">
+    <path
+        android:fillColor="#FF3D2A12"
+        android:pathData="M24,0L276,0A24,24 0,0 1,300 24L300,116A24,24 0,0 1,276 140L24,140A24,24 0,0 1,0 116L0,24A24,24 0,0 1,24 0Z" />
+    <path
+        android:fillColor="#FFFF9F1C"
+        android:pathData="M24,12L48,12A12,12 0,0 1,60 24L60,48A12,12 0,0 1,48 60L24,60A12,12 0,0 1,12 48L12,24A12,12 0,0 1,24 12Z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M72,24L172,24A4,4 0,0 1,172 32L72,32A4,4 0,0 1,72 24Z" />
+    <path
+        android:fillColor="#B3FFFFFF"
+        android:pathData="M72,40L132,40A3,3 0,0 1,132 46L72,46A3,3 0,0 1,72 40Z" />
+    <path
+        android:pathData="M276,44C272,41 267,37 267,32C267,27 273,26 276,31C279,26 285,27 285,32C285,37 280,41 276,44Z"
+        android:strokeWidth="2"
+        android:strokeColor="#FFFFFFFF"
+        android:strokeLineCap="round"
+        android:strokeLineJoin="round" />
+    <path
+        android:fillColor="#3DFFFFFF"
+        android:pathData="M14,72L286,72A2,2 0,0 1,286 76L14,76A2,2 0,0 1,14 72Z" />
+    <path
+        android:fillColor="#FFFF9F1C"
+        android:pathData="M14,72L110,72L110,76L14,76A2,2 0,0 1,14 72Z" />
+    <path
+        android:fillColor="#FFFFFFFF"
+        android:pathData="M98,105L89,112L98,119Z M90,105L81,112L90,119Z M202,105L211,112L202,119Z M210,105L219,112L210,119Z" />
+    <path
+        android:fillColor="#FFFF9F1C"
+        android:pathData="M150,88A24,24 0,1 1,150 136A24,24 0,1 1,150 88Z" />
+    <path
+        android:fillColor="#FF000000"
+        android:pathData="M144,103L148,103L148,121L144,121Z M152,103L156,103L156,121L152,121Z" />
+</vector>
