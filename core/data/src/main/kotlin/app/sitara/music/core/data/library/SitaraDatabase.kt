@@ -16,13 +16,13 @@ import app.sitara.music.core.data.scrobble.ScrobbleEntity
 @Database(
     entities = [
         LikedSongEntity::class, PlayEntity::class, SavedAlbumEntity::class, SavedArtistEntity::class, PlaylistEntity::class, PlaylistEntryEntity::class,
-        QueueEntryEntity::class, QueueStateEntity::class, LyricsCacheEntity::class, SongGainEntity::class,
+        QueueEntryEntity::class, QueueStateEntity::class, LyricsCacheEntity::class, LyricsChoiceEntity::class, SongGainEntity::class,
         ImportJobEntity::class, ImportRowEntity::class, ImportCandidateEntity::class, ScrobbleEntity::class,
     ],
-    version = 6,
+    version = 7,
     exportSchema = true,
-    // 2 adds the saved play queue and the lyrics cache, 3 per-song volume trims: new tables only. 4 adds each play's time heard (null for older plays) and an index by start; 5 playlist imports, 6 the scrobble outbox (new tables).
-    autoMigrations = [AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3), AutoMigration(from = 3, to = 4), AutoMigration(from = 4, to = 5), AutoMigration(from = 5, to = 6)],
+    // 2 adds the saved play queue and the lyrics cache, 3 per-song volume trims: new tables only. 4 adds each play's time heard (null for older plays) and an index by start; 5 playlist imports, 6 the scrobble outbox (new tables). 7 keys cached lyrics by source as well (old rows become LRCLIB's) with the matched song and licensor, and keeps the source picked per song.
+    autoMigrations = [AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3), AutoMigration(from = 3, to = 4), AutoMigration(from = 4, to = 5), AutoMigration(from = 5, to = 6), AutoMigration(from = 6, to = 7)],
 )
 abstract class SitaraDatabase : RoomDatabase() {
     abstract fun likedSongs(): LikedSongsDao

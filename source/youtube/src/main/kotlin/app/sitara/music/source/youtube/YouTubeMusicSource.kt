@@ -163,7 +163,7 @@ class YouTubeMusicSource :
         parseHomePage(music(BROWSE_URL, mapOf("browseId" to MOOD_PAGE_BROWSE_ID, "params" to params)))
 
     /** A YouTube Music API request as the WEB_REMIX client in the device's language and country, as the Home visitor once there is one. */
-    private suspend fun music(url: String, fields: Map<String, String>): JsonObject {
+    internal suspend fun music(url: String, fields: Map<String, String>): JsonObject {
         val locale = Locale.getDefault()
         return io {
             val client = JsonObject.builder().`object`("context").`object`("client")

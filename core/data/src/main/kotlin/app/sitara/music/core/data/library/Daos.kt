@@ -198,11 +198,20 @@ abstract class PlaybackQueueDao {
 
 @Dao
 interface LyricsCacheDao {
-    @Query("SELECT * FROM lyrics_cache WHERE track_id = :trackId")
-    suspend fun get(trackId: String): LyricsCacheEntity?
+    @Query("SELECT * FROM lyrics_cache WHERE track_id = :trackId AND provider = :provider")
+    suspend fun get(trackId: String, provider: String): LyricsCacheEntity?
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun put(entry: LyricsCacheEntity)
+
+    @Query("DELETE FROM lyrics_cache WHERE track_id = :trackId AND synced IS NULL AND plain IS NULL")
+    suspend fun forgetMisses(trackId: String)
+
+    @Query("SELECT provider FROM lyrics_choice WHERE track_id = :trackId")
+    suspend fun choice(trackId: String): String?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun choose(choice: LyricsChoiceEntity)
 }
 
 @Dao

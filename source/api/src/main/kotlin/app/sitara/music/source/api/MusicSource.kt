@@ -87,6 +87,9 @@ interface StreamResolver {
 interface LyricsProvider {
     val id: String
 
+    /** The source's name as the listener sees it ("LRCLIB"). */
+    val name: String
+
     suspend fun lyrics(track: Track): Lyrics?
 }
 

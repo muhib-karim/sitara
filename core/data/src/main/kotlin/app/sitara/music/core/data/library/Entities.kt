@@ -151,12 +151,25 @@ data class QueueStateEntity(
     @ColumnInfo(name = "repeat_mode") val repeatMode: String,
 )
 
-@Entity(tableName = "lyrics_cache")
+/** One lyrics source's answer for a song: both texts null when it found nothing; the song it matched and the licensor when known. Rows from before version 7 are LRCLIB's. */
+@Entity(tableName = "lyrics_cache", primaryKeys = ["track_id", "provider"])
 data class LyricsCacheEntity(
-    @PrimaryKey @ColumnInfo(name = "track_id") val trackId: String,
+    @ColumnInfo(name = "track_id") val trackId: String,
+    @ColumnInfo(defaultValue = "lrclib") val provider: String,
     val synced: String?,
     val plain: String?,
     @ColumnInfo(name = "fetched_at") val fetchedAt: Long,
+    val title: String?,
+    val artist: String?,
+    @ColumnInfo(name = "duration_ms") val durationMs: Long?,
+    val licensor: String?,
+)
+
+/** The lyrics source the listener picked for a song. */
+@Entity(tableName = "lyrics_choice")
+data class LyricsChoiceEntity(
+    @PrimaryKey @ColumnInfo(name = "track_id") val trackId: String,
+    val provider: String,
 )
 
 /** The listener's volume trim for one song, in whole decibels; a song without a row plays at 0 dB. */

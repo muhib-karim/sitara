@@ -34,6 +34,8 @@ tasks.register<Test>("networkSmokeTest") {
 
 dependencies {
     api(project(":source:api"))
+    // The lyrics cache and LRC parsing YouTube Music's lyrics share with LRCLIB.
+    implementation(project(":source:lyrics"))
     implementation(libs.newpipe.extractor)
     implementation(libs.okhttp)
     implementation(libs.nanojson)

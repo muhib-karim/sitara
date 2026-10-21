@@ -51,7 +51,7 @@ class YouTubeMusicLyricsProviderTest {
         assertEquals(mapOf("videoId" to "fHI8X4OXluQ"), sent[0].second)
         assertEquals(mapOf("browseId" to "MPLYt_bhuEtLF1qfp-3"), sent[1].second)
         assertFalse(lyrics.synced)
-        assertEquals(listOf("Paper lanterns over the river", "", "We carried the night in our hands", "And the morning came anyway"), lyrics.lines.map { it.text })
+        assertEquals(listOf("Paper lanterns over the river", "We carried the night in our hands", "And the morning came anyway"), lyrics.lines.map { it.text })
         assertEquals("YouTube Music", lyrics.source)
         assertEquals("Musixmatch", lyrics.licensor)
         assertEquals(LyricsSong("Paper Lanterns", "Orchid Lane", 214_000), lyrics.matched)

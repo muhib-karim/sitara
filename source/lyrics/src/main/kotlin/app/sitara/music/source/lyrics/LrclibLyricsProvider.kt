@@ -2,6 +2,7 @@ package app.sitara.music.source.lyrics
 
 import app.sitara.music.core.model.CachedLyrics
 import app.sitara.music.core.model.Lyrics
+import app.sitara.music.core.model.LyricsSong
 import app.sitara.music.core.model.Track
 import app.sitara.music.source.api.LyricsProvider
 import com.grack.nanojson.JsonObject
@@ -22,7 +23,7 @@ internal const val LRCLIB_USER_AGENT = "Sitara (https://github.com/muhib-karim/s
 private const val NOT_FOUND_RETRY_MS = 7 * 24 * 60 * 60 * 1_000L
 
 // LRCLIB's own matching tolerance for a song's length.
-private const val DURATION_TOLERANCE_S = 2.0
+internal const val DURATION_TOLERANCE_S = 2.0
 
 /** Where a provider keeps its answers, by song id. */
 interface LyricsCache {
@@ -49,6 +50,7 @@ class LrclibLyricsProvider(
     private val baseUrl: HttpUrl = "https://lrclib.net/".toHttpUrl(),
 ) : LyricsProvider {
     override val id: String = "lrclib"
+    override val name: String = "LRCLIB"
 
     override suspend fun lyrics(track: Track): Lyrics? {
         val now = clock()
@@ -61,7 +63,7 @@ class LrclibLyricsProvider(
             plain != null -> LrcParser.parse(plain)
             else -> return null
         }
-        return lyrics.takeIf { it.lines.isNotEmpty() }?.copy(source = "LRCLIB")
+        return lyrics.takeIf { it.lines.isNotEmpty() }?.copy(source = name, matched = answer.matched)
     }
 
     // A cache that cannot be written (disk full) must not hide lyrics LRCLIB found; the song is just asked again next time.
@@ -91,7 +93,8 @@ class LrclibLyricsProvider(
             if (match != null) break
         }
         if (match == null && failure != null) throw failure
-        return CachedLyrics(match?.text("syncedLyrics"), match?.text("plainLyrics"), now)
+        val matched = match?.let { LyricsSong(it.getString("trackName").orEmpty(), it.getString("artistName").orEmpty(), (it.getDouble("duration") * 1_000).toLong()) }
+        return CachedLyrics(match?.text("syncedLyrics"), match?.text("plainLyrics"), now, matched)
     }
 
     private suspend fun find(query: LyricsQuery, durationMs: Long): JsonObject? {

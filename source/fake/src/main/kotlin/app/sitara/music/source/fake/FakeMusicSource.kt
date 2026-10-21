@@ -38,6 +38,7 @@ class FakeMusicSource(
     private val latencyMs: Long = 0,
 ) : MusicSource, SearchSuggestionSource, ChartsSource, HomeFeedSource, MoodsSource, BrowseSource, RadioSource, StreamResolver, LyricsProvider, HealthCheck {
     override val id: String = "fake"
+    override val name: String = "Sample lyrics"
 
     override suspend fun trending(): Chart {
         simulateLatency()

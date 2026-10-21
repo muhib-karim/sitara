@@ -311,7 +311,7 @@ class AppViewModel(private val app: SitaraApplication) :
     private suspend fun <T : Any> browse(page: suspend BrowseSource.() -> T?): T = app.youtube.page() ?: throw NoSuchElementException("No catalogue has this page")
 
     private suspend fun lookUpLyrics(track: Track): LyricsState = try {
-        app.lyrics.lyrics(track)?.let(LyricsState::Found) ?: LyricsState.NotFound
+        app.lyrics.lookUp(track).firstOrNull()?.let { LyricsState.Found(it.lyrics) } ?: LyricsState.NotFound
     } catch (e: CancellationException) {
         throw e
     } catch (e: Exception) {

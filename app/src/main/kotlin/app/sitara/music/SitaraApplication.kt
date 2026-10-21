@@ -28,13 +28,15 @@ import app.sitara.music.core.player.PlaybackDependencies
 import app.sitara.music.core.player.PlaybackEngineRegistry
 import app.sitara.music.core.player.PlayerController
 import app.sitara.music.core.player.SongDownloads
-import app.sitara.music.source.api.LyricsProvider
 import app.sitara.music.source.api.StreamResolver
 import app.sitara.music.source.lyrics.LyricsCache
+import app.sitara.music.source.lyrics.LyricsChoices
+import app.sitara.music.source.lyrics.LyricsSources
 import app.sitara.music.source.lyrics.lrclibLyrics
 import app.sitara.music.source.scrobble.LastFmKeys
 import app.sitara.music.source.youtube.YouTubeMusicSource
 import app.sitara.music.source.youtube.installNewPipe
+import app.sitara.music.source.youtube.lyricsProvider
 import app.sitara.music.source.youtube.youTubeStreamResolver
 import app.sitara.music.widget.SitaraWidget
 import app.sitara.music.widget.SitaraWidgetReceiver
@@ -68,7 +70,7 @@ internal suspend fun PlayHistoryRepository.recordUnlessPaused(listen: Listen, se
 
 /**
  * Dependencies are wired by hand (see ADR 0001). Home's chart, search, detail pages, radio and streams come from
- * YouTube, lyrics from LRCLIB, covers through Coil; the library, the play queue, fetched lyrics and downloaded songs are stored on the device.
+ * YouTube, lyrics from LRCLIB and YouTube Music, covers through Coil; the library, the play queue, fetched lyrics and downloaded songs are stored on the device.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class SitaraApplication :
@@ -80,14 +82,21 @@ class SitaraApplication :
     val youtube by lazy { YouTubeMusicSource() }
     val settings by lazy { SettingsRepository(this) }
     val library by lazy { LibraryStore(this) }
-    val lyrics: LyricsProvider by lazy {
-        lrclibLyrics(
-            object : LyricsCache {
-                override suspend fun get(trackId: String) = library.lyrics.get(trackId)
+    val lyrics: LyricsSources by lazy {
+        LyricsSources(
+            listOf(lrclibLyrics(lyricsCache("lrclib")), youtube.lyricsProvider(lyricsCache("youtube-music"))),
+            object : LyricsChoices {
+                override suspend fun get(trackId: String) = library.lyrics.choice(trackId)
 
-                override suspend fun put(trackId: String, lyrics: CachedLyrics) = library.lyrics.put(trackId, lyrics)
+                override suspend fun put(trackId: String, providerId: String) = library.lyrics.choose(trackId, providerId)
             },
         )
+    }
+
+    private fun lyricsCache(provider: String) = object : LyricsCache {
+        override suspend fun get(trackId: String) = library.lyrics.get(trackId, provider)
+
+        override suspend fun put(trackId: String, lyrics: CachedLyrics) = library.lyrics.put(trackId, provider, lyrics)
     }
 
     // Read on the loader thread at each lookup, so a changed setting or network applies from the next song.

@@ -86,11 +86,18 @@ interface PlaybackQueueRepository {
     suspend fun save(queue: SavedQueue?)
 }
 
-/** Lyrics lookups by song id, so a song is not looked up again. */
+/** Each lyrics source's answers by song id, so a song is not looked up again, and the source the listener picked for a song. */
 interface LyricsCacheRepository {
-    suspend fun get(trackId: String): CachedLyrics?
+    suspend fun get(trackId: String, provider: String): CachedLyrics?
 
-    suspend fun put(trackId: String, lyrics: CachedLyrics)
+    suspend fun put(trackId: String, provider: String, lyrics: CachedLyrics)
+
+    /** Forgets the sources that found nothing for the song, so the next lookup asks them again. */
+    suspend fun forgetMisses(trackId: String)
+
+    suspend fun choice(trackId: String): String?
+
+    suspend fun choose(trackId: String, provider: String)
 }
 
 /** Per-song volume trims, applied before the equaliser. */

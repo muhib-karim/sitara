@@ -6,6 +6,7 @@ import app.sitara.music.core.model.Artwork
 import app.sitara.music.core.model.CachedLyrics
 import app.sitara.music.core.model.Listen
 import app.sitara.music.core.model.ListeningStats
+import app.sitara.music.core.model.LyricsSong
 import app.sitara.music.core.model.PlayCount
 import app.sitara.music.core.model.PlaylistSummary
 import app.sitara.music.core.model.RepeatMode
@@ -120,9 +121,23 @@ class RoomPlaybackQueue(private val dao: PlaybackQueueDao) : PlaybackQueueReposi
 }
 
 class RoomLyricsCache(private val dao: LyricsCacheDao) : LyricsCacheRepository {
-    override suspend fun get(trackId: String): CachedLyrics? = dao.get(trackId)?.let { CachedLyrics(it.synced, it.plain, it.fetchedAt) }
+    override suspend fun get(trackId: String, provider: String): CachedLyrics? = dao.get(trackId, provider)?.let {
+        val matched = if (it.title != null && it.artist != null) LyricsSong(it.title, it.artist, it.durationMs ?: 0) else null
+        CachedLyrics(it.synced, it.plain, it.fetchedAt, matched, it.licensor)
+    }
 
-    override suspend fun put(trackId: String, lyrics: CachedLyrics) = dao.put(LyricsCacheEntity(trackId, lyrics.synced, lyrics.plain, lyrics.fetchedAtMs))
+    override suspend fun put(trackId: String, provider: String, lyrics: CachedLyrics) = dao.put(
+        LyricsCacheEntity(
+            trackId, provider, lyrics.synced, lyrics.plain, lyrics.fetchedAtMs,
+            lyrics.matched?.title, lyrics.matched?.artist, lyrics.matched?.durationMs, lyrics.licensor,
+        ),
+    )
+
+    override suspend fun forgetMisses(trackId: String) = dao.forgetMisses(trackId)
+
+    override suspend fun choice(trackId: String): String? = dao.choice(trackId)
+
+    override suspend fun choose(trackId: String, provider: String) = dao.choose(LyricsChoiceEntity(trackId, provider))
 }
 
 class RoomSongGain(private val dao: SongGainDao) : SongGainRepository {
