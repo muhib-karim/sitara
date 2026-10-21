@@ -6,6 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+Polish slice 10: your own music, local audio, backup and restore.
+
+### Added
+
+- Library → On this phone: the music saved on the phone and in folders you pick, as songs, albums, artists or folders, in a grid or a list and your chosen order, with Play and Shuffle. Albums open in track order.
+- Access to the phone's music is asked for only when you choose Allow access (music and audio on Android 13 and later, storage before). Without it, Choose a folder still works: the system's folder picker grants Sitara that folder alone, and the grant is kept across restarts.
+- Tags come from MediaStore or the file: title, artist, album, length, track number and the embedded cover. A file without tags is listed under its file name by "Unknown artist". The same song found twice (a picked folder inside the phone's music) is listed once. A rescan reads only new and changed files.
+- A folder Sitara can no longer read keeps its songs and says so, with Relink folder; removing a folder forgets its songs but not your likes or playlists.
+- Songs on the phone play from their files and queue, like, join playlists, count in Your stats, scrobble and find lyrics by their tags just as streamed songs do. Their menu has no Download, and radio, which needs a catalogue song, is not offered for them.
+- Search lists matching songs on the phone first, with an On this phone badge, also when there is no connection.
+- Settings → Library → Backup and restore: one JSON file, saved where you choose, with your liked songs, saved albums and artists, playlists in their order, every kept play, each song's volume and lyrics source, and your settings. It names its format, a schema version and the app version.
+- Restoring asks first, then checks the whole file before it changes anything: a damaged or cut-off file, a file that is not a Sitara backup, or one from a newer Sitara changes nothing and says which it was. A good backup replaces the library in one step, then the settings.
+
+### Changed
+
+- The language picked for lyric translation is kept across restarts (and in backups) instead of only until the app closes.
+- The database is at version 9 (two new tables for songs on the phone and picked folders); existing data is kept.
+
 ## [0.9.9] - 2026-10-21
 
 Polish slice 9: lyrics II.

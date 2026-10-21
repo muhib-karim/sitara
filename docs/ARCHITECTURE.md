@@ -2,7 +2,7 @@
 
 This document describes how Sitara is put together: the module map, how data moves from a music source to the screen, how playback is wired to Media3, how stream lookups fall back, and how the code is tested and shipped.
 
-> Status: polish slice 9 (after Phase C slice 3). Home (YouTube Music's own Home, with the trending chart in its place when it fails), search with suggestions and Moods & genres, artist/album/playlist pages, radio and streams are live (YouTube through NewPipeExtractor); lyrics come from LRCLIB and YouTube Music, ranked and cached per source, with opt-in translation by MyMemory and shareable lyric cards; the library, the play queue and fetched lyrics are stored on the device with Room; downloaded songs live in a Media3 cache and play offline; playback levels loudness, can crossfade, joins songs gapless, changes speed and pitch and can skip silence; covers load through Coil and colour the player, and, if the listener chooses, the whole app; Android Auto browses the library through a media library service, and a Glance widget shows what plays on the home screen; plays can be scrobbled to ListenBrainz and Last.fm through an outbox kept in Room; playlists come in from YouTube links and M3U/CSV files through a resumable import, and streams follow a quality setting per network. The app contains no sample data; the sample catalogue is a test and debug fixture. Modules marked *planned* do not exist yet.
+> Status: polish slice 10 (after Phase C slice 3). Home (YouTube Music's own Home, with the trending chart in its place when it fails), search with suggestions and Moods & genres, artist/album/playlist pages, radio and streams are live (YouTube through NewPipeExtractor); lyrics come from LRCLIB and YouTube Music, ranked and cached per source, with opt-in translation by MyMemory and shareable lyric cards; the library, the play queue and fetched lyrics are stored on the device with Room; downloaded songs live in a Media3 cache and play offline; playback levels loudness, can crossfade, joins songs gapless, changes speed and pitch and can skip silence; covers load through Coil and colour the player, and, if the listener chooses, the whole app; Android Auto browses the library through a media library service, and a Glance widget shows what plays on the home screen; plays can be scrobbled to ListenBrainz and Last.fm through an outbox kept in Room; playlists come in from YouTube links and M3U/CSV files through a resumable import, and streams follow a quality setting per network; songs saved on the phone and in picked folders are indexed into Room and play like streamed ones, and the library and settings go to and come back from a versioned JSON backup. The app contains no sample data; the sample catalogue is a test and debug fixture. Modules marked *planned* do not exist yet.
 
 ## Goals
 
@@ -18,7 +18,7 @@ This document describes how Sitara is put together: the module map, how data mov
 | `:app` | Android application | Activity, app shell (glass tab bar, mini player dock, detail back stack of typed `DetailRoute`s), dependency wiring (including `LibraryContent` for the car, from Room, the download index and YouTube Music; the import's YouTube catalogue and file reading; the stream quality per network and the recorded stream formats), the home-screen widget (`widget/`: Jetpack Glance, `WidgetState` and its throttled redraws, cover colours, action callbacks) |
 | `:core:model` | Pure Kotlin | Domain types: `Track`, `Album`, `Artist`, `Playlist`, `Queue`, `LyricsLine`, `LyricsWord`; `Listen`, `StatsRange` (local-midnight bounds) and `ListeningStats` (top songs, artists, albums, time heard by hour) |
 | `:core:common` | Pure Kotlin | Result types, coroutine dispatchers, time and formatting helpers |
-| `:core:data` | Android library | DataStore-backed settings (theme, motion, sound, Wi-Fi-only downloads, the search filter and recent searches, Library's layout and order); the on-device store (`LibraryStore`): repositories for liked songs, play history (every play that counted, with its start and time heard; plays per song; listening stats for a range), saved albums and artists, playlists, the saved play queue, the lyrics cache and per-song volume trims, implemented with Room, whose schema is exported to `core/data/schemas`; the scrobble outbox and the scrobbling accounts with their Keystore-sealed tokens (`scrobble/`); playlist imports (`imports/`: pure M3U and CSV parsers, the match score, and `PlaylistImporter`, a job kept row by row in Room so it resumes without duplicates and a repeat import updates its playlist) |
+| `:core:data` | Android library | DataStore-backed settings (theme, motion, sound, Wi-Fi-only downloads, the search filter and recent searches, Library's layout and order); the on-device store (`LibraryStore`): repositories for liked songs, play history (every play that counted, with its start and time heard; plays per song; listening stats for a range), saved albums and artists, playlists, the saved play queue, the lyrics cache and per-song volume trims, implemented with Room, whose schema is exported to `core/data/schemas`; the scrobble outbox and the scrobbling accounts with their Keystore-sealed tokens (`scrobble/`); playlist imports (`imports/`: pure M3U and CSV parsers, the match score, and `PlaylistImporter`, a job kept row by row in Room so it resumes without duplicates and a repeat import updates its playlist); songs on the phone (`local/`: `LocalIndex` over MediaStore and picked folders, see [Songs on the phone](#songs-on-the-phone)); backups (`backup/`: `LibraryBackups` and the JSON format, see [Backup and restore](#backup-and-restore)) |
 | `:core:player` | Android library | `PlaybackService` (Media3 media library session + ExoPlayer; `LibraryBrowser` turns stable media ids into the car's browse tree, pages and search; `WordedErrors` words a failed song's error for system surfaces), `PlaybackEngine`, `PlayerController` facade, queue engine and its save/restore, controller/stream policies, the notification's Like, Shuffle and Repeat (`SessionActions`, custom session commands for system surfaces only), radio-tagged queue entries and Undo of a removal, `ListeningTracker` (time heard per entry on the monotonic clock; a play counts after 30 s or half the song; each new play announced for scrobbling's now playing), sleep timer, `PrefetchingStreamResolver` (the next song's stream, looked up ahead); `SongDownloads` and `SitaraDownloadService` (Media3 downloads); `LoudnessLeveller` in a Media3 audio processor; `Crossfader` and its timing rules |
 | `:core:designsystem` | Android library | Theme (six tuned accents, or the wallpaper's or the cover's walked to 4.5:1 on every surface; surfaces tinted from the playing cover; pure black), colour roles, `SitaraMotion`, glass surfaces, typography, icons, shared components; covers: the Coil image loader (memory and disk cache), cover URLs sized to their slot, square crops of video thumbnails, the cover analysis (main and vibrant colours, the brightest blurred colour, a 12 px copy for phones without blur), its contrast-checked themes for the stage and the dock, and the stage backdrop whose shade is worked out per cover |
 | `:source:api` | Pure Kotlin | Contracts: `SearchSource`, `SearchSuggestionSource`, `ChartsSource`, `HomeFeedSource`, `ScrobbleClient`, `MoodsSource`, `MusicSource`, `BrowseSource` (artist, album, playlist pages), `RadioSource`, `StreamResolver`, `LyricsProvider`, `HealthCheck` |
@@ -27,11 +27,10 @@ This document describes how Sitara is put together: the module map, how data mov
 | `:source:lyrics` | Pure Kotlin (JVM) | LRC and enhanced (word-timed) LRC parser; `LrclibLyricsProvider` (LRCLIB over OkHttp, cached through a `LyricsCache`) and the title clean-up for lyric searches; `LyricsSources` (every provider at once, ranked, a timeout per source, the listener's pick through `LyricsChoices`); `MyMemoryTranslator` (batched lines, cached through a `TranslationCache`) |
 | `:feature:home` | Android library | Home: `OnlineHomeLoader` (the catalogue's Home page by page, mood chips, the trending chart when the feed fails) and the screen: chips, Quick picks pages, cover carousels, Listen again, Your likes, Jump back in, placeholders and the offline card; `MoodScreen`, a mood or genre page drawn with the same shelves |
 | `:feature:search` | Android library | Search field, results with debounced states (loading, error, retry); with nothing typed, recent searches and Moods & genres tiles; suggestions while typing with recent searches as the fallback |
-| `:feature:library` | Android library | Library (Liked songs and Downloads pinned, Recently played, playlists, songs, albums, artists or downloads as a grid or a list, `LibraryOrder` for the orders each kind offers, playlist collages; Downloads with progress, cancel, delete and retry), song menus, Import playlist (link or file, progress counts, review of uncertain matches, worded problems), Your stats (ranges, totals, the hour chart, top songs, artists and albums, the share card sent through the app's FileProvider), and the artist, album and playlist detail pages with loading, error and empty states, Download all and downloaded badges |
+| `:feature:library` | Android library | Library (Liked songs and Downloads pinned, Recently played, playlists, songs, albums, artists or downloads as a grid or a list, `LibraryOrder` for the orders each kind offers, playlist collages; Downloads with progress, cancel, delete and retry), song menus, On this phone (`LocalScreen`: songs, albums, artists and folders of the phone's music, picked folders with Relink, the album/artist/folder page), Import playlist (link or file, progress counts, review of uncertain matches, worded problems), Your stats (ranges, totals, the hour chart, top songs, artists and albums, the share card sent through the app's FileProvider), and the artist, album and playlist detail pages with loading, error and empty states, Download all and downloaded badges |
 | `:feature:player` | Android library | Mini player, full player sheet, scrubber, Up next (swipe to remove with Undo, Save as playlist, radio's own section) / Lyrics pager, karaoke lyrics with the source chip and sheet, Translate and its language sheet, lyric cards (line picking, three styles, the 1080 × 1350 card), speed and pitch sheet, sleep timer sheet |
-| `:feature:settings` | Android library | Appearance (theme, pure black, wallpaper colours, accents, artwork colours across the app, live preview), reduced motion, Playback (stream quality on Wi-Fi and on mobile data), Library (Import playlist), Sound (normalise loudness, skip silence, crossfade), Listening history (Your stats, Scrobbling with ListenBrainz and Last.fm, Pause, Clear), Downloads (Wi-Fi only, storage used, Remove all) |
+| `:feature:settings` | Android library | Appearance (theme, pure black, wallpaper colours, accents, artwork colours across the app, live preview), reduced motion, Playback (stream quality on Wi-Fi and on mobile data), Library (Import playlist, Backup and restore with its worded outcomes), Sound (normalise loudness, skip silence, crossfade), Listening history (Your stats, Scrobbling with ListenBrainz and Last.fm, Pause, Clear), Downloads (Wi-Fi only, storage used, Remove all) |
 | `:source:youtube` | Pure Kotlin (JVM) | YouTube Music search (songs, albums, artists, playlists), artist/album/playlist pages, radio from related songs, the YouTube Charts trending list (NewPipe's `trending_music` kiosk), YouTube Music's Home (`FEmusic_home` asked directly over NewPipe's HTTP layer as the WEB_REMIX client, chips and continuations, parsed in `HomeFeedParsing`), search suggestions and Moods & genres with their pages (`ExploreParsing`, the same client), YouTube song and playlist link parsing, whole playlists for imports, and audio stream resolution on NewPipeExtractor at a quality asked for per lookup (with the codec named), with an OkHttp downloader ([ADR 0004](adr/0004-youtube-source-newpipeextractor.md)); YouTube Music's lyrics (`YouTubeMusicLyricsProvider`: the watch page's Lyrics tab) |
-| `:source:local` | *planned, Phase B* | MediaStore and folder-based local files |
 
 ## Dependency graph
 
@@ -298,7 +297,7 @@ flowchart LR
   Lines MyMemory merges are asked one by one; a request answered "two distinct languages" leaves its lines as they were
   (all of them: "already in that language"). Failures are typed (`TranslationProblem`: offline, daily limit, same
   language, service) so the page words each one. Room 8 keeps translations per song, source and language
-  (`lyrics_translation`). The target is the app's language until the listener picks another for the session.
+  (`lyrics_translation`). The target is the app's language until the listener picks another, which the settings keep.
 - **Cards** (`LyricShareCard`, `LyricShareSheet`): the card is laid out at 360 × 450 dp at a fixed three pixels to the
   dp, so it is 1080 × 1350 px on any phone, and shown scaled to the sheet's width; Share image records the card into a
   `GraphicsLayer`, writes it as a PNG under the app's cache (`shared/`) and offers it through the FileProvider with read
@@ -335,6 +334,79 @@ flowchart LR
 - Last.fm's API key and shared secret are build config fed by the `LASTFM_API_KEY` and `LASTFM_SHARED_SECRET` Gradle
   properties or environment variables (the release workflow's secrets); without them the Last.fm row says the
   build has no key.
+
+### Songs on the phone
+
+```mermaid
+flowchart LR
+    ms["MediaStore<br/>(music permission)"] -->|"files with tags"| idx["LocalIndex"]
+    saf["Picked folders<br/>(Storage Access Framework,<br/>kept read grant)"] -->|"files; tags from<br/>MediaMetadataRetriever"| idx
+    idx -->|"new and changed files only;<br/>gone files dropped"| room["Room 9<br/>local_songs, local_folders"]
+    room -->|"duplicates folded"| vm["AppViewModel.local"]
+    vm --> lib["On this phone, Search"]
+    vm -->|"local:content://… ids"| q["Queue"]
+    q -->|"StreamUriResolver hands<br/>over the content URI"| exo["ExoPlayer"]
+```
+
+- **Ids.** A song on the phone has the id `local:` followed by its content URI (`localTrackId`, `Track.localUri` in
+  `:core:model`). Likes, playlists, history, the saved queue, scrobbles and backups store it like any id and play the
+  file without asking the index. `StreamUriResolver` returns that URI for a queued song instead of resolving a stream;
+  only songs in the queue get that far, so the exported session cannot be used to open other content. The prefetcher,
+  downloads (`toDownload`), radio and ListenBrainz's `origin_url` skip these ids, and YouTube Music's lyrics source
+  ignores them (it reads video ids only); LRCLIB looks them up by their tags.
+- **Readers** (`AndroidAudioReaders.kt`). `MediaStoreAudio` lists `IS_MUSIC` audio with its tags (title, artist, album,
+  duration, track number; MediaStore's `TRACK` keeps the disc in the thousands). It runs only with `READ_MEDIA_AUDIO`
+  (Android 13+) or `READ_EXTERNAL_STORAGE` (up to 12, `maxSdkVersion` 32), asked for from On this phone. `FolderAudio`
+  walks a picked tree with `DocumentsContract` (audio MIME types) and reads tags with `MediaMetadataRetriever`; it runs
+  only while `ContentResolver.persistedUriPermissions` holds the tree's read grant, taken with
+  `takePersistableUriPermission` when the folder is picked.
+- **Index** (`LocalIndex`). Each place (the phone's music, each folder) is scanned on its own: files whose size and
+  modified time match the stored row keep it and their date added; new and changed files are read; rows for files that
+  are gone are deleted, all in one transaction per place. A place that cannot be read (no permission, a revoked grant,
+  a `SecurityException` mid-scan) keeps its rows, and a folder is marked `linked = false` until Relink folder picks it
+  again. Missing or blank tags (and MediaStore's `<unknown>`) become the file name, "Unknown artist" and "Unknown
+  album". A cover is the first embedded picture found for an album and artist, copied once into the app's files.
+  Duplicates (same title, artist and album, lengths within 2 s) are folded when listed, the phone's copy first, so
+  removing one copy brings the other back on the next scan.
+- **When.** The app rescans when it starts, when On this phone opens or the app returns to it, after the permission
+  answer, and after a folder is picked or relinked.
+
+### Backup and restore
+
+- `LibraryBackups.export` reads everything in one transaction (`BackupDao.snapshot`) and writes one JSON document with
+  `org.json` (the platform's, no new dependency). The app writes it through `CreateDocument` with mode `"wt"`.
+- `LibraryBackups.restore` parses the whole text and checks every value's type before anything is written: a cut-off
+  file (it still names the format) is `DAMAGED`, other text is `NOT_A_BACKUP`, a higher `schemaVersion` is
+  `NEWER_VERSION`. A good file replaces liked songs, saved albums and artists, playlists (new ids, same order), history,
+  volume trims and lyric choices in one Room transaction (`BackupDao.replaceAll`); the settings map is then applied
+  through `SettingsCodec`, so old keys carry over the way they do for an old install. The settings store is not part of
+  the Room transaction. Repeats that the library cannot hold (a song twice in one playlist) are kept once.
+- Out of a backup: the audio (downloads, files on the phone), picked folders and their grants, scrobbling accounts and
+  their tokens, the saved queue and the caches (lyrics, translations, covers). Songs on the phone are kept by their
+  content URI.
+- `schemaVersion` 1 is the first; a change of shape bumps it and teaches `restore` to read the older one.
+
+```json
+{
+  "format": "sitara-backup",
+  "schemaVersion": 1,
+  "appVersion": "0.10.0",
+  "createdAt": 1792540800000,
+  "liked": [{"track": {"id": "x7kGuhlXmFI", "title": "Paper Lanterns", "artist": "Orchid Lane", "album": "Harbour Lights",
+             "durationMs": 214000, "artworkColors": [-6587393, 42], "artworkUrl": "https://…", "explicit": false,
+             "artistId": "UC…"}, "likedAt": 1792500000000}],
+  "savedAlbums": [{"id": "OLAK5uy_…", "title": "Harbour Lights", "artist": "Orchid Lane", "year": 2024,
+                   "artworkColors": [-6587393], "savedAt": 1792500000000}],
+  "savedArtists": [{"id": "UC…", "name": "Orchid Lane", "artworkColors": [-6587393], "savedAt": 1792500000000}],
+  "playlists": [{"name": "Road trip", "createdAt": 1792400000000, "updatedAt": 1792450000000,
+                 "songs": [{"track": {"id": "local:content://media/external/audio/media/42", "…": "…"}, "addedAt": 1792400000000}]}],
+  "history": [{"track": {"…": "…"}, "playedAt": 1792300000000, "listenedMs": 182000},
+              {"track": {"…": "…"}, "playedAt": 1700000000000, "listenedMs": null}],
+  "songVolume": [{"trackId": "x7kGuhlXmFI", "trimDb": -3}],
+  "lyricsSource": [{"trackId": "x7kGuhlXmFI", "provider": "youtube-music"}],
+  "settings": {"dark_mode": "DARK", "translation_language": "bn", "…": "…"}
+}
+```
 
 ## Stream source fallback
 

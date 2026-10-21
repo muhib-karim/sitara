@@ -2,7 +2,7 @@
 
 How Sitara compares with the four apps it is measured against, updated with every release. Competitor columns come from their public documentation and release notes; **Y** = has it, **~** = partial or depends on version or setup, **—** = not offered, **?** = not documented. A Sitara entry says the release that shipped it, or the Phase C slice planned for it ([PHASE_C_PLAN.md](PHASE_C_PLAN.md)).
 
-Last updated: polish slice 8 (target v0.9.8, on `main`; the owner tags).
+Last updated: polish slice 10 (target v0.10.0, on `main`; the owner tags).
 
 | Capability | BitChord | Metrolist | Meld | ReVanced | Sitara |
 |---|:---:|:---:|:---:|:---:|---|
@@ -30,9 +30,9 @@ Last updated: polish slice 8 (target v0.9.8, on `main`; the owner tags).
 | Sleep timer with custom time | Y | Y | Y | Y | v0.8.0 (any minutes up to 3 h, extend, end of song; presets since v0.1.0) |
 | Equaliser (built-in or system) | Y | Y | Y | system | v0.9.0 (10 bands, presets, preamp, limiter; or the phone's own equaliser) |
 | Per-song volume trim | ? | ? | ? | — | v0.9.0 (±6 dB, kept with the song) |
-| Local audio files | Y | — | — | ~ | c4 |
+| Local audio files | Y | — | — | ~ | v0.10.0 (the phone's music through MediaStore and picked folders through the system folder picker; songs, albums, artists and folders; in Search with a badge; indexed on the CI emulator, not yet on a phone with a real collection) |
 | Downloads exported as tagged files with lyrics | — | ? | ? | — | c5 |
-| Backup and restore | Y | Y | Y | — | c5 |
+| Backup and restore | Y | Y | Y | — | v0.10.0 (likes, saved albums and artists, playlists, history, per-song volume and lyric source, settings; versioned JSON, checked whole before one transaction replaces the library; no audio, no scrobbling sign-ins) |
 | Several lyric sources with a picker | Y | Y | ? | — | v0.9.9 (LRCLIB and YouTube Music; no other lyrics service has an open API without a key) |
 | Lyric translation | Y | Y | ~ | — | v0.9.9 (MyMemory, free daily limit; not yet checked on a phone) |
 | Lyric share cards | Y | — | — | — | v0.9.9 (three styles, 1080 × 1350 PNG) |
