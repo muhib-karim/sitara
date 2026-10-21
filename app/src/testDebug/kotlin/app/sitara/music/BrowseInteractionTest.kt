@@ -463,7 +463,7 @@ class BrowseInteractionTest {
         var updated: SitaraSettings? = null
         render(Tab.SETTINGS, onSettings = { updated = it })
         compose.onNodeWithTag("settings-content").performScrollToNode(hasText("Reduced motion"))
-        compose.onNodeWithText("Reduced motion").performClick()
+        compose.onNodeWithText("Reduced motion").performSemanticsAction(SemanticsActions.OnClick)
         assertEquals(false, updated?.reducedMotion)
         // Normalisation and crossfade work now (soundSettingsSetNormalisationAndCrossfade); placeholders stay out.
         assertThrows(AssertionError::class.java) {

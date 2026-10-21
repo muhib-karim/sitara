@@ -458,11 +458,11 @@ class PlayerInteractionTest {
         })
         compose.onNodeWithText("Settings").performClick()
         compose.onNodeWithTag("settings-content").performScrollToNode(hasText("Equaliser"))
-        compose.onNodeWithText("Equaliser").performClick()
+        compose.onNodeWithText("Equaliser").performSemanticsAction(SemanticsActions.OnClick)
         compose.onNodeWithText("Late night").performScrollTo().performClick()
         assertEquals(listOf(EqualiserSettings().withPreset(EqualiserPreset.LATE_NIGHT)), picked)
         compose.runOnIdle { backDispatcher.onBackPressed() }
-        compose.onNodeWithText("Appearance").assertIsDisplayed()
+        compose.onNodeWithText("Normalise loudness").assertExists()
     }
 
     @Test

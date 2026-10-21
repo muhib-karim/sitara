@@ -372,22 +372,22 @@ class ScreenshotTest {
     )
 
     @Test fun settingsMotion() = shot("settings_motion", dark = true, settingsOpen = true) {
-        compose.onNodeWithTag("settings-content").performScrollToIndex(3)
+        compose.onNodeWithTag("settings-content").performScrollToKey("motion")
     }
 
     @Test fun settingsSound() = shot("settings_sound", dark = true, settingsOpen = true) {
-        compose.onNodeWithTag("settings-content").performScrollToIndex(4)
+        compose.onNodeWithTag("settings-content").performScrollToKey("sound")
     }
 
     @Test fun settingsDownloads() = shot("settings_downloads", dark = true, settingsOpen = true, downloads = Fixtures.downloads) {
-        compose.onNodeWithTag("settings-content").performScrollToIndex(5)
+        compose.onNodeWithTag("settings-content").performScrollToKey("downloads")
     }
 
     private val rock = EqualiserSettings().withPreset(EqualiserPreset.ROCK)
 
     // The Sound group at the top, so its first row is clear of the dock; then make sure the page opened before capturing.
     private fun openEqualiser() {
-        compose.onNodeWithTag("settings-content").performScrollToIndex(4)
+        compose.onNodeWithTag("settings-content").performScrollToKey("sound")
         compose.onNodeWithText("Equaliser").performClick()
         compose.onNodeWithContentDescription("Preamp").assertExists()
     }
