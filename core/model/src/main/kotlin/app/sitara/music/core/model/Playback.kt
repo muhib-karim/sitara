@@ -18,6 +18,25 @@ enum class AccentColor(val label: String) {
     ARTWORK("From artwork"),
 }
 
+/** How much data a stream may use: Auto is High on Wi-Fi and Normal on mobile data; Normal is up to 96 kbps; Data saver the lowest offered. */
+enum class AudioQuality(val label: String) {
+    AUTO("Auto"),
+    HIGH("High"),
+    NORMAL("Normal"),
+    DATA_SAVER("Data saver"),
+}
+
+/** The quality to stream at on the network in use: that network's setting, with Auto made concrete. */
+fun streamQuality(settings: SitaraSettings, onWifi: Boolean): AudioQuality {
+    val chosen = if (onWifi) settings.wifiQuality else settings.mobileQuality
+    return if (chosen != AudioQuality.AUTO) chosen else if (onWifi) AudioQuality.HIGH else AudioQuality.NORMAL
+}
+
+/** What the playing stream is, for the readout in Now Playing; [label] is null unless both are known. */
+data class StreamFormat(val codec: String?, val bitrateKbps: Int) {
+    val label: String? get() = codec?.takeIf { bitrateKbps > 0 }?.let { "$it · $bitrateKbps kbps" }
+}
+
 /** User preferences. Defaults are the values a fresh install starts with. */
 data class SitaraSettings(
     val darkMode: DarkMode = DarkMode.SYSTEM,
@@ -45,6 +64,9 @@ data class SitaraSettings(
     val librarySort: LibrarySort = LibrarySort.RECENTLY_ADDED,
     /** New plays are neither kept nor counted; what is kept stays. */
     val pauseListeningHistory: Boolean = false,
+    /** Stream quality on Wi-Fi (and Ethernet) and on mobile data. */
+    val wifiQuality: AudioQuality = AudioQuality.AUTO,
+    val mobileQuality: AudioQuality = AudioQuality.AUTO,
 ) {
     init {
         require(crossfadeSeconds in 0..MAX_CROSSFADE_SECONDS) { "crossfade out of range: $crossfadeSeconds" }

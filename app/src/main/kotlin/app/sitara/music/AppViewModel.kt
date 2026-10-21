@@ -224,8 +224,8 @@ class AppViewModel(private val app: SitaraApplication) :
         )
     }
 
-    val playerState: StateFlow<PlayerUiState> = combine(nowPlaying, settings, trimDb) { ui, s, trim ->
-        ui.copy(equaliser = s.equaliser, systemEqualiser = systemEqualiser, trimDb = trim)
+    val playerState: StateFlow<PlayerUiState> = combine(nowPlaying, settings, trimDb, app.streamFormats) { ui, s, trim, formats ->
+        ui.copy(equaliser = s.equaliser, systemEqualiser = systemEqualiser, trimDb = trim, stream = ui.track?.let { formats[it.id] })
     }.stateIn(viewModelScope, SharingStarted.Eagerly, PlayerUiState())
 
     init {

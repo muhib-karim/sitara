@@ -67,13 +67,14 @@ interface MusicSource : SearchSource {
     suspend fun library(): Library
 }
 
-/** A playable stream for a track. [expiresAtMs] lets callers refresh signed URLs early. */
+/** A playable stream for a track. [expiresAtMs] lets callers refresh signed URLs early; [codec] names it for display ("Opus"). */
 data class ResolvedStream(
     val url: String,
     val mimeType: String,
     val bitrateKbps: Int,
     val expiresAtMs: Long? = null,
     val loudnessLufs: Float? = null,
+    val codec: String? = null,
 )
 
 /** Turns a catalogue track into a stream URL. Implementations are tried in order with fallback. */

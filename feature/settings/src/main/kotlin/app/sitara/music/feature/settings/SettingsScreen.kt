@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
@@ -62,9 +63,11 @@ import app.sitara.music.core.designsystem.PillButton
 import app.sitara.music.core.designsystem.SectionHeader
 import app.sitara.music.core.designsystem.SitaraIcons
 import app.sitara.music.core.designsystem.SitaraRadius
+import app.sitara.music.core.designsystem.SitaraSheet
 import app.sitara.music.core.designsystem.SitaraSpacing
 import app.sitara.music.core.designsystem.accentTone
 import app.sitara.music.core.model.AccentColor
+import app.sitara.music.core.model.AudioQuality
 import app.sitara.music.core.model.DarkMode
 import app.sitara.music.core.model.SitaraSettings
 import app.sitara.music.core.model.SongDownload
@@ -97,6 +100,9 @@ fun SettingsScreen(
             SettingsGroup("Motion") {
                 SwitchRow("Reduced motion", "Instant transitions, without blur", settings.reducedMotion) { onChange(settings.copy(reducedMotion = it)) }
             }
+        }
+        item(key = "playback") {
+            PlaybackSettings(settings, onChange)
         }
         item(key = "sound") {
             SettingsGroup("Sound") {
@@ -234,6 +240,40 @@ private fun Swatch(label: String, tone: Color, selected: Boolean, onClick: () ->
             if (selected) Icon(SitaraIcons.Check, null, tint = Color(ArtworkPalette.inkOn(tone.toArgb())), modifier = Modifier.size(20.dp))
         }
     }
+}
+
+/** Stream quality for Wi-Fi and for mobile data, each picked in a sheet. */
+@Composable
+private fun PlaybackSettings(settings: SitaraSettings, onChange: (SitaraSettings) -> Unit) {
+    var picking by rememberSaveable { mutableStateOf<Boolean?>(null) } // true: Wi-Fi, false: mobile data
+    SettingsGroup("Playback") {
+        LinkRow("Quality on Wi-Fi", settings.wifiQuality.label) { picking = true }
+        InsetDivider()
+        LinkRow("Quality on mobile data", settings.mobileQuality.label) { picking = false }
+    }
+    picking?.let { wifi ->
+        val current = if (wifi) settings.wifiQuality else settings.mobileQuality
+        SitaraSheet(onDismiss = { picking = null }) { close ->
+            Column(Modifier.fillMaxWidth().navigationBarsPadding().padding(vertical = 8.dp).selectableGroup()) {
+                Text(
+                    if (wifi) "Quality on Wi-Fi" else "Quality on mobile data", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                )
+                AudioQuality.entries.forEach { quality ->
+                    Choice(quality.label, quality == current, qualityDescription(quality, wifi)) {
+                        close { onChange(if (wifi) settings.copy(wifiQuality = quality) else settings.copy(mobileQuality = quality)) }
+                    }
+                }
+            }
+        }
+    }
+}
+
+private fun qualityDescription(quality: AudioQuality, wifi: Boolean): String = when (quality) {
+    AudioQuality.AUTO -> if (wifi) "High on Wi-Fi" else "Normal on mobile data"
+    AudioQuality.HIGH -> "The best the song offers, usually 128–160 kbps"
+    AudioQuality.NORMAL -> "Up to 96 kbps"
+    AudioQuality.DATA_SAVER -> "The lowest offered, about 50 kbps"
 }
 
 /** Stats, and the listener's say over the plays kept for them, which never leave the phone. */

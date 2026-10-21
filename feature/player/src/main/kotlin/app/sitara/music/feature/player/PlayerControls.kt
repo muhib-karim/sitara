@@ -41,6 +41,8 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import app.sitara.music.core.common.formatDuration
@@ -163,7 +165,18 @@ private fun Scrubber(state: PlayerUiState, actions: PlayerActions) {
     Row(Modifier.fillMaxWidth()) {
         val timeStyle = MaterialTheme.typography.labelLarge.copy(fontFeatureSettings = "tnum")
         Text(formatDuration((value * duration).toLong()), color = SitaraColors.StageSecondary, style = timeStyle)
-        Spacer(Modifier.weight(1f))
+        // What the song streams in, between the times; absent while unknown (before its stream is looked up, or played from a download).
+        val format = state.stream
+        val label = format?.label
+        if (format != null && label != null) {
+            Text(
+                label, color = SitaraColors.StageSecondary, style = MaterialTheme.typography.labelMedium, textAlign = TextAlign.Center, maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f).padding(horizontal = 8.dp).semantics { contentDescription = "Streaming ${format.codec} at ${format.bitrateKbps} kilobits per second" },
+            )
+        } else {
+            Spacer(Modifier.weight(1f))
+        }
         Text(formatDuration(duration), color = SitaraColors.StageSecondary, style = timeStyle)
     }
 }

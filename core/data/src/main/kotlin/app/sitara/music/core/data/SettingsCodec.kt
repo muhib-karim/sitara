@@ -1,6 +1,7 @@
 package app.sitara.music.core.data
 
 import app.sitara.music.core.model.AccentColor
+import app.sitara.music.core.model.AudioQuality
 import app.sitara.music.core.model.DarkMode
 import app.sitara.music.core.model.EqualiserSettings
 import app.sitara.music.core.model.LibraryLayout
@@ -36,6 +37,8 @@ object SettingsCodec {
     const val LIBRARY_LAYOUT = "library_layout"
     const val LIBRARY_SORT = "library_sort"
     const val PAUSE_HISTORY = "pause_listening_history"
+    const val WIFI_QUALITY = "wifi_quality"
+    const val MOBILE_QUALITY = "mobile_quality"
 
     fun encode(s: SitaraSettings): Map<String, String> = mapOf(
         DARK to s.darkMode.name,
@@ -59,6 +62,8 @@ object SettingsCodec {
         LIBRARY_LAYOUT to s.libraryLayout.name,
         LIBRARY_SORT to s.librarySort.name,
         PAUSE_HISTORY to s.pauseListeningHistory.toString(),
+        WIFI_QUALITY to s.wifiQuality.name,
+        MOBILE_QUALITY to s.mobileQuality.name,
     )
 
     fun decode(map: Map<String, String>): SitaraSettings {
@@ -88,6 +93,8 @@ object SettingsCodec {
             libraryLayout = map[LIBRARY_LAYOUT]?.let { v -> LibraryLayout.entries.firstOrNull { it.name == v } } ?: d.libraryLayout,
             librarySort = map[LIBRARY_SORT]?.let { v -> LibrarySort.entries.firstOrNull { it.name == v } } ?: d.librarySort,
             pauseListeningHistory = map[PAUSE_HISTORY]?.toBooleanStrictOrNull() ?: d.pauseListeningHistory,
+            wifiQuality = map[WIFI_QUALITY]?.let { v -> AudioQuality.entries.firstOrNull { it.name == v } } ?: d.wifiQuality,
+            mobileQuality = map[MOBILE_QUALITY]?.let { v -> AudioQuality.entries.firstOrNull { it.name == v } } ?: d.mobileQuality,
         )
     }
 

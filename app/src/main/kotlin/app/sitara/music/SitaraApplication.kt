@@ -4,6 +4,7 @@ import android.app.Application
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.content.Context
+import android.net.ConnectivityManager
 import android.util.Log
 import androidx.glance.appwidget.updateAll
 import androidx.media3.datasource.cache.Cache
@@ -11,12 +12,15 @@ import app.sitara.music.core.data.SettingsRepository
 import app.sitara.music.core.data.library.LibraryStore
 import app.sitara.music.core.data.library.PlayHistoryRepository
 import app.sitara.music.core.designsystem.sitaraImageLoader
+import app.sitara.music.core.model.AudioQuality
 import app.sitara.music.core.model.CachedLyrics
 import app.sitara.music.core.model.Listen
 import app.sitara.music.core.model.SavedQueue
 import app.sitara.music.core.model.SearchFilter
 import app.sitara.music.core.model.SitaraSettings
+import app.sitara.music.core.model.StreamFormat
 import app.sitara.music.core.model.Track
+import app.sitara.music.core.model.streamQuality
 import app.sitara.music.core.player.DownloadDependencies
 import app.sitara.music.core.player.LibraryContent
 import app.sitara.music.core.player.PlaybackDependencies
@@ -84,8 +88,18 @@ class SitaraApplication :
         )
     }
 
-    override val streamResolver: StreamResolver by lazy { youTubeStreamResolver() }
-    override val songDownloads: SongDownloads by lazy { SongDownloads(this, streamResolver, appScope, settings.settings.map { it.downloadOnWifiOnly }.distinctUntilChanged()) }
+    // Read on the loader thread at each lookup, so a changed setting or network applies from the next song.
+    private val currentSettings by lazy { settings.settings.stateIn(appScope, SharingStarted.Eagerly, SitaraSettings()) }
+    private val recordingResolver by lazy {
+        val connectivity = getSystemService(ConnectivityManager::class.java)
+        FormatRecordingResolver(youTubeStreamResolver { streamQuality(currentSettings.value, connectivity.onWifi()) })
+    }
+    override val streamResolver: StreamResolver get() = recordingResolver
+
+    /** The codec and bitrate songs streamed in, by track id. */
+    val streamFormats: StateFlow<Map<String, StreamFormat>> get() = recordingResolver.formats
+    // A download is kept, so it takes the best stream whatever the network's streaming quality.
+    override val songDownloads: SongDownloads by lazy { SongDownloads(this, youTubeStreamResolver { AudioQuality.HIGH }, appScope, settings.settings.map { it.downloadOnWifiOnly }.distinctUntilChanged()) }
     override val downloadCache: Cache get() = songDownloads.cache
     override val playbackSettings get() = settings.settings
     val player by lazy { PlayerController(this, appScope) }

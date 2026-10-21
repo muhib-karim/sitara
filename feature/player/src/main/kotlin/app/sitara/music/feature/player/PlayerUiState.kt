@@ -4,6 +4,7 @@ import app.sitara.music.core.model.EqualiserSettings
 import app.sitara.music.core.model.Lyrics
 import app.sitara.music.core.model.PlaybackTuning
 import app.sitara.music.core.model.RepeatMode
+import app.sitara.music.core.model.StreamFormat
 import app.sitara.music.core.model.Track
 
 /** Everything the player surfaces render; produced by the app from the media controller. */
@@ -32,6 +33,8 @@ data class PlayerUiState(
     val systemEqualiser: Boolean = false,
     /** The current song's volume trim in dB. */
     val trimDb: Int = 0,
+    /** The codec and bitrate the current song streamed in, when its stream was looked up while the app ran. */
+    val stream: StreamFormat? = null,
 )
 
 /** The current song's lyrics, looked up when it starts. */
