@@ -135,7 +135,8 @@ class BrowseInteractionTest {
         assertEquals(library.likedTracks, queue)
         compose.onNodeWithContentDescription("Back").performClick()
 
-        compose.onAllNodesWithText(library.playlists.first().title).onFirst().performClick()
+        // The first row of covers can sit under the floating dock, so tap the tile through its click action.
+        compose.onAllNodesWithText(library.playlists.first().title).onFirst().performSemanticsAction(SemanticsActions.OnClick)
         compose.onNodeWithText("Your playlist").assertIsDisplayed()
         compose.onNodeWithContentDescription("Back").performClick()
 
