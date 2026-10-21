@@ -172,7 +172,10 @@ fun SitaraShell(
     val foldOnScroll = remember {
         object : NestedScrollConnection {
             override fun onPostScroll(consumed: Offset, available: Offset, source: NestedScrollSource): Offset {
-                if (consumed.y < -FOLD_SLOP) dockFolded = true else if (consumed.y > FOLD_SLOP) dockFolded = false
+                when {
+                    consumed.y < -FOLD_SLOP -> dockFolded = true
+                    consumed.y > FOLD_SLOP -> dockFolded = false
+                }
                 return Offset.Zero
             }
         }
