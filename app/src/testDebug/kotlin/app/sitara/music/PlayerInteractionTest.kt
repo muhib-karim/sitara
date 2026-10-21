@@ -13,6 +13,7 @@ import androidx.compose.ui.test.assertIsNotEnabled
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.assertWidthIsAtLeast
 import androidx.compose.ui.test.click
+import androidx.compose.ui.test.getBoundsInRoot
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasTestTag
@@ -21,6 +22,7 @@ import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
+import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToNode
@@ -149,6 +151,20 @@ class PlayerInteractionTest {
         compose.onNodeWithText("Skip").performClick()
         assertEquals(1, actions.retries)
         assertEquals(1, actions.skips)
+    }
+
+    @Test
+    @Config(qualifiers = "w360dp-h568dp-xxhdpi") // a 360 x 640 dp phone less a 24 dp status bar and a 48 dp navigation bar
+    fun failedSongKeepsTheSeekBarAndTransportOnScreenOnASmallPhone() {
+        render(expanded = true, failed = true)
+
+        compose.onNodeWithText("Couldn’t play this song").assertIsDisplayed()
+        val screen = compose.onRoot().getBoundsInRoot()
+        val notInDock = !hasAnyAncestor(hasTestTag("playback-dock"))
+        listOf("Seek", "Shuffle", "Previous track", "Try again", "Next track", "Repeat").forEach { label ->
+            val bounds = compose.onNode(hasContentDescription(label) and notInDock).getBoundsInRoot()
+            assertTrue("$label ends at ${bounds.bottom}, below the screen's ${screen.bottom}", bounds.bottom <= screen.bottom)
+        }
     }
 
     @Test
