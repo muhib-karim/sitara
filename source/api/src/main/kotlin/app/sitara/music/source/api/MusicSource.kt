@@ -3,8 +3,10 @@ package app.sitara.music.source.api
 import app.sitara.music.core.model.Album
 import app.sitara.music.core.model.ArtistPage
 import app.sitara.music.core.model.Chart
+import app.sitara.music.core.model.HomePage
 import app.sitara.music.core.model.Library
 import app.sitara.music.core.model.Lyrics
+import app.sitara.music.core.model.MoodChip
 import app.sitara.music.core.model.Playlist
 import app.sitara.music.core.model.SearchFilter
 import app.sitara.music.core.model.SearchResults
@@ -33,6 +35,15 @@ interface RadioSource {
 /** The songs trending now, for Home. */
 interface ChartsSource {
     suspend fun trending(): Chart
+}
+
+/** The catalogue's own Home, page by page. */
+interface HomeFeedSource {
+    /** The first page, filtered to [chip] when one is given. */
+    suspend fun home(chip: MoodChip? = null): HomePage
+
+    /** The shelves after a page, from that page's [HomePage.continuation]. */
+    suspend fun moreHome(continuation: String): HomePage
 }
 
 /** A whole catalogue with a listener's library, as the offline sample source offers it to tests and fixtures. */

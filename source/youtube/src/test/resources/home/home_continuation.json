@@ -1,0 +1,948 @@
+{
+ "continuationContents": {
+  "sectionListContinuation": {
+   "contents": [
+    {
+     "musicCarouselShelfRenderer": {
+      "header": {
+       "musicCarouselShelfBasicHeaderRenderer": {
+        "title": {
+         "runs": [
+          {
+           "text": "Throwbacks"
+          }
+         ]
+        },
+        "strapline": {
+         "runs": [
+          {
+           "text": "CLASSICS FROM EVERY DECADE"
+          }
+         ]
+        },
+        "headerStyle": "MUSIC_CAROUSEL_SHELF_BASIC_HEADER_STYLE_DEFAULT"
+       }
+      },
+      "contents": [
+       {
+        "musicTwoRowItemRenderer": {
+         "thumbnailRenderer": {
+          "musicThumbnailRenderer": {
+           "thumbnail": {
+            "thumbnails": [
+             {
+              "url": "https://yt3.googleusercontent.com/VGxWK75H8M5k3r2I89b7Tg9Mi1JPNkCtc9IOkAfpznmJu4N7toBj_PB2Fubc_sFHa8CZ1MqSb6AqVTE=w226-h226-l90-rj",
+              "width": 226,
+              "height": 226
+             },
+             {
+              "url": "https://yt3.googleusercontent.com/VGxWK75H8M5k3r2I89b7Tg9Mi1JPNkCtc9IOkAfpznmJu4N7toBj_PB2Fubc_sFHa8CZ1MqSb6AqVTE=w544-h544-l90-rj",
+              "width": 544,
+              "height": 544
+             }
+            ]
+           }
+          }
+         },
+         "aspectRatio": "MUSIC_TWO_ROW_ITEM_THUMBNAIL_ASPECT_RATIO_SQUARE",
+         "title": {
+          "runs": [
+           {
+            "text": "The Hits: '80s",
+            "navigationEndpoint": {
+             "browseEndpoint": {
+              "browseId": "VLRDCLAK5uy_lMzHW51iFg1Kx0d_2EHpzbOgCrwtu8cgI",
+              "params": "ggMEgAKPAw%3D%3D",
+              "browseEndpointContextSupportedConfigs": {
+               "browseEndpointContextMusicConfig": {
+                "pageType": "MUSIC_PAGE_TYPE_PLAYLIST"
+               }
+              }
+             }
+            }
+           }
+          ]
+         },
+         "subtitle": {
+          "runs": [
+           {
+            "text": "Michael Jackson"
+           },
+           {
+            "text": ", "
+           },
+           {
+            "text": "Prince"
+           },
+           {
+            "text": ", "
+           },
+           {
+            "text": "Madonna"
+           },
+           {
+            "text": ", "
+           },
+           {
+            "text": "George Michael"
+           }
+          ]
+         },
+         "navigationEndpoint": {
+          "browseEndpoint": {
+           "browseId": "VLRDCLAK5uy_lMzHW51iFg1Kx0d_2EHpzbOgCrwtu8cgI",
+           "params": "ggMEgAKPAw%3D%3D",
+           "browseEndpointContextSupportedConfigs": {
+            "browseEndpointContextMusicConfig": {
+             "pageType": "MUSIC_PAGE_TYPE_PLAYLIST"
+            }
+           }
+          }
+         },
+         "thumbnailOverlay": {
+          "musicItemThumbnailOverlayRenderer": {
+           "content": {
+            "musicPlayButtonRenderer": {
+             "playNavigationEndpoint": {
+              "watchPlaylistEndpoint": {
+               "playlistId": "RDCLAK5uy_lMzHW51iFg1Kx0d_2EHpzbOgCrwtu8cgI"
+              }
+             }
+            }
+           },
+           "contentPosition": "MUSIC_ITEM_THUMBNAIL_OVERLAY_CONTENT_POSITION_BOTTOM_RIGHT",
+           "displayStyle": "MUSIC_ITEM_THUMBNAIL_OVERLAY_DISPLAY_STYLE_HOVER"
+          }
+         }
+        }
+       },
+       {
+        "musicTwoRowItemRenderer": {
+         "thumbnailRenderer": {
+          "musicThumbnailRenderer": {
+           "thumbnail": {
+            "thumbnails": [
+             {
+              "url": "https://yt3.googleusercontent.com/PS9cvno4z8BtwsrzTdflxmG1-Xe9tKAQ7gG0zpuEqvanI5mpCZB-SWguPLlM15P98fHgVS8yQlu7r4eY=w226-h226-l90-rj",
+              "width": 226,
+              "height": 226
+             },
+             {
+              "url": "https://yt3.googleusercontent.com/PS9cvno4z8BtwsrzTdflxmG1-Xe9tKAQ7gG0zpuEqvanI5mpCZB-SWguPLlM15P98fHgVS8yQlu7r4eY=w544-h544-l90-rj",
+              "width": 544,
+              "height": 544
+             }
+            ]
+           }
+          }
+         },
+         "aspectRatio": "MUSIC_TWO_ROW_ITEM_THUMBNAIL_ASPECT_RATIO_SQUARE",
+         "title": {
+          "runs": [
+           {
+            "text": "'00s R&B",
+            "navigationEndpoint": {
+             "browseEndpoint": {
+              "browseId": "VLRDCLAK5uy_kBx-sjelcdmAxRchYQcbAMna5ZWfz3qw8",
+              "params": "ggMEgAKPAw%3D%3D",
+              "browseEndpointContextSupportedConfigs": {
+               "browseEndpointContextMusicConfig": {
+                "pageType": "MUSIC_PAGE_TYPE_PLAYLIST"
+               }
+              }
+             }
+            }
+           }
+          ]
+         },
+         "subtitle": {
+          "runs": [
+           {
+            "text": "USHER"
+           },
+           {
+            "text": ", "
+           },
+           {
+            "text": "Beyoncé"
+           },
+           {
+            "text": ", "
+           },
+           {
+            "text": "Keyshia Cole"
+           },
+           {
+            "text": ", "
+           },
+           {
+            "text": "Chris Brown"
+           }
+          ]
+         },
+         "navigationEndpoint": {
+          "browseEndpoint": {
+           "browseId": "VLRDCLAK5uy_kBx-sjelcdmAxRchYQcbAMna5ZWfz3qw8",
+           "params": "ggMEgAKPAw%3D%3D",
+           "browseEndpointContextSupportedConfigs": {
+            "browseEndpointContextMusicConfig": {
+             "pageType": "MUSIC_PAGE_TYPE_PLAYLIST"
+            }
+           }
+          }
+         },
+         "thumbnailOverlay": {
+          "musicItemThumbnailOverlayRenderer": {
+           "content": {
+            "musicPlayButtonRenderer": {
+             "playNavigationEndpoint": {
+              "watchPlaylistEndpoint": {
+               "playlistId": "RDCLAK5uy_kBx-sjelcdmAxRchYQcbAMna5ZWfz3qw8"
+              }
+             }
+            }
+           },
+           "contentPosition": "MUSIC_ITEM_THUMBNAIL_OVERLAY_CONTENT_POSITION_BOTTOM_RIGHT",
+           "displayStyle": "MUSIC_ITEM_THUMBNAIL_OVERLAY_DISPLAY_STYLE_HOVER"
+          }
+         }
+        }
+       },
+       {
+        "musicTwoRowItemRenderer": {
+         "thumbnailRenderer": {
+          "musicThumbnailRenderer": {
+           "thumbnail": {
+            "thumbnails": [
+             {
+              "url": "https://yt3.googleusercontent.com/-tjg2qJc4FcGfgqxVKNR8NdQikIFX6xBf5gYRtb-VwbWRcLpwILvwMU5whYTwyWMMKxpzWhztceb2Q=w226-h226-l90-rj",
+              "width": 226,
+              "height": 226
+             },
+             {
+              "url": "https://yt3.googleusercontent.com/-tjg2qJc4FcGfgqxVKNR8NdQikIFX6xBf5gYRtb-VwbWRcLpwILvwMU5whYTwyWMMKxpzWhztceb2Q=w544-h544-l90-rj",
+              "width": 544,
+              "height": 544
+             }
+            ]
+           }
+          }
+         },
+         "aspectRatio": "MUSIC_TWO_ROW_ITEM_THUMBNAIL_ASPECT_RATIO_SQUARE",
+         "title": {
+          "runs": [
+           {
+            "text": "'80s Rock",
+            "navigationEndpoint": {
+             "browseEndpoint": {
+              "browseId": "VLRDCLAK5uy_lvHI2Z7dSfpD5g8wvmePjWPfYwq5IgkLo",
+              "params": "ggMEgAKPAw%3D%3D",
+              "browseEndpointContextSupportedConfigs": {
+               "browseEndpointContextMusicConfig": {
+                "pageType": "MUSIC_PAGE_TYPE_PLAYLIST"
+               }
+              }
+             }
+            }
+           }
+          ]
+         },
+         "subtitle": {
+          "runs": [
+           {
+            "text": "Van Halen"
+           },
+           {
+            "text": ", "
+           },
+           {
+            "text": "Bon Jovi"
+           },
+           {
+            "text": ", "
+           },
+           {
+            "text": "Def Leppard"
+           },
+           {
+            "text": ", "
+           },
+           {
+            "text": "Mötley Crüe"
+           }
+          ]
+         },
+         "navigationEndpoint": {
+          "browseEndpoint": {
+           "browseId": "VLRDCLAK5uy_lvHI2Z7dSfpD5g8wvmePjWPfYwq5IgkLo",
+           "params": "ggMEgAKPAw%3D%3D",
+           "browseEndpointContextSupportedConfigs": {
+            "browseEndpointContextMusicConfig": {
+             "pageType": "MUSIC_PAGE_TYPE_PLAYLIST"
+            }
+           }
+          }
+         },
+         "thumbnailOverlay": {
+          "musicItemThumbnailOverlayRenderer": {
+           "content": {
+            "musicPlayButtonRenderer": {
+             "playNavigationEndpoint": {
+              "watchPlaylistEndpoint": {
+               "playlistId": "RDCLAK5uy_lvHI2Z7dSfpD5g8wvmePjWPfYwq5IgkLo"
+              }
+             }
+            }
+           },
+           "contentPosition": "MUSIC_ITEM_THUMBNAIL_OVERLAY_CONTENT_POSITION_BOTTOM_RIGHT",
+           "displayStyle": "MUSIC_ITEM_THUMBNAIL_OVERLAY_DISPLAY_STYLE_HOVER"
+          }
+         }
+        }
+       }
+      ],
+      "itemSize": "COLLECTION_STYLE_ITEM_SIZE_MEDIUM",
+      "shelfId": "d9b83953-efaf-4f0a-8c8e-1df28ebcdc8c"
+     }
+    },
+    {
+     "musicCarouselShelfRenderer": {
+      "header": {
+       "musicCarouselShelfBasicHeaderRenderer": {
+        "title": {
+         "runs": [
+          {
+           "text": "New & trending songs"
+          }
+         ]
+        },
+        "headerStyle": "MUSIC_CAROUSEL_SHELF_BASIC_HEADER_STYLE_DEFAULT"
+       }
+      },
+      "contents": [
+       {
+        "musicTwoRowItemRenderer": {
+         "thumbnailRenderer": {
+          "musicThumbnailRenderer": {
+           "thumbnail": {
+            "thumbnails": [
+             {
+              "url": "https://yt3.googleusercontent.com/uwTOHL-HKlOj-6-cKvYSxUVb8Veu1-d_NhE6dUQJJjzyg9-DxPDjpCe_2KaYppLjpPccl09tVBLDauyj=w226-h226-l90-rj",
+              "width": 226,
+              "height": 226
+             },
+             {
+              "url": "https://yt3.googleusercontent.com/uwTOHL-HKlOj-6-cKvYSxUVb8Veu1-d_NhE6dUQJJjzyg9-DxPDjpCe_2KaYppLjpPccl09tVBLDauyj=w544-h544-l90-rj",
+              "width": 544,
+              "height": 544
+             }
+            ]
+           }
+          }
+         },
+         "aspectRatio": "MUSIC_TWO_ROW_ITEM_THUMBNAIL_ASPECT_RATIO_SQUARE",
+         "title": {
+          "runs": [
+           {
+            "text": "phonk 2026",
+            "navigationEndpoint": {
+             "browseEndpoint": {
+              "browseId": "VLRDCLAK5uy_ljyDz8FJv4xec1TEdCPzYAHasU-OgXTeU",
+              "params": "ggMEgAKPAw%3D%3D",
+              "browseEndpointContextSupportedConfigs": {
+               "browseEndpointContextMusicConfig": {
+                "pageType": "MUSIC_PAGE_TYPE_PLAYLIST"
+               }
+              }
+             }
+            }
+           }
+          ]
+         },
+         "subtitle": {
+          "runs": [
+           {
+            "text": "MXZI"
+           },
+           {
+            "text": ", "
+           },
+           {
+            "text": "NUEKI"
+           },
+           {
+            "text": ", "
+           },
+           {
+            "text": "Eternxlkz"
+           },
+           {
+            "text": ", "
+           },
+           {
+            "text": "ATLXS"
+           }
+          ]
+         },
+         "navigationEndpoint": {
+          "browseEndpoint": {
+           "browseId": "VLRDCLAK5uy_ljyDz8FJv4xec1TEdCPzYAHasU-OgXTeU",
+           "params": "ggMEgAKPAw%3D%3D",
+           "browseEndpointContextSupportedConfigs": {
+            "browseEndpointContextMusicConfig": {
+             "pageType": "MUSIC_PAGE_TYPE_PLAYLIST"
+            }
+           }
+          }
+         },
+         "thumbnailOverlay": {
+          "musicItemThumbnailOverlayRenderer": {
+           "content": {
+            "musicPlayButtonRenderer": {
+             "playNavigationEndpoint": {
+              "watchPlaylistEndpoint": {
+               "playlistId": "RDCLAK5uy_ljyDz8FJv4xec1TEdCPzYAHasU-OgXTeU"
+              }
+             }
+            }
+           },
+           "contentPosition": "MUSIC_ITEM_THUMBNAIL_OVERLAY_CONTENT_POSITION_BOTTOM_RIGHT",
+           "displayStyle": "MUSIC_ITEM_THUMBNAIL_OVERLAY_DISPLAY_STYLE_HOVER"
+          }
+         }
+        }
+       },
+       {
+        "musicTwoRowItemRenderer": {
+         "thumbnailRenderer": {
+          "musicThumbnailRenderer": {
+           "thumbnail": {
+            "thumbnails": [
+             {
+              "url": "https://yt3.googleusercontent.com/zBVuhhihp3P6F-LkVIEgfTPIs67rsMijsB0-bMl1dypvR8sIG-j2oK2tuIjY0Px8lmn84UCrY3UDPow=w226-h226-l90-rj",
+              "width": 226,
+              "height": 226
+             },
+             {
+              "url": "https://yt3.googleusercontent.com/zBVuhhihp3P6F-LkVIEgfTPIs67rsMijsB0-bMl1dypvR8sIG-j2oK2tuIjY0Px8lmn84UCrY3UDPow=w544-h544-l90-rj",
+              "width": 544,
+              "height": 544
+             }
+            ]
+           }
+          }
+         },
+         "aspectRatio": "MUSIC_TWO_ROW_ITEM_THUMBNAIL_ASPECT_RATIO_SQUARE",
+         "title": {
+          "runs": [
+           {
+            "text": "The Short List",
+            "navigationEndpoint": {
+             "browseEndpoint": {
+              "browseId": "VLRDCLAK5uy_lS3E3PgpboCkZ_PfLPCkLLNPI1uH6kfc0",
+              "params": "ggMEgAKPAw%3D%3D",
+              "browseEndpointContextSupportedConfigs": {
+               "browseEndpointContextMusicConfig": {
+                "pageType": "MUSIC_PAGE_TYPE_PLAYLIST"
+               }
+              }
+             }
+            }
+           }
+          ]
+         },
+         "subtitle": {
+          "runs": [
+           {
+            "text": "KATSEYE"
+           },
+           {
+            "text": ", "
+           },
+           {
+            "text": "Justin Bieber"
+           },
+           {
+            "text": ", "
+           },
+           {
+            "text": "sombr"
+           },
+           {
+            "text": ", "
+           },
+           {
+            "text": "Taylor Swift"
+           }
+          ]
+         },
+         "navigationEndpoint": {
+          "browseEndpoint": {
+           "browseId": "VLRDCLAK5uy_lS3E3PgpboCkZ_PfLPCkLLNPI1uH6kfc0",
+           "params": "ggMEgAKPAw%3D%3D",
+           "browseEndpointContextSupportedConfigs": {
+            "browseEndpointContextMusicConfig": {
+             "pageType": "MUSIC_PAGE_TYPE_PLAYLIST"
+            }
+           }
+          }
+         },
+         "thumbnailOverlay": {
+          "musicItemThumbnailOverlayRenderer": {
+           "content": {
+            "musicPlayButtonRenderer": {
+             "playNavigationEndpoint": {
+              "watchPlaylistEndpoint": {
+               "playlistId": "RDCLAK5uy_lS3E3PgpboCkZ_PfLPCkLLNPI1uH6kfc0"
+              }
+             }
+            }
+           },
+           "contentPosition": "MUSIC_ITEM_THUMBNAIL_OVERLAY_CONTENT_POSITION_BOTTOM_RIGHT",
+           "displayStyle": "MUSIC_ITEM_THUMBNAIL_OVERLAY_DISPLAY_STYLE_HOVER"
+          }
+         }
+        }
+       },
+       {
+        "musicTwoRowItemRenderer": {
+         "thumbnailRenderer": {
+          "musicThumbnailRenderer": {
+           "thumbnail": {
+            "thumbnails": [
+             {
+              "url": "https://yt3.googleusercontent.com/JZRXyfs4dM8920Zfj_ljR6GK4eNmY24T_k3CUtWBxXxKc9JLz9OsRjeM1_leczwDEAmPDYuhx-Y2eaE=w226-h226-l90-rj",
+              "width": 226,
+              "height": 226
+             },
+             {
+              "url": "https://yt3.googleusercontent.com/JZRXyfs4dM8920Zfj_ljR6GK4eNmY24T_k3CUtWBxXxKc9JLz9OsRjeM1_leczwDEAmPDYuhx-Y2eaE=w544-h544-l90-rj",
+              "width": 544,
+              "height": 544
+             }
+            ]
+           }
+          }
+         },
+         "aspectRatio": "MUSIC_TWO_ROW_ITEM_THUMBNAIL_ASPECT_RATIO_SQUARE",
+         "title": {
+          "runs": [
+           {
+            "text": "Whimsy",
+            "navigationEndpoint": {
+             "browseEndpoint": {
+              "browseId": "VLRDCLAK5uy_lNzRHplZVAlqyCb_v76f9SMYnEzyBJoEM",
+              "params": "ggMEgAKPAw%3D%3D",
+              "browseEndpointContextSupportedConfigs": {
+               "browseEndpointContextMusicConfig": {
+                "pageType": "MUSIC_PAGE_TYPE_PLAYLIST"
+               }
+              }
+             }
+            }
+           }
+          ]
+         },
+         "subtitle": {
+          "runs": [
+           {
+            "text": "Justin Bieber"
+           },
+           {
+            "text": ", "
+           },
+           {
+            "text": "sombr"
+           },
+           {
+            "text": ", "
+           },
+           {
+            "text": "KATSEYE"
+           },
+           {
+            "text": ", "
+           },
+           {
+            "text": "Sabrina Carpenter"
+           }
+          ]
+         },
+         "navigationEndpoint": {
+          "browseEndpoint": {
+           "browseId": "VLRDCLAK5uy_lNzRHplZVAlqyCb_v76f9SMYnEzyBJoEM",
+           "params": "ggMEgAKPAw%3D%3D",
+           "browseEndpointContextSupportedConfigs": {
+            "browseEndpointContextMusicConfig": {
+             "pageType": "MUSIC_PAGE_TYPE_PLAYLIST"
+            }
+           }
+          }
+         },
+         "thumbnailOverlay": {
+          "musicItemThumbnailOverlayRenderer": {
+           "content": {
+            "musicPlayButtonRenderer": {
+             "playNavigationEndpoint": {
+              "watchPlaylistEndpoint": {
+               "playlistId": "RDCLAK5uy_lNzRHplZVAlqyCb_v76f9SMYnEzyBJoEM"
+              }
+             }
+            }
+           },
+           "contentPosition": "MUSIC_ITEM_THUMBNAIL_OVERLAY_CONTENT_POSITION_BOTTOM_RIGHT",
+           "displayStyle": "MUSIC_ITEM_THUMBNAIL_OVERLAY_DISPLAY_STYLE_HOVER"
+          }
+         }
+        }
+       }
+      ],
+      "itemSize": "COLLECTION_STYLE_ITEM_SIZE_MEDIUM",
+      "shelfId": "92a81776-8b26-4fc6-ac27-69441973201a"
+     }
+    },
+    {
+     "musicCarouselShelfRenderer": {
+      "header": {
+       "musicCarouselShelfBasicHeaderRenderer": {
+        "title": {
+         "runs": [
+          {
+           "text": "New releases",
+           "navigationEndpoint": {
+            "browseEndpoint": {
+             "browseId": "FEmusic_new_releases_albums",
+             "params": "ggMEgALSAg%3D%3D"
+            }
+           }
+          }
+         ]
+        },
+        "headerStyle": "MUSIC_CAROUSEL_SHELF_BASIC_HEADER_STYLE_DEFAULT",
+        "moreContentButton": {
+         "buttonRenderer": {
+          "style": "STYLE_TEXT",
+          "text": {
+           "runs": [
+            {
+             "text": "More"
+            }
+           ]
+          },
+          "navigationEndpoint": {
+           "browseEndpoint": {
+            "browseId": "FEmusic_new_releases_albums",
+            "params": "ggMEgALSAg%3D%3D"
+           }
+          }
+         }
+        }
+       }
+      },
+      "contents": [
+       {
+        "musicTwoRowItemRenderer": {
+         "thumbnailRenderer": {
+          "musicThumbnailRenderer": {
+           "thumbnail": {
+            "thumbnails": [
+             {
+              "url": "https://yt3.googleusercontent.com/-j0O0ECErEcwJBa4yFFceOQmk71PtfdSvp9Ryqa6cC5obWs9MkZGGPyCd7aNqFzyMGy-FA1689tz52-A=w226-h226-l90-rj",
+              "width": 226,
+              "height": 226
+             },
+             {
+              "url": "https://yt3.googleusercontent.com/-j0O0ECErEcwJBa4yFFceOQmk71PtfdSvp9Ryqa6cC5obWs9MkZGGPyCd7aNqFzyMGy-FA1689tz52-A=w544-h544-l90-rj",
+              "width": 544,
+              "height": 544
+             }
+            ]
+           }
+          }
+         },
+         "aspectRatio": "MUSIC_TWO_ROW_ITEM_THUMBNAIL_ASPECT_RATIO_SQUARE",
+         "title": {
+          "runs": [
+           {
+            "text": "Unloveu",
+            "navigationEndpoint": {
+             "browseEndpoint": {
+              "browseId": "MPREb_qiouslh2IK6",
+              "params": "ggMvGilPTEFLNXV5X2tpb1kwamFlLS1Yc2FoTGwwQ0I5dTRjeERyOGsyX24xb4AC0gI%3D",
+              "browseEndpointContextSupportedConfigs": {
+               "browseEndpointContextMusicConfig": {
+                "pageType": "MUSIC_PAGE_TYPE_ALBUM"
+               }
+              }
+             }
+            }
+           }
+          ]
+         },
+         "subtitle": {
+          "runs": [
+           {
+            "text": "Single"
+           },
+           {
+            "text": " • "
+           },
+           {
+            "text": "KATSEYE",
+            "navigationEndpoint": {
+             "browseEndpoint": {
+              "browseId": "UCX9kfYB9t0tnd6DYUC2iuKg",
+              "params": "ggMEgALSAg%3D%3D",
+              "browseEndpointContextSupportedConfigs": {
+               "browseEndpointContextMusicConfig": {
+                "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+               }
+              }
+             }
+            }
+           }
+          ]
+         },
+         "navigationEndpoint": {
+          "browseEndpoint": {
+           "browseId": "MPREb_qiouslh2IK6",
+           "params": "ggMvGilPTEFLNXV5X2tpb1kwamFlLS1Yc2FoTGwwQ0I5dTRjeERyOGsyX24xb4AC0gI%3D",
+           "browseEndpointContextSupportedConfigs": {
+            "browseEndpointContextMusicConfig": {
+             "pageType": "MUSIC_PAGE_TYPE_ALBUM"
+            }
+           }
+          }
+         },
+         "thumbnailOverlay": {
+          "musicItemThumbnailOverlayRenderer": {
+           "content": {
+            "musicPlayButtonRenderer": {
+             "playNavigationEndpoint": {
+              "watchPlaylistEndpoint": {
+               "playlistId": "OLAK5uy_kioY0jae--XsahLl0CB9u4cxDr8k2_n1o"
+              }
+             }
+            }
+           },
+           "contentPosition": "MUSIC_ITEM_THUMBNAIL_OVERLAY_CONTENT_POSITION_BOTTOM_RIGHT",
+           "displayStyle": "MUSIC_ITEM_THUMBNAIL_OVERLAY_DISPLAY_STYLE_HOVER"
+          }
+         }
+        }
+       },
+       {
+        "musicTwoRowItemRenderer": {
+         "thumbnailRenderer": {
+          "musicThumbnailRenderer": {
+           "thumbnail": {
+            "thumbnails": [
+             {
+              "url": "https://yt3.googleusercontent.com/c63RvqEc13t6Lc7UrTSgPMpzhFMJUjr6fLjJlQKiOzqYxwsx-rd0VYu6jXYky4gmM8S5BWNLM4TqKsgb=w226-h226-l90-rj",
+              "width": 226,
+              "height": 226
+             },
+             {
+              "url": "https://yt3.googleusercontent.com/c63RvqEc13t6Lc7UrTSgPMpzhFMJUjr6fLjJlQKiOzqYxwsx-rd0VYu6jXYky4gmM8S5BWNLM4TqKsgb=w544-h544-l90-rj",
+              "width": 544,
+              "height": 544
+             }
+            ]
+           }
+          }
+         },
+         "aspectRatio": "MUSIC_TWO_ROW_ITEM_THUMBNAIL_ASPECT_RATIO_SQUARE",
+         "title": {
+          "runs": [
+           {
+            "text": "It's All Lies, Darling",
+            "navigationEndpoint": {
+             "browseEndpoint": {
+              "browseId": "MPREb_7rMWMZ7uiOe",
+              "params": "ggMvGilPTEFLNXV5X2xnV3BKdHItOVNOVkRZVm5YOUd2SlRBM2QzbEJ6Z0V3b4AC0gI%3D",
+              "browseEndpointContextSupportedConfigs": {
+               "browseEndpointContextMusicConfig": {
+                "pageType": "MUSIC_PAGE_TYPE_ALBUM"
+               }
+              }
+             }
+            }
+           }
+          ]
+         },
+         "subtitle": {
+          "runs": [
+           {
+            "text": "Single"
+           },
+           {
+            "text": " • "
+           },
+           {
+            "text": "Ash Reed Music",
+            "navigationEndpoint": {
+             "browseEndpoint": {
+              "browseId": "UCdXJLWIt5-BQHazS3Y6eH4A",
+              "params": "ggMEgALSAg%3D%3D",
+              "browseEndpointContextSupportedConfigs": {
+               "browseEndpointContextMusicConfig": {
+                "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+               }
+              }
+             }
+            }
+           }
+          ]
+         },
+         "navigationEndpoint": {
+          "browseEndpoint": {
+           "browseId": "MPREb_7rMWMZ7uiOe",
+           "params": "ggMvGilPTEFLNXV5X2xnV3BKdHItOVNOVkRZVm5YOUd2SlRBM2QzbEJ6Z0V3b4AC0gI%3D",
+           "browseEndpointContextSupportedConfigs": {
+            "browseEndpointContextMusicConfig": {
+             "pageType": "MUSIC_PAGE_TYPE_ALBUM"
+            }
+           }
+          }
+         },
+         "thumbnailOverlay": {
+          "musicItemThumbnailOverlayRenderer": {
+           "content": {
+            "musicPlayButtonRenderer": {
+             "playNavigationEndpoint": {
+              "watchPlaylistEndpoint": {
+               "playlistId": "OLAK5uy_lgWpJtr-9SNVDYVnX9GvJTA3d3lBzgEwo"
+              }
+             }
+            }
+           },
+           "contentPosition": "MUSIC_ITEM_THUMBNAIL_OVERLAY_CONTENT_POSITION_BOTTOM_RIGHT",
+           "displayStyle": "MUSIC_ITEM_THUMBNAIL_OVERLAY_DISPLAY_STYLE_HOVER"
+          }
+         }
+        }
+       },
+       {
+        "musicTwoRowItemRenderer": {
+         "thumbnailRenderer": {
+          "musicThumbnailRenderer": {
+           "thumbnail": {
+            "thumbnails": [
+             {
+              "url": "https://yt3.googleusercontent.com/mMVnHxRiqyOBPUr-IZGCVgbqokqh4lnItPxvJtZrYEUFI8NMn4m5Rchxv3cv--ofuZZOUx4H196lXUM=w226-h226-l90-rj",
+              "width": 226,
+              "height": 226
+             },
+             {
+              "url": "https://yt3.googleusercontent.com/mMVnHxRiqyOBPUr-IZGCVgbqokqh4lnItPxvJtZrYEUFI8NMn4m5Rchxv3cv--ofuZZOUx4H196lXUM=w544-h544-l90-rj",
+              "width": 544,
+              "height": 544
+             }
+            ]
+           }
+          }
+         },
+         "aspectRatio": "MUSIC_TWO_ROW_ITEM_THUMBNAIL_ASPECT_RATIO_SQUARE",
+         "title": {
+          "runs": [
+           {
+            "text": "ARIGATO",
+            "navigationEndpoint": {
+             "browseEndpoint": {
+              "browseId": "MPREb_9PjretjcOW3",
+              "params": "ggMvGilPTEFLNXV5X213QlptSUg2NTM2Zm5pWEtCWEFhR0RUVG8tZ05YZ1UxNIAC0gI%3D",
+              "browseEndpointContextSupportedConfigs": {
+               "browseEndpointContextMusicConfig": {
+                "pageType": "MUSIC_PAGE_TYPE_ALBUM"
+               }
+              }
+             }
+            }
+           }
+          ]
+         },
+         "subtitle": {
+          "runs": [
+           {
+            "text": "Single"
+           },
+           {
+            "text": " • "
+           },
+           {
+            "text": "Los Dareyes De La Sierra",
+            "navigationEndpoint": {
+             "browseEndpoint": {
+              "browseId": "UCDB1S6gqvv0wfPoqlX8ubGA",
+              "params": "ggMEgALSAg%3D%3D",
+              "browseEndpointContextSupportedConfigs": {
+               "browseEndpointContextMusicConfig": {
+                "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+               }
+              }
+             }
+            }
+           },
+           {
+            "text": " & "
+           },
+           {
+            "text": "Raúl Castro",
+            "navigationEndpoint": {
+             "browseEndpoint": {
+              "browseId": "UC5mwe2Ct31j1oCqzXiLTjzw",
+              "params": "ggMEgALSAg%3D%3D",
+              "browseEndpointContextSupportedConfigs": {
+               "browseEndpointContextMusicConfig": {
+                "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+               }
+              }
+             }
+            }
+           }
+          ]
+         },
+         "navigationEndpoint": {
+          "browseEndpoint": {
+           "browseId": "MPREb_9PjretjcOW3",
+           "params": "ggMvGilPTEFLNXV5X213QlptSUg2NTM2Zm5pWEtCWEFhR0RUVG8tZ05YZ1UxNIAC0gI%3D",
+           "browseEndpointContextSupportedConfigs": {
+            "browseEndpointContextMusicConfig": {
+             "pageType": "MUSIC_PAGE_TYPE_ALBUM"
+            }
+           }
+          }
+         },
+         "thumbnailOverlay": {
+          "musicItemThumbnailOverlayRenderer": {
+           "content": {
+            "musicPlayButtonRenderer": {
+             "playNavigationEndpoint": {
+              "watchPlaylistEndpoint": {
+               "playlistId": "OLAK5uy_mwBZmIH6536fniXKBXAaGDTTo-gNXgU14"
+              }
+             }
+            }
+           },
+           "contentPosition": "MUSIC_ITEM_THUMBNAIL_OVERLAY_CONTENT_POSITION_BOTTOM_RIGHT",
+           "displayStyle": "MUSIC_ITEM_THUMBNAIL_OVERLAY_DISPLAY_STYLE_HOVER"
+          }
+         }
+        }
+       }
+      ],
+      "itemSize": "COLLECTION_STYLE_ITEM_SIZE_MEDIUM",
+      "shelfId": "63876780-3995-4294-a7e4-5507da102169"
+     }
+    }
+   ],
+   "continuations": [
+    {
+     "nextContinuationData": {
+      "continuation": "4qmFsgKhAhIMRkVtdXNpY19ob21lGpACQ0FsNnh3RkhTVzV3TlRWdU1IbGFZMFJYYjBWQ1EyNDRTMHBJYkRCWU0wSm9XakpXWm1NeU5XaGpTRTV2WWpOU1ptSllWbnBoVjA1bVkwZEdibHBXT1hsYVYyUndZakkxYUdKQ1NXWlplbEYwVm01Q2FXUnVTa0pVYXpGYVZWVndWVlpHWjNSU1JsSjVUMVZXTTFOdE9YaFlNRnBUWW5odk1sUllWbnBoVjA1RllWaE9hbUl6V214amJteFJXVmRrYkZVeVZubGtiV3hxV2xNeFNGcFlVa2xpTWpGc1ZVZEdibHBSUVVKQlIxWjFRVUZHU0ZGblFVSldWazFCUVZGRlJDMXdla2gyVVd0RFEwRnY%3D"
+     }
+    }
+   ]
+  }
+ }
+}

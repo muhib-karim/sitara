@@ -69,6 +69,18 @@ class NetworkSmokeTest {
         assertTrue(chart.tracks.size >= 10, "only ${chart.tracks.size} songs in ${chart.label}")
     }
 
+    @Test
+    fun `YouTube Music Home has shelves and continues with more of them`() = runBlocking {
+        val source = YouTubeMusicSource()
+        val home = source.home()
+        home.shelves.forEach { println("home -> ${it.title} (${it.layout}, ${it.items.size} items)") }
+        println("home chips -> ${home.chips.joinToString { it.title }}")
+        assertTrue(home.shelves.isNotEmpty())
+        val more = source.moreHome(home.continuation ?: return@runBlocking)
+        more.shelves.forEach { println("home more -> ${it.title} (${it.layout}, ${it.items.size} items)") }
+        assertTrue(more.shelves.isNotEmpty(), "the continuation brought no shelves")
+    }
+
     private inline fun <T> unlessBotChecked(block: () -> T): T = try {
         block()
     } catch (e: SignInConfirmNotBotException) {

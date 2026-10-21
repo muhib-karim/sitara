@@ -3,20 +3,29 @@ package app.sitara.music.source.youtube
 import app.sitara.music.core.model.Album
 import app.sitara.music.core.model.ArtistPage
 import app.sitara.music.core.model.Chart
+import app.sitara.music.core.model.HomePage
+import app.sitara.music.core.model.MoodChip
 import app.sitara.music.core.model.Playlist
 import app.sitara.music.core.model.SearchFilter
 import app.sitara.music.core.model.SearchResults
 import app.sitara.music.core.model.Track
 import app.sitara.music.source.api.BrowseSource
 import app.sitara.music.source.api.ChartsSource
+import app.sitara.music.source.api.HomeFeedSource
 import app.sitara.music.source.api.RadioSource
 import app.sitara.music.source.api.SearchSource
+import com.grack.nanojson.JsonObject
+import com.grack.nanojson.JsonParser
+import com.grack.nanojson.JsonWriter
+import java.io.IOException
+import java.net.URLEncoder
 import java.util.Locale
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.runInterruptible
 import org.schabi.newpipe.extractor.InfoItem
+import org.schabi.newpipe.extractor.NewPipe
 import org.schabi.newpipe.extractor.ServiceList
 import org.schabi.newpipe.extractor.channel.ChannelInfo
 import org.schabi.newpipe.extractor.channel.tabs.ChannelTabInfo
@@ -25,18 +34,28 @@ import org.schabi.newpipe.extractor.exceptions.UnsupportedContentInCountryExcept
 import org.schabi.newpipe.extractor.kiosk.KioskInfo
 import org.schabi.newpipe.extractor.localization.ContentCountry
 import org.schabi.newpipe.extractor.playlist.PlaylistInfo
+import org.schabi.newpipe.extractor.services.youtube.YoutubeParsingHelper.getValidJsonResponseBody
+import org.schabi.newpipe.extractor.services.youtube.YoutubeParsingHelper.getYoutubeMusicClientVersion
+import org.schabi.newpipe.extractor.services.youtube.YoutubeParsingHelper.getYoutubeMusicHeaders
 import org.schabi.newpipe.extractor.search.SearchInfo
 import org.schabi.newpipe.extractor.services.youtube.linkHandler.YoutubeSearchQueryHandlerFactory.MUSIC_SONGS
 import org.schabi.newpipe.extractor.stream.StreamInfo
 import org.schabi.newpipe.extractor.stream.StreamInfoItem
 
-/** YouTube Music search (songs, albums, artists, playlists), their pages, radio from related songs and the YouTube Charts trending list; a pasted video link resolves to that one song. */
+/**
+ * YouTube Music search (songs, albums, artists, playlists), their pages, radio from related songs, the YouTube Charts
+ * trending list and YouTube Music's own Home; a pasted video link resolves to that one song.
+ */
 class YouTubeMusicSource :
     SearchSource,
     ChartsSource,
+    HomeFeedSource,
     BrowseSource,
     RadioSource {
     private val service = ServiceList.YouTube
+
+    // YouTube answers a Home continuation only for the visitor that was sent the first page.
+    @Volatile private var visitorData: String? = null
 
     override suspend fun search(query: String, filter: SearchFilter): SearchResults {
         val q = query.trim()
@@ -101,6 +120,37 @@ class YouTubeMusicSource :
         return Chart(chartLabel(country), songsFrom(info.relatedItems))
     }
 
+    /** YouTube Music's signed-out Home for the device's language and country; one with nothing the app can show is an error. */
+    override suspend fun home(chip: MoodChip?): HomePage {
+        val page = musicHome(BROWSE_URL, mapOf("browseId" to HOME_BROWSE_ID) + chip?.let { mapOf("params" to it.params) }.orEmpty())
+        if (chip == null && page.shelves.isEmpty()) throw IOException("YouTube Music sent a Home with nothing to show")
+        return page
+    }
+
+    override suspend fun moreHome(continuation: String): HomePage {
+        val token = URLEncoder.encode(continuation, Charsets.UTF_8)
+        return musicHome("$BROWSE_URL&ctoken=$token&continuation=$token&type=next", emptyMap())
+    }
+
+    private suspend fun musicHome(url: String, fields: Map<String, String>): HomePage {
+        val locale = Locale.getDefault()
+        val response = io {
+            val client = JsonObject.builder().`object`("context").`object`("client")
+                .value("clientName", "WEB_REMIX")
+                .value("clientVersion", getYoutubeMusicClientVersion())
+                .value("hl", locale.language.ifEmpty { "en" })
+                .value("gl", locale.country.ifEmpty { FALLBACK_COUNTRY })
+            visitorData?.let { client.value("visitorData", it) }
+            val request = client.end().end()
+            fields.forEach { (name, value) -> request.value(name, value) }
+            val body = JsonWriter.string(request.done()).toByteArray()
+            val headers = getYoutubeMusicHeaders() + visitorData?.let { mapOf("X-Goog-Visitor-Id" to listOf(it)) }.orEmpty()
+            JsonParser.`object`().from(getValidJsonResponseBody(NewPipe.getDownloader().postWithContentTypeJson(url, headers, body)))
+        }
+        response.getObject("responseContext").getString("visitorData")?.let { visitorData = it }
+        return parseHomePage(response)
+    }
+
     // shortcut: stops after MAX_PLAYLIST_ITEMS so a huge playlist stays one quick load; page lazily on scroll if people hit the cap.
     private suspend fun playlistWithItems(id: String): Pair<PlaylistInfo, List<StreamInfoItem>> {
         val url = "https://www.youtube.com/playlist?list=$id"
@@ -129,5 +179,7 @@ class YouTubeMusicSource :
         const val MAX_PLAYLIST_ITEMS = 500
         const val TRENDING_MUSIC_KIOSK = "trending_music"
         const val FALLBACK_COUNTRY = "GB"
+        const val HOME_BROWSE_ID = "FEmusic_home"
+        const val BROWSE_URL = "https://music.youtube.com/youtubei/v1/browse?prettyPrint=false"
     }
 }
