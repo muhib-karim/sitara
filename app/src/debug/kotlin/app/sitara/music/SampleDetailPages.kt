@@ -1,11 +1,12 @@
 package app.sitara.music
 
-import app.sitara.music.core.model.Chart
+import app.sitara.music.core.model.HomePage
 import app.sitara.music.core.model.Library
 import app.sitara.music.core.model.PlaylistSummary
 import app.sitara.music.core.model.UserPlaylist
+import app.sitara.music.feature.home.FeedState
 import app.sitara.music.feature.home.HomeFeed
-import app.sitara.music.feature.home.TrendingState
+import app.sitara.music.feature.home.OnlineHome
 import app.sitara.music.feature.home.homeFeed
 import app.sitara.music.feature.library.DetailState
 import app.sitara.music.feature.library.SavedLibrary
@@ -42,5 +43,6 @@ internal fun sampleSavedLibrary(sample: Library) = SavedLibrary(
     artists = sample.artists,
 )
 
-/** Debug and test fixture: Home for a listener with [saved] in their library, under [chart]. */
-internal fun sampleHomeFeed(chart: Chart, saved: SavedLibrary): HomeFeed = homeFeed(TrendingState.Ready(chart), saved.recent, saved.liked, saved.playlists, saved.albums)
+/** Debug and test fixture: Home with the sample feed [page] for a listener with [saved] in their library. */
+internal fun sampleHomeFeed(page: HomePage, saved: SavedLibrary): HomeFeed =
+    homeFeed(OnlineHome(page.chips, FeedState.Ready(page.shelves, page.continuation)), saved.recent, saved.liked, saved.playlists, saved.albums)

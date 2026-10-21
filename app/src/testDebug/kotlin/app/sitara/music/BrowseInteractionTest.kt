@@ -40,6 +40,7 @@ import app.sitara.music.core.model.Album
 import app.sitara.music.core.model.Chart
 import app.sitara.music.core.model.DarkMode
 import app.sitara.music.core.model.DownloadState
+import app.sitara.music.core.model.MoodChip
 import app.sitara.music.core.model.PlaylistSummary
 import app.sitara.music.core.model.SearchFilter
 import app.sitara.music.core.model.SearchResults
@@ -47,7 +48,10 @@ import app.sitara.music.core.model.SitaraSettings
 import app.sitara.music.core.model.SongDownload
 import app.sitara.music.core.model.ThemeMode
 import app.sitara.music.core.model.Track
+import app.sitara.music.feature.home.FeedState
+import app.sitara.music.feature.home.HomeActions
 import app.sitara.music.feature.home.HomeFeed
+import app.sitara.music.feature.home.OnlineHome
 import app.sitara.music.feature.home.TrendingState
 import app.sitara.music.feature.library.DetailState
 import app.sitara.music.feature.library.LibraryActions
@@ -78,6 +82,7 @@ class BrowseInteractionTest {
     private val source = FakeMusicSource()
     private val library = runBlocking { source.library() }
     private val chart = runBlocking { source.trending() }
+    private val homePage = runBlocking { source.home() }
 
     private fun render(
         tab: Tab = Tab.HOME,
@@ -96,8 +101,8 @@ class BrowseInteractionTest {
         onShuffle: (List<Track>) -> Unit = {},
         onFilter: (SearchFilter) -> Unit = {},
         initialDetail: DetailRoute? = null,
-        home: HomeFeed = sampleHomeFeed(chart, (saved as? LibraryState.Ready)?.library ?: sampleSavedLibrary(library)),
-        onRetryTrending: () -> Unit = {},
+        home: HomeFeed = sampleHomeFeed(homePage, (saved as? LibraryState.Ready)?.library ?: sampleSavedLibrary(library)),
+        homeActions: HomeActions = HomeActions.None,
         downloads: List<SongDownload> = emptyList(),
         onRemoveAllDownloads: () -> Unit = {},
     ): StateRestorationTester {
@@ -111,10 +116,10 @@ class BrowseInteractionTest {
                     settings, home, saved, query, filter, search,
                     PlayerUiState(track = SampleCatalog.tracks.first()), actions, details,
                     onQueryChange = { query = it; onQuery(it) }, onSearchFilterChange = { filter = it; onFilter(it) },
-                    onRetrySearch = onRetrySearch, onRetryTrending = onRetryTrending, onPlay = onPlay, onShuffle = onShuffle,
+                    onRetrySearch = onRetrySearch, onPlay = onPlay, onShuffle = onShuffle,
                     onSettingsChange = { settings = it; onSettings(it) }, initialTab = tab, initialDetail = initialDetail,
                     savedIds = savedIds, playlists = (saved as? LibraryState.Ready)?.library?.playlists.orEmpty(), libraryActions = libraryActions,
-                    downloads = downloads, onRemoveAllDownloads = onRemoveAllDownloads,
+                    downloads = downloads, onRemoveAllDownloads = onRemoveAllDownloads, homeActions = homeActions,
                 )
             }
         }
@@ -230,7 +235,7 @@ class BrowseInteractionTest {
             SitaraShell(
                 SitaraSettings(darkMode = DarkMode.DARK, reducedMotion = true), HomeFeed(), LibraryState.Loading, "", SearchFilter.SONGS, SearchState.Idle,
                 PlayerUiState(), PlayerActions.None, FixedPage(DetailState.AlbumReady(album)),
-                onQueryChange = {}, onSearchFilterChange = {}, onRetrySearch = {}, onRetryTrending = {}, onPlay = { _, _ -> }, onShuffle = {},
+                onQueryChange = {}, onSearchFilterChange = {}, onRetrySearch = {}, onPlay = { _, _ -> }, onShuffle = {},
                 onSettingsChange = {}, initialDetail = DetailRoute.Album(album.id), savedIds = ids, libraryActions = actions,
             )
         }
@@ -420,7 +425,7 @@ class BrowseInteractionTest {
         var queue = emptyList<Track>()
         render(onPlay = { tracks, selected -> queue = tracks; index = selected })
         compose.onNodeWithTag("quick-picks").performTouchInput { swipeLeft() }
-        val picks = chart.tracks
+        val picks = SampleCatalog.tracks
         compose.onNodeWithContentDescription("${picks[4].title} by ${picks[4].artist}").performClick()
         assertEquals(picks, queue)
         assertEquals(4, index)
@@ -480,9 +485,9 @@ class BrowseInteractionTest {
 
     @Test fun lastHomeRailScrollsAboveTheDockAtLargeText() {
         render(fontScale = 2f)
-        // Title, the trending heading and chart, then a heading and a rail for each of the three library shelves.
-        compose.onNodeWithTag("home-content").performScrollToIndex(8)
-        val rail = compose.onNodeWithTag("rail-likes").fetchSemanticsNode().boundsInRoot
+        // Title, chips, Quick picks, the three library shelves, then three more feed shelves: a heading and a rail each.
+        compose.onNodeWithTag("home-content").performScrollToIndex(15)
+        val rail = compose.onNodeWithTag("rail-feed-3").fetchSemanticsNode().boundsInRoot
         val dock = compose.onNodeWithTag("playback-dock").fetchSemanticsNode().boundsInRoot
         assertTrue("The final rail must clear the entire playback dock", rail.bottom <= dock.top)
     }
@@ -506,19 +511,54 @@ class BrowseInteractionTest {
         compose.onNode(libraryTab).assertIsDisplayed()
     }
 
-    @Test fun failedChartOffersTryAgain() {
+    @Test fun aFailedFeedOffersTryAgainAndKeepsTheChartAndTheListenersShelves() {
         var retries = 0
-        render(home = HomeFeed(TrendingState.Failed), onRetryTrending = { retries++ })
-        compose.onNodeWithText("The charts didn’t load. Check your connection, then try again.").assertIsDisplayed()
+        val saved = sampleSavedLibrary(library)
+        val offline = sampleHomeFeed(homePage, saved).copy(online = OnlineHome(feed = FeedState.Failed, trending = TrendingState.Ready(chart)))
+        render(home = offline, homeActions = object : HomeActions by HomeActions.None {
+            override fun retryHome() { retries++ }
+        })
+        compose.onNodeWithText("Home didn’t load").assertIsDisplayed()
+        compose.onNodeWithText("Trending now").assertIsDisplayed()
         compose.onNodeWithText("Try again").performClick()
         assertEquals(1, retries)
+        compose.onNodeWithTag("home-content").performScrollToNode(hasTestTag("rail-recent"))
+        compose.onNodeWithText("Listen again").assertIsDisplayed()
     }
 
-    @Test fun freshInstallHomeSaysHowItFillsUp() {
-        render(home = HomeFeed(TrendingState.Ready(Chart("YouTube Charts · Iceland", emptyList())), libraryLoaded = true))
+    @Test fun freshInstallOfflineHomeSaysHowItFillsUp() {
+        render(home = HomeFeed(OnlineHome(feed = FeedState.Failed, trending = TrendingState.Ready(Chart("YouTube Charts · Iceland", emptyList()))), libraryLoaded = true))
         compose.onNodeWithText("Nothing is charting here right now.").assertIsDisplayed()
         compose.onNodeWithText("Make Home yours").assertIsDisplayed()
-        compose.onNodeWithText("Recently played").assertDoesNotExist()
+        compose.onNodeWithText("Listen again").assertDoesNotExist()
+    }
+
+    @Test fun homeWhileLoadingIsOneLoadingAnnouncementInTheRealLayout() {
+        render(home = HomeFeed())
+        compose.onNodeWithContentDescription("Loading Home").assertIsDisplayed()
+        compose.onAllNodesWithContentDescription("Loading Home").assertCountEquals(1)
+    }
+
+    @Test fun moodChipsAskForTheirFilter() {
+        val asked = mutableListOf<MoodChip>()
+        render(homeActions = object : HomeActions by HomeActions.None {
+            override fun selectMood(chip: MoodChip) { asked += chip }
+        })
+        compose.onNode(hasText("Focus") and hasAnyAncestor(hasTestTag("mood-chips"))).performClick()
+        assertEquals(listOf("Focus"), asked.map { it.title })
+    }
+
+    @Test fun feedCardsAndMoreOpenTheirPages() {
+        val playlist = SampleCatalog.playlists[1]
+        render()
+        compose.onNodeWithTag("home-content").performScrollToNode(hasTestTag("rail-feed-2"))
+        compose.onNode(hasText(playlist.title) and hasAnyAncestor(hasTestTag("rail-feed-2"))).performSemanticsAction(SemanticsActions.OnClick)
+        compose.onNodeWithText(playlist.description).assertIsDisplayed()
+        compose.onNodeWithContentDescription("Back").performClick()
+
+        compose.onNodeWithTag("home-content").performScrollToNode(hasContentDescription("More from Mixed for you"))
+        compose.onNodeWithContentDescription("More from Mixed for you").performClick()
+        compose.onNodeWithText(SampleCatalog.playlists.first().description).assertIsDisplayed()
     }
 
     @Test fun homeShelvesPlayAndOpenWhatTheyShow() {
@@ -526,14 +566,14 @@ class BrowseInteractionTest {
         var index = -1
         val saved = sampleSavedLibrary(library)
         render(onPlay = { tracks, selected -> queue = tracks; index = selected })
-        compose.onNodeWithText(chart.label).assertIsDisplayed()
+        compose.onNodeWithText("Quick picks").assertIsDisplayed()
 
-        compose.onNodeWithTag("home-content").performScrollToIndex(4)
+        compose.onNodeWithTag("home-content").performScrollToIndex(5)
         compose.onNode(hasText(saved.recent[1].title) and hasAnyAncestor(hasTestTag("rail-recent"))).performSemanticsAction(SemanticsActions.OnClick)
         assertEquals(saved.recent, queue)
         assertEquals(1, index)
 
-        compose.onNodeWithTag("home-content").performScrollToIndex(6)
+        compose.onNodeWithTag("home-content").performScrollToIndex(9)
         compose.onNode(hasText(saved.playlists.first().name) and hasAnyAncestor(hasTestTag("rail-jump"))).performSemanticsAction(SemanticsActions.OnClick)
         compose.onNodeWithText("Your playlist").assertIsDisplayed()
     }

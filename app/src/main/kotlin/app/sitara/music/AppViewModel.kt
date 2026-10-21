@@ -21,8 +21,9 @@ import app.sitara.music.core.player.QueueState
 import app.sitara.music.core.player.SleepTimerState
 import app.sitara.music.core.player.hasSystemEqualiser
 import app.sitara.music.core.player.systemEqualiserPanel
+import app.sitara.music.feature.home.HomeActions
 import app.sitara.music.feature.home.HomeFeed
-import app.sitara.music.feature.home.TrendingState
+import app.sitara.music.feature.home.OnlineHomeLoader
 import app.sitara.music.feature.home.homeFeed
 import app.sitara.music.feature.library.DetailState
 import app.sitara.music.feature.library.LibraryActions
@@ -68,7 +69,10 @@ class AppViewModel(private val app: SitaraApplication) :
     DetailPages {
     private val player = app.player
 
-    private val trending = MutableStateFlow<TrendingState>(TrendingState.Loading)
+    private val onlineHome = OnlineHomeLoader(viewModelScope, { app.youtube.home(it) }, app.youtube::moreHome, app.youtube::trending)
+
+    /** Mood chips, more shelves and Try again on Home. */
+    val homeActions: HomeActions = onlineHome
     val query = MutableStateFlow("")
     val searchFilter = MutableStateFlow(SearchFilter.SONGS)
     private val searchRetries = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
@@ -112,11 +116,11 @@ class AppViewModel(private val app: SitaraApplication) :
         .catch<LibraryState> { emit(LibraryState.Failed) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), LibraryState.Loading)
 
-    val home: StateFlow<HomeFeed> = combine(trending, library) { chart, saved ->
+    val home: StateFlow<HomeFeed> = combine(onlineHome.state, library) { online, saved ->
         if (saved is LibraryState.Ready) {
-            saved.library.run { homeFeed(chart, recent, liked, playlists, albums) }
+            saved.library.run { homeFeed(online, recent, liked, playlists, albums) }
         } else {
-            HomeFeed(chart)
+            HomeFeed(online)
         }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HomeFeed())
 
@@ -165,7 +169,6 @@ class AppViewModel(private val app: SitaraApplication) :
 
     init {
         player.connect()
-        loadTrending()
         viewModelScope.launch { search.collect { playSharedSongIfResolved(it) } }
         val queue = player.state.map { it.queue }
         viewModelScope.launch { queue.distinctUntilChangedBy { it.currentEntry?.uid }.collect { radio.value = RadioStatus.READY } }
@@ -207,23 +210,6 @@ class AppViewModel(private val app: SitaraApplication) :
     }
 
     private suspend fun <T : Any> browse(page: suspend BrowseSource.() -> T?): T = app.youtube.page() ?: throw NoSuchElementException("No catalogue has this page")
-
-    fun retryTrending() {
-        if (trending.value == TrendingState.Failed) loadTrending()
-    }
-
-    private fun loadTrending() {
-        viewModelScope.launch {
-            trending.value = TrendingState.Loading
-            trending.value = try {
-                TrendingState.Ready(app.youtube.trending())
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                TrendingState.Failed
-            }
-        }
-    }
 
     private suspend fun lookUpLyrics(track: Track): LyricsState = try {
         app.lyrics.lyrics(track)?.let(LyricsState::Found) ?: LyricsState.NotFound

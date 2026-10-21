@@ -53,7 +53,7 @@ private fun CaptureScreen(screen: String, dark: Boolean, reduced: Boolean) {
     val source = remember { FakeMusicSource() }
     val catalog by produceState<CaptureCatalog?>(null, source) {
         val saved = sampleSavedLibrary(source.library())
-        value = CaptureCatalog(sampleHomeFeed(source.trending(), saved), saved, source.lyrics(SampleCatalog.tracks.first())!!)
+        value = CaptureCatalog(sampleHomeFeed(source.home(), saved), saved, source.lyrics(SampleCatalog.tracks.first())!!)
     }
     val ready = catalog ?: return
     val player = remember(ready) { DemoPlayer(SampleCatalog.tracks, ready.lyrics) }
@@ -76,7 +76,6 @@ private fun CaptureScreen(screen: String, dark: Boolean, reduced: Boolean) {
             onQueryChange = { query = it },
             onSearchFilterChange = { filter = it },
             onRetrySearch = {},
-            onRetryTrending = {},
             onPlay = player::play,
             onShuffle = { player.play(it.shuffled(), 0) },
             onSettingsChange = { settings = it },

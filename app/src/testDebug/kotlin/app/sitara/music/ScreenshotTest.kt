@@ -33,7 +33,9 @@ import app.sitara.music.core.model.SitaraSettings
 import app.sitara.music.core.model.SongDownload
 import app.sitara.music.core.model.ThemeMode
 import app.sitara.music.core.model.UserPlaylist
+import app.sitara.music.feature.home.FeedState
 import app.sitara.music.feature.home.HomeFeed
+import app.sitara.music.feature.home.OnlineHome
 import app.sitara.music.feature.home.TrendingState
 import app.sitara.music.feature.library.AddToPlaylist
 import app.sitara.music.feature.library.DetailState
@@ -86,7 +88,8 @@ class ScreenshotTest {
 
     private val source = FakeMusicSource()
     private val library: Library = runBlocking { source.library() }
-    private val home = sampleHomeFeed(runBlocking { source.trending() }, sampleSavedLibrary(library))
+    private val home = sampleHomeFeed(runBlocking { source.home() }, sampleSavedLibrary(library))
+    private val offline = home.copy(online = OnlineHome(feed = FeedState.Failed, trending = TrendingState.Ready(runBlocking { source.trending() })))
     private val track = SampleCatalog.tracks.first()
     private val sampleLyrics = runBlocking { source.lyrics(track)!! }
     private val playing = PlayerUiState(
@@ -143,7 +146,6 @@ class ScreenshotTest {
                     onQueryChange = {},
                     onSearchFilterChange = {},
                     onRetrySearch = {},
-                    onRetryTrending = {},
                     onPlay = { _, _ -> },
                     onShuffle = {},
                     onSettingsChange = {},
@@ -230,14 +232,29 @@ class ScreenshotTest {
         compose.onNodeWithTag("quick-picks").performTouchInput { swipeLeft() }
     }
 
-    @Test fun homeLoading() = shot("home_loading", dark = true, playerState = PlayerUiState(), homeFeed = HomeFeed())
+    @Test fun homeLoadingDark() = shot("home_loading", dark = true, playerState = PlayerUiState(), homeFeed = HomeFeed())
 
-    @Test fun homeChartFailed() = shot("home_chart_failed", dark = true, homeFeed = home.copy(trending = TrendingState.Failed))
+    @Test fun homeLoadingLight() = shot("home_loading", dark = false, playerState = PlayerUiState(), homeFeed = HomeFeed())
 
-    @Test fun homeFreshInstall() = shot("home_fresh", dark = true, playerState = PlayerUiState(), homeFeed = HomeFeed(home.trending, libraryLoaded = true))
+    @Test fun homeOfflineDark() = shot("home_offline", dark = true, homeFeed = offline)
+
+    @Test fun homeOfflineLight() = shot("home_offline", dark = false, homeFeed = offline)
+
+    @Test fun homeOfflineWithoutChart() = shot("home_offline_no_chart", dark = true, homeFeed = offline.copy(online = offline.online.copy(trending = TrendingState.Failed)))
+
+    @Test fun homeMoodSelected() = shot(
+        "home_mood", dark = true,
+        homeFeed = sampleHomeFeed(runBlocking { source.home(home.online.chips.first()) }, sampleSavedLibrary(library)),
+    )
+
+    @Test fun homeFreshInstall() = shot("home_fresh", dark = true, playerState = PlayerUiState(), homeFeed = HomeFeed(home.online, libraryLoaded = true))
+
+    @Test fun homeFeedShelves() = shot("home_shelves", dark = true) {
+        compose.onNodeWithTag("home-content").performScrollToIndex(10)
+    }
 
     @Test fun homeBottomLargeText() = shot("home_bottom_large_text", dark = true, fontScale = 2f) {
-        compose.onNodeWithTag("home-content").performScrollToIndex(8)
+        compose.onNodeWithTag("home-content").performScrollToIndex(15)
     }
 
     @Test fun libraryEmpty() = shot("library_empty", dark = true, tab = Tab.LIBRARY, saved = LibraryState.Ready(SavedLibrary(emptyList(), emptyList(), emptyList(), emptyList(), emptyList())))

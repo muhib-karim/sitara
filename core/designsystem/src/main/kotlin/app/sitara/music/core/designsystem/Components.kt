@@ -24,10 +24,23 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import app.sitara.music.core.model.Track
 
+/** A section title with optional quiet supporting text and, at its end, an optional [action] such as a "More" button. */
 @Composable
-fun SectionHeader(title: String, modifier: Modifier = Modifier, subtitle: String? = null) {
-    // The title leads; an optional subtitle follows as quiet supporting text, never as a label above it.
-    Column(modifier.padding(horizontal = 20.dp, vertical = 8.dp)) {
+fun SectionHeader(title: String, modifier: Modifier = Modifier, subtitle: String? = null, action: (@Composable () -> Unit)? = null) {
+    if (action == null) {
+        SectionTitle(title, subtitle, modifier.padding(horizontal = 20.dp, vertical = 8.dp))
+    } else {
+        Row(modifier.padding(start = 20.dp, end = 8.dp, top = 8.dp, bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
+            SectionTitle(title, subtitle, Modifier.weight(1f))
+            action()
+        }
+    }
+}
+
+// The title leads; an optional subtitle follows as quiet supporting text, never as a label above it.
+@Composable
+private fun SectionTitle(title: String, subtitle: String?, modifier: Modifier) {
+    Column(modifier) {
         Text(title, style = SectionStyle, color = MaterialTheme.colorScheme.onBackground)
         if (subtitle != null) {
             Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)

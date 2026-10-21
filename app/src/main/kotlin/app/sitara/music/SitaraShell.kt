@@ -59,9 +59,11 @@ import app.sitara.music.core.model.Album
 import app.sitara.music.core.model.Artist
 import app.sitara.music.core.model.PlaylistSummary
 import app.sitara.music.core.model.SearchFilter
+import app.sitara.music.core.model.ShelfLink
 import app.sitara.music.core.model.SitaraSettings
 import app.sitara.music.core.model.SongDownload
 import app.sitara.music.core.model.Track
+import app.sitara.music.feature.home.HomeActions
 import app.sitara.music.feature.home.HomeFeed
 import app.sitara.music.feature.home.HomeScreen
 import app.sitara.music.feature.library.AddToPlaylist
@@ -119,7 +121,7 @@ fun SitaraRoot(vm: AppViewModel, systemReducedMotion: Boolean) {
         onQueryChange = { vm.query.value = it },
         onSearchFilterChange = { vm.searchFilter.value = it },
         onRetrySearch = vm::retrySearch,
-        onRetryTrending = vm::retryTrending,
+        homeActions = vm.homeActions,
         onPlay = vm::play,
         onShuffle = vm::shuffle,
         onSettingsChange = vm::updateSettings,
@@ -144,7 +146,6 @@ fun SitaraShell(
     onQueryChange: (String) -> Unit,
     onSearchFilterChange: (SearchFilter) -> Unit,
     onRetrySearch: () -> Unit,
-    onRetryTrending: () -> Unit,
     onPlay: (List<Track>, Int) -> Unit,
     onShuffle: (List<Track>) -> Unit,
     onSettingsChange: (SitaraSettings) -> Unit,
@@ -158,6 +159,7 @@ fun SitaraShell(
     savedIds: SavedIds = SavedIds(),
     playlists: List<PlaylistSummary> = emptyList(),
     libraryActions: LibraryActions = LibraryActions.None,
+    homeActions: HomeActions = HomeActions.None,
     downloads: List<SongDownload> = emptyList(),
     onRemoveAllDownloads: () -> Unit = {},
 ) {
@@ -229,7 +231,16 @@ fun SitaraShell(
                     } else {
                         when (tab) {
                             Tab.HOME -> HomeScreen(
-                                greetingText, home, onPlay, onRetryTrending, openAlbum, { open(DetailRoute.UserPlaylist(it.id)) }, openMenu,
+                                greetingText, home, homeActions, onPlay, openMenu, openAlbum,
+                                onPlaylist = { open(DetailRoute.Playlist(it.id)) },
+                                onArtist = openArtist,
+                                onOwnPlaylist = { open(DetailRoute.UserPlaylist(it.id)) },
+                                onShelfLink = { link ->
+                                    when (link) {
+                                        is ShelfLink.ToPlaylist -> open(DetailRoute.Playlist(link.id))
+                                        is ShelfLink.ToArtist -> open(DetailRoute.Artist(link.id))
+                                    }
+                                },
                                 contentPadding = contentPadding,
                             )
                             Tab.SEARCH -> SearchScreen(

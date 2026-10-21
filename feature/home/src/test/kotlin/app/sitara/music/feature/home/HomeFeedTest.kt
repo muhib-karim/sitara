@@ -19,7 +19,7 @@ class HomeFeedTest {
     }
 
     @Test fun fromYourLikesLeavesOutSongsAlreadyInRecentlyPlayed() {
-        val feed = homeFeed(TrendingState.Loading, recent = tracks.take(2), liked = listOf(tracks[1], tracks[3], tracks[0], tracks[4]), playlists = emptyList(), albums = emptyList())
+        val feed = homeFeed(OnlineHome(), recent = tracks.take(2), liked = listOf(tracks[1], tracks[3], tracks[0], tracks[4]), playlists = emptyList(), albums = emptyList())
 
         assertEquals(tracks.take(2), feed.recent)
         assertEquals(listOf(tracks[3], tracks[4]), feed.fromLikes)
@@ -30,7 +30,7 @@ class HomeFeedTest {
         val draft = PlaylistSummary(2, "Draft", songCount = 0, artwork = null)
         val album = Album("al", "Album", "Artist", null, art, emptyList())
 
-        val feed = homeFeed(TrendingState.Loading, emptyList(), emptyList(), playlists = listOf(road, draft), albums = listOf(album))
+        val feed = homeFeed(OnlineHome(), emptyList(), emptyList(), playlists = listOf(road, draft), albums = listOf(album))
 
         assertEquals(listOf(SavedCollection.OwnPlaylist(road), SavedCollection.SavedAlbum(album)), feed.jumpBackIn)
     }
@@ -38,7 +38,7 @@ class HomeFeedTest {
     @Test fun shelvesAreCapped() {
         val many = (0 until 40).map { Track("m$it", "Song $it", "Artist", "", 1_000, art) }
 
-        val feed = homeFeed(TrendingState.Loading, recent = many.take(30), liked = many.drop(10), playlists = emptyList(), albums = emptyList())
+        val feed = homeFeed(OnlineHome(), recent = many.take(30), liked = many.drop(10), playlists = emptyList(), albums = emptyList())
 
         assertEquals(SHELF_SIZE, feed.recent.size)
         assertEquals(many.drop(20), feed.fromLikes)
@@ -46,11 +46,11 @@ class HomeFeedTest {
 
     @Test fun onlyABuiltFeedHasReadTheLibrary() {
         assertFalse(HomeFeed().libraryLoaded)
-        assertTrue(homeFeed(TrendingState.Loading, emptyList(), emptyList(), emptyList(), emptyList()).libraryLoaded)
+        assertTrue(homeFeed(OnlineHome(), emptyList(), emptyList(), emptyList(), emptyList()).libraryLoaded)
     }
 
     @Test fun aFreshInstallHasNoLibraryShelves() {
-        assertFalse(homeFeed(TrendingState.Failed, emptyList(), emptyList(), emptyList(), emptyList()).hasLibrary)
-        assertTrue(homeFeed(TrendingState.Failed, emptyList(), liked = tracks.take(1), emptyList(), emptyList()).hasLibrary)
+        assertFalse(homeFeed(OnlineHome(feed = FeedState.Failed), emptyList(), emptyList(), emptyList(), emptyList()).hasLibrary)
+        assertTrue(homeFeed(OnlineHome(feed = FeedState.Failed), emptyList(), liked = tracks.take(1), emptyList(), emptyList()).hasLibrary)
     }
 }

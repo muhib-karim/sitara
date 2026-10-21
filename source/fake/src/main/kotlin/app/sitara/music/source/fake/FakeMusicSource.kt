@@ -3,17 +3,24 @@ package app.sitara.music.source.fake
 import app.sitara.music.core.model.Album
 import app.sitara.music.core.model.ArtistPage
 import app.sitara.music.core.model.Chart
+import app.sitara.music.core.model.HomeItem
+import app.sitara.music.core.model.HomePage
+import app.sitara.music.core.model.HomeShelf
 import app.sitara.music.core.model.Library
 import app.sitara.music.core.model.Lyrics
+import app.sitara.music.core.model.MoodChip
 import app.sitara.music.core.model.Playlist
 import app.sitara.music.core.model.SearchFilter
 import app.sitara.music.core.model.SearchResults
+import app.sitara.music.core.model.ShelfLayout
+import app.sitara.music.core.model.ShelfLink
 import app.sitara.music.core.model.Track
 import app.sitara.music.source.api.BrowseSource
 import app.sitara.music.source.api.ChartsSource
 import app.sitara.music.source.api.HealthCheck
 import app.sitara.music.source.api.HealthReport
 import app.sitara.music.source.api.HealthStatus
+import app.sitara.music.source.api.HomeFeedSource
 import app.sitara.music.source.api.LyricsProvider
 import app.sitara.music.source.api.MusicSource
 import app.sitara.music.source.api.RadioSource
@@ -25,13 +32,34 @@ import kotlinx.coroutines.delay
 /** An offline source backed by [SampleCatalog], for tests, screenshot fixtures and debug capture screens only. */
 class FakeMusicSource(
     private val latencyMs: Long = 0,
-) : MusicSource, ChartsSource, BrowseSource, RadioSource, StreamResolver, LyricsProvider, HealthCheck {
+) : MusicSource, ChartsSource, HomeFeedSource, BrowseSource, RadioSource, StreamResolver, LyricsProvider, HealthCheck {
     override val id: String = "fake"
 
     override suspend fun trending(): Chart {
         simulateLatency()
         return Chart("Sample chart", SampleCatalog.tracks)
     }
+
+    /** A Home shaped like YouTube Music's: mood chips, Quick picks, then albums, playlists and artists; a mood keeps the playlists. */
+    override suspend fun home(chip: MoodChip?): HomePage {
+        simulateLatency()
+        val playlists = HomeShelf(
+            "Mixed for you", null, ShelfLayout.CAROUSEL, SampleCatalog.playlists.map(HomeItem::PlaylistCard), ShelfLink.ToPlaylist(SampleCatalog.playlists.first().id),
+        )
+        val shelves = if (chip != null) {
+            listOf(playlists.copy(title = "${chip.title} mixes"))
+        } else {
+            listOf(
+                HomeShelf("Quick picks", null, ShelfLayout.SONG_ROWS, SampleCatalog.tracks.map(HomeItem::Song)),
+                HomeShelf("New releases", "Fresh this week", ShelfLayout.CAROUSEL, SampleCatalog.albums.map(HomeItem::AlbumCard)),
+                playlists,
+                HomeShelf("Artists you might like", null, ShelfLayout.CAROUSEL, SampleCatalog.artists.map(HomeItem::ArtistCard)),
+            )
+        }
+        return HomePage(SAMPLE_MOODS.map { MoodChip(it, "sample:$it", selected = it == chip?.title) }, shelves, continuation = null)
+    }
+
+    override suspend fun moreHome(continuation: String): HomePage = HomePage(emptyList(), emptyList(), continuation = null)
 
     override suspend fun search(query: String, filter: SearchFilter): SearchResults {
         simulateLatency()
@@ -85,3 +113,5 @@ class FakeMusicSource(
         if (latencyMs > 0) delay(latencyMs)
     }
 }
+
+private val SAMPLE_MOODS = listOf("Relax", "Energise", "Workout", "Focus", "Commute", "Sleep")

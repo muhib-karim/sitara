@@ -97,7 +97,6 @@ class PlayerInteractionTest {
                 onQueryChange = {},
                 onSearchFilterChange = {},
                 onRetrySearch = {},
-                onRetryTrending = {},
                 onPlay = { _, _ -> },
                 onShuffle = {},
                 onSettingsChange = {},

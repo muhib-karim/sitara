@@ -1,7 +1,9 @@
 package app.sitara.music.core.designsystem
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -45,6 +47,7 @@ fun SelectionPill(label: String, selected: Boolean, onClick: () -> Unit, modifie
     )
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun ArtworkTile(
     title: String,
@@ -54,9 +57,11 @@ fun ArtworkTile(
     modifier: Modifier = Modifier,
     round: Boolean = false,
     enabled: Boolean = true,
+    onLongClick: (() -> Unit)? = null,
 ) {
     Column(
-        modifier.clip(RoundedCornerShape(SitaraRadius.Tile)).clickable(enabled = enabled, role = Role.Button, onClick = onClick)
+        modifier.clip(RoundedCornerShape(SitaraRadius.Tile))
+            .combinedClickable(enabled = enabled, role = Role.Button, onClick = onClick, onLongClickLabel = onLongClick?.let { "More options" }, onLongClick = onLongClick)
             .semantics(mergeDescendants = true) {},
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {

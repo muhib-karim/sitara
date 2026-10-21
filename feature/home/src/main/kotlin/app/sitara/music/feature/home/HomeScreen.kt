@@ -1,11 +1,11 @@
 package app.sitara.music.feature.home
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -18,81 +18,176 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
 import app.sitara.music.core.designsystem.ArtworkTile
 import app.sitara.music.core.designsystem.EmptyCollectionArtwork
+import app.sitara.music.core.designsystem.GlassSurface
 import app.sitara.music.core.designsystem.LargeTitle
 import app.sitara.music.core.designsystem.PillButton
 import app.sitara.music.core.designsystem.SectionHeader
+import app.sitara.music.core.designsystem.SelectionPill
+import app.sitara.music.core.designsystem.SitaraRadius
 import app.sitara.music.core.designsystem.SitaraSpacing
 import app.sitara.music.core.designsystem.TrackRow
 import app.sitara.music.core.designsystem.byline
 import app.sitara.music.core.model.Album
+import app.sitara.music.core.model.Artist
+import app.sitara.music.core.model.HomeItem
+import app.sitara.music.core.model.HomeShelf
+import app.sitara.music.core.model.MoodChip
+import app.sitara.music.core.model.Playlist
 import app.sitara.music.core.model.PlaylistSummary
+import app.sitara.music.core.model.ShelfLayout
+import app.sitara.music.core.model.ShelfLink
 import app.sitara.music.core.model.Track
 
-/** Trending songs, then the listener's own shelves; a fresh install with nothing played says how Home fills up. */
+internal val CardWidth = 150.dp
+
+/**
+ * Mood chips, then the catalogue's shelves with the listener's own (Listen again, Your likes, Jump back in) after the
+ * first one; more shelves load as the list nears its end. When the feed fails, the trending chart and the listener's
+ * shelves stand in, so Home is never empty. A chosen mood shows only the catalogue's shelves for it.
+ */
 @Composable
 fun HomeScreen(
     greeting: String,
     feed: HomeFeed,
+    actions: HomeActions,
     onPlay: (tracks: List<Track>, index: Int) -> Unit,
-    onRetryTrending: () -> Unit,
-    onAlbum: (Album) -> Unit,
-    onPlaylist: (PlaylistSummary) -> Unit,
     onTrackMenu: (Track) -> Unit,
+    onAlbum: (Album) -> Unit,
+    onPlaylist: (Playlist) -> Unit,
+    onArtist: (Artist) -> Unit,
+    onOwnPlaylist: (PlaylistSummary) -> Unit,
+    onShelfLink: (ShelfLink) -> Unit,
     modifier: Modifier = Modifier,
     contentPadding: PaddingValues = PaddingValues(),
     listState: LazyListState = rememberLazyListState(),
 ) {
+    val online = feed.online
+    val mood = online.selectedChip
+    val ready = online.feed as? FeedState.Ready
+
+    // Keys carry the mood, so the shelves of another mood start unscrolled instead of inheriting a row's position.
+    fun LazyListScope.feedShelf(index: Int, shelf: HomeShelf) {
+        item(key = "feed-h-${mood?.title}-$index", contentType = "header") {
+            SectionHeader(
+                shelf.title, Modifier.padding(top = 12.dp), subtitle = shelf.strapline?.let(::sentenceCase),
+                action = shelf.more?.let { link -> @Composable { MoreButton(shelf.title) { onShelfLink(link) } } },
+            )
+        }
+        item(key = "feed-${mood?.title}-$index", contentType = shelf.layout) {
+            when (shelf.layout) {
+                ShelfLayout.SONG_ROWS -> QuickPicks(remember(shelf) { shelf.items.songs() }, onPlay, onTrackMenu)
+                ShelfLayout.CAROUSEL -> FeedCarousel("feed-$index", shelf.items, onPlay, onTrackMenu, onAlbum, onPlaylist, onArtist)
+            }
+        }
+    }
+
     LazyColumn(modifier.fillMaxSize().testTag("home-content"), state = listState, contentPadding = contentPadding) {
         item(key = "title") { LargeTitle(greeting) }
-        item(key = "trending-heading") {
-            SectionHeader("Trending now", subtitle = (feed.trending as? TrendingState.Ready)?.chart?.label, modifier = Modifier.padding(top = 12.dp))
+        when {
+            online.chips.isNotEmpty() -> item(key = "chips") { MoodChips(online.chips, actions::selectMood) }
+            online.feed == FeedState.Loading -> item(key = "chips-loading", contentType = "skeleton") { ChipsSkeleton() }
         }
-        item(key = "trending") {
-            when (val trending = feed.trending) {
-                TrendingState.Loading -> HomeMessage("Loading the charts…")
-                TrendingState.Failed -> Column {
-                    HomeMessage("The charts didn’t load. Check your connection, then try again.")
-                    PillButton("Try again", onRetryTrending, Modifier.padding(horizontal = SitaraSpacing.Gutter))
+        when (val state = online.feed) {
+            FeedState.Loading -> item(key = "loading", contentType = "skeleton") { RowsSkeleton(Modifier.testTag("home-loading")) }
+            FeedState.Failed -> {
+                item(key = "offline") { OfflineNotice(actions::retryHome) }
+                if (mood == null) trending(online.trending, onPlay, onTrackMenu)
+            }
+            is FeedState.Ready -> if (state.shelves.isEmpty()) {
+                item(key = "nothing") { HomeMessage("Nothing under ${mood?.title ?: "this mood"} that Sitara can play yet.") }
+            } else {
+                feedShelf(0, state.shelves.first())
+            }
+        }
+        if (mood == null) {
+            if (online.feed == FeedState.Failed && feed.libraryLoaded && !feed.hasLibrary) {
+                item(key = "welcome") {
+                    SectionHeader("Make Home yours", subtitle = "Songs you play, like and save show up here.", modifier = Modifier.padding(top = 20.dp))
                 }
-                is TrendingState.Ready ->
-                    if (trending.chart.tracks.isEmpty()) HomeMessage("Nothing is charting here right now.") else QuickPicks(trending.chart.tracks, onPlay, onTrackMenu)
             }
-        }
-        if (feed.libraryLoaded && !feed.hasLibrary) {
-            item(key = "welcome") {
-                SectionHeader("Make Home yours", subtitle = "Songs you play, like and save show up here.", modifier = Modifier.padding(top = 20.dp))
-            }
-        }
-        trackShelf("recent", "Recently played", feed.recent, onPlay)
-        if (feed.jumpBackIn.isNotEmpty()) {
-            item(key = "h-jump") { SectionHeader("Jump back in", modifier = Modifier.padding(top = 12.dp)) }
-            item(key = "r-jump") {
-                Rail("jump") {
-                    items(feed.jumpBackIn, key = { it.key }) { saved ->
-                        when (saved) {
-                            is SavedCollection.OwnPlaylist -> ArtworkTile(
-                                saved.playlist.name, songCount(saved.playlist.songCount), saved.playlist.artwork ?: EmptyCollectionArtwork,
-                                { onPlaylist(saved.playlist) }, Modifier.width(156.dp),
-                            )
-                            is SavedCollection.SavedAlbum -> ArtworkTile(saved.album.title, saved.album.byline, saved.album.artwork, { onAlbum(saved.album) }, Modifier.width(156.dp))
+            trackShelf("recent", "Listen again", feed.recent, onPlay, onTrackMenu)
+            trackShelf("likes", "Your likes", feed.fromLikes, onPlay, onTrackMenu)
+            if (feed.jumpBackIn.isNotEmpty()) {
+                item(key = "h-jump") { SectionHeader("Jump back in", modifier = Modifier.padding(top = 12.dp)) }
+                item(key = "r-jump") {
+                    Rail("jump") {
+                        items(feed.jumpBackIn, key = { it.key }) { saved ->
+                            when (saved) {
+                                is SavedCollection.OwnPlaylist -> ArtworkTile(
+                                    saved.playlist.name, songCount(saved.playlist.songCount), saved.playlist.artwork ?: EmptyCollectionArtwork,
+                                    { onOwnPlaylist(saved.playlist) }, Modifier.width(CardWidth),
+                                )
+                                is SavedCollection.SavedAlbum -> ArtworkTile(saved.album.title, saved.album.byline, saved.album.artwork, { onAlbum(saved.album) }, Modifier.width(CardWidth))
+                            }
                         }
                     }
                 }
             }
         }
-        trackShelf("likes", "From your likes", feed.fromLikes, onPlay)
+        if (online.feed == FeedState.Loading) {
+            items(2, key = { "loading-$it" }, contentType = { "skeleton" }) { CarouselSkeleton() }
+        }
+        ready?.shelves?.drop(1)?.forEachIndexed { index, shelf -> feedShelf(index + 1, shelf) }
+        if (ready != null && (ready.continuation != null || ready.paging == Paging.FAILED)) {
+            item(key = "paging", contentType = "skeleton") {
+                if (ready.paging == Paging.FAILED) {
+                    Column(Modifier.padding(top = 12.dp)) {
+                        HomeMessage("More of Home didn’t load.")
+                        PillButton("Try again", actions::loadMoreHome, Modifier.padding(horizontal = SitaraSpacing.Gutter))
+                    }
+                } else {
+                    CarouselSkeleton()
+                }
+            }
+        }
+    }
+
+    // The next page loads while the last shelves come into view, so scrolling rarely meets the placeholder.
+    val nearEnd by remember(listState) {
+        derivedStateOf { listState.layoutInfo.run { totalItemsCount > 0 && (visibleItemsInfo.lastOrNull()?.index ?: 0) >= totalItemsCount - 3 } }
+    }
+    LaunchedEffect(nearEnd, ready?.continuation, ready?.paging) {
+        if (nearEnd && ready?.continuation != null && ready.paging == Paging.IDLE) actions.loadMoreHome()
     }
 }
+
+private fun LazyListScope.trending(trending: TrendingState, onPlay: (List<Track>, Int) -> Unit, onTrackMenu: (Track) -> Unit) {
+    when (trending) {
+        TrendingState.Loading -> item(key = "trending-loading", contentType = "skeleton") { RowsSkeleton() }
+        // The notice above already says the network is not answering; a second error would repeat it.
+        TrendingState.Failed -> Unit
+        is TrendingState.Ready -> {
+            item(key = "trending-heading") { SectionHeader("Trending now", subtitle = trending.chart.label, modifier = Modifier.padding(top = 12.dp)) }
+            item(key = "trending") {
+                if (trending.chart.tracks.isEmpty()) HomeMessage("Nothing is charting here right now.") else QuickPicks(trending.chart.tracks, onPlay, onTrackMenu)
+            }
+        }
+    }
+}
+
+private fun List<HomeItem>.songs(): List<Track> = filterIsInstance<HomeItem.Song>().map { it.track }
+
+// YouTube Music writes straplines in capitals ("FOR RELAXING"); under a title they read as a quiet line instead.
+private fun sentenceCase(text: String) = text.lowercase().replaceFirstChar { it.titlecase() }
 
 private val SavedCollection.key: String get() = when (this) {
     is SavedCollection.OwnPlaylist -> "playlist-${playlist.id}"
@@ -101,14 +196,41 @@ private val SavedCollection.key: String get() = when (this) {
 
 private fun songCount(count: Int) = if (count == 1) "1 song" else "$count songs"
 
-private fun LazyListScope.trackShelf(key: String, title: String, tracks: List<Track>, onPlay: (List<Track>, Int) -> Unit) {
+private fun LazyListScope.trackShelf(key: String, title: String, tracks: List<Track>, onPlay: (List<Track>, Int) -> Unit, onTrackMenu: (Track) -> Unit) {
     if (tracks.isEmpty()) return
     item(key = "h-$key") { SectionHeader(title, modifier = Modifier.padding(top = 12.dp)) }
     item(key = "r-$key") {
         Rail(key) {
             items(tracks.size, key = { tracks[it].id }) { index ->
                 val track = tracks[index]
-                ArtworkTile(track.title, track.artist, track.artwork, { onPlay(tracks, index) }, Modifier.width(156.dp))
+                ArtworkTile(track.title, track.artist, track.artwork, { onPlay(tracks, index) }, Modifier.width(CardWidth), onLongClick = { onTrackMenu(track) })
+            }
+        }
+    }
+}
+
+@Composable
+private fun FeedCarousel(
+    key: String,
+    items: List<HomeItem>,
+    onPlay: (List<Track>, Int) -> Unit,
+    onTrackMenu: (Track) -> Unit,
+    onAlbum: (Album) -> Unit,
+    onPlaylist: (Playlist) -> Unit,
+    onArtist: (Artist) -> Unit,
+) {
+    val songs = remember(items) { items.songs() }
+    Rail(key) {
+        items(items, key = { it.id }) { item ->
+            val card = Modifier.width(CardWidth)
+            when (item) {
+                is HomeItem.Song -> ArtworkTile(
+                    item.track.title, item.track.artist, item.track.artwork, { onPlay(songs, songs.indexOf(item.track)) }, card,
+                    onLongClick = { onTrackMenu(item.track) },
+                )
+                is HomeItem.AlbumCard -> ArtworkTile(item.album.title, item.album.byline, item.album.artwork, { onAlbum(item.album) }, card)
+                is HomeItem.PlaylistCard -> ArtworkTile(item.playlist.title, item.playlist.curator, item.playlist.artwork, { onPlaylist(item.playlist) }, card)
+                is HomeItem.ArtistCard -> ArtworkTile(item.artist.name, "Artist", item.artist.artwork, { onArtist(item.artist) }, card, round = true)
             }
         }
     }
@@ -119,9 +241,48 @@ private fun Rail(key: String, content: LazyListScope.() -> Unit) {
     LazyRow(
         modifier = Modifier.testTag("rail-$key"),
         contentPadding = PaddingValues(horizontal = SitaraSpacing.Gutter, vertical = 8.dp),
-        horizontalArrangement = Arrangement.spacedBy(16.dp),
+        horizontalArrangement = Arrangement.spacedBy(CardGap),
         content = content,
     )
+}
+
+internal val CardGap = 12.dp
+
+@Composable
+private fun MoodChips(chips: List<MoodChip>, onSelect: (MoodChip) -> Unit) {
+    LazyRow(
+        modifier = Modifier.testTag("mood-chips"),
+        contentPadding = PaddingValues(horizontal = SitaraSpacing.Gutter, vertical = 8.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+    ) {
+        items(chips, key = { it.title }) { chip -> SelectionPill(chip.title, chip.selected, { onSelect(chip) }) }
+    }
+}
+
+@Composable
+private fun MoreButton(shelf: String, onClick: () -> Unit) {
+    Text(
+        "More",
+        style = MaterialTheme.typography.labelLarge,
+        color = MaterialTheme.colorScheme.primary,
+        modifier = Modifier.defaultMinSize(minWidth = SitaraSpacing.TouchTarget, minHeight = SitaraSpacing.TouchTarget).clip(CircleShape)
+            .clickable(role = Role.Button, onClick = onClick).semantics { contentDescription = "More from $shelf" }
+            .padding(horizontal = 12.dp, vertical = 14.dp),
+    )
+}
+
+@Composable
+private fun OfflineNotice(onRetry: () -> Unit) {
+    GlassSurface(Modifier.padding(horizontal = SitaraSpacing.Gutter, vertical = 8.dp).fillMaxWidth(), shape = RoundedCornerShape(SitaraRadius.Artwork)) {
+        Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+            Text("Home didn’t load", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+            Text(
+                "YouTube Music didn’t answer. Check your connection, then try again.",
+                style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Row(Modifier.padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) { PillButton("Try again", onRetry) }
+        }
+    }
 }
 
 @Composable
@@ -129,42 +290,29 @@ private fun HomeMessage(text: String) {
     Text(text, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(horizontal = SitaraSpacing.Gutter, vertical = 8.dp))
 }
 
+/** Songs four to a page, each page a column of rows; the next page peeks in at the edge, which says the shelf scrolls. */
 @Composable
 private fun QuickPicks(tracks: List<Track>, onPlay: (List<Track>, Int) -> Unit, onTrackMenu: (Track) -> Unit) {
     val pages = remember(tracks) { quickPickPages(tracks) }
     val pager = rememberPagerState { pages.size }
-    BoxWithConstraints(Modifier.fillMaxWidth()) {
-        val availableWidth = maxWidth
-        val columns = if (availableWidth / LocalDensity.current.fontScale < 320.dp) 1 else 2
-        Column {
-            HorizontalPager(state = pager, modifier = Modifier.fillMaxWidth().testTag("quick-picks")) { page ->
-                Column(Modifier.fillMaxWidth().padding(horizontal = SitaraSpacing.Gutter)) {
-                    pages[page].chunked(columns).forEachIndexed { row, pair ->
-                        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                            pair.forEachIndexed { column, track ->
-                                TrackRow(
-                                    track,
-                                    onClick = { onPlay(tracks, page * 4 + row * columns + column) },
-                                    modifier = Modifier.weight(1f),
-                                    contentPadding = PaddingValues(horizontal = 4.dp, vertical = 8.dp),
-                                    // Two columns leave no room for the button; a long press opens the same menu.
-                                    onMore = { onTrackMenu(track) },
-                                    moreButton = columns == 1,
-                                )
-                            }
-                            if (pair.size < columns) Spacer(Modifier.weight(1f))
-                        }
-                    }
-                }
-            }
-            if (pages.size > 1) {
-                Text(
-                    "${pager.currentPage + 1} / ${pages.size} · Swipe for more",
-                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    style = MaterialTheme.typography.labelSmall,
-                    modifier = Modifier.padding(horizontal = SitaraSpacing.Gutter, vertical = 8.dp),
+    HorizontalPager(
+        state = pager,
+        modifier = Modifier.fillMaxWidth().testTag("quick-picks"),
+        contentPadding = PaddingValues(start = SitaraSpacing.Gutter, end = if (pages.size > 1) PagePeek else SitaraSpacing.Gutter),
+        pageSpacing = CardGap,
+        verticalAlignment = Alignment.Top,
+    ) { page ->
+        Column(Modifier.fillMaxWidth()) {
+            pages[page].forEachIndexed { row, track ->
+                TrackRow(
+                    track,
+                    onClick = { onPlay(tracks, page * 4 + row) },
+                    contentPadding = PaddingValues(vertical = 6.dp),
+                    onMore = { onTrackMenu(track) },
                 )
             }
         }
     }
 }
+
+private val PagePeek = 48.dp
