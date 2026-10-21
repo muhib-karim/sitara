@@ -39,6 +39,9 @@ jobs:
         run: |
           export SITARA_KEYSTORE_PATH="$HOME/.android/debug.keystore"
           gradle :app:assembleRelease :app:assembleReleaseAndroidTest --stacktrace
+      # WorkManager (which runs the widget) needs this constructor; without it the widget never drew in 0.9.6.
+      - name: R8 kept WorkManager's input merger constructor
+        run: grep -A8 "^androidx.work.OverwritingInputMerger -> " app/build/outputs/mapping/release/mapping.txt | grep -q "<init>()"
       - name: Enable KVM
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules

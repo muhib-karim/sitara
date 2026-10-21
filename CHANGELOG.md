@@ -17,6 +17,10 @@ Polish slice 7: bring your music.
 - Settings → Playback: stream quality on Wi-Fi and on mobile data, each Auto (High on Wi-Fi, Normal on mobile data), High, Normal (up to 96 kbps) or Data saver (the lowest offered). Changes apply from the next song; downloads always take the best stream.
 - Now Playing shows the codec and bitrate the song streams in under the scrubber, for example "Opus · 160 kbps" (TalkBack reads it in words); it is hidden when unknown.
 
+### Fixed
+
+- The home-screen widget stayed on a loading spinner in the release build and never drew. The release build's code shrinker had removed a constructor WorkManager needs, so the background job that draws the widget never started. The widget now draws within a few seconds of being placed (Sitara with Play something, or what is playing), and the widget picker shows a true one-row picture with the play button in full instead of the two-row layout squeezed in.
+
 ## [0.9.6] - 2026-10-21
 
 Polish slice 6: everywhere the music goes.
