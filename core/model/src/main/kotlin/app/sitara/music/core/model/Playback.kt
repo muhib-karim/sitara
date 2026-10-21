@@ -29,7 +29,11 @@ enum class AudioQuality(val label: String) {
 /** The quality to stream at on the network in use: that network's setting, with Auto made concrete. */
 fun streamQuality(settings: SitaraSettings, onWifi: Boolean): AudioQuality {
     val chosen = if (onWifi) settings.wifiQuality else settings.mobileQuality
-    return if (chosen != AudioQuality.AUTO) chosen else if (onWifi) AudioQuality.HIGH else AudioQuality.NORMAL
+    return when {
+        chosen != AudioQuality.AUTO -> chosen
+        onWifi -> AudioQuality.HIGH
+        else -> AudioQuality.NORMAL
+    }
 }
 
 /** What the playing stream is, for the readout in Now Playing; [label] is null unless both are known. */

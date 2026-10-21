@@ -21,7 +21,14 @@ class FormatRecordingResolver(private val upstream: StreamResolver) : StreamReso
     val formats: StateFlow<Map<String, StreamFormat>> = recorded.asStateFlow()
 
     override suspend fun resolve(track: Track): ResolvedStream = upstream.resolve(track).also { stream ->
-        recorded.update { formats -> (formats - track.id + (track.id to StreamFormat(stream.codec, stream.bitrateKbps))).entries.toList().takeLast(MAX_FORMATS).associate { it.toPair() } }
+        recorded.update { formats ->
+            // Insertion order is lookup order: a song looked up again moves to the end, the oldest goes first.
+            LinkedHashMap(formats).apply {
+                remove(track.id)
+                put(track.id, StreamFormat(stream.codec, stream.bitrateKbps))
+                while (size > MAX_FORMATS) remove(keys.first())
+            }
+        }
     }
 
     private companion object {

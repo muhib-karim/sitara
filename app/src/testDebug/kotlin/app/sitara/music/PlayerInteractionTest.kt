@@ -485,6 +485,8 @@ class PlayerInteractionTest {
         compose.onNodeWithText("Late night").performScrollTo().performClick()
         assertEquals(listOf(EqualiserSettings().withPreset(EqualiserPreset.LATE_NIGHT)), picked)
         compose.runOnIdle { backDispatcher.onBackPressed() }
+        // Settings comes back at its top; Sound sits below Playback, so scroll to it.
+        compose.onNodeWithTag("settings-content").performScrollToNode(hasText("Normalise loudness"))
         compose.onNodeWithText("Normalise loudness").assertExists()
     }
 

@@ -28,11 +28,11 @@ class FormatRecordingResolverTest {
 
     @Test
     fun onlyTheLatestFiftySongsAreKept() = runBlocking {
-        (1..51).forEach { resolver.resolve(track(it)) }
-        assertNull(resolver.formats.value["id1"])
-        assertEquals(50, resolver.formats.value.size)
+        for (n in 1..51) resolver.resolve(track(n))
+        assertNull("the oldest song is dropped", resolver.formats.value["id1"])
+        assertEquals("fifty songs are kept", 50, resolver.formats.value.size)
         resolver.resolve(track(2))
         resolver.resolve(track(52))
-        assertEquals(StreamFormat("Opus", 160), resolver.formats.value["id2"])
+        assertEquals("a song looked up again counts as new", StreamFormat("Opus", 160), resolver.formats.value["id2"])
     }
 }
