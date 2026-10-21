@@ -109,6 +109,7 @@ class StatsInteractionTest {
         render(Tab.LIBRARY)
         openFromLibrary()
         compose.onNode(hasText("All time") and isSelectable()).performSemanticsAction(SemanticsActions.OnClick)
+        compose.waitForIdle()
         assertEquals(StatsRange.ALL_TIME, asked.last())
         stats.performScrollToNode(hasText("${sampleListeningStats(StatsRange.ALL_TIME).plays} plays"))
     }
@@ -129,7 +130,7 @@ class StatsInteractionTest {
         val artist = sampleListeningStats(StatsRange.WEEK).topArtists.first()
         stats.performScrollToNode(hasContentDescription("${artist.name},", substring = true))
         compose.onNodeWithContentDescription("${artist.name},", substring = true).performSemanticsAction(SemanticsActions.OnClick)
-        compose.onNodeWithText("Albums and singles").assertExists()
+        compose.onNodeWithTag("detail-content").performScrollToNode(hasText("Albums and singles"))
     }
 
     @Test fun theChartReadsAsASummary() {
