@@ -65,6 +65,10 @@ class SitaraApplication :
 
     override fun songGainDb(trackId: String) = library.songGain.trimDb(trackId)
 
+    override fun isLiked(trackId: String) = library.likedSongs.ids.map { trackId in it }.distinctUntilChanged()
+
+    override fun setLiked(track: Track, liked: Boolean) = writeLibrary { library.likedSongs.setLiked(track, liked) }
+
     override suspend fun savedQueue(): SavedQueue? = library.queue.load()
 
     override fun saveQueue(queue: SavedQueue) = writeLibrary { library.queue.save(queue) }

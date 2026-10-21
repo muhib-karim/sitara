@@ -47,6 +47,12 @@ interface PlaybackDependencies {
     /** The song's volume trim in dB, 0 when none is set; the player follows it while the song plays. */
     fun songGainDb(trackId: String): Flow<Int>
 
+    /** Whether the song is among the liked songs, following changes; the notification's heart shows it. */
+    fun isLiked(trackId: String): Flow<Boolean>
+
+    /** Likes or unlikes [track] from the notification; implementations hand the write off. */
+    fun setLiked(track: Track, liked: Boolean)
+
     /** The queue saved before the process last ended, or null. */
     suspend fun savedQueue(): SavedQueue?
 

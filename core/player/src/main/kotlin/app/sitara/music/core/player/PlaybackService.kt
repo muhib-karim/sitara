@@ -3,6 +3,7 @@ package app.sitara.music.core.player
 import android.content.Context
 import android.content.Intent
 import android.media.audiofx.AudioEffect
+import android.os.Bundle
 import android.os.Process
 import androidx.annotation.OptIn
 import androidx.media3.common.AudioAttributes
@@ -24,7 +25,8 @@ import androidx.media3.exoplayer.source.DefaultMediaSourceFactory
 import androidx.media3.session.MediaSession
 import androidx.media3.session.MediaSession.MediaItemsWithStartPosition
 import androidx.media3.session.MediaSessionService
-import androidx.media3.session.SessionCommands
+import androidx.media3.session.SessionCommand
+import androidx.media3.session.SessionResult
 import app.sitara.music.core.model.EqualiserSettings
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
@@ -36,6 +38,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
@@ -52,8 +55,10 @@ import kotlinx.coroutines.launch
 @OptIn(UnstableApi::class, ExperimentalCoroutinesApi::class)
 class PlaybackService : MediaSessionService() {
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Main)
-    private var session: MediaSession? = null
+    internal var session: MediaSession? = null
+        private set
     private var engine: PlaybackEngine? = null
+    private var currentLiked = false
     private lateinit var dependencies: PlaybackDependencies
 
     // The tail player has its own leveller and equaliser, the leveller started from the main one's level at each fade.
@@ -139,6 +144,17 @@ class PlaybackService : MediaSessionService() {
                 .collect { equaliser.trimDb = it }
         }
         scope.launch {
+            val liked = engine.state.map { it.queue.current?.id }.distinctUntilChanged()
+                .flatMapLatest { id -> id?.let(dependencies::isLiked) ?: flowOf(false) }
+                // A store that cannot be read shows an empty heart rather than stopping the music.
+                .catch { emit(false) }
+            val modes = engine.state.map { it.queue.shuffled to it.queue.repeatMode }.distinctUntilChanged()
+            combine(liked, modes) { isLiked, (shuffled, repeat) -> Triple(isLiked, shuffled, repeat) }.distinctUntilChanged().collect { (isLiked, shuffled, repeat) ->
+                currentLiked = isLiked
+                session?.setMediaButtonPreferences(SessionActions.buttons(isLiked, shuffled, repeat))
+            }
+        }
+        scope.launch {
             dependencies.playbackSettings.collect { settings ->
                 listOf(leveller, tailLeveller).forEach {
                     it.enabled = settings.normalisation
@@ -161,6 +177,18 @@ class PlaybackService : MediaSessionService() {
         tailEqualiser.settings = builtIn
         val playing = player.playbackState == Player.STATE_READY || player.playbackState == Player.STATE_BUFFERING
         systemEqualiser.update(equaliserChoice.systemActive(systemEqualiserAvailable) && playing, player.audioSessionId)
+    }
+
+    /** Runs a notification or lock screen button; false for anything else, or a like with nothing playing. */
+    internal fun onSessionAction(action: String): Boolean {
+        val engine = engine ?: return false
+        when (action) {
+            SessionActions.LIKE -> dependencies.setLiked(engine.state.value.queue.current ?: return false, !currentLiked)
+            SessionActions.SHUFFLE -> engine.toggleShuffle()
+            SessionActions.REPEAT -> engine.cycleRepeat()
+            else -> return false
+        }
+        return true
     }
 
     /** Puts the last queue back unless something is already queued; a store that cannot be read only costs the old queue. */
@@ -259,7 +287,7 @@ class PlaybackService : MediaSessionService() {
                     .setAvailablePlayerCommands(
                         Player.Commands.Builder().addAll(*ControllerPolicy.PLAYBACK_COMMANDS.toIntArray()).build(),
                     )
-                    .setAvailableSessionCommands(SessionCommands.EMPTY)
+                    .setAvailableSessionCommands(SessionActions.commands)
                     .build()
                 ControllerAccess.REJECT -> MediaSession.ConnectionResult.reject()
             }
@@ -286,6 +314,14 @@ class PlaybackService : MediaSessionService() {
             }
             return result
         }
+
+        override fun onCustomCommand(
+            session: MediaSession,
+            controller: MediaSession.ControllerInfo,
+            customCommand: SessionCommand,
+            args: Bundle,
+        ): ListenableFuture<SessionResult> =
+            Futures.immediateFuture(SessionResult(if (onSessionAction(customCommand.customAction)) SessionResult.RESULT_SUCCESS else SessionResult.RESULT_ERROR_NOT_SUPPORTED))
 
         /** The app queues through the engine, never through the session, so no controller may add items. */
         override fun onAddMediaItems(
