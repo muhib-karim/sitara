@@ -46,6 +46,7 @@ internal class SampleDetailPages(private val source: FakeMusicSource = FakeMusic
         is DetailRoute.Mood -> error("A mood page is a feed: see moodPage")
         DetailRoute.Stats -> error("Stats have their own state: see stats")
         DetailRoute.Import -> error("Import has its own state")
+        DetailRoute.Scrobbling -> error("Scrobbling has its own state")
     } ?: DetailState.Failed
 }
 
