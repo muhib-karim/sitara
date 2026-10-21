@@ -5,13 +5,17 @@ import app.sitara.music.core.model.Artist
 import app.sitara.music.core.model.Artwork
 import app.sitara.music.core.model.CachedLyrics
 import app.sitara.music.core.model.Listen
+import app.sitara.music.core.model.ListeningStats
 import app.sitara.music.core.model.PlayCount
 import app.sitara.music.core.model.PlaylistSummary
 import app.sitara.music.core.model.RepeatMode
 import app.sitara.music.core.model.SavedQueue
 import app.sitara.music.core.model.SongGain
+import app.sitara.music.core.model.SongTotal
+import app.sitara.music.core.model.TimedListen
 import app.sitara.music.core.model.Track
 import app.sitara.music.core.model.UserPlaylist
+import java.time.ZoneId
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
@@ -29,6 +33,10 @@ class RoomPlayHistory(private val dao: PlayHistoryDao) : PlayHistoryRepository {
     override fun recent(limit: Int): Flow<List<Track>> = dao.recent(limit).map { rows -> rows.map { it.track.toTrack() } }
 
     override val counts: Flow<List<PlayCount>> = dao.counts().map { rows -> rows.map { PlayCount(it.trackId, it.artistId, it.lastPlayedAt, it.plays) } }
+
+    override fun stats(sinceMs: Long, zone: ZoneId): Flow<ListeningStats> = combine(dao.songTotals(sinceMs), dao.listenTimes(sinceMs)) { songs, times ->
+        ListeningStats.of(songs.map { SongTotal(it.track.toTrack(), it.plays, it.listenedMs, it.lastPlayedAt) }, times.map { TimedListen(it.playedAt, it.listenedMs) }, zone)
+    }
 
     override suspend fun record(listen: Listen) = dao.record(PlayEntity(track = listen.track.toColumns(), playedAt = listen.startedAtMs, listenedMs = listen.listenedMs))
 }

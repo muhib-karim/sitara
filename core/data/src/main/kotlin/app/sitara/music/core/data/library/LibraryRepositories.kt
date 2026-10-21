@@ -4,11 +4,13 @@ import app.sitara.music.core.model.Album
 import app.sitara.music.core.model.Artist
 import app.sitara.music.core.model.CachedLyrics
 import app.sitara.music.core.model.Listen
+import app.sitara.music.core.model.ListeningStats
 import app.sitara.music.core.model.PlayCount
 import app.sitara.music.core.model.PlaylistSummary
 import app.sitara.music.core.model.SavedQueue
 import app.sitara.music.core.model.Track
 import app.sitara.music.core.model.UserPlaylist
+import java.time.ZoneId
 import kotlinx.coroutines.flow.Flow
 
 /** Songs the listener liked, newest first. */
@@ -26,6 +28,9 @@ interface PlayHistoryRepository {
 
     /** Each kept song's plays and last play, in no particular order. */
     val counts: Flow<List<PlayCount>>
+
+    /** What was played from [sinceMs] on, following new plays; [zone] places plays in the hours of the day. */
+    fun stats(sinceMs: Long, zone: ZoneId): Flow<ListeningStats>
 
     /** Keeps [listen], or updates its time heard when the same play (song and start) is kept already. */
     suspend fun record(listen: Listen)

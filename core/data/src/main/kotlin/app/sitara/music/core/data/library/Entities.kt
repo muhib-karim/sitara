@@ -99,6 +99,20 @@ data class PlaylistCoverRow(
     val url: String?,
 )
 
+/** A song's plays in a stats range, with the details of its latest play. */
+data class SongTotalRow(
+    @Embedded(prefix = "track_") val track: TrackColumns,
+    val plays: Int,
+    @ColumnInfo(name = "listened_ms") val listenedMs: Long,
+    @ColumnInfo(name = "last_played_at") val lastPlayedAt: Long,
+)
+
+/** A play's start and time heard. */
+data class ListenTimeRow(
+    @ColumnInfo(name = "played_at") val playedAt: Long,
+    @ColumnInfo(name = "listened_ms") val listenedMs: Long,
+)
+
 /** A song's plays in the kept history. */
 data class PlayCountRow(
     @ColumnInfo(name = "track_id") val trackId: String,

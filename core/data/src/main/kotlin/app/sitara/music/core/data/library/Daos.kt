@@ -35,6 +35,20 @@ abstract class PlayHistoryDao {
     @Query("SELECT track_id, track_artist_id AS artist_id, MAX(played_at) AS last_played_at, COUNT(*) AS plays FROM play_history GROUP BY track_id")
     abstract fun counts(): Flow<List<PlayCountRow>>
 
+    // Plays kept before 0.9.5 have no time heard and are left out of stats. The bare track columns come from the play
+    // with MAX(played_at), so each song shows its latest details.
+    @Query(
+        """
+        SELECT track_id, track_title, track_artist, track_album, track_duration_ms, track_artwork_colors, track_artwork_url, track_explicit,
+            track_artist_id, COUNT(*) AS plays, SUM(listened_ms) AS listened_ms, MAX(played_at) AS last_played_at
+        FROM play_history WHERE listened_ms IS NOT NULL AND played_at >= :since GROUP BY track_id
+        """,
+    )
+    abstract fun songTotals(since: Long): Flow<List<SongTotalRow>>
+
+    @Query("SELECT played_at, listened_ms FROM play_history WHERE listened_ms IS NOT NULL AND played_at >= :since")
+    abstract fun listenTimes(since: Long): Flow<List<ListenTimeRow>>
+
     /** Returns how many plays it changed: 0 or 1. */
     @Query("UPDATE play_history SET listened_ms = :listenedMs WHERE track_id = :trackId AND played_at = :playedAt")
     abstract suspend fun updateListened(trackId: String, playedAt: Long, listenedMs: Long?): Int
