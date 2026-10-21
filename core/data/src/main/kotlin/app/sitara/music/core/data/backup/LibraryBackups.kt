@@ -124,11 +124,11 @@ private fun JSONObject.text(key: String): String = opt(key) as? String ?: damage
 
 private fun JSONObject.name(key: String): String = text(key).takeIf { it.isNotBlank() } ?: damaged()
 
-private fun JSONObject.optText(key: String): String? = if (isNull(key)) null else text(key)
+private fun JSONObject.textOrNull(key: String): String? = if (isNull(key)) null else text(key)
 
 private fun JSONObject.long(key: String): Long = (opt(key) as? Number)?.toLong()?.takeIf { it >= 0 } ?: damaged()
 
-private fun JSONObject.optLong(key: String): Long? = if (isNull(key)) null else long(key)
+private fun JSONObject.longOrNull(key: String): Long? = if (isNull(key)) null else long(key)
 
 private fun JSONObject.colors(key: String): String {
     val array = opt(key) as? JSONArray ?: damaged()
@@ -138,8 +138,8 @@ private fun JSONObject.colors(key: String): String {
 
 private fun JSONObject.track(): TrackColumns = obj("track").run {
     TrackColumns(
-        name("id"), name("title"), text("artist"), text("album"), long("durationMs"), colors("artworkColors"), optText("artworkUrl"),
-        opt("explicit") as? Boolean ?: damaged(), optText("artistId"),
+        name("id"), name("title"), text("artist"), text("album"), long("durationMs"), colors("artworkColors"), textOrNull("artworkUrl"),
+        opt("explicit") as? Boolean ?: damaged(), textOrNull("artistId"),
     )
 }
 
@@ -147,14 +147,14 @@ private fun JSONObject.track(): TrackColumns = obj("track").run {
 private fun JSONObject.toSnapshot() = BackupSnapshot(
     liked = list("liked").map { LikedSongEntity(it.track(), it.long("likedAt")) }.distinctBy { it.track.id },
     albums = list("savedAlbums").map {
-        SavedAlbumEntity(it.name("id"), it.name("title"), it.text("artist"), it.optLong("year")?.toInt(), it.colors("artworkColors"), it.optText("artworkUrl"), it.optText("artistId"), it.long("savedAt"))
+        SavedAlbumEntity(it.name("id"), it.name("title"), it.text("artist"), it.longOrNull("year")?.toInt(), it.colors("artworkColors"), it.textOrNull("artworkUrl"), it.textOrNull("artistId"), it.long("savedAt"))
     }.distinctBy { it.id },
-    artists = list("savedArtists").map { SavedArtistEntity(it.name("id"), it.name("name"), it.colors("artworkColors"), it.optText("artworkUrl"), it.long("savedAt")) }.distinctBy { it.id },
+    artists = list("savedArtists").map { SavedArtistEntity(it.name("id"), it.name("name"), it.colors("artworkColors"), it.textOrNull("artworkUrl"), it.long("savedAt")) }.distinctBy { it.id },
     playlists = list("playlists").map { playlist ->
         val songs = playlist.list("songs").map { PlaylistEntryEntity(0, 0, it.track(), it.long("addedAt")) }.distinctBy { it.track.id }
         PlaylistEntity(name = playlist.name("name"), createdAt = playlist.long("createdAt"), updatedAt = playlist.long("updatedAt")) to songs
     },
-    history = list("history").map { PlayEntity(track = it.track(), playedAt = it.long("playedAt"), listenedMs = it.optLong("listenedMs")) },
+    history = list("history").map { PlayEntity(track = it.track(), playedAt = it.long("playedAt"), listenedMs = it.longOrNull("listenedMs")) },
     gains = list("songVolume").map {
         val db = (it.opt("trimDb") as? Int ?: damaged()).coerceIn(-SongGain.MAX_TRIM_DB, SongGain.MAX_TRIM_DB)
         SongGainEntity(it.name("trackId"), db)
