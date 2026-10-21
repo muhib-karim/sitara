@@ -36,9 +36,10 @@ import dev.chrisbanes.haze.hazeEffect
 
 val LocalGlassHaze = staticCompositionLocalOf<HazeState?> { null }
 
+/** Frosted where blur is available (Android 12+, not AMOLED); a near-opaque fill elsewhere. Blur is static, so reduced motion keeps it. */
 @Composable
 fun Modifier.glass(state: HazeState?, tint: Color, blurEnabled: Boolean = true): Modifier =
-    if (state != null && blurEnabled && !LocalReducedMotion.current && LocalArtworkWash.current && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+    if (state != null && blurEnabled && LocalArtworkWash.current && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
         hazeEffect(state) {
             blurRadius = 24.dp
             tints = listOf(HazeTint(tint.copy(alpha = 0.88f)))

@@ -2,6 +2,7 @@ package app.sitara.music
 
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -37,10 +38,16 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
+import androidx.compose.ui.input.nestedscroll.NestedScrollSource
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import app.sitara.music.core.designsystem.ScrollEdge
@@ -160,6 +167,16 @@ fun SitaraShell(
     var menuTrack by remember { mutableStateOf<Track?>(null) }
     var playlistTrack by remember { mutableStateOf<Track?>(null) }
     var equaliserOpen by rememberSaveable { mutableStateOf(false) }
+    // Reading on (scrolling towards the end) folds the dock into one row; scrolling back or its tab unfolds it.
+    var dockFolded by rememberSaveable { mutableStateOf(false) }
+    val foldOnScroll = remember {
+        object : NestedScrollConnection {
+            override fun onPostScroll(consumed: Offset, available: Offset, source: NestedScrollSource): Offset {
+                if (consumed.y < -FOLD_SLOP) dockFolded = true else if (consumed.y > FOLD_SLOP) dockFolded = false
+                return Offset.Zero
+            }
+        }
+    }
     val openMenu: (Track) -> Unit = { menuTrack = it }
     val open: (DetailRoute) -> Unit = { detailStack = detailStack + it }
     val closeDetails: () -> Unit = { detailStack = emptyList() }
@@ -179,6 +196,7 @@ fun SitaraShell(
         val fontScale = LocalDensity.current.fontScale
         val miniHeight = SitaraSpacing.MiniPlayerHeight * fontScale.coerceAtLeast(1f)
         val minimumDockHeight = SitaraSpacing.NavigationHeight + (if (player.track != null) miniHeight else 0.dp)
+        // The unfolded height: content pads for the dock at its tallest, so folding never moves the page.
         var measuredDockHeight by remember(player.track != null, fontScale) { mutableStateOf(0.dp) }
         val dockHeight = maxOf(minimumDockHeight, measuredDockHeight)
         val contentPadding = PaddingValues(
@@ -186,7 +204,7 @@ fun SitaraShell(
             bottom = dockHeight + navBottom + SitaraSpacing.DockBottom + SitaraSpacing.Section,
         )
         Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
-            Box(Modifier.fillMaxSize().hazeSource(haze)) {
+            Box(Modifier.fillMaxSize().hazeSource(haze).nestedScroll(foldOnScroll)) {
                 val route = detailStack.lastOrNull()
                 val openAlbum: (Album) -> Unit = { open(DetailRoute.Album(it.id)) }
                 val openArtist: (Artist) -> Unit = { open(DetailRoute.Artist(it.id)) }
@@ -252,8 +270,11 @@ fun SitaraShell(
                 initiallyExpanded = playerExpanded,
                 initialPage = playerPage,
                 haze = haze,
-                navigation = { FloatingNav(tab, onSelect = { closeDetails(); equaliserOpen = false; tab = it }) },
-                onDockHeightChanged = { measuredDockHeight = it },
+                folded = dockFolded,
+                navigation = { accent, folded ->
+                    FloatingNav(tab, accent, folded, onSelect = { closeDetails(); equaliserOpen = false; dockFolded = false; tab = it }, onUnfold = { dockFolded = false })
+                },
+                onDockHeightChanged = { measuredDockHeight = maxOf(measuredDockHeight, it) },
                 onArtist = { open(DetailRoute.Artist(it)) },
                 onAddToPlaylist = { playlistTrack = it },
             )
@@ -289,12 +310,24 @@ private val DetailStackSaver = listSaver<List<DetailRoute>, String>(
     restore = { saved -> saved.mapNotNull(::decodeDetailRoute) },
 )
 
+/** The tabs, the open one in the cover's [accent] on a glass indicator. [folded]: only the open tab, which unfolds the rest. */
 @Composable
-private fun FloatingNav(selected: Tab, onSelect: (Tab) -> Unit) {
+private fun FloatingNav(selected: Tab, accent: Color, folded: Boolean, onSelect: (Tab) -> Unit, onUnfold: () -> Unit) {
+    val content = MaterialTheme.colorScheme.onSurface
+    val indicator = content.copy(alpha = 0.10f)
+    if (folded) {
+        Box(
+            Modifier.padding(start = 8.dp).size(SitaraSpacing.TouchTarget).clip(CircleShape).background(indicator)
+                .clickable(role = Role.Button, onClick = onUnfold).semantics { contentDescription = "${selected.label}, show all tabs" },
+            contentAlignment = Alignment.Center,
+        ) {
+            Icon(selected.icon, null, tint = accent, modifier = Modifier.size(22.dp))
+        }
+        return
+    }
     Row(Modifier.fillMaxWidth().height(SitaraSpacing.NavigationHeight).padding(horizontal = 8.dp, vertical = 4.dp)) {
         Tab.entries.forEach { tab ->
             val active = tab == selected
-            val color = if (active) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
             Column(
                 Modifier.weight(1f).fillMaxHeight().clip(RoundedCornerShape(20.dp))
                     .selectable(selected = active, role = Role.Tab, onClick = { onSelect(tab) }),
@@ -302,17 +335,25 @@ private fun FloatingNav(selected: Tab, onSelect: (Tab) -> Unit) {
                 verticalArrangement = Arrangement.Center,
             ) {
                 Box(
-                    Modifier.width(40.dp).height(28.dp).clip(CircleShape)
-                        .background(if (active) color.copy(alpha = 0.12f) else Color.Transparent),
+                    Modifier.width(56.dp).height(30.dp).clip(CircleShape).background(if (active) indicator else Color.Transparent),
                     contentAlignment = Alignment.Center,
                 ) {
-                    Icon(tab.icon, null, tint = color, modifier = Modifier.size(20.dp))
+                    Icon(tab.icon, null, tint = if (active) accent else content.copy(alpha = 0.65f), modifier = Modifier.size(22.dp))
                 }
-                Text(tab.label, color = color, style = MaterialTheme.typography.labelSmall, maxLines = 1, overflow = TextOverflow.Ellipsis)
+                Text(
+                    tab.label,
+                    color = if (active) content else content.copy(alpha = 0.65f),
+                    style = MaterialTheme.typography.labelSmall,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
+                )
             }
         }
     }
 }
+
+// Pixels of scroll that count as reading on or going back, so a settling list does not flip the dock.
+private const val FOLD_SLOP = 2f
 
 private fun greeting(): String {
     val hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)

@@ -32,7 +32,9 @@ import androidx.compose.ui.test.performScrollToKey
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTouchInput
+import androidx.compose.ui.test.swipeDown
 import androidx.compose.ui.test.swipeLeft
+import androidx.compose.ui.test.swipeUp
 import androidx.compose.ui.unit.Density
 import app.sitara.music.core.model.Album
 import app.sitara.music.core.model.Chart
@@ -483,6 +485,24 @@ class BrowseInteractionTest {
         val rail = compose.onNodeWithTag("rail-likes").fetchSemanticsNode().boundsInRoot
         val dock = compose.onNodeWithTag("playback-dock").fetchSemanticsNode().boundsInRoot
         assertTrue("The final rail must clear the entire playback dock", rail.bottom <= dock.top)
+    }
+
+    @Test fun readingOnFoldsTheDockIntoOneRowAndItsTabOrScrollingBackUnfoldsIt() {
+        render()
+        val inDock = hasAnyAncestor(hasTestTag("playback-dock"))
+        val libraryTab = hasText("Library") and inDock
+        compose.onNode(libraryTab).assertIsDisplayed()
+
+        compose.onNodeWithTag("home-content").performTouchInput { swipeUp() }
+        compose.onNode(libraryTab).assertDoesNotExist()
+        compose.onNodeWithContentDescription("Open player").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Home, show all tabs").performClick()
+        compose.onNode(libraryTab).assertIsDisplayed()
+
+        compose.onNodeWithTag("home-content").performTouchInput { swipeUp() }
+        compose.onNode(libraryTab).assertDoesNotExist()
+        compose.onNodeWithTag("home-content").performTouchInput { swipeDown() }
+        compose.onNode(libraryTab).assertIsDisplayed()
     }
 
     @Test fun failedChartOffersTryAgain() {

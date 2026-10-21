@@ -5,6 +5,7 @@ package app.sitara.music.feature.player
 import androidx.activity.compose.BackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.SharedTransitionLayout
+import androidx.compose.animation.animateContentSize
 import androidx.compose.animation.core.snap
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -36,6 +37,8 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.compositeOver
+import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
@@ -73,7 +76,8 @@ fun PlayerSheet(
     initiallyExpanded: Boolean = false,
     initialPage: Int = 0,
     haze: dev.chrisbanes.haze.HazeState? = null,
-    navigation: @Composable () -> Unit = {},
+    folded: Boolean = false,
+    navigation: @Composable (accent: Color, folded: Boolean) -> Unit = { _, _ -> },
     onDockHeightChanged: (Dp) -> Unit = {},
     onArtist: (artistId: String) -> Unit = {},
     onAddToPlaylist: (Track) -> Unit = {},
@@ -112,45 +116,61 @@ fun PlayerSheet(
                 )
             } else {
                 Box(Modifier.fillMaxSize()) {
+                    // The cover's accent for the dock's surface (light or dark), on the selected tab and the progress line.
+                    val wash = LocalArtworkWash.current
+                    val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f
+                    val glass = MaterialTheme.colorScheme.surfaceContainerHigh
+                    val accent = if (track != null && wash) {
+                        animateArtworkColor(rememberArtworkTheme(track.artwork, dark).accent, "dock accent")
+                    } else {
+                        MaterialTheme.colorScheme.primary
+                    }
                     GlassSurface(
-                        Modifier.align(Alignment.BottomCenter).padding(horizontal = SitaraSpacing.Gutter).padding(bottom = bottomReserved).fillMaxWidth(),
+                        Modifier.align(Alignment.BottomCenter).padding(horizontal = SitaraSpacing.Gutter).padding(bottom = bottomReserved).fillMaxWidth()
+                            .animateContentSize(SitaraMotion.orReduced(reduced, SitaraMotion.smooth())),
                         haze = haze,
+                        tint = if (track != null && wash) accent.copy(alpha = 0.10f).compositeOver(glass) else glass,
                     ) {
-                        Column(
-                            Modifier.testTag("playback-dock").onSizeChanged { size ->
-                                onDockHeightChanged(with(density) { size.height.toDp() })
-                            },
-                        ) {
+                        val dock = Modifier.testTag("playback-dock").onSizeChanged { size ->
+                            onDockHeightChanged(with(density) { size.height.toDp() })
+                        }
+                        val mini: @Composable (Modifier) -> Unit = { placement ->
                             if (track != null) {
-                                val wash = LocalArtworkWash.current
-                                val tint = animateArtworkColor(rememberArtworkTheme(track.artwork).accent, "mini player tint")
                                 MiniPlayer(
-                                    state,
-                                    actions,
-                                    coverModifier,
-                                    Modifier.background(if (wash) tint.copy(alpha = 0.08f) else Color.Transparent)
-                                        .pointerInput(track.id) {
-                                            var dx = 0f
-                                            var dy = 0f
-                                            detectDragGestures(
-                                                onDragStart = { dx = 0f; dy = 0f },
-                                                onDragEnd = {
-                                                    val threshold = 48.dp.toPx()
-                                                    when {
-                                                        abs(dx) > threshold && abs(dx) > abs(dy) -> if (dx < 0) currentActions.next() else currentActions.previous()
-                                                        dy < -threshold -> expanded = true
-                                                    }
-                                                },
-                                            ) { change, drag ->
-                                                change.consume()
-                                                dx += drag.x
-                                                dy += drag.y
-                                            }
-                                        },
+                                    state, actions, coverModifier, accent, folded,
+                                    placement.pointerInput(track.id) {
+                                        var dx = 0f
+                                        var dy = 0f
+                                        detectDragGestures(
+                                            onDragStart = { dx = 0f; dy = 0f },
+                                            onDragEnd = {
+                                                val threshold = 48.dp.toPx()
+                                                when {
+                                                    abs(dx) > threshold && abs(dx) > abs(dy) -> if (dx < 0) currentActions.next() else currentActions.previous()
+                                                    dy < -threshold -> expanded = true
+                                                }
+                                            },
+                                        ) { change, drag ->
+                                            change.consume()
+                                            dx += drag.x
+                                            dy += drag.y
+                                        }
+                                    },
                                     onExpand = { expanded = true },
                                 )
                             }
-                            navigation()
+                        }
+                        // Folded while the listener reads on: one pill row, the open tab beside the song.
+                        if (folded && track != null) {
+                            Row(dock, verticalAlignment = Alignment.CenterVertically) {
+                                navigation(accent, true)
+                                mini(Modifier.weight(1f))
+                            }
+                        } else {
+                            Column(dock) {
+                                mini(Modifier)
+                                navigation(accent, false)
+                            }
                         }
                     }
                 }
@@ -160,7 +180,15 @@ fun PlayerSheet(
 }
 
 @Composable
-private fun MiniPlayer(state: PlayerUiState, actions: PlayerActions, artworkModifier: Modifier, modifier: Modifier, onExpand: () -> Unit) {
+private fun MiniPlayer(
+    state: PlayerUiState,
+    actions: PlayerActions,
+    artworkModifier: Modifier,
+    accent: Color,
+    folded: Boolean,
+    modifier: Modifier,
+    onExpand: () -> Unit,
+) {
     val track = state.track ?: return
     val content = MaterialTheme.colorScheme.onSurface
     val height = SitaraSpacing.MiniPlayerHeight * LocalDensity.current.fontScale.coerceAtLeast(1f)
@@ -176,18 +204,21 @@ private fun MiniPlayer(state: PlayerUiState, actions: PlayerActions, artworkModi
                 },
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                ArtworkImage(track.artwork, artworkModifier.size(44.dp), cornerRadius = SitaraRadius.Cover)
+                ArtworkImage(track.artwork, artworkModifier.size(if (folded) 36.dp else 44.dp), cornerRadius = SitaraRadius.Cover)
                 Spacer(Modifier.width(12.dp))
                 Column(Modifier.weight(1f)) {
                     Text(track.title, color = content, style = MaterialTheme.typography.titleMedium, maxLines = 1, overflow = TextOverflow.Ellipsis)
-                    Text(
-                        if (state.failed) PLAYBACK_FAILED else track.artist,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        style = MaterialTheme.typography.bodySmall,
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
-                    )
+                    // Folded, the row is shared with the open tab: the title stays, the artist goes, a failure still shows.
+                    if (!folded || state.failed) {
+                        Text(
+                            if (state.failed) PLAYBACK_FAILED else track.artist,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            style = MaterialTheme.typography.bodySmall,
+                            maxLines = 1,
+                            overflow = TextOverflow.Ellipsis,
+                            modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+                        )
+                    }
                 }
             }
             if (state.failed) {
@@ -204,8 +235,8 @@ private fun MiniPlayer(state: PlayerUiState, actions: PlayerActions, artworkModi
             }
         }
         val fraction = if (state.durationMs > 0) state.positionMs.toFloat() / state.durationMs else 0f
-        Box(Modifier.fillMaxWidth().height(2.dp).background(MaterialTheme.colorScheme.outlineVariant)) {
-            Box(Modifier.fillMaxWidth(fraction.coerceIn(0f, 1f)).height(2.dp).background(MaterialTheme.colorScheme.primary))
+        Box(Modifier.fillMaxWidth().height(2.dp).background(content.copy(alpha = 0.12f))) {
+            Box(Modifier.fillMaxWidth(fraction.coerceIn(0f, 1f)).height(2.dp).background(accent))
         }
     }
 }
