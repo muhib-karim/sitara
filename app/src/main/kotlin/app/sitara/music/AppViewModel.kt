@@ -42,6 +42,7 @@ import app.sitara.music.feature.player.PlayerActions
 import app.sitara.music.feature.player.PlayerUiState
 import app.sitara.music.feature.player.RadioStatus
 import app.sitara.music.feature.player.SleepTimerStatus
+import app.sitara.music.feature.player.TranslationState
 import app.sitara.music.feature.search.MoodsState
 import app.sitara.music.feature.search.SearchActions
 import app.sitara.music.feature.search.SearchLanding
@@ -50,6 +51,8 @@ import app.sitara.music.feature.search.searchStates
 import app.sitara.music.feature.search.searchSuggestions
 import app.sitara.music.feature.search.withRecentSearch
 import app.sitara.music.source.api.BrowseSource
+import app.sitara.music.source.lyrics.TranslationException
+import app.sitara.music.source.lyrics.TranslationProblem
 import java.time.ZoneId
 import java.time.temporal.WeekFields
 import java.util.Locale
@@ -243,8 +246,28 @@ class AppViewModel(private val app: SitaraApplication) :
         )
     }
 
-    val playerState: StateFlow<PlayerUiState> = combine(nowPlaying, settings, trimDb, app.streamFormats) { ui, s, trim, formats ->
-        ui.copy(equaliser = s.equaliser, systemEqualiser = systemEqualiser, trimDb = trim, stream = ui.track?.let { formats[it.id] })
+    private val translating = MutableStateFlow(false)
+
+    // The app's language until the listener picks another; kept for this session.
+    private val translationLanguage = MutableStateFlow(Locale.getDefault().toLanguageTag().substringBefore('-').ifEmpty { "en" })
+    private val translationRetries = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+
+    // The shown lyrics translated while Translate is on: anew for another song, source or language, or when tried again.
+    private val translation: StateFlow<TranslationState> = combine(lyrics, translating, translationLanguage, ::Triple)
+        .flatMapLatest { (state, on, language) ->
+            if (!on || state !is LyricsState.Found) {
+                flowOf(TranslationState.Off)
+            } else {
+                translationRetries.onStart { emit(Unit) }.transformLatest {
+                    emit(TranslationState.Translating(language))
+                    emit(translate(state, language))
+                }
+            }
+        }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, TranslationState.Off)
+
+    val playerState: StateFlow<PlayerUiState> = combine(nowPlaying, settings, trimDb, app.streamFormats, translation) { ui, s, trim, formats, translated ->
+        ui.copy(equaliser = s.equaliser, systemEqualiser = systemEqualiser, trimDb = trim, stream = ui.track?.let { formats[it.id] }, translation = translated)
     }.stateIn(viewModelScope, SharingStarted.Eagerly, PlayerUiState())
 
     init {
@@ -340,6 +363,30 @@ class AppViewModel(private val app: SitaraApplication) :
 
     override fun chooseLyrics(providerId: String) {
         lyricsPicks.tryEmit(providerId)
+    }
+
+    private suspend fun translate(found: LyricsState.Found, language: String): TranslationState = try {
+        val track = player.state.value.queue.current ?: return TranslationState.Off
+        val providerId = found.matches.firstOrNull { it.lyrics == found.lyrics }?.providerId ?: found.lyrics.source.orEmpty()
+        TranslationState.Translated(app.translator.translate(track.id, providerId, found.lyrics.lines.map { it.text }, language))
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: TranslationException) {
+        TranslationState.Failed(e.problem, language)
+    } catch (e: Exception) {
+        TranslationState.Failed(TranslationProblem.SERVICE, language)
+    }
+
+    override fun toggleTranslation() {
+        translating.value = !translating.value
+    }
+
+    override fun retryTranslation() {
+        translationRetries.tryEmit(Unit)
+    }
+
+    override fun setTranslationLanguage(language: String) {
+        translationLanguage.value = language
     }
 
     override fun startRadio() {

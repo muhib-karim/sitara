@@ -79,6 +79,10 @@ internal class DemoPlayer(private var original: List<Track>, lyrics: Lyrics) : P
     }
     // The demo's lyrics are built in, so they never fail.
     override fun retryLyrics() = Unit
+    override fun chooseLyrics(providerId: String) = Unit
+    override fun toggleTranslation() = Unit
+    override fun retryTranslation() = Unit
+    override fun setTranslationLanguage(language: String) = Unit
     override fun setEqualiser(equaliser: EqualiserSettings) { state = state.copy(equaliser = equaliser) }
 
     // The demo offers no phone equaliser (systemEqualiser stays false), so there is nothing to open.

@@ -16,6 +16,7 @@ import app.sitara.music.core.designsystem.sitaraImageLoader
 import app.sitara.music.core.model.AudioQuality
 import app.sitara.music.core.model.CachedLyrics
 import app.sitara.music.core.model.Listen
+import app.sitara.music.core.model.LyricsTranslation
 import app.sitara.music.core.model.SavedQueue
 import app.sitara.music.core.model.SearchFilter
 import app.sitara.music.core.model.SitaraSettings
@@ -32,7 +33,9 @@ import app.sitara.music.source.api.StreamResolver
 import app.sitara.music.source.lyrics.LyricsCache
 import app.sitara.music.source.lyrics.LyricsChoices
 import app.sitara.music.source.lyrics.LyricsSources
+import app.sitara.music.source.lyrics.TranslationCache
 import app.sitara.music.source.lyrics.lrclibLyrics
+import app.sitara.music.source.lyrics.myMemoryTranslator
 import app.sitara.music.source.scrobble.LastFmKeys
 import app.sitara.music.source.youtube.YouTubeMusicSource
 import app.sitara.music.source.youtube.installNewPipe
@@ -89,6 +92,16 @@ class SitaraApplication :
                 override suspend fun get(trackId: String) = library.lyrics.choice(trackId)
 
                 override suspend fun put(trackId: String, providerId: String) = library.lyrics.choose(trackId, providerId)
+            },
+        )
+    }
+
+    val translator by lazy {
+        myMemoryTranslator(
+            object : TranslationCache {
+                override suspend fun get(trackId: String, providerId: String, language: String) = library.lyrics.translation(trackId, providerId, language)
+
+                override suspend fun put(trackId: String, providerId: String, translation: LyricsTranslation) = library.lyrics.putTranslation(trackId, providerId, translation)
             },
         )
     }

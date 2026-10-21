@@ -165,6 +165,16 @@ data class LyricsCacheEntity(
     val licensor: String?,
 )
 
+/** A song's lyrics from one source translated into one language, a line per lyric line joined by newlines; the detected source language when known. */
+@Entity(tableName = "lyrics_translation", primaryKeys = ["track_id", "provider", "language"])
+data class LyricsTranslationEntity(
+    @ColumnInfo(name = "track_id") val trackId: String,
+    val provider: String,
+    val language: String,
+    @ColumnInfo(name = "from_language") val fromLanguage: String?,
+    val lines: String,
+)
+
 /** The lyrics source the listener picked for a song. */
 @Entity(tableName = "lyrics_choice")
 data class LyricsChoiceEntity(

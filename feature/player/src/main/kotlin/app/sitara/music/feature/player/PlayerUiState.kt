@@ -2,11 +2,13 @@ package app.sitara.music.feature.player
 
 import app.sitara.music.core.model.EqualiserSettings
 import app.sitara.music.core.model.Lyrics
+import app.sitara.music.core.model.LyricsTranslation
 import app.sitara.music.core.model.PlaybackTuning
 import app.sitara.music.core.model.RepeatMode
 import app.sitara.music.core.model.StreamFormat
 import app.sitara.music.core.model.Track
 import app.sitara.music.source.lyrics.LyricsMatch
+import app.sitara.music.source.lyrics.TranslationProblem
 
 /** Everything the player surfaces render; produced by the app from the media controller. */
 data class PlayerUiState(
@@ -22,6 +24,8 @@ data class PlayerUiState(
     val lyrics: LyricsState = LyricsState.NotFound,
     /** Every lyrics source the app asks, by name, in the order they are asked. */
     val lyricsSources: List<String> = emptyList(),
+    /** The shown lyrics' translation, while Translate is on. */
+    val translation: TranslationState = TranslationState.Off,
     val sleepTimer: SleepTimerStatus = SleepTimerStatus.Off,
     val radio: RadioStatus = RadioStatus.READY,
     /** Whether the current track is in Liked songs. */
@@ -51,6 +55,20 @@ sealed interface LyricsState {
 
     /** The lookup failed (no connection, the lyrics service busy); it can be tried again. */
     data object Failed : LyricsState
+}
+
+/** The shown lyrics' translation line by line, once there is one. */
+internal val PlayerUiState.translatedLines: List<String>? get() = (translation as? TranslationState.Translated)?.translation?.lines
+
+/** Translate, off until the listener turns it on; [language]s are ISO 639-1 codes. */
+sealed interface TranslationState {
+    data object Off : TranslationState
+
+    data class Translating(val language: String) : TranslationState
+
+    data class Translated(val translation: LyricsTranslation) : TranslationState
+
+    data class Failed(val problem: TranslationProblem, val language: String) : TranslationState
 }
 
 /** Whether "Start radio" can extend the queue from the current song right now. */
@@ -109,6 +127,15 @@ interface PlayerActions {
     /** Shows the current song's lyrics from the source [providerId] from now on. */
     fun chooseLyrics(providerId: String)
 
+    /** Turns lyric translation on or off. */
+    fun toggleTranslation()
+
+    /** Translates the lyrics again after a failure. */
+    fun retryTranslation()
+
+    /** Translates into [language] (an ISO 639-1 code) from now on. */
+    fun setTranslationLanguage(language: String)
+
     fun setEqualiser(equaliser: EqualiserSettings)
 
     /** Opens the device's own equaliser on Sitara's audio session. */
@@ -142,6 +169,9 @@ interface PlayerActions {
         override fun undoRemoveUpNext() = Unit
         override fun retryLyrics() = Unit
         override fun chooseLyrics(providerId: String) = Unit
+        override fun toggleTranslation() = Unit
+        override fun retryTranslation() = Unit
+        override fun setTranslationLanguage(language: String) = Unit
         override fun setEqualiser(equaliser: EqualiserSettings) = Unit
         override fun openSystemEqualiser() = Unit
         override fun setTrimDb(db: Int) = Unit

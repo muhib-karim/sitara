@@ -248,7 +248,7 @@ private fun LyricsPanel(state: PlayerUiState, actions: PlayerActions, onMore: ()
                 Column(Modifier.weight(1f)) {
                     TrackHeading(state, Modifier.padding(vertical = 8.dp), compact = true, onLike = actions::toggleLike, onMore = onMore)
                     LyricsToolbar(state, actions)
-                    LyricsPage(state.lyrics, state.lyricsSources, state.positionMs, SitaraColors.StageContent, actions::seekTo, actions::retryLyrics, Modifier.weight(1f))
+                    LyricsPage(state.lyrics, state.lyricsSources, state.positionMs, SitaraColors.StageContent, actions::seekTo, actions::retryLyrics, Modifier.weight(1f), state.translatedLines)
                 }
                 PlayerControls(state, actions, Modifier.weight(1f).verticalScroll(rememberScrollState()).padding(start = 24.dp, top = 12.dp))
             }
@@ -256,7 +256,7 @@ private fun LyricsPanel(state: PlayerUiState, actions: PlayerActions, onMore: ()
             Column(Modifier.fillMaxSize()) {
                 TrackHeading(state, Modifier.padding(horizontal = 24.dp, vertical = 12.dp), compact = true, onLike = actions::toggleLike, onMore = onMore)
                 LyricsToolbar(state, actions, Modifier.padding(horizontal = 24.dp))
-                LyricsPage(state.lyrics, state.lyricsSources, state.positionMs, SitaraColors.StageContent, actions::seekTo, actions::retryLyrics, Modifier.weight(1f))
+                LyricsPage(state.lyrics, state.lyricsSources, state.positionMs, SitaraColors.StageContent, actions::seekTo, actions::retryLyrics, Modifier.weight(1f), state.translatedLines)
                 PlayerControls(state, actions, Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
             }
         }

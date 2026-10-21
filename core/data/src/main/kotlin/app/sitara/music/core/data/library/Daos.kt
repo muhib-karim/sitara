@@ -212,6 +212,12 @@ interface LyricsCacheDao {
 
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun choose(choice: LyricsChoiceEntity)
+
+    @Query("SELECT * FROM lyrics_translation WHERE track_id = :trackId AND provider = :provider AND language = :language")
+    suspend fun translation(trackId: String, provider: String, language: String): LyricsTranslationEntity?
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun putTranslation(translation: LyricsTranslationEntity)
 }
 
 @Dao

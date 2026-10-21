@@ -44,3 +44,10 @@ data class CachedLyrics(
     val matched: LyricsSong? = null,
     val licensor: String? = null,
 )
+
+/** A song's lyrics translated line by line into [toLanguage] ("" for a line left as it was); [fromLanguage] as detected, when known. Languages are ISO 639-1 codes. */
+data class LyricsTranslation(
+    val lines: List<String>,
+    val fromLanguage: String?,
+    val toLanguage: String,
+)

@@ -3,6 +3,7 @@ package app.sitara.music.core.data.library
 import app.sitara.music.core.model.Album
 import app.sitara.music.core.model.Artist
 import app.sitara.music.core.model.CachedLyrics
+import app.sitara.music.core.model.LyricsTranslation
 import app.sitara.music.core.model.Listen
 import app.sitara.music.core.model.ListeningStats
 import app.sitara.music.core.model.PlayCount
@@ -86,7 +87,7 @@ interface PlaybackQueueRepository {
     suspend fun save(queue: SavedQueue?)
 }
 
-/** Each lyrics source's answers by song id, so a song is not looked up again, and the source the listener picked for a song. */
+/** Each lyrics source's answers by song id, so a song is not looked up again, the source the listener picked for a song, and translations by song, source and language. */
 interface LyricsCacheRepository {
     suspend fun get(trackId: String, provider: String): CachedLyrics?
 
@@ -98,6 +99,10 @@ interface LyricsCacheRepository {
     suspend fun choice(trackId: String): String?
 
     suspend fun choose(trackId: String, provider: String)
+
+    suspend fun translation(trackId: String, provider: String, language: String): LyricsTranslation?
+
+    suspend fun putTranslation(trackId: String, provider: String, translation: LyricsTranslation)
 }
 
 /** Per-song volume trims, applied before the equaliser. */

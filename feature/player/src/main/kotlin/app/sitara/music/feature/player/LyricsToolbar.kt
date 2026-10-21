@@ -13,6 +13,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
+import androidx.compose.foundation.selection.toggleable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
@@ -26,26 +27,121 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import app.sitara.music.core.designsystem.GlassSurface
+import app.sitara.music.core.designsystem.PillButton
 import app.sitara.music.core.designsystem.SitaraColors
 import app.sitara.music.core.designsystem.SitaraIcons
 import app.sitara.music.core.designsystem.SitaraSheet
 import app.sitara.music.core.designsystem.SitaraSpacing
 import app.sitara.music.core.model.Lyrics
 import app.sitara.music.source.lyrics.LyricsMatch
+import app.sitara.music.source.lyrics.TranslationProblem
+import java.util.Locale
 
-/** Above found lyrics: which source they came from, as a chip that opens every source's match. */
+/**
+ * Above found lyrics: which source they came from, as a chip that opens every source's match, and Translate. While
+ * Translate is on, a line under them says how the translation is going and which language it is into.
+ */
 @Composable
 internal fun LyricsToolbar(state: PlayerUiState, actions: PlayerActions, modifier: Modifier = Modifier) {
     val found = state.lyrics as? LyricsState.Found ?: return
     var picking by rememberSaveable { mutableStateOf(false) }
-    Row(modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-        SourceChip(found.lyrics, { picking = true }, Modifier.weight(1f, fill = false))
+    Column(modifier.fillMaxWidth()) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            SourceChip(found.lyrics, { picking = true }, Modifier.weight(1f, fill = false))
+            Spacer(Modifier.weight(0.01f))
+            TranslateToggle(state.translation != TranslationState.Off, actions::toggleTranslation)
+        }
+        TranslationStatus(state.translation, actions)
     }
     if (picking) LyricsSourceSheet(state, actions) { picking = false }
 }
+
+@Composable
+private fun TranslateToggle(on: Boolean, onToggle: () -> Unit) {
+    Row(
+        Modifier.heightIn(min = SitaraSpacing.TouchTarget).toggleable(on, role = Role.Switch, onValueChange = { onToggle() }),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        GlassSurface(shape = CircleShape, tint = if (on) SitaraColors.StageContent else MaterialTheme.colorScheme.surfaceContainerHigh) {
+            Text(
+                "Translate", style = MaterialTheme.typography.labelLarge, color = if (on) SitaraColors.Stage else SitaraColors.StageContent,
+                modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
+            )
+        }
+    }
+}
+
+/** How the translation is going, MyMemory's credit, and the language it is into, which opens the other languages. */
+@Composable
+private fun TranslationStatus(translation: TranslationState, actions: PlayerActions) {
+    val (language, message, retry) = when (translation) {
+        TranslationState.Off -> return
+        is TranslationState.Translating -> Triple(translation.language, "Translating to ${languageName(translation.language)}…", false)
+        is TranslationState.Translated -> Triple(
+            translation.translation.toLanguage,
+            translation.translation.fromLanguage?.let { "Translated from ${languageName(it)} by MyMemory" } ?: "Translated by MyMemory",
+            false,
+        )
+        is TranslationState.Failed -> when (translation.problem) {
+            TranslationProblem.OFFLINE -> Triple(translation.language, "You’re offline. Connect to translate.", true)
+            TranslationProblem.DAILY_LIMIT -> Triple(translation.language, "MyMemory’s free daily translations are used up. Try again tomorrow.", false)
+            TranslationProblem.SAME_LANGUAGE -> Triple(translation.language, "These lyrics are already in ${languageName(translation.language)}.", false)
+            TranslationProblem.SERVICE -> Triple(translation.language, "MyMemory couldn’t translate these lyrics.", true)
+        }
+    }
+    var choosing by rememberSaveable { mutableStateOf(false) }
+    Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Text(message, style = MaterialTheme.typography.bodySmall, color = SitaraColors.StageSecondary, modifier = Modifier.weight(1f))
+        if (retry) PillButton("Try again", actions::retryTranslation, primary = false)
+        val name = languageName(language)
+        Row(
+            Modifier.heightIn(min = SitaraSpacing.TouchTarget).clickable(role = Role.Button) { choosing = true }
+                .semantics { contentDescription = "Translate into $name. Change language" },
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            GlassSurface(shape = CircleShape) {
+                Text(name, style = MaterialTheme.typography.labelLarge, color = SitaraColors.StageContent, modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp))
+            }
+        }
+    }
+    if (choosing) {
+        SitaraSheet({ choosing = false }) { close -> TranslationLanguages(language) { code -> close { actions.setTranslationLanguage(code) } } }
+    }
+}
+
+// The app's language first, then languages people often sing in; MyMemory takes ISO 639-1 codes ("zh-CN" for Simplified Chinese).
+private val COMMON_LANGUAGES = listOf("en", "bn", "hi", "ur", "ar", "es", "pt", "fr", "de", "it", "tr", "ru", "id", "ja", "ko", "zh-CN")
+
+/** The languages lyrics can be translated into, [current] marked; the content of the language sheet. */
+@Composable
+fun TranslationLanguages(current: String, onChoose: (language: String) -> Unit) {
+    val appLanguage = Locale.getDefault().toLanguageTag().substringBefore('-')
+    Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).navigationBarsPadding().padding(bottom = 16.dp)) {
+        Text(
+            "Translate into", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.padding(horizontal = SitaraSpacing.Gutter, vertical = 8.dp),
+        )
+        (listOf(appLanguage) + COMMON_LANGUAGES).distinct().forEach { code ->
+            Row(
+                Modifier.fillMaxWidth().heightIn(min = 56.dp).selectable(code == current, role = Role.RadioButton) { onChoose(code) }
+                    .padding(horizontal = SitaraSpacing.Gutter),
+                verticalAlignment = Alignment.CenterVertically,
+            ) {
+                Text(languageName(code), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
+                if (code == current) Icon(SitaraIcons.Check, null, tint = MaterialTheme.colorScheme.primary)
+            }
+        }
+    }
+}
+
+/** "Spanish" for "es", in the phone's language. */
+private fun languageName(code: String): String =
+    Locale.forLanguageTag(code).getDisplayLanguage(Locale.getDefault()).replaceFirstChar { it.titlecase(Locale.getDefault()) }
 
 @Composable
 private fun SourceChip(lyrics: Lyrics, onClick: () -> Unit, modifier: Modifier) {

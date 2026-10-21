@@ -7,6 +7,7 @@ import app.sitara.music.core.model.CachedLyrics
 import app.sitara.music.core.model.Listen
 import app.sitara.music.core.model.ListeningStats
 import app.sitara.music.core.model.LyricsSong
+import app.sitara.music.core.model.LyricsTranslation
 import app.sitara.music.core.model.PlayCount
 import app.sitara.music.core.model.PlaylistSummary
 import app.sitara.music.core.model.RepeatMode
@@ -138,6 +139,13 @@ class RoomLyricsCache(private val dao: LyricsCacheDao) : LyricsCacheRepository {
     override suspend fun choice(trackId: String): String? = dao.choice(trackId)
 
     override suspend fun choose(trackId: String, provider: String) = dao.choose(LyricsChoiceEntity(trackId, provider))
+
+    // A translated line never holds a newline (the translator flattens them), so newlines can join the lines.
+    override suspend fun translation(trackId: String, provider: String, language: String): LyricsTranslation? =
+        dao.translation(trackId, provider, language)?.let { LyricsTranslation(it.lines.split("\n"), it.fromLanguage, it.language) }
+
+    override suspend fun putTranslation(trackId: String, provider: String, translation: LyricsTranslation) =
+        dao.putTranslation(LyricsTranslationEntity(trackId, provider, translation.toLanguage, translation.fromLanguage, translation.lines.joinToString("\n")))
 }
 
 class RoomSongGain(private val dao: SongGainDao) : SongGainRepository {

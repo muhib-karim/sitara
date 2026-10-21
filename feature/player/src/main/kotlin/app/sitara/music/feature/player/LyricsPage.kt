@@ -52,13 +52,14 @@ import kotlinx.coroutines.flow.first
 
 private val LineStyle = LyricStyle
 private val PlainStyle = TextStyle(fontFamily = Inter, fontSize = 22.sp, lineHeight = 32.sp, fontWeight = FontWeight.SemiBold)
+private val TranslationStyle = TextStyle(fontFamily = Inter, fontSize = 17.sp, lineHeight = 24.sp, fontWeight = FontWeight.Medium)
 private const val LINE_CONTENT_TYPE = "lyric"
 
 /**
  * Synced lyrics: the active line stays white and in focus and the list follows it; tapping a line seeks. Scrolling by
  * hand stops the following until "Back to current line" resumes it.
  * Plain lyrics have no timing, so they are shown as static text with no highlight, scrolling or seeking.
- * Both end with a credit to where they came from. With none found, the sources asked are named and can be asked again.
+ * While Translate is on, each line's translation sits under it. Both end with a credit to where they came from. With none found, the sources asked are named and can be asked again.
  */
 @Composable
 fun LyricsPage(
@@ -69,6 +70,7 @@ fun LyricsPage(
     onSeek: (Long) -> Unit,
     onRetry: () -> Unit,
     modifier: Modifier = Modifier,
+    translation: List<String>? = null,
 ) {
     when (state) {
         LyricsState.Loading -> LyricsMessage("Looking for lyrics…", contentColor, modifier)
@@ -79,7 +81,11 @@ fun LyricsPage(
             PillButton("Try again", onRetry, Modifier.padding(top = 16.dp))
         }
         is LyricsState.Found ->
-            if (state.lyrics.synced) SyncedLyrics(state.lyrics, positionMs, contentColor, onSeek, modifier) else PlainLyrics(state.lyrics, contentColor, modifier)
+            if (state.lyrics.synced) {
+                SyncedLyrics(state.lyrics, translation, positionMs, contentColor, onSeek, modifier)
+            } else {
+                PlainLyrics(state.lyrics, translation, contentColor, modifier)
+            }
     }
 }
 
@@ -98,6 +104,13 @@ private fun LyricsMessage(text: String, contentColor: Color, modifier: Modifier,
     }
 }
 
+/** A line's translation under it, smaller and dimmer; nothing for a line left untranslated. */
+@Composable
+private fun TranslatedLine(text: String?, contentColor: Color) {
+    if (text.isNullOrEmpty()) return
+    Text(text, style = TranslationStyle, color = contentColor.copy(alpha = 0.72f), modifier = Modifier.padding(top = 4.dp))
+}
+
 /** "Lyrics from LRCLIB", under the last line. */
 @Composable
 private fun SourceCredit(source: String?, contentColor: Color) {
@@ -111,7 +124,7 @@ private fun SourceCredit(source: String?, contentColor: Color) {
 }
 
 @Composable
-private fun PlainLyrics(lyrics: Lyrics, contentColor: Color, modifier: Modifier) {
+private fun PlainLyrics(lyrics: Lyrics, translation: List<String>?, contentColor: Color, modifier: Modifier) {
     LazyColumn(modifier.fillMaxSize().fadingEdges(), contentPadding = PaddingValues(top = 24.dp, bottom = 240.dp)) {
         item(contentType = "caption") {
             Text(
@@ -121,15 +134,18 @@ private fun PlainLyrics(lyrics: Lyrics, contentColor: Color, modifier: Modifier)
                 modifier = Modifier.padding(horizontal = 28.dp, vertical = 8.dp),
             )
         }
-        itemsIndexed(lyrics.lines, key = { i, _ -> i }, contentType = { _, _ -> LINE_CONTENT_TYPE }) { _, line ->
-            Text(line.text, style = PlainStyle, color = contentColor, modifier = Modifier.padding(horizontal = 28.dp, vertical = 6.dp))
+        itemsIndexed(lyrics.lines, key = { i, _ -> i }, contentType = { _, _ -> LINE_CONTENT_TYPE }) { i, line ->
+            Column(Modifier.padding(horizontal = 28.dp, vertical = 6.dp)) {
+                Text(line.text, style = PlainStyle, color = contentColor)
+                TranslatedLine(translation?.getOrNull(i), contentColor)
+            }
         }
         item(contentType = "credit") { SourceCredit(lyrics.source, contentColor) }
     }
 }
 
 @Composable
-private fun SyncedLyrics(lyrics: Lyrics, positionMs: Long, contentColor: Color, onSeek: (Long) -> Unit, modifier: Modifier) {
+private fun SyncedLyrics(lyrics: Lyrics, translation: List<String>?, positionMs: Long, contentColor: Color, onSeek: (Long) -> Unit, modifier: Modifier) {
     val active = LyricsCursor.activeLineIndex(lyrics, positionMs)
     val listState = rememberLazyListState()
     val reduced = LocalReducedMotion.current
@@ -172,7 +188,10 @@ private fun SyncedLyrics(lyrics: Lyrics, positionMs: Long, contentColor: Color, 
                         // Softer the further a line is from the one being sung; static, so reduced motion keeps it.
                         .blur((distance * 1.2f).coerceAtMost(3f).dp),
                 ) {
-                    Text(line.text, style = LineStyle, color = contentColor)
+                    Column {
+                        Text(line.text, style = LineStyle, color = contentColor)
+                        TranslatedLine(translation?.getOrNull(i), contentColor)
+                    }
                 }
             }
             item(contentType = "credit") { SourceCredit(lyrics.source, contentColor) }
