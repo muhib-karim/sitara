@@ -493,15 +493,16 @@ class BrowseInteractionTest {
         val libraryTab = hasText("Library") and inDock
         compose.onNode(libraryTab).assertIsDisplayed()
 
+        // Each swipe goes the other way, so the list always has room to move: a full swipe flings it to an end.
         compose.onNodeWithTag("home-content").performTouchInput { swipeUp() }
         compose.onNode(libraryTab).assertDoesNotExist()
         compose.onNodeWithContentDescription("Open player").assertIsDisplayed()
-        compose.onNodeWithContentDescription("Home, show all tabs").performClick()
+        compose.onNodeWithTag("home-content").performTouchInput { swipeDown() }
         compose.onNode(libraryTab).assertIsDisplayed()
 
         compose.onNodeWithTag("home-content").performTouchInput { swipeUp() }
         compose.onNode(libraryTab).assertDoesNotExist()
-        compose.onNodeWithTag("home-content").performTouchInput { swipeDown() }
+        compose.onNodeWithContentDescription("Home, show all tabs").performClick()
         compose.onNode(libraryTab).assertIsDisplayed()
     }
 
