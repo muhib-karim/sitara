@@ -95,7 +95,7 @@ class PlaylistImporterTest {
     }
 
     @Test
-    fun `file rows are searched: confident matches, uncertain ones to review with their candidates, and songs not found`() = runTest {
+    fun `file rows are searched, giving confident matches, uncertain ones to review with their candidates, and songs not found`() = runTest {
         answer()
         val id = importer.open(ImportSource.PlaylistFile("Favourites.csv", csv))
         importer.match(id)

@@ -18,9 +18,9 @@ fun videoIdFromLink(text: String): String? = text.trim().split(Regex("\\s+")).fi
  * The playlist id (`list=`) of the first YouTube, YouTube Music or youtu.be link in [text] that names one: a playlist
  * page, or a shared song link played from a playlist. Share text around the link and a missing scheme are allowed.
  */
-fun playlistIdFromLink(text: String): String? = text.trim().split(Regex("\\s+")).firstNotNullOfOrNull(::playlistIdFromUrl)
+fun playlistIdFromLink(text: String): String? = text.trim().split(Regex("\\s+")).firstNotNullOfOrNull(::playlistIdFromToken)
 
-private fun playlistIdFromUrl(token: String): String? {
+private fun playlistIdFromToken(token: String): String? {
     val uri = webUri(token) ?: return null
     val host = uri.host.lowercase()
     val playlistPage = host in WATCH_HOSTS && uri.path in setOf("/playlist", "/watch") || host in SHORT_HOSTS
