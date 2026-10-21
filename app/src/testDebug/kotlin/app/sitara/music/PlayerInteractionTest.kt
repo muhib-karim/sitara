@@ -19,6 +19,7 @@ import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -33,6 +34,7 @@ import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipe
 import androidx.compose.ui.test.swipeLeft
 import androidx.compose.ui.test.swipeUp
+import androidx.compose.ui.unit.IntSize
 import androidx.compose.ui.unit.dp
 import app.sitara.music.core.model.DarkMode
 import app.sitara.music.core.model.EqualiserPreset
@@ -48,6 +50,8 @@ import app.sitara.music.core.model.Track
 import app.sitara.music.feature.home.HomeFeed
 import app.sitara.music.feature.library.LibraryActions
 import app.sitara.music.feature.library.LibraryState
+import app.sitara.music.feature.player.LyricCardStyle
+import app.sitara.music.feature.player.LyricShareCard
 import app.sitara.music.feature.player.LyricsState
 import app.sitara.music.feature.player.PlayerActions
 import app.sitara.music.feature.player.PlayerUiState
@@ -503,6 +507,49 @@ class PlayerInteractionTest {
         compose.onNodeWithContentDescription("Translate into English. Change language").performClick()
         compose.onNodeWithText("Hindi").performScrollTo().performClick()
         assertEquals(listOf("hi"), languages)
+    }
+
+    @Test
+    fun aLongPressPicksLinesForACardAndShareOpensTheCardWithItsStyles() {
+        render(expanded = true, page = 1, lyricsState = LyricsState.Found(synced))
+        val (first, second) = synced.lines
+
+        compose.onNodeWithText(first.text).performTouchInput { longClick() }
+        compose.onNodeWithText("Share 1 line").assertIsDisplayed()
+        compose.onNodeWithText(second.text).performClick()
+        compose.onNodeWithText("Share 2 lines").performClick()
+
+        listOf("Artwork", "Colour", "Light").forEach { compose.onNodeWithText(it).assertIsDisplayed() }
+        compose.onNodeWithText("Share image").assertIsDisplayed()
+        compose.onNodeWithTag("lyric-share-card").assertExists()
+    }
+
+    @Test
+    fun shareLyricsStartsWithTheLineBeingSungAndCancelLeaves() {
+        var seeks = 0
+        render(expanded = true, page = 1, lyricsState = LyricsState.Found(synced), actions = object : PlayerActions by PlayerActions.None {
+            override fun seekTo(positionMs: Long) { seeks++ }
+        })
+        val sung = synced.lines.last { it.startMs <= 15_300 }
+
+        compose.onNodeWithContentDescription("Share lyrics").performClick()
+        compose.onNodeWithText("Share 1 line").assertIsDisplayed()
+        compose.onNodeWithText(sung.text).performClick()
+        assertEquals("picking lines does not seek", 0, seeks)
+        compose.onNodeWithText("Cancel").performClick()
+
+        compose.onNodeWithText("Share 1 line").assertDoesNotExist()
+        compose.onNodeWithText(sung.text).performClick()
+        assertEquals(1, seeks)
+    }
+
+    @Test
+    fun aLyricCardIsDrawnAt1080By1350Pixels() {
+        compose.setContent {
+            LyricShareCard(LyricCardStyle.LIGHT, listOf("Paper lanterns over the river"), track, "Lyrics from LRCLIB")
+        }
+
+        assertEquals(IntSize(1080, 1350), compose.onNodeWithTag("lyric-share-card").fetchSemanticsNode().size)
     }
 
     @Test
