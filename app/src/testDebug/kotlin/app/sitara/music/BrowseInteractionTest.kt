@@ -424,7 +424,8 @@ class BrowseInteractionTest {
         var index = -1
         var queue = emptyList<Track>()
         render(onPlay = { tracks, selected -> queue = tracks; index = selected })
-        compose.onNodeWithTag("quick-picks").performTouchInput { swipeLeft() }
+        // A page is narrower than the screen (the next one peeks in), so a swipe across it all would pass page two.
+        compose.onNodeWithTag("quick-picks").performTouchInput { swipeLeft(startX = right * 0.75f, endX = right * 0.15f) }
         val picks = SampleCatalog.tracks
         compose.onNodeWithContentDescription("${picks[4].title} by ${picks[4].artist}").performClick()
         assertEquals(picks, queue)

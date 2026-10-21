@@ -229,7 +229,7 @@ class ScreenshotTest {
     @Test fun settingsLight() = shot("settings", dark = false, settingsOpen = true)
 
     @Test fun homeQuickPicksSecondPage() = shot("home_quick_page2", dark = true) {
-        compose.onNodeWithTag("quick-picks").performTouchInput { swipeLeft() }
+        compose.onNodeWithTag("quick-picks").performTouchInput { swipeLeft(startX = right * 0.75f, endX = right * 0.15f) }
     }
 
     @Test fun homeLoadingDark() = shot("home_loading", dark = true, playerState = PlayerUiState(), homeFeed = HomeFeed())
