@@ -37,6 +37,7 @@ android {
             isMinifyEnabled = true
             isShrinkResources = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
+            testProguardFiles("proguard-test-rules.pro")
             if (System.getenv("SITARA_KEYSTORE_PATH") != null) {
                 signingConfig = signingConfigs.getByName("release")
             }
