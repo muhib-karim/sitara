@@ -2,7 +2,7 @@
 
 How Sitara compares with the four apps it is measured against, updated with every release. Competitor columns come from their public documentation and release notes; **Y** = has it, **~** = partial or depends on version or setup, **—** = not offered, **?** = not documented. A Sitara entry says the release that shipped it, or the Phase C slice planned for it ([PHASE_C_PLAN.md](PHASE_C_PLAN.md)).
 
-Last updated: polish slice 4 (target v0.9.4, on `main`; the owner tags).
+Last updated: polish slice 5 (target v0.9.5, on `main`; the owner tags).
 
 | Capability | BitChord | Metrolist | Meld | ReVanced | Sitara |
 |---|:---:|:---:|:---:|:---:|---|
@@ -14,7 +14,8 @@ Last updated: polish slice 4 (target v0.9.4, on `main`; the owner tags).
 | Ad-free listening | Y | Y | Y | Y | v0.2.0 |
 | Background playback and system media controls | Y | Y | Y | Y | v0.5.0 |
 | Queue restored after the app is killed | ? | ? | ? | ? | v0.5.0 |
-| Likes, playlists and history on the device | Y | Y | Y | Y | v0.4.0 |
+| Likes, playlists and history on the device | Y | Y | Y | Y | v0.4.0; plays counted after 30 s heard, kept with the time listened, Pause and Clear history in v0.9.5 |
+| Listening stats (top songs, artists, time listened) and a share card | ? | Y | ? | ? | v0.9.5 (week, month, year, all time; on the phone only) |
 | Queue reorder, play next, remove | Y | Y | Y | Y | v0.4.0; Undo, swipe to remove, haptic reorder, Save as playlist and radio's own section in v0.9.4 |
 | Offline downloads | Y | Y | Y | ~ | v0.6.0 (no storage cap yet) |
 | Synced lyrics | Y | Y | Y | Y | v0.5.0 (LRCLIB) |

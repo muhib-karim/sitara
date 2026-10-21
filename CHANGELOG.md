@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+Polish slice 5: your stats.
+
+### Added
+
+- Your stats, from a tile in Library or Settings → Listening history: This week, This month, This year or All time, each starting at midnight where the phone is (a week starts on the day your language's calendar starts it).
+- Stats show the time you listened and your plays, a chart of the hours you listen in (TalkBack reads the busiest hours), your top songs with plays and minutes (a tap plays them from there), your top artists with their top song's cover (a tap opens the artist) and your top albums.
+- Share turns a range into a card: the top song's cover blurred behind the time you listened, your top artist and your top five songs, previewed before it goes to the share sheet as an image. No storage permission is asked for.
+- Settings → Listening history: Pause listening history (new plays are not kept) and Clear listening history, which asks first. Stats say when history is paused.
+
+### Changed
+
+- A play is now kept once you have heard 30 seconds of a song, or half of a song shorter than a minute, with when it started and how long you listened; paused time and skipped parts don't count. Recently played and Most played follow the same rule, so a song skipped after a few seconds no longer shows up there.
+- Play history keeps every play instead of the latest 500. Plays from before this version still show in Recently played and play counts, but not in stats, because they were kept without the time listened.
+- Everything stays on the phone: nothing about your listening is sent anywhere.
+
 ## [0.9.4] - 2026-10-21
 
 Polish slice 4: make it yours.
