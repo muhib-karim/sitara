@@ -59,7 +59,7 @@ class StatsInteractionTest {
             SitaraShell(
                 settings = SitaraSettings(darkMode = DarkMode.DARK, reducedMotion = true),
                 home = HomeFeed(),
-                library = LibraryState.Ready(SavedLibrary(liked = SampleCatalog.tracks.take(2))),
+                library = LibraryState.Ready(SavedLibrary(SampleCatalog.tracks.take(2), recent = emptyList(), playlists = emptyList(), albums = emptyList(), artists = emptyList())),
                 query = "",
                 searchFilter = SearchFilter.SONGS,
                 search = SearchState.Idle,

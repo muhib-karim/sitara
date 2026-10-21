@@ -196,7 +196,11 @@ private fun HourChart(stats: ListeningStats) {
             hours.forEachIndexed { hour, ms ->
                 val height = if (ms == 0L) floor else maxOf(floor, size.height * ms / most)
                 drawRoundRect(
-                    color = if (ms == 0L) baseline else if (hour == peakHour) peak else rest,
+                    color = when {
+                        ms == 0L -> baseline
+                        hour == peakHour -> peak
+                        else -> rest
+                    },
                     topLeft = Offset(hour * slot + (slot - bar) / 2, size.height - height),
                     size = Size(bar, height),
                     cornerRadius = CornerRadius(bar / 2),
