@@ -68,7 +68,19 @@ on the phone; BitChord scrobbles to both services, Metrolist and Meld to Last.fm
 
 ## CI
 
-FINAL_RUNS
+Green on `b172485` (code, baselines and docs): CI 39586831165 (its first attempt failed only on Robolectric's
+download of its Android jar, MavenArtifactFetcher; the rerun passed), Secret scan 39586830804, Device screens
+39586830764.
+
+Red runs on the way, each fixed in the next push:
+- CI 39582192431 (`2602de4`): one outbox test used plays dated 1970, which the 30-day clean-up removed; schema 6
+  came from this run's artifact (`bb84023`, CI 39582857206 green).
+- CI 39583462741 (`53a5419`): a debug-only `when` over detail routes lacked the new route (`c3ecc67`).
+- CI 39584150156 (`c3ecc67`), 39585307777 (`9b3026f`): only the screenshot baselines the new Settings row and page
+  changed, as expected before recording.
+- CI 39584928907 (`014da0d`): test names with a dot ("Last.fm"), which JVM method names cannot hold, and a missing
+  import (`9b3026f`).
+- Record screenshots 39584937837 (the same compile error) and 39585307008's first attempt (the Robolectric download).
 
 ## Not verified
 
