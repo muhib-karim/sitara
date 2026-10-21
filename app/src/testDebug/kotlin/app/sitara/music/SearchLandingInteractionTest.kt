@@ -18,6 +18,7 @@ import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performSemanticsAction
 import app.sitara.music.core.model.DarkMode
 import app.sitara.music.core.model.SearchFilter
+import app.sitara.music.core.model.SearchResults
 import app.sitara.music.core.model.SitaraSettings
 import app.sitara.music.feature.home.HomeFeed
 import app.sitara.music.feature.library.LibraryState
@@ -52,7 +53,13 @@ class SearchLandingInteractionTest {
         override fun retryMoods() { calls += "retry moods" }
     }
 
-    private fun render(landing: SearchLanding, actions: SearchActions, initialQuery: String = "", onQuery: (String) -> Unit = {}) {
+    private fun render(
+        landing: SearchLanding,
+        actions: SearchActions,
+        initialQuery: String = "",
+        onQuery: (String) -> Unit = {},
+        search: SearchState = SearchState.Idle,
+    ) {
         compose.setContent {
             var query by remember { mutableStateOf(initialQuery) }
             SitaraShell(
@@ -61,7 +68,7 @@ class SearchLandingInteractionTest {
                 library = LibraryState.Loading,
                 query = query,
                 searchFilter = SearchFilter.SONGS,
-                search = SearchState.Idle,
+                search = search,
                 player = PlayerUiState(track = SampleCatalog.tracks.first()),
                 actions = PlayerActions.None,
                 details = SampleDetailPages(source),
@@ -135,6 +142,19 @@ class SearchLandingInteractionTest {
         assertEquals(listOf("save Lumen Drift live"), actions.calls)
         compose.onNodeWithContentDescription("Clear search").performClick()
         assertEquals("", query)
+    }
+
+    @Test fun openingAResultKeepsTheSearch() {
+        val actions = RecordedActions()
+        val playlist = SampleCatalog.playlists.first()
+        render(
+            SearchLanding(moods = moods), actions, initialQuery = "night ",
+            search = SearchState.Loaded("night", SearchResults.empty("night").copy(playlists = listOf(playlist)), SearchFilter.SONGS),
+        )
+
+        compose.onNodeWithText(playlist.title).performClick()
+
+        assertEquals(listOf("save night"), actions.calls)
     }
 
     @Test fun aMoodTileOpensItsPageAndBackReturnsToSearch() {
