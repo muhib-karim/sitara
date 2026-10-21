@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [0.9.5] - 2026-10-21
+
 Polish slice 5: your stats.
 
 ### Added
@@ -301,7 +303,8 @@ Phase A: foundation, plus the first UI redesign.
 - GitHub Actions workflows: CI (ktlint, unit tests, screenshot tests, debug APK artifact), release on `v*` tags with SHA256SUMS, GitHub Pages site, gitleaks scanning and a manual screenshot refresh workflow.
 - Project documentation: README, architecture and design system guides, contributing guide, code of conduct, security policy and the project website.
 
-[Unreleased]: https://github.com/muhib-karim/sitara/compare/v0.9.4...HEAD
+[Unreleased]: https://github.com/muhib-karim/sitara/compare/v0.9.5...HEAD
+[0.9.5]: https://github.com/muhib-karim/sitara/compare/v0.9.4...v0.9.5
 [0.9.4]: https://github.com/muhib-karim/sitara/compare/v0.9.3...v0.9.4
 [0.9.3]: https://github.com/muhib-karim/sitara/compare/v0.9.2...v0.9.3
 [0.9.2]: https://github.com/muhib-karim/sitara/compare/v0.9.1...v0.9.2
