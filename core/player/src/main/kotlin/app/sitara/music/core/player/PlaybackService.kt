@@ -140,7 +140,7 @@ class PlaybackService : MediaLibraryService() {
         }
         player.addListener(EngineListener(engine))
         this.engine = engine
-        session = MediaLibrarySession.Builder(this, player, callback).build()
+        session = MediaLibrarySession.Builder(this, WordedErrors(player), callback).build()
         PlaybackEngineRegistry.attach(engine)
         scope.launch {
             restoreSavedQueue(engine)
@@ -163,10 +163,6 @@ class PlaybackService : MediaLibraryService() {
                 currentLiked = isLiked
                 session?.setMediaButtonPreferences(SessionActions.buttons(isLiked, shuffled, repeat))
             }
-        }
-        scope.launch {
-            // Cars and system surfaces show why the music stopped instead of the player's own exception.
-            engine.state.map(::playbackError).distinctUntilChanged(PlaybackException::areErrorInfosEqual).collect { session?.setPlaybackException(it) }
         }
         scope.launch {
             dependencies.playbackSettings.collect { settings ->
@@ -238,10 +234,8 @@ class PlaybackService : MediaLibraryService() {
         systemEqualiser.close()
         PlaybackEngineRegistry.audioSessionId = SystemEqualiserSession.NO_SESSION
         crossfader.release()
-        session?.run {
-            player.release()
-            release()
-        }
+        player.release()
+        session?.release()
         session = null
         super.onDestroy()
     }
@@ -352,7 +346,8 @@ class PlaybackService : MediaLibraryService() {
             val result = SettableFuture.create<MediaItemsWithStartPosition>()
             scope.launch {
                 engine?.let { restoreSavedQueue(it) }
-                val player = mediaSession.player
+                // The engine has just filled ExoPlayer; the session's worded view of it catches up a moment later.
+                val player = this@PlaybackService.player
                 if (player.mediaItemCount == 0) {
                     result.setException(IllegalStateException("No saved queue to resume"))
                 } else {
@@ -446,7 +441,7 @@ class PlaybackService : MediaLibraryService() {
                     return@launch
                 }
                 engine.play(queue.first, queue.second)
-                val player = mediaSession.player
+                val player = this@PlaybackService.player
                 result.set(MediaItemsWithStartPosition(List(player.mediaItemCount, player::getMediaItemAt), player.currentMediaItemIndex, C.TIME_UNSET))
             }
             return result

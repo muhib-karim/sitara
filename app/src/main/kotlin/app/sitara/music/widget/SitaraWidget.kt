@@ -250,6 +250,6 @@ class ToggleLike : ActionCallback {
     override suspend fun onAction(context: Context, glanceId: GlanceId, parameters: ActionParameters) {
         val track = withContext(Dispatchers.Main) { PlaybackEngineRegistry.engine.value?.state?.value?.queue?.current } ?: return
         val app = context.applicationContext as SitaraApplication
-        app.library.likedSongs.setLiked(track, !app.isLiked(track.id).first())
+        app.setLiked(track, !app.isLiked(track.id).first())
     }
 }

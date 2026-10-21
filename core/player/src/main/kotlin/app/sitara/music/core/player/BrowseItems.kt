@@ -6,7 +6,6 @@ import androidx.core.net.toUri
 import androidx.core.os.bundleOf
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
-import androidx.media3.common.PlaybackException
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.session.MediaConstants
 
@@ -16,10 +15,6 @@ internal fun defaultContentStyle(): Bundle = bundleOf(
     MediaConstants.EXTRAS_KEY_CONTENT_STYLE_BROWSABLE to MediaConstants.EXTRAS_VALUE_CONTENT_STYLE_LIST_ITEM,
     MediaConstants.EXTRAS_KEY_CONTENT_STYLE_PLAYABLE to MediaConstants.EXTRAS_VALUE_CONTENT_STYLE_LIST_ITEM,
 )
-
-/** What a car shows when the current song could not be played; null while nothing failed. */
-internal fun playbackError(snapshot: PlaybackSnapshot): PlaybackException? =
-    if (snapshot.failed) PlaybackException("Couldn’t play this song. Try again, skip it, or play a download.", null, PlaybackException.ERROR_CODE_IO_UNSPECIFIED) else null
 
 /** [node] as a Media3 item: a song is playable, everything else browsable, each typed and styled so cars can lay it out. */
 internal fun BrowseNode.toMediaItem(): MediaItem = MediaItem.Builder()
