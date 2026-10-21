@@ -9,25 +9,25 @@ import app.sitara.music.source.api.StreamResolver
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.update
 
 /** Remembers the codec and bitrate each song last streamed in, for the readout in Now Playing. */
 class FormatRecordingResolver(private val upstream: StreamResolver) : StreamResolver {
     override val id: String get() = upstream.id
 
+    // Lookup order, oldest first. A StateFlow drops a value equal to the current one, and maps compare without
+    // order, so the order lives here and the flow only publishes copies.
+    private val byLookup = LinkedHashMap<String, StreamFormat>()
     private val recorded = MutableStateFlow<Map<String, StreamFormat>>(emptyMap())
 
     /** By track id, the most recent [MAX_FORMATS] songs. */
     val formats: StateFlow<Map<String, StreamFormat>> = recorded.asStateFlow()
 
     override suspend fun resolve(track: Track): ResolvedStream = upstream.resolve(track).also { stream ->
-        recorded.update { formats ->
-            // Insertion order is lookup order: a song looked up again moves to the end, the oldest goes first.
-            LinkedHashMap(formats).apply {
-                remove(track.id)
-                put(track.id, StreamFormat(stream.codec, stream.bitrateKbps))
-                while (size > MAX_FORMATS) remove(keys.first())
-            }
+        synchronized(byLookup) {
+            byLookup.remove(track.id)
+            byLookup[track.id] = StreamFormat(stream.codec, stream.bitrateKbps)
+            while (byLookup.size > MAX_FORMATS) byLookup.remove(byLookup.keys.first())
+            recorded.value = byLookup.toMap()
         }
     }
 
