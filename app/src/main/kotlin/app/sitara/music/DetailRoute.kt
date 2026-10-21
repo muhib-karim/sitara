@@ -15,6 +15,9 @@ sealed interface DetailRoute {
 
     /** A mood or genre page of the catalogue: the [params] that ask for it, and its [title] for the header. */
     data class Mood(val params: String, val title: String) : DetailRoute
+
+    /** The listener's stats, from the history kept on the phone. */
+    data object Stats : DetailRoute
 }
 
 /** "kind:id", the form a route is saved in across process death. */
@@ -26,6 +29,7 @@ fun DetailRoute.encode(): String = when (this) {
     is DetailRoute.UserPlaylist -> "mine:$id"
     // The params never hold a "|", the title may.
     is DetailRoute.Mood -> "mood:$params|$title"
+    DetailRoute.Stats -> "stats:listening"
 }
 
 fun decodeDetailRoute(saved: String): DetailRoute? {
@@ -35,6 +39,7 @@ fun decodeDetailRoute(saved: String): DetailRoute? {
         "album" -> DetailRoute.Album(id)
         "playlist" -> DetailRoute.Playlist(id)
         "liked" -> DetailRoute.LikedSongs
+        "stats" -> DetailRoute.Stats
         "mine" -> id.toLongOrNull()?.let(DetailRoute::UserPlaylist)
         "mood" -> DetailRoute.Mood(id.substringBefore('|').ifEmpty { return null }, id.substringAfter('|', "").ifEmpty { return null })
         else -> null

@@ -48,6 +48,7 @@ import app.sitara.music.core.model.SearchFilter
 import app.sitara.music.core.model.SearchResults
 import app.sitara.music.core.model.SitaraSettings
 import app.sitara.music.core.model.SongDownload
+import app.sitara.music.core.model.StatsRange
 import app.sitara.music.core.model.Track
 import app.sitara.music.feature.home.FeedState
 import app.sitara.music.feature.home.HomeActions
@@ -59,6 +60,7 @@ import app.sitara.music.feature.library.LibraryActions
 import app.sitara.music.feature.library.LibraryState
 import app.sitara.music.feature.library.SavedIds
 import app.sitara.music.feature.library.SavedLibrary
+import app.sitara.music.feature.library.StatsState
 import app.sitara.music.feature.player.PlayerActions
 import app.sitara.music.feature.player.PlayerUiState
 import app.sitara.music.feature.search.SearchState
@@ -399,6 +401,7 @@ class BrowseInteractionTest {
         val failing = object : DetailPages {
             override fun state(route: DetailRoute) = MutableStateFlow<DetailState>(DetailState.Failed)
             override fun moodPage(route: DetailRoute.Mood) = MutableStateFlow<FeedState>(FeedState.Failed)
+            override fun stats(range: StatsRange) = MutableStateFlow<StatsState>(StatsState.Failed)
             override fun retry(route: DetailRoute) { retried += route }
         }
         render(details = failing, initialDetail = route)
@@ -412,6 +415,7 @@ class BrowseInteractionTest {
         val failing = object : DetailPages {
             override fun state(route: DetailRoute) = MutableStateFlow<DetailState>(DetailState.Failed)
             override fun moodPage(route: DetailRoute.Mood) = MutableStateFlow<FeedState>(FeedState.Failed)
+            override fun stats(range: StatsRange) = MutableStateFlow<StatsState>(StatsState.Failed)
             override fun retry(route: DetailRoute) { retried += route }
         }
         render(details = failing, initialDetail = route)

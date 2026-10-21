@@ -82,7 +82,7 @@ import app.sitara.music.core.model.SongDownload
 import app.sitara.music.core.model.Track
 
 /**
- * The listener's own library: Liked songs and Downloads pinned at the top with their counts, Recently played, then one
+ * The listener's own library: Liked songs and Downloads pinned at the top with their counts, Your stats, Recently played, then one
  * kind at a time (playlists, songs, albums, artists or downloads) as a grid of covers or a list, in the chosen order.
  */
 @Composable
@@ -93,6 +93,7 @@ fun LibraryScreen(
     sort: LibrarySort,
     onPlay: (tracks: List<Track>, index: Int) -> Unit,
     onLikedSongs: () -> Unit,
+    onStats: () -> Unit,
     onPlaylist: (PlaylistSummary) -> Unit,
     onAlbum: (Album) -> Unit,
     onArtist: (Artist) -> Unit,
@@ -128,6 +129,12 @@ fun LibraryScreen(
                             PinnedTile(SitaraIcons.HeartFilled, "Liked songs", songCount(saved.liked.size), onLikedSongs, Modifier.weight(1f))
                             PinnedTile(SitaraIcons.Download, "Downloads", songCount(downloads.size), { kind = LibraryKind.DOWNLOADS }, Modifier.weight(1f))
                         }
+                    }
+                    item(key = "stats") {
+                        PinnedTile(
+                            SitaraIcons.Stats, "Your stats", "Top songs, artists and when you listen", onStats,
+                            Modifier.padding(horizontal = SitaraSpacing.Gutter, vertical = 4.dp).fillMaxWidth(),
+                        )
                     }
                     if (saved.recent.isNotEmpty()) {
                         item(key = "recent-heading") { SectionHeader("Recently played", Modifier.padding(top = 12.dp)) }
@@ -222,8 +229,8 @@ private fun Modifier.libraryRow() = padding(horizontal = SitaraSpacing.Gutter).t
 
 private const val TILE_TAG = "library-tile"
 private const val ROW_TAG = "library-row"
-private val TileWidth = 150.dp
-private val TileGap = 12.dp
+internal val TileWidth = 150.dp
+internal val TileGap = 12.dp
 
 /** The order (when this kind has more than one), New playlist on playlists, and grid or list (not for downloads, which are rows). */
 @Composable
@@ -277,7 +284,7 @@ private fun SortSheet(kind: LibraryKind, order: LibrarySort, onSort: (LibrarySor
 
 /** Liked songs or Downloads, always at the top, with how many songs each holds. */
 @Composable
-private fun PinnedTile(icon: ImageVector, title: String, count: String, onClick: () -> Unit, modifier: Modifier) {
+private fun PinnedTile(icon: ImageVector, title: String, detail: String, onClick: () -> Unit, modifier: Modifier) {
     Row(
         modifier.clip(RoundedCornerShape(SitaraRadius.Tile)).background(MaterialTheme.colorScheme.surfaceContainerHigh)
             .clickable(role = Role.Button, onClick = onClick).semantics(mergeDescendants = true) {}.padding(12.dp),
@@ -292,7 +299,19 @@ private fun PinnedTile(icon: ImageVector, title: String, count: String, onClick:
         }
         Column(Modifier.weight(1f)) {
             Text(title, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text(count, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+            Text(detail, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+        }
+    }
+}
+
+/** Three covers fanned out in the theme's colours, for a page with nothing to show yet; decoration only. */
+@Composable
+internal fun FannedCovers() {
+    val accent = MaterialTheme.colorScheme.primary.toArgb()
+    val deep = MaterialTheme.colorScheme.surfaceContainerHighest.toArgb()
+    Box(Modifier.size(180.dp, 128.dp).clearAndSetSemantics {}, contentAlignment = Alignment.Center) {
+        listOf(-12f to listOf(deep, accent), 12f to listOf(accent, deep), 0f to listOf(accent, deep, accent)).forEach { (turn, colors) ->
+            ArtworkImage(Artwork(colors), Modifier.size(104.dp).offset(x = (turn * 3).dp).rotate(turn), cornerRadius = SitaraRadius.Tile)
         }
     }
 }
@@ -300,20 +319,12 @@ private fun PinnedTile(icon: ImageVector, title: String, count: String, onClick:
 /** A fresh library: three fanned covers in the theme's colours, what fills it, and one way to start. */
 @Composable
 private fun EmptyLibrary(onFindMusic: () -> Unit) {
-    val accent = MaterialTheme.colorScheme.primary.toArgb()
-    val deep = MaterialTheme.colorScheme.surfaceContainerHighest.toArgb()
     Column(
         Modifier.fillMaxWidth().padding(horizontal = SitaraSpacing.Gutter, vertical = 32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Box(Modifier.size(180.dp, 128.dp).clearAndSetSemantics {}, contentAlignment = Alignment.Center) {
-            listOf(-12f to listOf(deep, accent), 12f to listOf(accent, deep), 0f to listOf(accent, deep, accent)).forEach { (turn, colors) ->
-                ArtworkImage(
-                    Artwork(colors), Modifier.size(104.dp).offset(x = (turn * 3).dp).rotate(turn), cornerRadius = SitaraRadius.Tile,
-                )
-            }
-        }
+        FannedCovers()
         Text("Your library starts here", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface)
         Text(
             "Like songs, save albums and artists, make playlists and download for offline. They all gather here.",

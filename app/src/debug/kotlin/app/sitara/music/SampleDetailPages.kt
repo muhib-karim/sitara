@@ -2,7 +2,11 @@ package app.sitara.music
 
 import app.sitara.music.core.model.HomePage
 import app.sitara.music.core.model.Library
+import app.sitara.music.core.model.ListeningStats
 import app.sitara.music.core.model.PlaylistSummary
+import app.sitara.music.core.model.SongTotal
+import app.sitara.music.core.model.StatsRange
+import app.sitara.music.core.model.TimedListen
 import app.sitara.music.core.model.UserPlaylist
 import app.sitara.music.feature.home.FeedState
 import app.sitara.music.feature.home.HomeFeed
@@ -10,7 +14,10 @@ import app.sitara.music.feature.home.OnlineHome
 import app.sitara.music.feature.home.homeFeed
 import app.sitara.music.feature.library.DetailState
 import app.sitara.music.feature.library.SavedLibrary
+import app.sitara.music.feature.library.StatsState
 import app.sitara.music.source.fake.FakeMusicSource
+import app.sitara.music.source.fake.SampleCatalog
+import java.time.ZoneOffset
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.runBlocking
@@ -25,6 +32,8 @@ internal class SampleDetailPages(private val source: FakeMusicSource = FakeMusic
     override fun moodPage(route: DetailRoute.Mood): StateFlow<FeedState> =
         MutableStateFlow(runBlocking { source.moodPage(route.params).let { FeedState.Ready(it.shelves, it.continuation) } })
 
+    override fun stats(range: StatsRange): StateFlow<StatsState> = MutableStateFlow(StatsState.Ready(sampleListeningStats(range)))
+
     override fun retry(route: DetailRoute) = Unit
 
     private suspend fun load(route: DetailRoute): DetailState = when (route) {
@@ -35,7 +44,28 @@ internal class SampleDetailPages(private val source: FakeMusicSource = FakeMusic
         is DetailRoute.UserPlaylist -> source.library().playlists.getOrNull(route.id.toInt() - 1)
             ?.let { DetailState.UserPlaylistReady(UserPlaylist(route.id, it.title, it.tracks)) } ?: DetailState.Gone
         is DetailRoute.Mood -> error("A mood page is a feed: see moodPage")
+        DetailRoute.Stats -> error("Stats have their own state: see stats")
     } ?: DetailState.Failed
+}
+
+/**
+ * Debug and test fixture: stats shaped like real listening on the sample catalogue, more plays for longer ranges, an
+ * evening listener with a morning commute. Emulators cannot stream, so screenshots and the device capture show these.
+ */
+internal fun sampleListeningStats(range: StatsRange): ListeningStats {
+    val scale = when (range) {
+        StatsRange.WEEK -> 1
+        StatsRange.MONTH -> 4
+        StatsRange.YEAR -> 38
+        StatsRange.ALL_TIME -> 52
+    }
+    val songs = SampleCatalog.tracks.mapIndexed { i, track ->
+        val plays = (14 - i).coerceAtLeast(1) * scale
+        SongTotal(track, plays, plays * track.durationMs * 9 / 10, lastPlayedAt = i.toLong())
+    }
+    val byHour = listOf(0, 0, 0, 0, 0, 0, 1, 4, 6, 3, 1, 1, 2, 2, 1, 1, 2, 4, 6, 8, 9, 7, 4, 1)
+    val listens = byHour.flatMapIndexed { hour, weight -> List(weight) { TimedListen(hour * 3_600_000L, scale * 240_000L) } }
+    return ListeningStats.of(songs, listens, ZoneOffset.UTC)
 }
 
 /** Debug and test fixture: the sample catalogue shaped as a listener's saved library, playlists numbered from 1. */

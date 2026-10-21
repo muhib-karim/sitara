@@ -49,6 +49,9 @@ data class ListeningStats(
 ) {
     val isEmpty: Boolean get() = plays == 0
 
+    /** The hour of the day with the most time heard, the earlier on a tie; null with nothing heard. */
+    val peakHour: Int? get() = listenedByHour.indices.maxByOrNull { listenedByHour[it] }?.takeIf { listenedByHour[it] > 0 }
+
     companion object {
         const val TOP_SONGS = 10
         const val TOP_ARTISTS = 5

@@ -178,6 +178,12 @@ object SitaraIcons {
         moveTo(10f, 4f); lineTo(14f, 4f)
         moveTo(6.5f, 7f); lineTo(7.5f, 20f); lineTo(16.5f, 20f); lineTo(17.5f, 7f)
     }
+    val Stats = icon("stats", filled = false) {
+        moveTo(5f, 20f); lineTo(5f, 13f)
+        moveTo(10f, 20f); lineTo(10f, 5f)
+        moveTo(15f, 20f); lineTo(15f, 10f)
+        moveTo(20f, 20f); lineTo(20f, 15f)
+    }
     val Star = icon("star") {
         moveTo(12f, 2f); curveTo(12.8f, 8f, 16f, 11.2f, 22f, 12f)
         curveTo(16f, 12.8f, 12.8f, 16f, 12f, 22f)

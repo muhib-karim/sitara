@@ -80,6 +80,7 @@ fun SettingsScreen(
     modifier: Modifier = Modifier,
     equaliserSummary: String = "Off",
     onOpenEqualiser: () -> Unit = {},
+    onOpenStats: () -> Unit = {},
     contentPadding: PaddingValues = PaddingValues(),
 ) {
     LazyColumn(modifier.fillMaxSize().testTag("settings-content"), contentPadding = contentPadding) {
@@ -104,6 +105,11 @@ fun SettingsScreen(
                 SwitchRow("Skip silence", "Skips quiet stretches inside and between songs", settings.skipSilence) { onChange(settings.copy(skipSilence = it)) }
                 InsetDivider()
                 CrossfadeRow(settings.crossfadeSeconds) { onChange(settings.copy(crossfadeSeconds = it)) }
+            }
+        }
+        item(key = "history") {
+            SettingsGroup("Listening history") {
+                LinkRow("Your stats", "On this phone", onOpenStats)
             }
         }
         item(key = "downloads") {

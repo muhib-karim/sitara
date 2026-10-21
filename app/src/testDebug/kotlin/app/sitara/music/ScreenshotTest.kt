@@ -37,6 +37,7 @@ import app.sitara.music.core.model.SearchFilter
 import app.sitara.music.core.model.SearchResults
 import app.sitara.music.core.model.SitaraSettings
 import app.sitara.music.core.model.SongDownload
+import app.sitara.music.core.model.StatsRange
 import app.sitara.music.core.model.UserPlaylist
 import app.sitara.music.feature.home.FeedState
 import app.sitara.music.feature.home.HomeFeed
@@ -47,6 +48,7 @@ import app.sitara.music.feature.library.DetailState
 import app.sitara.music.feature.library.LibraryState
 import app.sitara.music.feature.library.SavedIds
 import app.sitara.music.feature.library.SavedLibrary
+import app.sitara.music.feature.library.StatsState
 import app.sitara.music.feature.library.SongActions
 import app.sitara.music.feature.player.EqualiserPanel
 import app.sitara.music.feature.player.LyricsState
@@ -444,6 +446,8 @@ internal class FixedPage(state: DetailState) : DetailPages {
     override fun state(route: DetailRoute): StateFlow<DetailState> = flow
 
     override fun moodPage(route: DetailRoute.Mood): StateFlow<FeedState> = error("A fixed page is a catalogue or own page, not a mood")
+
+    override fun stats(range: StatsRange): StateFlow<StatsState> = error("A fixed page is a catalogue or own page, not stats")
 
     override fun retry(route: DetailRoute) = Unit
 }

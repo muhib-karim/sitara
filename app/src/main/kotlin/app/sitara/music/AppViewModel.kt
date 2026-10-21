@@ -13,10 +13,12 @@ import app.sitara.music.core.model.Artist
 import app.sitara.music.core.model.EqualiserSettings
 import app.sitara.music.core.model.LibraryLayout
 import app.sitara.music.core.model.LibrarySort
+import app.sitara.music.core.model.ListeningStats
 import app.sitara.music.core.model.PlaylistSummary
 import app.sitara.music.core.model.SearchFilter
 import app.sitara.music.core.model.SitaraSettings
 import app.sitara.music.core.model.SongDownload
+import app.sitara.music.core.model.StatsRange
 import app.sitara.music.core.model.Track
 import app.sitara.music.core.model.toDownload
 import app.sitara.music.core.player.QueueState
@@ -33,6 +35,7 @@ import app.sitara.music.feature.library.LibraryActions
 import app.sitara.music.feature.library.LibraryState
 import app.sitara.music.feature.library.SavedIds
 import app.sitara.music.feature.library.SavedLibrary
+import app.sitara.music.feature.library.StatsState
 import app.sitara.music.feature.player.LyricsState
 import app.sitara.music.feature.player.PlayerActions
 import app.sitara.music.feature.player.PlayerUiState
@@ -46,6 +49,9 @@ import app.sitara.music.feature.search.searchStates
 import app.sitara.music.feature.search.searchSuggestions
 import app.sitara.music.feature.search.withRecentSearch
 import app.sitara.music.source.api.BrowseSource
+import java.time.ZoneId
+import java.time.temporal.WeekFields
+import java.util.Locale
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.channels.Channel
@@ -228,6 +234,14 @@ class AppViewModel(private val app: SitaraApplication) :
     private fun Flow<DetailState>.ownPage(): StateFlow<DetailState> =
         catch { emit(DetailState.Failed) }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), DetailState.Loading)
 
+    // The range starts where it does when Stats opens, in the phone's zone and with its locale's first day of the week.
+    override fun stats(range: StatsRange): StateFlow<StatsState> {
+        val zone = ZoneId.systemDefault()
+        val since = range.startMs(System.currentTimeMillis(), zone, WeekFields.of(Locale.getDefault()).firstDayOfWeek)
+        return app.library.history.stats(since, zone).map<ListeningStats, StatsState> { StatsState.Ready(it) }.catch { emit(StatsState.Failed) }
+            .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), StatsState.Loading)
+    }
+
     override fun moodPage(route: DetailRoute.Mood): StateFlow<FeedState> =
         moodPages.getOrPut(route) { MutableStateFlow<FeedState>(FeedState.Loading).also { loadMood(route, it) } }
 
@@ -259,6 +273,7 @@ class AppViewModel(private val app: SitaraApplication) :
                     is DetailRoute.Playlist -> DetailState.PlaylistReady(browse { playlist(route.id) })
                     DetailRoute.LikedSongs, is DetailRoute.UserPlaylist -> error("Own pages are not loaded from a catalogue")
                     is DetailRoute.Mood -> error("A mood page is a feed: see moodPage")
+                    DetailRoute.Stats -> error("Stats have their own state: see stats")
                 }
             } catch (e: CancellationException) {
                 throw e

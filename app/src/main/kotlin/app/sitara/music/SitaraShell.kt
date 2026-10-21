@@ -62,6 +62,7 @@ import app.sitara.music.core.model.SearchFilter
 import app.sitara.music.core.model.ShelfLink
 import app.sitara.music.core.model.SitaraSettings
 import app.sitara.music.core.model.SongDownload
+import app.sitara.music.core.model.StatsRange
 import app.sitara.music.core.model.Track
 import app.sitara.music.feature.home.HomeActions
 import app.sitara.music.feature.home.HomeFeed
@@ -75,6 +76,7 @@ import app.sitara.music.feature.library.LibraryState
 import app.sitara.music.feature.library.PlaylistNameSheet
 import app.sitara.music.feature.library.SavedIds
 import app.sitara.music.feature.library.SongActions
+import app.sitara.music.feature.library.StatsScreen
 import app.sitara.music.feature.player.EqualiserScreen
 import app.sitara.music.feature.player.PlayerActions
 import app.sitara.music.feature.player.PlayerSheet
@@ -245,6 +247,16 @@ fun SitaraShell(
                             onShelfLink = onShelfLink,
                             contentPadding = contentPadding,
                         )
+                    } else if (route == DetailRoute.Stats) {
+                        var range by rememberSaveable { mutableStateOf(StatsRange.WEEK) }
+                        val state by remember(details, range) { details.stats(range) }.collectAsState()
+                        StatsScreen(
+                            state, range, onRange = { range = it },
+                            onBack = { detailStack = detailStack.dropLast(1) },
+                            onPlay = onPlay,
+                            onArtist = { open(DetailRoute.Artist(it)) },
+                            contentPadding = contentPadding,
+                        )
                     } else if (route != null) {
                         val state by remember(details, route) { details.state(route) }.collectAsState()
                         DetailScreen(
@@ -276,6 +288,7 @@ fun SitaraShell(
                             Tab.LIBRARY -> LibraryScreen(
                                 library, downloads, settings.libraryLayout, settings.librarySort, onPlay,
                                 onLikedSongs = { open(DetailRoute.LikedSongs) },
+                                onStats = { open(DetailRoute.Stats) },
                                 onPlaylist = { open(DetailRoute.UserPlaylist(it.id)) },
                                 onAlbum = openAlbum,
                                 onArtist = openArtist,
@@ -296,6 +309,7 @@ fun SitaraShell(
                                     onBack = { tab = Tab.HOME }, contentPadding = contentPadding,
                                     equaliserSummary = equaliserSummary(player.equaliser, player.systemEqualiser),
                                     onOpenEqualiser = { equaliserOpen = true },
+                                    onOpenStats = { open(DetailRoute.Stats) },
                                 )
                             }
                         }

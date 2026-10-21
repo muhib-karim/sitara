@@ -25,6 +25,18 @@ fun formatDuration(ms: Long): String {
     return if (h > 0) "%d:%02d:%02d".format(h, m, s) else "%d:%02d".format(m, s)
 }
 
+/** Formats time spent listening in whole minutes: "42 min", "1 h 5 min", "12 h". */
+fun formatListening(ms: Long): String {
+    val minutes = ms.coerceAtLeast(0) / 60_000
+    val h = minutes / 60
+    val m = minutes % 60
+    return when {
+        h == 0L -> "$m min"
+        m == 0L -> "$h h"
+        else -> "$h h $m min"
+    }
+}
+
 /** Formats a byte count the way Android's storage settings do (1 kB = 1000 bytes): "820 kB", "4.2 MB", "1.3 GB". */
 fun formatBytes(bytes: Long): String {
     val b = bytes.coerceAtLeast(0)
