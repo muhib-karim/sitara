@@ -1,5 +1,6 @@
 package app.sitara.music.feature.player
 
+import androidx.compose.animation.core.animateDpAsState
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -42,19 +43,26 @@ import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import app.sitara.music.core.common.formatDuration
+import app.sitara.music.core.designsystem.GlassIconButton
+import app.sitara.music.core.designsystem.LocalReducedMotion
 import app.sitara.music.core.designsystem.PillButton
 import app.sitara.music.core.designsystem.SitaraColors
 import app.sitara.music.core.designsystem.SitaraIcons
+import app.sitara.music.core.designsystem.SitaraMotion
 import app.sitara.music.core.model.RepeatMode
 
 @Composable
 internal fun PlayerControls(state: PlayerUiState, actions: PlayerActions, modifier: Modifier = Modifier) {
     Column(modifier) {
-        if (state.failed) PlaybackFailed(actions) else Scrubber(state, actions)
+        // The scrubber stays where it is on a failed song, still, so the screen keeps its shape and its times.
+        Scrubber(state, actions)
+        if (state.failed) PlaybackFailed(actions)
         Row(Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 8.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = actions::toggleShuffle, modifier = Modifier.semantics { stateDescription = if (state.shuffled) "On" else "Off" }) {
-                Icon(SitaraIcons.Shuffle, "Shuffle", tint = if (state.shuffled) MaterialTheme.colorScheme.primary else SitaraColors.StageSecondary)
-            }
+            GlassIconButton(
+                SitaraIcons.Shuffle, "Shuffle", actions::toggleShuffle,
+                Modifier.semantics { stateDescription = if (state.shuffled) "On" else "Off" },
+                tint = if (state.shuffled) MaterialTheme.colorScheme.primary else SitaraColors.StageSecondary,
+            )
             IconButton(onClick = actions::previous, modifier = Modifier.size(48.dp)) {
                 Icon(SitaraIcons.Previous, "Previous track", tint = Color.White, modifier = Modifier.size(28.dp))
             }
@@ -74,11 +82,13 @@ internal fun PlayerControls(state: PlayerUiState, actions: PlayerActions, modifi
             IconButton(onClick = actions::next, modifier = Modifier.size(48.dp)) {
                 Icon(SitaraIcons.Next, "Next track", tint = Color.White, modifier = Modifier.size(28.dp))
             }
-            IconButton(onClick = actions::cycleRepeat, modifier = Modifier.semantics { stateDescription = state.repeatMode.name.lowercase() }) {
-                Box(contentAlignment = Alignment.Center) {
-                    Icon(SitaraIcons.Repeat, "Repeat", tint = if (state.repeatMode == RepeatMode.OFF) SitaraColors.StageSecondary else MaterialTheme.colorScheme.primary)
-                    if (state.repeatMode == RepeatMode.ONE) Text("1", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
-                }
+            Box(contentAlignment = Alignment.Center) {
+                GlassIconButton(
+                    SitaraIcons.Repeat, "Repeat", actions::cycleRepeat,
+                    Modifier.semantics { stateDescription = state.repeatMode.name.lowercase() },
+                    tint = if (state.repeatMode == RepeatMode.OFF) SitaraColors.StageSecondary else MaterialTheme.colorScheme.primary,
+                )
+                if (state.repeatMode == RepeatMode.ONE) Text("1", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
             }
         }
     }
@@ -87,7 +97,7 @@ internal fun PlayerControls(state: PlayerUiState, actions: PlayerActions, modifi
 /** Takes the scrubber's place while the current song cannot play: a stream that never loaded has nothing to seek. */
 @Composable
 private fun PlaybackFailed(actions: PlayerActions) {
-    Column(Modifier.fillMaxWidth().semantics { liveRegion = LiveRegionMode.Polite }) {
+    Column(Modifier.fillMaxWidth().padding(top = 8.dp).semantics { liveRegion = LiveRegionMode.Polite }) {
         Text(PLAYBACK_FAILED, color = SitaraColors.StageContent, style = MaterialTheme.typography.titleSmall)
         Row(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             PillButton("Try again", actions::retryPlayback)
@@ -110,17 +120,20 @@ private fun Scrubber(state: PlayerUiState, actions: PlayerActions) {
     }
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     val played = MaterialTheme.colorScheme.primary
+    val seekable = duration > 0 && !state.failed
+    // A thick bar that thickens again under the finger, so a drag shows it has hold of the song.
+    val thickness by animateDpAsState(if (dragging) 10.dp else 6.dp, SitaraMotion.orReduced(LocalReducedMotion.current, SitaraMotion.smooth()), label = "scrubber thickness")
     Box(Modifier.fillMaxWidth().height(48.dp)) {
         Canvas(Modifier.fillMaxSize()) {
-            // Keep the tiny visual handle inside the generous native seek target.
-            val inset = 8.dp.toPx()
+            // Keep the visual handle inside the generous native seek target.
+            val inset = 10.dp.toPx()
             val start = if (rtl) size.width - inset else inset
             val end = if (rtl) inset else size.width - inset
             val center = size.height / 2f
             val thumb = start + (end - start) * value
-            drawLine(Color.White.copy(alpha = 0.30f), Offset(start, center), Offset(end, center), 3.dp.toPx(), StrokeCap.Round)
-            if (value > 0f) drawLine(played, Offset(start, center), Offset(thumb, center), 3.dp.toPx(), StrokeCap.Round)
-            if (duration > 0) drawCircle(played, (if (dragging) 6.dp else 5.dp).toPx(), Offset(thumb, center))
+            drawLine(Color.White.copy(alpha = 0.24f), Offset(start, center), Offset(end, center), thickness.toPx(), StrokeCap.Round)
+            if (value > 0f) drawLine(played, Offset(start, center), Offset(thumb, center), thickness.toPx(), StrokeCap.Round)
+            if (seekable) drawCircle(Color.White, (thickness + 4.dp).toPx() / 2f + 2.dp.toPx(), Offset(thumb, center))
         }
         // Use the stable overload for touch, keyboard, RTL and accessibility behavior.
         // Transparent colours keep the semantics visible to TalkBack (layer alpha=0 would not).
@@ -131,7 +144,7 @@ private fun Scrubber(state: PlayerUiState, actions: PlayerActions) {
                 if (dragging && duration > 0) actions.seekTo((dragValue * duration).toLong())
                 dragging = false
             },
-            enabled = duration > 0,
+            enabled = seekable,
             colors = SliderDefaults.colors(
                 thumbColor = Color.Transparent,
                 activeTrackColor = Color.Transparent,
@@ -144,7 +157,7 @@ private fun Scrubber(state: PlayerUiState, actions: PlayerActions) {
         )
     }
     Row(Modifier.fillMaxWidth()) {
-        val timeStyle = MaterialTheme.typography.bodySmall.copy(fontFeatureSettings = "tnum")
+        val timeStyle = MaterialTheme.typography.labelLarge.copy(fontFeatureSettings = "tnum")
         Text(formatDuration((value * duration).toLong()), color = SitaraColors.StageSecondary, style = timeStyle)
         Spacer(Modifier.weight(1f))
         Text(formatDuration(duration), color = SitaraColors.StageSecondary, style = timeStyle)

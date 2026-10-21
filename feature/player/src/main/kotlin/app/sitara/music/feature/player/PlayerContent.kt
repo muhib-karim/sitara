@@ -47,6 +47,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import app.sitara.music.core.designsystem.ArtworkBackdrop
@@ -234,14 +235,17 @@ private fun TrackHeading(
             Spacer(Modifier.width(12.dp))
         }
         Column(Modifier.weight(1f)) {
-            Text(track.title, color = SitaraColors.StageContent, style = if (compact) MaterialTheme.typography.titleMedium else MaterialTheme.typography.titleLarge, maxLines = 2, overflow = TextOverflow.Ellipsis)
+            // Weight carries the hierarchy: an extra-bold title over a medium-weight artist line.
+            val titleStyle = if (compact) MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold) else MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.ExtraBold)
+            Text(track.title, color = SitaraColors.StageContent, style = titleStyle, maxLines = 2, overflow = TextOverflow.Ellipsis)
             val artistId = track.artistId
             val link = if (onArtist != null && artistId != null) {
                 Modifier.minimumInteractiveComponentSize().clickable(role = Role.Button, onClickLabel = "Open artist") { onArtist(artistId) }
             } else {
                 Modifier
             }
-            Text(track.artist, color = SitaraColors.StageSecondary, style = MaterialTheme.typography.bodySmall, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = link)
+            val artistStyle = (if (compact) MaterialTheme.typography.bodyMedium else MaterialTheme.typography.bodyLarge).copy(fontWeight = FontWeight.Medium)
+            Text(track.artist, color = SitaraColors.StageSecondary, style = artistStyle, maxLines = 1, overflow = TextOverflow.Ellipsis, modifier = link)
         }
         if (onLike != null) {
             GlassIconButton(

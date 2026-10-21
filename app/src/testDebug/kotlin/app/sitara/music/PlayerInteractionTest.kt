@@ -140,12 +140,12 @@ class PlayerInteractionTest {
     }
 
     @Test
-    fun failedSongInNowPlayingReplacesTheScrubberWithTryAgainAndSkip() {
+    fun failedSongInNowPlayingKeepsAStillScrubberAndOffersTryAgainAndSkip() {
         val actions = RecoveryActions()
         render(expanded = true, actions = actions, failed = true)
 
         compose.onNodeWithText("Couldn’t play this song").assertIsDisplayed()
-        compose.onNodeWithContentDescription("Seek").assertDoesNotExist()
+        compose.onNodeWithContentDescription("Seek").assertIsDisplayed().assertIsNotEnabled()
         compose.onNodeWithText("Try again").performClick()
         compose.onNodeWithText("Skip").performClick()
         assertEquals(1, actions.retries)
