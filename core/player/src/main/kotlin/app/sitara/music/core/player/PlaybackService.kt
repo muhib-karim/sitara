@@ -165,6 +165,10 @@ class PlaybackService : MediaLibraryService() {
             }
         }
         scope.launch {
+            // Cars and system surfaces show why the music stopped instead of the player's own exception.
+            engine.state.map(::playbackError).distinctUntilChanged(PlaybackException::areErrorInfosEqual).collect { session?.setPlaybackException(it) }
+        }
+        scope.launch {
             dependencies.playbackSettings.collect { settings ->
                 listOf(leveller, tailLeveller).forEach {
                     it.enabled = settings.normalisation
@@ -370,7 +374,8 @@ class PlaybackService : MediaLibraryService() {
             session: MediaLibrarySession,
             browser: MediaSession.ControllerInfo,
             params: LibraryParams?,
-        ): ListenableFuture<LibraryResult<MediaItem>> = Futures.immediateFuture(LibraryResult.ofItem(libraryBrowser.root.toMediaItem(), params))
+        ): ListenableFuture<LibraryResult<MediaItem>> =
+            Futures.immediateFuture(LibraryResult.ofItem(libraryBrowser.root.toMediaItem(), LibraryParams.Builder().setExtras(defaultContentStyle()).build()))
 
         override fun onGetItem(
             session: MediaLibrarySession,

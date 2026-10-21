@@ -1,10 +1,27 @@
 package app.sitara.music.core.player
 
+import android.os.Bundle
+import androidx.annotation.OptIn
 import androidx.core.net.toUri
+import androidx.core.os.bundleOf
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
+import androidx.media3.common.PlaybackException
+import androidx.media3.common.util.UnstableApi
+import androidx.media3.session.MediaConstants
 
-/** [node] as a Media3 item: a song is playable, everything else browsable, each typed so cars can lay it out. */
+/** How a car lays out the tree unless a folder says otherwise: everything as a list. */
+@OptIn(UnstableApi::class)
+internal fun defaultContentStyle(): Bundle = bundleOf(
+    MediaConstants.EXTRAS_KEY_CONTENT_STYLE_BROWSABLE to MediaConstants.EXTRAS_VALUE_CONTENT_STYLE_LIST_ITEM,
+    MediaConstants.EXTRAS_KEY_CONTENT_STYLE_PLAYABLE to MediaConstants.EXTRAS_VALUE_CONTENT_STYLE_LIST_ITEM,
+)
+
+/** What a car shows when the current song could not be played; null while nothing failed. */
+internal fun playbackError(snapshot: PlaybackSnapshot): PlaybackException? =
+    if (snapshot.failed) PlaybackException("Couldn’t play this song. Try again, skip it, or play a download.", null, PlaybackException.ERROR_CODE_IO_UNSPECIFIED) else null
+
+/** [node] as a Media3 item: a song is playable, everything else browsable, each typed and styled so cars can lay it out. */
 internal fun BrowseNode.toMediaItem(): MediaItem = MediaItem.Builder()
     .setMediaId(id.mediaId)
     .setMediaMetadata(
@@ -15,6 +32,7 @@ internal fun BrowseNode.toMediaItem(): MediaItem = MediaItem.Builder()
             .setIsPlayable(playable)
             .setIsBrowsable(!playable)
             .setMediaType(mediaType(id))
+            .setExtras(contentStyle(id))
             .build(),
     )
     .build()
@@ -28,4 +46,12 @@ private fun mediaType(id: BrowseId): Int = when (id) {
     is BrowseId.Album -> MediaMetadata.MEDIA_TYPE_ALBUM
     is BrowseId.Artist -> MediaMetadata.MEDIA_TYPE_ARTIST
     is BrowseId.Song -> MediaMetadata.MEDIA_TYPE_MUSIC
+}
+
+/** Covers read best as a grid (playlists, albums, artists), songs as a list. */
+@OptIn(UnstableApi::class)
+private fun contentStyle(id: BrowseId): Bundle? = when (id) {
+    BrowseId.Playlists, BrowseId.Albums, BrowseId.Artists -> bundleOf(MediaConstants.EXTRAS_KEY_CONTENT_STYLE_BROWSABLE to MediaConstants.EXTRAS_VALUE_CONTENT_STYLE_GRID_ITEM)
+    is BrowseId.SongList -> bundleOf(MediaConstants.EXTRAS_KEY_CONTENT_STYLE_PLAYABLE to MediaConstants.EXTRAS_VALUE_CONTENT_STYLE_LIST_ITEM)
+    else -> null
 }

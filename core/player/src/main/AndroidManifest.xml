@@ -15,13 +15,15 @@
     </queries>
 
     <application>
-        <!-- Exported so system media controls, Bluetooth and Android Auto can bind; Media3 checks callers. -->
+        <!-- Exported so system media controls, Bluetooth and Android Auto can bind; ControllerPolicy decides what each caller may do. -->
         <service
             android:name="app.sitara.music.core.player.PlaybackService"
             android:exported="true"
             android:foregroundServiceType="mediaPlayback">
             <intent-filter>
                 <action android:name="androidx.media3.session.MediaLibraryService" />
+                <!-- Android Auto finds media apps through the platform's media browser action. -->
+                <action android:name="android.media.browse.MediaBrowserService" />
             </intent-filter>
         </service>
 

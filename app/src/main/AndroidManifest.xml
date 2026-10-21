@@ -47,6 +47,10 @@
                 <data android:mimeType="text/plain" />
             </intent-filter>
         </activity>
+        <!-- Lists Sitara as a media app in Android Auto; it browses and plays through PlaybackService. -->
+        <meta-data
+            android:name="com.google.android.gms.car.application"
+            android:resource="@xml/automotive_app_desc" />
         <!-- Hands the stats card, written to cache/shared, to the app the listener shares it with. -->
         <provider
             android:name="androidx.core.content.FileProvider"
