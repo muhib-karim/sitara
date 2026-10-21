@@ -71,7 +71,10 @@ private fun delimiterOf(firstLine: String): Char {
     var quoted = false
     val counts = mutableMapOf(',' to 0, ';' to 0, '\t' to 0)
     for (c in firstLine) {
-        if (c == '"') quoted = !quoted else if (!quoted && c in counts) counts[c] = counts.getValue(c) + 1
+        when {
+            c == '"' -> quoted = !quoted
+            !quoted && c in counts -> counts[c] = counts.getValue(c) + 1
+        }
     }
     return counts.entries.filter { it.value > 0 }.maxByOrNull { it.value }?.key ?: ','
 }
