@@ -28,7 +28,6 @@ object ArtworkPalette {
     private const val WHITE = 0xFFFFFFFF.toInt()
     private const val NEAR_BLACK = 0xFF080808.toInt()
     private const val BLACK = 0xFF000000.toInt()
-    private const val BLACK = 0xFF000000.toInt()
 
     /** [colors]: the cover's most common colour first, then the one to accent with. */
     fun themeFrom(colors: List<Int>, dark: Boolean): ArtworkTheme {
