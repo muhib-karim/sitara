@@ -84,7 +84,7 @@ internal fun StatsShareSheet(stats: ListeningStats, range: StatsRange, onDismiss
 
 /**
  * A 9:16 card over the top song's cover, blurred and shaded like Now Playing so its white and grey text keeps 4.5:1:
- * the range, time heard, the top artist and the top five songs. TalkBack reads it as one summary.
+ * the range, the top song's cover, time heard, the top artist and the top five songs. TalkBack reads it as one summary.
  */
 @Composable
 fun StatsShareCard(stats: ListeningStats, range: StatsRange, modifier: Modifier = Modifier) {
@@ -107,6 +107,7 @@ fun StatsShareCard(stats: ListeningStats, range: StatsRange, modifier: Modifier 
                 Icon(SitaraIcons.Star, null, tint = SitaraColors.StageContent, modifier = Modifier.size(16.dp))
                 Text(heading, style = MaterialTheme.typography.labelLarge, color = SitaraColors.StageSecondary)
             }
+            top.firstOrNull()?.let { ArtworkImage(it.track.artwork, Modifier.padding(top = 20.dp).fillMaxWidth(0.42f), cornerRadius = SitaraRadius.Tile) }
             Spacer(Modifier.weight(1f))
             Text(formatListening(stats.listenedMs), style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Bold, color = SitaraColors.StageContent)
             Text("listened", style = MaterialTheme.typography.titleMedium, color = SitaraColors.StageSecondary)
