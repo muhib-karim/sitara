@@ -45,6 +45,7 @@ internal class SampleDetailPages(private val source: FakeMusicSource = FakeMusic
             ?.let { DetailState.UserPlaylistReady(UserPlaylist(route.id, it.title, it.tracks)) } ?: DetailState.Gone
         is DetailRoute.Mood -> error("A mood page is a feed: see moodPage")
         DetailRoute.Stats -> error("Stats have their own state: see stats")
+        DetailRoute.Import -> error("Import has its own state")
     } ?: DetailState.Failed
 }
 

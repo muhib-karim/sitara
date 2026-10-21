@@ -35,7 +35,9 @@ class MainActivity : ComponentActivity() {
 
     private fun open(intent: Intent) {
         if (intent.getBooleanExtra(EXTRA_OPEN_PLAYER, false)) vm.openPlayer()
-        sharedRequest(intent.action, intent.dataString, intent.getCharSequenceExtra(Intent.EXTRA_TEXT)?.toString())?.let(vm::open)
+        val text = intent.getCharSequenceExtra(Intent.EXTRA_TEXT)?.toString()
+        val playlistLink = sharedPlaylistLink(intent.action, intent.dataString, text)
+        if (playlistLink != null) vm.importPlaylist(playlistLink) else sharedRequest(intent.action, intent.dataString, text)?.let(vm::open)
     }
 
     companion object {

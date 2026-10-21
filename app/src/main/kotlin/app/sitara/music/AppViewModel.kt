@@ -2,6 +2,7 @@ package app.sitara.music
 
 import android.content.ActivityNotFoundException
 import android.content.Intent
+import android.net.Uri
 import android.widget.Toast
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -103,6 +104,15 @@ class AppViewModel(private val app: SitaraApplication) :
 
     /** Requests to open Now Playing (from the home-screen widget), buffered until the UI collects them. */
     val requestedPlayer: Flow<Unit> = playerRequests.receiveAsFlow()
+
+    /** Import playlist: runs here, so an import goes on while the listener browses. */
+    val imports = PlaylistImports(viewModelScope, app.library.importer(YouTubeImportCatalogue(app.youtube))) { uri ->
+        readPlaylistFile(app.contentResolver, Uri.parse(uri))
+    }
+    private val importRequests = Channel<Unit>(Channel.CONFLATED)
+
+    /** Requests to open Import playlist (a shared playlist link), buffered until the UI collects them. */
+    val requestedImport: Flow<Unit> = importRequests.receiveAsFlow()
     val search: StateFlow<SearchState> = searchStates(query, searchRetries, debounceMs = 300, searchFilter) { q, filter -> app.youtube.search(q, filter) }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SearchState.Idle)
 
@@ -278,6 +288,7 @@ class AppViewModel(private val app: SitaraApplication) :
                     DetailRoute.LikedSongs, is DetailRoute.UserPlaylist -> error("Own pages are not loaded from a catalogue")
                     is DetailRoute.Mood -> error("A mood page is a feed: see moodPage")
                     DetailRoute.Stats -> error("Stats have their own state: see stats")
+                    DetailRoute.Import -> error("Import has its own state: see imports")
                 }
             } catch (e: CancellationException) {
                 throw e
@@ -323,6 +334,12 @@ class AppViewModel(private val app: SitaraApplication) :
 
     fun openPlayer() {
         playerRequests.trySend(Unit)
+    }
+
+    /** Opens Import playlist with a shared playlist [link] in its field. */
+    fun importPlaylist(link: String) {
+        imports.prefill(link)
+        importRequests.trySend(Unit)
     }
 
     /** Shows a shared link or text in Search; a linked song starts playing as soon as it resolves. */

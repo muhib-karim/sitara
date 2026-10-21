@@ -18,6 +18,9 @@ sealed interface DetailRoute {
 
     /** The listener's stats, from the history kept on the phone. */
     data object Stats : DetailRoute
+
+    /** Import playlist: a link or a file into the library. */
+    data object Import : DetailRoute
 }
 
 /** "kind:id", the form a route is saved in across process death. */
@@ -30,6 +33,7 @@ fun DetailRoute.encode(): String = when (this) {
     // The params never hold a "|", the title may.
     is DetailRoute.Mood -> "mood:$params|$title"
     DetailRoute.Stats -> "stats:listening"
+    DetailRoute.Import -> "import:playlist"
 }
 
 fun decodeDetailRoute(saved: String): DetailRoute? {
@@ -40,6 +44,7 @@ fun decodeDetailRoute(saved: String): DetailRoute? {
         "playlist" -> DetailRoute.Playlist(id)
         "liked" -> DetailRoute.LikedSongs
         "stats" -> DetailRoute.Stats
+        "import" -> DetailRoute.Import
         "mine" -> id.toLongOrNull()?.let(DetailRoute::UserPlaylist)
         "mood" -> DetailRoute.Mood(id.substringBefore('|').ifEmpty { return null }, id.substringAfter('|', "").ifEmpty { return null })
         else -> null

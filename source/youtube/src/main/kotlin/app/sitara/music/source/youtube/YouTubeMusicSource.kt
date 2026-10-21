@@ -96,6 +96,13 @@ class YouTubeMusicSource :
         return playlistPage(id, info.name, info.uploaderName, info.thumbnails, items)
     }
 
+    /** The playlist with up to [limit] of its songs, read page by page, for an import; null when [id] is not a playlist id. */
+    suspend fun wholePlaylist(id: String, limit: Int): Playlist? {
+        if (!isPlaylistId(id)) return null
+        val (info, items) = playlistWithItems(id, limit)
+        return playlistPage(id, info.name, info.uploaderName, info.thumbnails, items)
+    }
+
     override suspend fun radio(seed: Track, exclude: Set<String>): List<Track>? {
         if (!isVideoId(seed.id)) return null
         val info = io { StreamInfo.getInfo(service, "https://www.youtube.com/watch?v=${seed.id}") }
@@ -173,19 +180,19 @@ class YouTubeMusicSource :
         }
     }
 
-    // shortcut: stops after MAX_PLAYLIST_ITEMS so a huge playlist stays one quick load; page lazily on scroll if people hit the cap.
-    private suspend fun playlistWithItems(id: String): Pair<PlaylistInfo, List<StreamInfoItem>> {
+    // shortcut: a playlist page stops after MAX_PLAYLIST_ITEMS so a huge playlist stays one quick load; page lazily on scroll if people hit the cap.
+    private suspend fun playlistWithItems(id: String, limit: Int = MAX_PLAYLIST_ITEMS): Pair<PlaylistInfo, List<StreamInfoItem>> {
         val url = "https://www.youtube.com/playlist?list=$id"
         val info = io { PlaylistInfo.getInfo(service, url) }
         val items = info.relatedItems.toMutableList()
         var next = info.nextPage.takeIf { info.hasNextPage() }
-        while (next != null && items.size < MAX_PLAYLIST_ITEMS) {
+        while (next != null && items.size < limit) {
             val page = next
             val more = io { PlaylistInfo.getMoreItems(service, url, page) }
             items += more.items
             next = more.nextPage.takeIf { more.hasNextPage() }
         }
-        return info to items.take(MAX_PLAYLIST_ITEMS)
+        return info to items.take(limit)
     }
 
     private suspend fun musicSearch(query: String, filter: String): List<InfoItem> {

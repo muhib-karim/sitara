@@ -1,6 +1,8 @@
 package app.sitara.music
 
 import androidx.activity.compose.BackHandler
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -70,6 +72,9 @@ import app.sitara.music.feature.home.HomeScreen
 import app.sitara.music.feature.home.MoodScreen
 import app.sitara.music.feature.library.AddToPlaylist
 import app.sitara.music.feature.library.DetailScreen
+import app.sitara.music.feature.library.ImportActions
+import app.sitara.music.feature.library.ImportScreen
+import app.sitara.music.feature.library.ImportState
 import app.sitara.music.feature.library.LibraryActions
 import app.sitara.music.feature.library.LibraryScreen
 import app.sitara.music.feature.library.LibraryState
@@ -112,6 +117,7 @@ fun SitaraRoot(vm: AppViewModel, systemReducedMotion: Boolean) {
     val search by vm.search.collectAsState()
     val searchLanding by vm.searchLanding.collectAsState()
     val downloads by vm.downloads.collectAsState()
+    val imports by vm.imports.state.collectAsState()
     SitaraShell(
         settings = settings.let { if (systemReducedMotion) it.copy(reducedMotion = true) else it },
         home = home,
@@ -139,6 +145,9 @@ fun SitaraRoot(vm: AppViewModel, systemReducedMotion: Boolean) {
         onClearHistory = vm::clearListeningHistory,
         searchLanding = searchLanding,
         searchActions = vm,
+        imports = imports,
+        importActions = vm.imports,
+        importRequests = vm.requestedImport,
     )
 }
 
@@ -177,6 +186,9 @@ fun SitaraShell(
     onClearHistory: () -> Unit = {},
     searchLanding: SearchLanding = SearchLanding(),
     searchActions: SearchActions = SearchActions.None,
+    imports: ImportState = ImportState.Start(),
+    importActions: ImportActions = ImportActions.None,
+    importRequests: Flow<Unit> = emptyFlow(),
 ) {
     var tab by rememberSaveable { mutableStateOf(if (initialSettingsOpen) Tab.SETTINGS else initialTab) }
     var detailStack by rememberSaveable(stateSaver = DetailStackSaver) { mutableStateOf(listOfNotNull(initialDetail)) }
@@ -204,6 +216,11 @@ fun SitaraShell(
     LaunchedEffect(tabRequests) {
         tabRequests.collect { closeDetails(); tab = it }
     }
+    LaunchedEffect(importRequests) {
+        importRequests.collect { tab = Tab.LIBRARY; detailStack = listOf(DetailRoute.Import) }
+    }
+    // The system file picker: no storage permission, and the app reads only the file the listener picks.
+    val pickPlaylistFile = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> uri?.let { importActions.importFile(it.toString()) } }
     BackHandler(enabled = detailStack.isNotEmpty() || tab == Tab.SETTINGS) {
         when {
             detailStack.isNotEmpty() -> detailStack = detailStack.dropLast(1)
@@ -261,6 +278,14 @@ fun SitaraShell(
                             onArtist = { open(DetailRoute.Artist(it)) },
                             contentPadding = contentPadding,
                         )
+                    } else if (route == DetailRoute.Import) {
+                        ImportScreen(
+                            imports, importActions,
+                            onPickFile = { pickPlaylistFile.launch(PLAYLIST_FILE_TYPES) },
+                            onOpenPlaylist = { id -> importActions.close(); detailStack = detailStack.dropLast(1) + DetailRoute.UserPlaylist(id) },
+                            onBack = { detailStack = detailStack.dropLast(1) },
+                            contentPadding = contentPadding,
+                        )
                     } else if (route != null) {
                         val state by remember(details, route) { details.state(route) }.collectAsState()
                         DetailScreen(
@@ -293,6 +318,7 @@ fun SitaraShell(
                                 library, downloads, settings.libraryLayout, settings.librarySort, onPlay,
                                 onLikedSongs = { open(DetailRoute.LikedSongs) },
                                 onStats = { open(DetailRoute.Stats) },
+                                onImport = { open(DetailRoute.Import) },
                                 onPlaylist = { open(DetailRoute.UserPlaylist(it.id)) },
                                 onAlbum = openAlbum,
                                 onArtist = openArtist,
@@ -315,6 +341,7 @@ fun SitaraShell(
                                     onOpenEqualiser = { equaliserOpen = true },
                                     onOpenStats = { open(DetailRoute.Stats) },
                                     onClearHistory = onClearHistory,
+                                    onImportPlaylist = { open(DetailRoute.Import) },
                                 )
                             }
                         }
@@ -419,6 +446,12 @@ private fun FloatingNav(selected: Tab, accent: Color, folded: Boolean, onSelect:
 
 // Pixels of scroll that count as reading on or going back, so a settling list does not flip the dock.
 private const val FOLD_SLOP = 2f
+
+// M3U and CSV files go by many types across file managers; anything else is refused by the parser with a worded error.
+private val PLAYLIST_FILE_TYPES = arrayOf(
+    "audio/x-mpegurl", "audio/mpegurl", "application/x-mpegurl", "application/vnd.apple.mpegurl", "text/csv", "text/comma-separated-values", "text/plain",
+    "application/octet-stream",
+)
 
 private fun greeting(): String {
     val hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)

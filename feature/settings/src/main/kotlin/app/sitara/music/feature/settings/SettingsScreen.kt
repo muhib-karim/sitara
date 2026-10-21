@@ -82,6 +82,7 @@ fun SettingsScreen(
     onOpenEqualiser: () -> Unit = {},
     onOpenStats: () -> Unit = {},
     onClearHistory: () -> Unit = {},
+    onImportPlaylist: () -> Unit = {},
     contentPadding: PaddingValues = PaddingValues(),
 ) {
     LazyColumn(modifier.fillMaxSize().testTag("settings-content"), contentPadding = contentPadding) {
@@ -106,6 +107,11 @@ fun SettingsScreen(
                 SwitchRow("Skip silence", "Skips quiet stretches inside and between songs", settings.skipSilence) { onChange(settings.copy(skipSilence = it)) }
                 InsetDivider()
                 CrossfadeRow(settings.crossfadeSeconds) { onChange(settings.copy(crossfadeSeconds = it)) }
+            }
+        }
+        item(key = "library") {
+            SettingsGroup("Library") {
+                LinkRow("Import playlist", "Link or file", onImportPlaylist)
             }
         }
         item(key = "history") {

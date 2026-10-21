@@ -178,6 +178,11 @@ object SitaraIcons {
         moveTo(10f, 4f); lineTo(14f, 4f)
         moveTo(6.5f, 7f); lineTo(7.5f, 20f); lineTo(16.5f, 20f); lineTo(17.5f, 7f)
     }
+    // A list with an arrow coming down into it.
+    val Import = icon("import", filled = false) {
+        moveTo(4f, 7f); lineTo(12f, 7f); moveTo(4f, 12f); lineTo(12f, 12f); moveTo(4f, 17f); lineTo(10f, 17f)
+        moveTo(18f, 4f); lineTo(18f, 17f); moveTo(14.5f, 13.5f); lineTo(18f, 17f); lineTo(21.5f, 13.5f)
+    }
     val Stats = icon("stats", filled = false) {
         moveTo(5f, 20f); lineTo(5f, 13f)
         moveTo(10f, 20f); lineTo(10f, 5f)

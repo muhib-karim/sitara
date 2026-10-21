@@ -94,6 +94,7 @@ fun LibraryScreen(
     onPlay: (tracks: List<Track>, index: Int) -> Unit,
     onLikedSongs: () -> Unit,
     onStats: () -> Unit,
+    onImport: () -> Unit,
     onPlaylist: (PlaylistSummary) -> Unit,
     onAlbum: (Album) -> Unit,
     onArtist: (Artist) -> Unit,
@@ -121,7 +122,7 @@ fun LibraryScreen(
                 LibraryState.Loading -> item(key = "loading", contentType = "skeleton") { LibrarySkeleton(columns) }
                 LibraryState.Failed -> item(key = "failed") { LibraryMessage("Your library couldn’t be read. Restart Sitara to try again.") }
                 is LibraryState.Ready -> if (state.library.isEmpty && downloads.isEmpty()) {
-                    item(key = "empty") { EmptyLibrary(onFindMusic) }
+                    item(key = "empty") { EmptyLibrary(onFindMusic, onImport) }
                 } else {
                     val saved = state.library
                     item(key = "pinned") {
@@ -133,6 +134,12 @@ fun LibraryScreen(
                     item(key = "stats") {
                         PinnedTile(
                             SitaraIcons.Stats, "Your stats", "Top songs, artists and when you listen", onStats,
+                            Modifier.padding(horizontal = SitaraSpacing.Gutter, vertical = 4.dp).fillMaxWidth(),
+                        )
+                    }
+                    item(key = "import") {
+                        PinnedTile(
+                            SitaraIcons.Import, "Import playlist", "From a YouTube link, M3U or CSV file", onImport,
                             Modifier.padding(horizontal = SitaraSpacing.Gutter, vertical = 4.dp).fillMaxWidth(),
                         )
                     }
@@ -318,7 +325,7 @@ internal fun FannedCovers() {
 
 /** A fresh library: three fanned covers in the theme's colours, what fills it, and one way to start. */
 @Composable
-private fun EmptyLibrary(onFindMusic: () -> Unit) {
+private fun EmptyLibrary(onFindMusic: () -> Unit, onImport: () -> Unit) {
     Column(
         Modifier.fillMaxWidth().padding(horizontal = SitaraSpacing.Gutter, vertical = 32.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
@@ -331,6 +338,7 @@ private fun EmptyLibrary(onFindMusic: () -> Unit) {
             style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center,
         )
         PillButton("Find music", onFindMusic, Modifier.padding(top = 8.dp))
+        PillButton("Import a playlist", onImport, primary = false)
     }
 }
 
