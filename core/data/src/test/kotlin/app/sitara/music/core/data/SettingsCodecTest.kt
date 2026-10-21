@@ -21,9 +21,17 @@ class SettingsCodecTest {
             equaliser = EqualiserSettings(enabled = true, bandsDb = listOf(-12, -7, 0, 1, 2, 3, 4, 5, 11, 12), preampDb = -5, useSystem = true),
             searchFilter = SearchFilter.PLAYLISTS, recentSearches = listOf("lo-fi beats", "Jazz, piano"),
             libraryLayout = LibraryLayout.LIST, librarySort = LibrarySort.MOST_PLAYED, pauseListeningHistory = true,
-            wifiQuality = AudioQuality.NORMAL, mobileQuality = AudioQuality.DATA_SAVER,
+            wifiQuality = AudioQuality.NORMAL, mobileQuality = AudioQuality.DATA_SAVER, translationLanguage = "ur",
         )
         assertEquals(s, SettingsCodec.decode(SettingsCodec.encode(s)))
+    }
+
+    @Test
+    fun `the translation language picked is kept, and none means the app's language`() {
+        assertEquals("bn", SettingsCodec.decode(SettingsCodec.encode(SitaraSettings(translationLanguage = "bn"))).translationLanguage)
+        assertEquals(null, SettingsCodec.decode(SettingsCodec.encode(SitaraSettings())).translationLanguage)
+        assertEquals(null, SettingsCodec.decode(mapOf(SettingsCodec.TRANSLATION_LANGUAGE to " ")).translationLanguage)
+        assertEquals(null, SettingsCodec.decode(mapOf(SettingsCodec.TRANSLATION_LANGUAGE to "not a language!")).translationLanguage)
     }
 
     @Test
