@@ -37,7 +37,7 @@ class LastFmClientTest {
     }
 
     @Test
-    fun `signing in asks for a token and sends the listener to Last.fm with it`() = runTest {
+    fun `signing in asks for a token and sends the listener to the sign-in page with it`() = runTest {
         server.answer(200, """{"token":"t-1"}""")
 
         assertEquals("t-1", auth.requestToken())
@@ -49,7 +49,7 @@ class LastFmClientTest {
     }
 
     @Test
-    fun `no token comes back when Last.fm cannot be reached`() = runTest {
+    fun `no token comes back when the service cannot be reached`() = runTest {
         server.fail()
         assertNull(auth.requestToken())
     }

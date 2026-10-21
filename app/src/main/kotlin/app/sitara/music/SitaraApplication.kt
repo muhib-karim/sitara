@@ -32,6 +32,7 @@ import app.sitara.music.source.api.LyricsProvider
 import app.sitara.music.source.api.StreamResolver
 import app.sitara.music.source.lyrics.LyricsCache
 import app.sitara.music.source.lyrics.lrclibLyrics
+import app.sitara.music.source.scrobble.LastFmKeys
 import app.sitara.music.source.youtube.YouTubeMusicSource
 import app.sitara.music.source.youtube.installNewPipe
 import app.sitara.music.source.youtube.youTubeStreamResolver
