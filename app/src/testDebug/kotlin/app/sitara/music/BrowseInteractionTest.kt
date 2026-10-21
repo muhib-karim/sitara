@@ -11,6 +11,7 @@ import androidx.compose.ui.semantics.getOrNull
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertCountEquals
 import androidx.compose.ui.test.assertIsDisplayed
+import androidx.compose.ui.test.assertIsNotSelected
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasContentDescription
@@ -36,6 +37,7 @@ import androidx.compose.ui.test.swipeDown
 import androidx.compose.ui.test.swipeLeft
 import androidx.compose.ui.test.swipeUp
 import androidx.compose.ui.unit.Density
+import app.sitara.music.core.model.AccentColor
 import app.sitara.music.core.model.Album
 import app.sitara.music.core.model.Chart
 import app.sitara.music.core.model.DarkMode
@@ -46,7 +48,6 @@ import app.sitara.music.core.model.SearchFilter
 import app.sitara.music.core.model.SearchResults
 import app.sitara.music.core.model.SitaraSettings
 import app.sitara.music.core.model.SongDownload
-import app.sitara.music.core.model.ThemeMode
 import app.sitara.music.core.model.Track
 import app.sitara.music.feature.home.FeedState
 import app.sitara.music.feature.home.HomeActions
@@ -461,7 +462,7 @@ class BrowseInteractionTest {
     @Test fun settingsOnlyExposeImplementedControls() {
         var updated: SitaraSettings? = null
         render(Tab.SETTINGS, onSettings = { updated = it })
-        compose.onNodeWithTag("settings-content").performScrollToIndex(3)
+        compose.onNodeWithTag("settings-content").performScrollToNode(hasText("Reduced motion"))
         compose.onNodeWithText("Reduced motion").performClick()
         assertEquals(false, updated?.reducedMotion)
         // Normalisation and crossfade work now (soundSettingsSetNormalisationAndCrossfade); placeholders stay out.
@@ -470,22 +471,55 @@ class BrowseInteractionTest {
         }
     }
 
-    @Test fun wallpaperAccentUpdatesTheThemeOnSupportedAndroid() {
-        var updated: SitaraSettings? = null
+    @Test fun appearanceSetsThemePureBlackAndArtworkColoursLive() {
+        var updated = SitaraSettings()
         render(Tab.SETTINGS, onSettings = { updated = it })
-        compose.onNodeWithText("Wallpaper accent").performClick()
-        assertEquals(ThemeMode.DYNAMIC, updated?.themeMode)
-        compose.onNodeWithText("Wallpaper accent").assertIsSelected()
+        compose.onNodeWithTag("appearance-preview").assertIsDisplayed()
+        compose.onNodeWithText("Light").performClick()
+        assertEquals(DarkMode.LIGHT, updated.darkMode)
+        compose.onNodeWithText("Light").assertIsSelected()
+
+        compose.onNodeWithText("Pure black").performSemanticsAction(SemanticsActions.OnClick)
+        assertEquals(true, updated.pureBlack)
+        val list = compose.onNodeWithTag("settings-content")
+        list.performScrollToNode(hasText("Use artwork colours across the app"))
+        compose.onNodeWithText("Use artwork colours across the app").performSemanticsAction(SemanticsActions.OnClick)
+        assertEquals(true, updated.artworkColorsAcrossApp)
+    }
+
+    @Test fun pickingAnAccentTurnsWallpaperColoursOff() {
+        var updated = SitaraSettings()
+        render(Tab.SETTINGS, onSettings = { updated = it })
+        val list = compose.onNodeWithTag("settings-content")
+        list.performScrollToNode(hasContentDescription("Rose"))
+        compose.onNodeWithContentDescription("Rose").performSemanticsAction(SemanticsActions.OnClick)
+        assertEquals(AccentColor.ROSE, updated.accent)
+        assertEquals(false, updated.dynamicColor)
+        compose.onNodeWithContentDescription("Rose").assertIsSelected()
+
+        list.performScrollToNode(hasText("Wallpaper colours"))
+        compose.onNodeWithText("Wallpaper colours").performSemanticsAction(SemanticsActions.OnClick)
+        assertEquals(true, updated.dynamicColor)
+        // The wallpaper decides the accent now, so no swatch claims to be it.
+        compose.onNodeWithContentDescription("Rose").assertIsNotSelected()
+
+        list.performScrollToNode(hasText("From artwork"))
+        compose.onNodeWithText("From artwork").performSemanticsAction(SemanticsActions.OnClick)
+        assertEquals(AccentColor.ARTWORK, updated.accent)
+        assertEquals(false, updated.dynamicColor)
     }
 
     @Test
     @Config(sdk = [30])
-    fun wallpaperAccentIsHiddenOnOlderAndroid() {
+    fun wallpaperColoursAreHiddenOnOlderAndroid() {
         render(Tab.SETTINGS)
-        compose.onNodeWithText("From artwork").assertIsDisplayed()
+        compose.onNodeWithText("Pure black").assertIsDisplayed()
         assertThrows(AssertionError::class.java) {
-            compose.onNodeWithTag("settings-content").performScrollToNode(hasText("Wallpaper accent"))
+            compose.onNodeWithTag("settings-content").performScrollToNode(hasText("Wallpaper colours"))
         }
+        // Without wallpaper colours the stored default cannot hide the chosen swatch.
+        compose.onNodeWithTag("settings-content").performScrollToNode(hasContentDescription("Saffron"))
+        compose.onNodeWithContentDescription("Saffron").assertIsSelected()
     }
 
     @Test fun lastHomeRailScrollsAboveTheDockAtLargeText() {
