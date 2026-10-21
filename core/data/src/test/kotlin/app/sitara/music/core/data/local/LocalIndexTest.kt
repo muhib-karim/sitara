@@ -93,6 +93,7 @@ class LocalIndexTest {
     @Test
     fun `the same song in the phone's music and a picked folder is listed once, the phone's copy`() = runTest {
         phone = FakeReader(listOf(store(1, saffron)))
+        index.rescan()
         folders[tree] = FakeReader(listOf(doc("Saffron Morning.mp3")), tags = mapOf(doc("Saffron Morning.mp3").uri to saffron.copy(title = "saffron morning", durationMs = 62_500)))
         index.addFolder(tree, "Music")
         assertEquals(listOf(localTrackId(store(1, saffron).uri)), index.songs.first().map { it.track.id })
