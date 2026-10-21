@@ -254,7 +254,7 @@ class AppViewModel(private val app: SitaraApplication) :
 
     // The shown lyrics translated while Translate is on: anew for another song, source or language, or when tried again.
     private val translation: StateFlow<TranslationState> = combine(lyrics, translating, translationLanguage, ::Triple)
-        .flatMapLatest { (state, on, language) ->
+        .flatMapLatest<Triple<LyricsState, Boolean, String>, TranslationState> { (state, on, language) ->
             if (!on || state !is LyricsState.Found) {
                 flowOf(TranslationState.Off)
             } else {
