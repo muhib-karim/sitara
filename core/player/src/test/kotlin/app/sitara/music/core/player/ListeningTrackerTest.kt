@@ -12,7 +12,8 @@ class ListeningTrackerTest {
     private val time = TestTimeSource()
     private var wallMs = 1_000_000L
     private val listens = mutableListOf<Listen>()
-    private val tracker = ListeningTracker(time, { wallMs }, listens::add)
+    private val starts = mutableListOf<Track>()
+    private val tracker = ListeningTracker(time, { wallMs }, listens::add, starts::add)
 
     private fun entry(uid: Long, durationMs: Long = 200_000) = QueueEntry(uid, Track("t$uid", "Song $uid", "Artist", "Album", durationMs, Artwork(listOf(0))))
 
@@ -125,5 +126,25 @@ class ListeningTrackerTest {
         time += 10.seconds
         tracker.update(song, playing = false)
         assertEquals("one play, heard for 50 s", listOf(Listen(song.track, 1_000_000, 50_000)), listens)
+    }
+
+    @Test
+    fun `a play is announced when it first plays, not again after a pause`() {
+        tracker.update(song, playing = false)
+        assertEquals("queued is not playing", emptyList<Track>(), starts)
+
+        tracker.update(song, playing = true)
+        tracker.update(song, playing = false)
+        tracker.update(song, playing = true)
+        assertEquals(listOf(song.track), starts)
+    }
+
+    @Test
+    fun `each new play is announced, including the same entry started over`() {
+        tracker.update(song, playing = true)
+        tracker.startOver(song.uid)
+        tracker.update(song, playing = true)
+        tracker.update(entry(2), playing = true)
+        assertEquals(listOf(song.track, song.track, entry(2).track), starts)
     }
 }
