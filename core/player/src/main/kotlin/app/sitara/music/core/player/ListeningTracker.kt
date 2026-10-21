@@ -24,6 +24,9 @@ internal class ListeningTracker(
     private var heardMs = 0L
     private var playingSince: TimeMark? = null
 
+    // The time heard last reported, so a checkpoint with nothing more heard (a pause, then the next song) stays quiet.
+    private var reportedMs = 0L
+
     /** Follows the player: the current entry and whether it is playing right now. */
     fun update(current: QueueEntry?, playing: Boolean) {
         if (current?.uid != entry?.uid) {
@@ -54,7 +57,9 @@ internal class ListeningTracker(
         val startedAt = startedAtMs ?: return
         val heard = heardMs + (playingSince?.elapsedNow()?.inWholeMilliseconds ?: 0)
         val countsAfter = if (track.durationMs > 0) minOf(PLAY_COUNTS_AFTER_MS, track.durationMs / 2) else PLAY_COUNTS_AFTER_MS
-        if (heard >= countsAfter) onListen(Listen(track, startedAt, heard))
+        if (heard < countsAfter || heard == reportedMs) return
+        reportedMs = heard
+        onListen(Listen(track, startedAt, heard))
     }
 
     private fun finish() {
@@ -64,5 +69,6 @@ internal class ListeningTracker(
         entry = null
         startedAtMs = null
         heardMs = 0
+        reportedMs = 0
     }
 }
