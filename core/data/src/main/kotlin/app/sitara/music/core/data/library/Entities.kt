@@ -33,11 +33,13 @@ data class LikedSongEntity(
     @ColumnInfo(name = "liked_at") val likedAt: Long,
 )
 
-@Entity(tableName = "play_history", indices = [Index("track_id")])
+/** A play that counted, keyed by its song and start; [listenedMs] is null for plays kept before 0.9.5, which kept no time heard. */
+@Entity(tableName = "play_history", indices = [Index("track_id"), Index("played_at")])
 data class PlayEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     @Embedded(prefix = "track_") val track: TrackColumns,
     @ColumnInfo(name = "played_at") val playedAt: Long,
+    @ColumnInfo(name = "listened_ms") val listenedMs: Long?,
 )
 
 @Entity(tableName = "saved_albums")

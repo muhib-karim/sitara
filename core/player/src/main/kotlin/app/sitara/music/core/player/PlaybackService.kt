@@ -124,7 +124,7 @@ class PlaybackService : MediaSessionService() {
             // The tail plays the end of the song the main player is leaving, at that song's trim.
             tailEqualiser.trimDb = equaliser.trimDb
         }
-        val engine = PlaybackEngine(port, scope, ElapsedRealtimeTimeSource, dependencies::onTrackStarted) { track ->
+        val engine = PlaybackEngine(port, scope, ElapsedRealtimeTimeSource, dependencies::onListened) { track ->
             // A downloaded song plays from the cache and needs no lookup.
             if (!dependencies.downloadCache.holdsWhole(StreamUriResolver.uriFor(track.id).toString())) streams.prepare(track)
         }
@@ -216,6 +216,7 @@ class PlaybackService : MediaSessionService() {
     }
 
     override fun onDestroy() {
+        engine?.checkpointListening()
         engine?.savedQueue()?.let(dependencies::saveQueue)
         engine?.let(PlaybackEngineRegistry::detach)
         engine = null

@@ -8,6 +8,7 @@ import app.sitara.music.core.data.SettingsRepository
 import app.sitara.music.core.data.library.LibraryStore
 import app.sitara.music.core.designsystem.sitaraImageLoader
 import app.sitara.music.core.model.CachedLyrics
+import app.sitara.music.core.model.Listen
 import app.sitara.music.core.model.SavedQueue
 import app.sitara.music.core.model.Track
 import app.sitara.music.core.player.DownloadDependencies
@@ -61,7 +62,7 @@ class SitaraApplication :
 
     override fun newImageLoader(context: Context) = sitaraImageLoader(context)
 
-    override fun onTrackStarted(track: Track) = writeLibrary { library.history.record(track) }
+    override fun onListened(listen: Listen) = writeLibrary { library.history.record(listen) }
 
     override fun songGainDb(trackId: String) = library.songGain.trimDb(trackId)
 

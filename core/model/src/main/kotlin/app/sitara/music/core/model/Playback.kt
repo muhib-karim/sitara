@@ -106,5 +106,8 @@ enum class LibrarySort(val label: String) {
     MOST_PLAYED("Most played"),
 }
 
+/** One play of a song: when it started (wall clock) and how long it was heard, pauses left out. */
+data class Listen(val track: Track, val startedAtMs: Long, val listenedMs: Long)
+
 /** How often a song was played in the kept history and when it last played, for ordering Library by plays. */
 data class PlayCount(val trackId: String, val artistId: String?, val lastPlayedAt: Long, val plays: Int)

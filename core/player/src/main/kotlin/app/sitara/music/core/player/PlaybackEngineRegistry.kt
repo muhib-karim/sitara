@@ -1,6 +1,7 @@
 package app.sitara.music.core.player
 
 import androidx.media3.datasource.cache.Cache
+import app.sitara.music.core.model.Listen
 import app.sitara.music.core.model.SavedQueue
 import app.sitara.music.core.model.SitaraSettings
 import app.sitara.music.core.model.Track
@@ -41,8 +42,8 @@ interface PlaybackDependencies {
     /** The listener's settings; the player follows normalisation and crossfade as they change. */
     val playbackSettings: Flow<SitaraSettings>
 
-    /** A queued song started playing; called on the main thread, so implementations hand slow work off. */
-    fun onTrackStarted(track: Track)
+    /** A play that counts, or one already reported heard for longer (same song and start); called on the main thread, so implementations hand slow work off. */
+    fun onListened(listen: Listen)
 
     /** The song's volume trim in dB, 0 when none is set; the player follows it while the song plays. */
     fun songGainDb(trackId: String): Flow<Int>

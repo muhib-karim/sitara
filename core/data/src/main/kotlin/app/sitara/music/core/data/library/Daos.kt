@@ -35,13 +35,14 @@ abstract class PlayHistoryDao {
     @Query("SELECT track_id, track_artist_id AS artist_id, MAX(played_at) AS last_played_at, COUNT(*) AS plays FROM play_history GROUP BY track_id")
     abstract fun counts(): Flow<List<PlayCountRow>>
 
-    @Query("DELETE FROM play_history WHERE id NOT IN (SELECT id FROM play_history ORDER BY id DESC LIMIT :keep)")
-    abstract suspend fun trim(keep: Int)
+    /** Returns how many plays it changed: 0 or 1. */
+    @Query("UPDATE play_history SET listened_ms = :listenedMs WHERE track_id = :trackId AND played_at = :playedAt")
+    abstract suspend fun updateListened(trackId: String, playedAt: Long, listenedMs: Long?): Int
 
+    /** Keeps a play, or updates the time heard of the same play (song and start) when it is kept already. */
     @Transaction
-    open suspend fun record(play: PlayEntity, keep: Int) {
-        insert(play)
-        trim(keep)
+    open suspend fun record(play: PlayEntity) {
+        if (updateListened(play.track.id, play.playedAt, play.listenedMs) == 0) insert(play)
     }
 }
 

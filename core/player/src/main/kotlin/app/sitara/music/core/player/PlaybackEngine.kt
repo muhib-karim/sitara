@@ -1,5 +1,6 @@
 package app.sitara.music.core.player
 
+import app.sitara.music.core.model.Listen
 import app.sitara.music.core.model.PlaybackTuning
 import app.sitara.music.core.model.RepeatMode
 import app.sitara.music.core.model.SavedQueue
@@ -37,7 +38,8 @@ class PlaybackEngine(
     private val port: PlayerPort,
     scope: CoroutineScope,
     timeSource: TimeSource,
-    private val onTrackStarted: (Track) -> Unit = {},
+    /** A play that counts (see [ListeningTracker]), reported again as more of it is heard. */
+    onListen: (Listen) -> Unit = {},
     /** Gets the song the player will move to next ready while the current one plays (gapless joins, instant skips). */
     private val prepareAhead: (Track) -> Unit = {},
 ) {
@@ -49,8 +51,7 @@ class PlaybackEngine(
 
     private val queue: QueueState get() = _state.value.queue
 
-    // The entry whose start was last reported; cleared when that same entry starts over.
-    private var startedUid: Long? = null
+    private val listening = ListeningTracker(timeSource, System::currentTimeMillis, onListen)
 
     // The entry last handed to prepareAhead, so each following entry is prepared once.
     private var preparedUid: Long? = null
@@ -150,7 +151,7 @@ class PlaybackEngine(
         if (_state.value.failed) return retry()
         when {
             q.ended -> {
-                startedUid = null
+                listening.startOver(q.entries[q.currentIndex].uid)
                 publish(q.copy(ended = false))
                 port.seekToItem(q.currentIndex, 0)
                 port.play()
@@ -236,7 +237,7 @@ class PlaybackEngine(
 
     /** The player moved to another entry by itself (auto-advance or a system control). */
     fun onItemTransition(uid: Long) {
-        if (uid == startedUid) startedUid = null // repeat-one, or a one-song repeat-all
+        listening.startOver(uid) // repeat-one, or a one-song repeat-all; another entry is a plain move
         publish(queue.select(uid))
         refresh()
     }
@@ -259,7 +260,10 @@ class PlaybackEngine(
         refresh()
     }
 
-    /** Pulls position, duration and play state from the player, and reports an entry that just started playing. */
+    /** Reports the play being heard with the time heard so far, if it counts yet; for periodic saves and shutdown. */
+    fun checkpointListening() = listening.checkpoint()
+
+    /** Pulls position, duration and play state from the player, and follows how long the current entry is heard. */
     fun refresh() {
         _state.update {
             it.copy(
@@ -269,11 +273,7 @@ class PlaybackEngine(
                 failedUid = it.failedUid.takeUnless { port.isPlaying },
             )
         }
-        val entry = queue.currentEntry
-        if (port.isPlaying && entry != null && entry.uid != startedUid) {
-            startedUid = entry.uid
-            onTrackStarted(entry.track)
-        }
+        listening.update(queue.currentEntry, port.isPlaying)
         prepareFollowing()
     }
 

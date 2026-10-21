@@ -4,6 +4,7 @@ import app.sitara.music.core.model.Album
 import app.sitara.music.core.model.Artist
 import app.sitara.music.core.model.Artwork
 import app.sitara.music.core.model.CachedLyrics
+import app.sitara.music.core.model.Listen
 import app.sitara.music.core.model.PlayCount
 import app.sitara.music.core.model.PlaylistSummary
 import app.sitara.music.core.model.RepeatMode
@@ -24,20 +25,12 @@ class RoomLikedSongs(private val dao: LikedSongsDao, private val clock: () -> Lo
     }
 }
 
-class RoomPlayHistory(
-    private val dao: PlayHistoryDao,
-    private val clock: () -> Long = System::currentTimeMillis,
-    private val limit: Int = DEFAULT_LIMIT,
-) : PlayHistoryRepository {
+class RoomPlayHistory(private val dao: PlayHistoryDao) : PlayHistoryRepository {
     override fun recent(limit: Int): Flow<List<Track>> = dao.recent(limit).map { rows -> rows.map { it.track.toTrack() } }
 
     override val counts: Flow<List<PlayCount>> = dao.counts().map { rows -> rows.map { PlayCount(it.trackId, it.artistId, it.lastPlayedAt, it.plays) } }
 
-    override suspend fun record(track: Track) = dao.record(PlayEntity(track = track.toColumns(), playedAt = clock()), keep = limit)
-
-    companion object {
-        const val DEFAULT_LIMIT = 500
-    }
+    override suspend fun record(listen: Listen) = dao.record(PlayEntity(track = listen.track.toColumns(), playedAt = listen.startedAtMs, listenedMs = listen.listenedMs))
 }
 
 class RoomSavedCollections(private val dao: SavedDao, private val clock: () -> Long = System::currentTimeMillis) : SavedCollectionsRepository {

@@ -39,7 +39,8 @@ fun SavedQueue.toQueueState(): QueueState? {
 
 /**
  * Hands [save] the queue once a change settles, whenever playback pauses and every [QUEUE_SAVE_INTERVAL_MS] while
- * playing, so process death loses at most a few seconds of position. An empty queue is never saved over the last one.
+ * playing, so process death loses at most a few seconds of position; the play being heard is checkpointed with it.
+ * An empty queue is never saved over the last one.
  */
 @OptIn(FlowPreview::class, ExperimentalCoroutinesApi::class)
 internal suspend fun keepSaving(engine: PlaybackEngine, save: (SavedQueue) -> Unit) {
@@ -53,5 +54,8 @@ internal suspend fun keepSaving(engine: PlaybackEngine, save: (SavedQueue) -> Un
                 emit(Unit)
             }
         },
-    ).collect { engine.savedQueue()?.let(save) }
+    ).collect {
+        engine.checkpointListening()
+        engine.savedQueue()?.let(save)
+    }
 }

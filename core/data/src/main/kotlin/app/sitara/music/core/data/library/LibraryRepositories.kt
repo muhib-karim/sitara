@@ -3,6 +3,7 @@ package app.sitara.music.core.data.library
 import app.sitara.music.core.model.Album
 import app.sitara.music.core.model.Artist
 import app.sitara.music.core.model.CachedLyrics
+import app.sitara.music.core.model.Listen
 import app.sitara.music.core.model.PlayCount
 import app.sitara.music.core.model.PlaylistSummary
 import app.sitara.music.core.model.SavedQueue
@@ -18,7 +19,7 @@ interface LikedSongsRepository {
     suspend fun setLiked(track: Track, liked: Boolean)
 }
 
-/** Songs that started playing, kept for the most recent plays only. */
+/** Plays that counted (heard for 30 s, or half the song), every one kept on this device. */
 interface PlayHistoryRepository {
     /** Each song once, most recently played first. */
     fun recent(limit: Int): Flow<List<Track>>
@@ -26,7 +27,8 @@ interface PlayHistoryRepository {
     /** Each kept song's plays and last play, in no particular order. */
     val counts: Flow<List<PlayCount>>
 
-    suspend fun record(track: Track)
+    /** Keeps [listen], or updates its time heard when the same play (song and start) is kept already. */
+    suspend fun record(listen: Listen)
 }
 
 /** Albums and artists the listener saved, newest first. Albums are stored without their songs. */

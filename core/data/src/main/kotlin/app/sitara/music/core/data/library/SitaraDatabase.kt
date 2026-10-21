@@ -12,10 +12,10 @@ import androidx.room.RoomDatabase
         LikedSongEntity::class, PlayEntity::class, SavedAlbumEntity::class, SavedArtistEntity::class, PlaylistEntity::class, PlaylistEntryEntity::class,
         QueueEntryEntity::class, QueueStateEntity::class, LyricsCacheEntity::class, SongGainEntity::class,
     ],
-    version = 3,
+    version = 4,
     exportSchema = true,
-    // 2 adds the saved play queue and the lyrics cache, 3 per-song volume trims: new tables only.
-    autoMigrations = [AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3)],
+    // 2 adds the saved play queue and the lyrics cache, 3 per-song volume trims: new tables only. 4 adds each play's time heard (null for older plays) and an index by start.
+    autoMigrations = [AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3), AutoMigration(from = 3, to = 4)],
 )
 abstract class SitaraDatabase : RoomDatabase() {
     abstract fun likedSongs(): LikedSongsDao
