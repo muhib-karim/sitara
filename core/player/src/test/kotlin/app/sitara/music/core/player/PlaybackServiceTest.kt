@@ -36,6 +36,7 @@ import app.sitara.music.core.model.Track
 import app.sitara.music.source.api.ResolvedStream
 import app.sitara.music.source.api.StreamResolver
 import java.io.IOException
+import java.time.Duration
 import kotlin.io.path.createTempDirectory
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
@@ -301,15 +302,18 @@ class PlaybackServiceTest {
         shadowOf(Looper.getMainLooper()).idle()
         val service = controller.get()
         val shown = checkNotNull(service.session).player
-
-        // Streams never resolve in tests, as when YouTube refuses one; ExoPlayer tries the load a few times first.
-        checkNotNull(PlaybackEngineRegistry.engine.value).togglePlay()
-        idleUntil(timeoutMs = 20_000) { shown.playerError != null }
-        assertEquals("Couldn’t play this song. Try again, skip it, or play a download.", shown.playerError?.message)
-        assertEquals(service.player.playerError?.errorCode, shown.playerError?.errorCode)
-        assertTrue(shown.isCommandAvailable(Player.COMMAND_PLAY_PAUSE))
-        assertTrue(shown.isCommandAvailable(Player.COMMAND_SEEK_TO_NEXT))
-        controller.destroy()
+        try {
+            // Streams never resolve in tests, as when YouTube refuses one. ExoPlayer retries the load after 1, 2 and 3 s
+            // on its clock, which moves only as the test advances it.
+            checkNotNull(PlaybackEngineRegistry.engine.value).togglePlay()
+            idleUntil(advanceMs = 100) { shown.playerError != null }
+            assertEquals("Couldn’t play this song. Try again, skip it, or play a download.", shown.playerError?.message)
+            assertEquals(service.player.playerError?.errorCode, shown.playerError?.errorCode)
+            assertTrue(shown.isCommandAvailable(Player.COMMAND_PLAY_PAUSE))
+            assertTrue(shown.isCommandAvailable(Player.COMMAND_SEEK_TO_NEXT))
+        } finally {
+            controller.destroy()
+        }
     }
 
     @Test
@@ -333,11 +337,11 @@ class PlaybackServiceTest {
         controller.destroy()
     }
 
-    /** Runs the main looper until [done], while ExoPlayer's playback thread works in the background. */
-    private fun idleUntil(timeoutMs: Long = 5_000, done: () -> Boolean) {
-        val deadline = System.currentTimeMillis() + timeoutMs
+    /** Runs the main looper until [done], while ExoPlayer's playback thread works in the background; [advanceMs] moves the clock each round. */
+    private fun idleUntil(advanceMs: Long = 0, done: () -> Boolean) {
+        val deadline = System.currentTimeMillis() + 10_000
         while (!done() && System.currentTimeMillis() < deadline) {
-            shadowOf(Looper.getMainLooper()).idle()
+            shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(advanceMs))
             Thread.sleep(10)
         }
         assertTrue("timed out", done())

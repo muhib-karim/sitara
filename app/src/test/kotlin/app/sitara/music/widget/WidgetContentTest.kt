@@ -10,7 +10,6 @@ import androidx.glance.appwidget.testing.unit.runGlanceAppWidgetUnitTest
 import androidx.glance.testing.unit.hasContentDescription
 import androidx.glance.testing.unit.hasStartActivityClickAction
 import androidx.glance.testing.unit.hasText
-import androidx.media3.session.MediaButtonReceiver
 import androidx.test.core.app.ApplicationProvider
 import app.sitara.music.MainActivity
 import app.sitara.music.core.model.Artwork
@@ -68,7 +67,7 @@ class WidgetContentTest {
     @Test
     fun `idle with a saved queue, Play something resumes it`() = runGlanceAppWidgetUnitTest {
         show(WidgetState.Idle(canResume = true), tall = true)
-        onNode(hasText("Play something")).assertHasSendBroadcastClickAction<MediaButtonReceiver>()
+        onNode(hasText("Play something")).assertHasSendBroadcastClickAction(resumeIntent(ApplicationProvider.getApplicationContext()))
     }
 
     @Test
