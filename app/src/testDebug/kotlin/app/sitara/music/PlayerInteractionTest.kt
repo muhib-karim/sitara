@@ -51,6 +51,10 @@ import app.sitara.music.feature.player.SleepTimerStatus
 import app.sitara.music.feature.search.SearchState
 import app.sitara.music.source.fake.FakeMusicSource
 import app.sitara.music.source.fake.SampleCatalog
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -82,6 +86,7 @@ class PlayerInteractionTest {
         equaliser: EqualiserSettings = EqualiserSettings(),
         systemEqualiser: Boolean = false,
         trimDb: Int = 0,
+        playerRequests: Flow<Unit> = emptyFlow(),
     ) {
         val source = FakeMusicSource()
         val track = SampleCatalog.tracks.first()
@@ -111,8 +116,19 @@ class PlayerInteractionTest {
                 playerPage = page,
                 greetingText = "Good evening",
                 libraryActions = libraryActions,
+                playerRequests = playerRequests,
             )
         }
+    }
+
+    @Test
+    fun aRequestFromTheWidgetOpensNowPlaying() {
+        val requests = Channel<Unit>(Channel.CONFLATED)
+        render(playerRequests = requests.receiveAsFlow())
+        compose.onNodeWithContentDescription("Collapse player").assertDoesNotExist()
+        requests.trySend(Unit)
+        compose.waitForIdle()
+        compose.onNodeWithContentDescription("Collapse player").assertIsDisplayed()
     }
 
     @Test

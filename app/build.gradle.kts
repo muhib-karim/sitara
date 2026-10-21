@@ -85,6 +85,8 @@ dependencies {
     implementation(libs.coil.compose)
     // Covers come over the OkHttp client stack the app already ships.
     implementation(libs.coil.network.okhttp)
+    // The home-screen widget (Apache-2.0).
+    implementation(libs.glance.appwidget)
     coreLibraryDesugaring(libs.desugar.jdk.libs)
     debugImplementation(libs.compose.ui.tooling)
     debugImplementation(libs.compose.ui.test.manifest)
@@ -97,4 +99,7 @@ dependencies {
     testImplementation(libs.roborazzi)
     testImplementation(libs.roborazzi.compose)
     testImplementation(libs.roborazzi.junit.rule)
+    testImplementation(libs.kotlinx.coroutines.test)
+    testImplementation(libs.glance.appwidget.testing)
+    testImplementation(libs.glance.testing)
 }
