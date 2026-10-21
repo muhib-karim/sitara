@@ -284,19 +284,18 @@ class PlaybackService : MediaLibraryService() {
     }
 
     /** Runs a library request on the main thread; a catalogue that cannot be reached becomes an error the car shows. */
-    private fun <T> library(request: suspend () -> LibraryResult<T>): ListenableFuture<LibraryResult<T>> {
+    private fun <T : Any> library(request: suspend () -> LibraryResult<T>): ListenableFuture<LibraryResult<T>> {
         val result = SettableFuture.create<LibraryResult<T>>()
         scope.launch {
-            result.set(
-                try {
-                    request()
-                } catch (e: CancellationException) {
-                    result.cancel(false)
-                    throw e
-                } catch (e: Exception) {
-                    LibraryResult.ofError(SessionError(SessionError.ERROR_IO, CATALOGUE_UNREACHABLE))
-                },
-            )
+            val answer: LibraryResult<T> = try {
+                request()
+            } catch (e: CancellationException) {
+                result.cancel(false)
+                throw e
+            } catch (e: Exception) {
+                LibraryResult.ofError<T>(SessionError(SessionError.ERROR_IO, CATALOGUE_UNREACHABLE))
+            }
+            result.set(answer)
         }
         return result
     }
