@@ -30,6 +30,7 @@ import androidx.test.core.app.ApplicationProvider
 import app.sitara.music.core.designsystem.SitaraSpacing
 import app.sitara.music.core.designsystem.SitaraTheme
 import app.sitara.music.core.model.AccentColor
+import app.sitara.music.core.model.Artwork
 import app.sitara.music.core.model.DarkMode
 import app.sitara.music.core.model.DownloadState
 import app.sitara.music.core.model.EqualiserPreset
@@ -39,6 +40,8 @@ import app.sitara.music.core.model.ImportResult
 import app.sitara.music.core.model.Library
 import app.sitara.music.core.model.LibraryLayout
 import app.sitara.music.core.model.ListeningStats
+import app.sitara.music.core.model.LocalFolder
+import app.sitara.music.core.model.LocalSong
 import app.sitara.music.core.model.Lyrics
 import app.sitara.music.core.model.LyricsLine
 import app.sitara.music.core.model.LyricsSong
@@ -52,7 +55,9 @@ import app.sitara.music.core.model.SitaraSettings
 import app.sitara.music.core.model.SongDownload
 import app.sitara.music.core.model.StatsRange
 import app.sitara.music.core.model.StreamFormat
+import app.sitara.music.core.model.Track
 import app.sitara.music.core.model.UserPlaylist
+import app.sitara.music.core.model.localTrackId
 import app.sitara.music.feature.home.FeedState
 import app.sitara.music.feature.home.HomeFeed
 import app.sitara.music.feature.home.OnlineHome
@@ -61,6 +66,8 @@ import app.sitara.music.feature.library.AddToPlaylist
 import app.sitara.music.feature.library.DetailState
 import app.sitara.music.feature.library.ImportState
 import app.sitara.music.feature.library.LibraryState
+import app.sitara.music.feature.library.LocalKind
+import app.sitara.music.feature.library.LocalLibraryState
 import app.sitara.music.feature.library.SavedIds
 import app.sitara.music.feature.library.SavedLibrary
 import app.sitara.music.feature.library.SongActions
@@ -83,6 +90,8 @@ import app.sitara.music.feature.player.TranslationState
 import app.sitara.music.feature.search.MoodsState
 import app.sitara.music.feature.search.SearchLanding
 import app.sitara.music.feature.search.SearchState
+import app.sitara.music.feature.settings.BackupFailure
+import app.sitara.music.feature.settings.BackupStatus
 import app.sitara.music.feature.settings.ScrobbleServiceState
 import app.sitara.music.feature.settings.ScrobblingState
 import app.sitara.music.feature.settings.SignInProblem
@@ -201,6 +210,8 @@ class ScreenshotTest {
         libraryLayout: LibraryLayout = LibraryLayout.GRID,
         imports: ImportState = ImportState.Start(),
         scrobbling: ScrobblingState = ScrobblingState(),
+        local: LocalLibraryState = LocalLibraryState(),
+        backup: BackupStatus = BackupStatus.Idle,
         beforeCapture: () -> Unit = {},
     ) {
         val settings = SitaraSettings(
@@ -237,6 +248,8 @@ class ScreenshotTest {
                     searchLanding = landing,
                     imports = imports,
                     scrobbling = scrobbling,
+                    local = local,
+                    backup = backup,
                 )
             }
         }
@@ -245,6 +258,61 @@ class ScreenshotTest {
     }
 
     @Test fun miniPlayerDark() = shot("mini_player", dark = true)
+
+    // Songs on the phone: sample songs under content URIs, one folder Sitara lost access to, and a file without tags.
+    private val musicFolder = "content://com.android.externalstorage.documents/tree/primary%3AMusic"
+    private val onThePhone = LocalLibraryState(
+        songs = SampleCatalog.tracks.take(7).mapIndexed { i, t ->
+            LocalSong(t.copy(id = localTrackId("content://media/external/audio/media/${i + 1}")), musicFolder.takeIf { i >= 5 }, "Music/${t.album}/${t.title}.mp3", i + 1, 100L - i)
+        } + LocalSong(
+            Track(localTrackId("content://media/external/audio/media/99"), "field recording 03", "Unknown artist", "Unknown album", 12_000, Artwork(listOf(0xFF2E2A4A.toInt(), 0xFF9A7BFF.toInt()))),
+            null, "Recordings/field recording 03.m4a", null, 1,
+        ),
+        folders = listOf(LocalFolder(musicFolder, "Music", songCount = 2, linked = false), LocalFolder("$musicFolder%2FLive", "Live", songCount = 0, linked = true)),
+        musicAccess = true,
+    )
+
+    private fun localKind(label: String) = compose.onNode(hasText(label) and isSelectable()).performSemanticsAction(SemanticsActions.OnClick)
+
+    @Test fun onThisPhoneDark() = shot("on_this_phone", dark = true, tab = Tab.LIBRARY, route = DetailRoute.OnThisPhone, playerState = PlayerUiState(), local = onThePhone)
+    @Test fun onThisPhoneLight() = shot("on_this_phone", dark = false, tab = Tab.LIBRARY, route = DetailRoute.OnThisPhone, playerState = PlayerUiState(), local = onThePhone)
+    @Test fun onThisPhoneList() = shot(
+        "on_this_phone_list", dark = true, tab = Tab.LIBRARY, route = DetailRoute.OnThisPhone, libraryLayout = LibraryLayout.LIST, local = onThePhone,
+    )
+    @Test fun onThisPhoneAlbums() = shot("on_this_phone_albums", dark = true, tab = Tab.LIBRARY, route = DetailRoute.OnThisPhone, local = onThePhone) { localKind("Albums") }
+    @Test fun onThisPhoneFolders() = shot("on_this_phone_folders", dark = true, tab = Tab.LIBRARY, route = DetailRoute.OnThisPhone, libraryLayout = LibraryLayout.LIST, local = onThePhone) {
+        localKind("Folders")
+        compose.onNodeWithTag("local-content").performScrollToNode(hasText("Relink folder"))
+    }
+    @Test fun onThisPhoneNoAccess() = shot(
+        "on_this_phone_empty", dark = true, tab = Tab.LIBRARY, route = DetailRoute.OnThisPhone, playerState = PlayerUiState(), local = LocalLibraryState(musicAccess = false),
+    )
+    @Test fun onThisPhoneNoAccessLight() = shot(
+        "on_this_phone_empty", dark = false, tab = Tab.LIBRARY, route = DetailRoute.OnThisPhone, playerState = PlayerUiState(), local = LocalLibraryState(musicAccess = false),
+    )
+    @Test fun onThisPhoneNothingFound() = shot(
+        "on_this_phone_nothing_found", dark = true, tab = Tab.LIBRARY, route = DetailRoute.OnThisPhone, playerState = PlayerUiState(), local = LocalLibraryState(musicAccess = true),
+    )
+    @Test fun onThisPhoneAlbum() = shot(
+        "on_this_phone_album", dark = true, tab = Tab.LIBRARY, route = DetailRoute.LocalGroup(LocalKind.ALBUMS, onThePhone.songs.first().track.album.lowercase()), local = onThePhone,
+    )
+    @Test fun libraryWithSongsOnThePhone() = shot("library_on_this_phone", dark = true, tab = Tab.LIBRARY, local = onThePhone)
+    @Test fun searchFindsSongsOnThePhone() {
+        val query = onThePhone.songs.first().track.title.substringBefore(' ')
+        shot("search_on_this_phone", dark = true, tab = Tab.SEARCH, query = query, local = onThePhone)
+    }
+
+    @Test fun backupDark() = shot("backup", dark = true, tab = Tab.SETTINGS, route = DetailRoute.Backup, settingsOpen = true)
+    @Test fun backupLight() = shot("backup", dark = false, tab = Tab.SETTINGS, route = DetailRoute.Backup, settingsOpen = true)
+    @Test fun backupConfirm() = shot("backup_confirm", dark = true, tab = Tab.SETTINGS, route = DetailRoute.Backup, settingsOpen = true) {
+        compose.onNodeWithText("Restore from a file").performSemanticsAction(SemanticsActions.OnClick)
+    }
+    @Test fun backupDone() = shot(
+        "backup_restored", dark = true, tab = Tab.SETTINGS, route = DetailRoute.Backup, settingsOpen = true, backup = BackupStatus.Restored(1_204, 6, 3_481),
+    )
+    @Test fun backupDamaged() = shot(
+        "backup_damaged", dark = true, tab = Tab.SETTINGS, route = DetailRoute.Backup, settingsOpen = true, backup = BackupStatus.Failed(BackupFailure.DAMAGED),
+    )
 
     // Last sent on an earlier day, so the words do not depend on when the test runs.
     private val listenBrainz = ScrobbleServiceState(
