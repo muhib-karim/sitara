@@ -22,6 +22,7 @@ class DetailRouteTest {
             DetailRoute.OnThisPhone,
             DetailRoute.LocalGroup(LocalKind.ALBUMS, "orbit"),
             DetailRoute.LocalGroup(LocalKind.FOLDERS, "Music/Live | Bootlegs"),
+            DetailRoute.Backup,
         )
 
         assertEquals(routes, routes.map { decodeDetailRoute(it.encode()) })
