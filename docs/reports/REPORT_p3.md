@@ -129,7 +129,8 @@ look: saffron accent on the chosen chip, 150 dp covers and 20 dp gutters, Inter 
 | `a3fc035` | that fix | CI 39533779008 | unit tests green (the Search interaction tests included); 12 screenshots stale or new as expected |
 | `7c4b824`, `1b1a40f` | result-keeps-search test, Library | CI 39534118115 | one failure: an existing test tapped the first playlist cover, now under the floating dock in the grid; the 9 Library interaction and 6 order tests passed |
 | `50c1d6a` | tap through the click action | CI 39534460222 | unit tests green; 18 screenshots stale or new as expected; Record screenshots 39534467648 green (95 baselines) |
-| (this commit) | baselines, docs, report | see the project brain | recorded after this report was written |
+| `87f9f7c` | baselines, docs, report | CI 39535060152, Secret scan 39535060119, Pages 39535060176 | green; Device screens 39535060180 red for a real reason, not the infrastructure flake: the capture script waited for a cover now below the first screen of Library and for Search's removed "Try a search" |
+| `fca2adb` | capture waits for Liked songs and Recent searches | CI 39535614914, Secret scan 39535614948, Device screens 39535614945 | all green; Device screens passed first time |
 
 ## Not verified on a real phone
 
