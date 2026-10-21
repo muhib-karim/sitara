@@ -54,10 +54,17 @@ class StatsInteractionTest {
         }
     }
 
-    private fun render(tab: Tab, details: DetailPages = pages(), onPlay: (List<Track>, Int) -> Unit = { _, _ -> }) {
+    private fun render(
+        tab: Tab,
+        details: DetailPages = pages(),
+        settings: SitaraSettings = SitaraSettings(darkMode = DarkMode.DARK, reducedMotion = true),
+        onSettings: (SitaraSettings) -> Unit = {},
+        onClearHistory: () -> Unit = {},
+        onPlay: (List<Track>, Int) -> Unit = { _, _ -> },
+    ) {
         compose.setContent {
             SitaraShell(
-                settings = SitaraSettings(darkMode = DarkMode.DARK, reducedMotion = true),
+                settings = settings,
                 home = HomeFeed(),
                 library = LibraryState.Ready(SavedLibrary(SampleCatalog.tracks.take(2), recent = emptyList(), playlists = emptyList(), albums = emptyList(), artists = emptyList())),
                 query = "",
@@ -71,8 +78,9 @@ class StatsInteractionTest {
                 onRetrySearch = {},
                 onPlay = onPlay,
                 onShuffle = {},
-                onSettingsChange = {},
+                onSettingsChange = onSettings,
                 initialTab = tab,
+                onClearHistory = onClearHistory,
             )
         }
     }
@@ -151,6 +159,36 @@ class StatsInteractionTest {
         render(Tab.LIBRARY, details = pages(StatsRange.WEEK))
         openFromLibrary()
         compose.onAllNodesWithContentDescription("Share your stats").assertCountEquals(0)
+    }
+
+    @Test fun settingsPauseListeningHistory() {
+        var changed: SitaraSettings? = null
+        render(Tab.SETTINGS, onSettings = { changed = it })
+        compose.onNodeWithTag("settings-content").performScrollToNode(hasText("Pause listening history"))
+        tap("Pause listening history")
+        assertEquals(true, changed?.pauseListeningHistory)
+    }
+
+    @Test fun clearingListeningHistoryAsksFirst() {
+        var cleared = 0
+        render(Tab.SETTINGS, onClearHistory = { cleared++ })
+        val list = compose.onNodeWithTag("settings-content")
+        list.performScrollToNode(hasText("Clear listening history"))
+        tap("Clear listening history")
+        list.performScrollToNode(hasText("Keep history"))
+        tap("Keep history")
+        assertEquals("keeping cancels", 0, cleared)
+
+        tap("Clear listening history")
+        list.performScrollToNode(hasText("Clear history"))
+        tap("Clear history")
+        assertEquals(1, cleared)
+    }
+
+    @Test fun statsSayWhenHistoryIsPaused() {
+        render(Tab.LIBRARY, settings = SitaraSettings(pauseListeningHistory = true, reducedMotion = true))
+        openFromLibrary()
+        stats.performScrollToNode(hasText("Listening history is paused", substring = true))
     }
 
     @Test fun aRangeWithoutPlaysSaysSoHonestly() {

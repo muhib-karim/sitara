@@ -19,7 +19,7 @@ class SettingsCodecTest {
             darkMode = DarkMode.DARK, pureBlack = true, dynamicColor = false, accent = AccentColor.TEAL, artworkColorsAcrossApp = true, reducedMotion = true, crossfadeSeconds = 6, normalisation = false, targetLufs = -16f, downloadOnWifiOnly = false, skipSilence = true,
             equaliser = EqualiserSettings(enabled = true, bandsDb = listOf(-12, -7, 0, 1, 2, 3, 4, 5, 11, 12), preampDb = -5, useSystem = true),
             searchFilter = SearchFilter.PLAYLISTS, recentSearches = listOf("lo-fi beats", "Jazz, piano"),
-            libraryLayout = LibraryLayout.LIST, librarySort = LibrarySort.MOST_PLAYED,
+            libraryLayout = LibraryLayout.LIST, librarySort = LibrarySort.MOST_PLAYED, pauseListeningHistory = true,
         )
         assertEquals(s, SettingsCodec.decode(SettingsCodec.encode(s)))
     }
@@ -75,6 +75,12 @@ class SettingsCodecTest {
         assertEquals(true, SettingsCodec.decode(emptyMap()).downloadOnWifiOnly)
         assertEquals(true, SettingsCodec.decode(mapOf(SettingsCodec.WIFI_ONLY to "maybe")).downloadOnWifiOnly)
         assertEquals(false, SettingsCodec.decode(mapOf(SettingsCodec.WIFI_ONLY to "false")).downloadOnWifiOnly)
+    }
+
+    @Test
+    fun `listening history is kept unless the listener paused it`() {
+        assertEquals(false, SettingsCodec.decode(emptyMap()).pauseListeningHistory)
+        assertEquals(true, SettingsCodec.decode(mapOf(SettingsCodec.PAUSE_HISTORY to "true")).pauseListeningHistory)
     }
 
     @Test

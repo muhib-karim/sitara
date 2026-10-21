@@ -117,6 +117,19 @@ class LibraryStoreTest {
     }
 
     @Test
+    fun `clearing the history forgets every play, for Recently played, counts and stats alike`() = runTest {
+        val history = RoomPlayHistory(db.playHistory())
+        listOf(1, 2, 1).forEach { history.record(listen(it)) }
+        db.playHistory().insert(PlayEntity(track = song(3).toColumns(), playedAt = 9, listenedMs = null))
+
+        history.clear()
+
+        assertEquals(emptyList<Track>(), history.recent(10).first())
+        assertEquals(emptyList<PlayCount>(), history.counts.first())
+        assertTrue(history.stats(sinceMs = 0, zone = ZoneOffset.UTC).first().isEmpty)
+    }
+
+    @Test
     fun `reporting the same play again updates the time heard and adds no play`() = runTest {
         val history = RoomPlayHistory(db.playHistory())
         val play = Listen(song(1), startedAtMs = 5_000, listenedMs = 30_000)

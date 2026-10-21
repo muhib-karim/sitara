@@ -15,6 +15,7 @@ class DetailRouteTest {
             DetailRoute.LikedSongs,
             DetailRoute.UserPlaylist(7),
             DetailRoute.Mood("ggMPOg1uX2NXUkgxdW0zUHJp", "R&B | Soul: 90s"),
+            DetailRoute.Stats,
         )
 
         assertEquals(routes, routes.map { decodeDetailRoute(it.encode()) })
