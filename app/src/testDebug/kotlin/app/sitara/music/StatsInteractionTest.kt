@@ -14,6 +14,7 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performSemanticsAction
+import app.sitara.music.core.common.formatListening
 import app.sitara.music.core.model.DarkMode
 import app.sitara.music.core.model.ListeningStats
 import app.sitara.music.core.model.SearchFilter
@@ -128,8 +129,9 @@ class StatsInteractionTest {
         render(Tab.LIBRARY)
         openFromLibrary()
         val artist = sampleListeningStats(StatsRange.WEEK).topArtists.first()
-        stats.performScrollToNode(hasContentDescription("${artist.name},", substring = true))
-        compose.onNodeWithContentDescription("${artist.name},", substring = true).performSemanticsAction(SemanticsActions.OnClick)
+        val tile = "${artist.name}, ${artist.plays} plays · ${formatListening(artist.listenedMs)}"
+        stats.performScrollToNode(hasContentDescription(tile))
+        compose.onNodeWithContentDescription(tile).performSemanticsAction(SemanticsActions.OnClick)
         compose.onNodeWithTag("detail-content").performScrollToNode(hasText("Albums and singles"))
     }
 
