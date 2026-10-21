@@ -30,7 +30,8 @@ jobs:
         run: python3 -m unittest discover -s tools -p 'test_*.py'
       - name: Assemble debug APK
         run: gradle :app:assembleDebug --stacktrace
-      # The widget check runs on the minified build, signed with the debug key the debug build just created.
+      # The widget check runs on the minified build, signed with the debug key the debug build just created. Its
+      # instrumentation uses no app code, so the debug test APK drives the minified app.
       - name: Assemble minified APK and the widget check
         env:
           SIGNING_STORE_PASSWORD: android
@@ -38,7 +39,7 @@ jobs:
           SIGNING_KEY_PASSWORD: android
         run: |
           export SITARA_KEYSTORE_PATH="$HOME/.android/debug.keystore"
-          gradle :app:assembleRelease :app:assembleReleaseAndroidTest --stacktrace
+          gradle :app:assembleRelease :app:assembleDebugAndroidTest --stacktrace
       # WorkManager (which runs the widget) needs this constructor; without it the widget never drew in 0.9.6.
       - name: R8 kept WorkManager's input merger constructor
         run: grep -A8 "^androidx.work.OverwritingInputMerger -> " app/build/outputs/mapping/release/mapping.txt | grep -q "<init>()"
@@ -61,7 +62,7 @@ jobs:
             adb shell settings put system font_scale 1.0
             python3 tools/capture-device-screens.py
             adb install -r app/build/outputs/apk/release/app-release.apk
-            adb install -r app/build/outputs/apk/androidTest/release/app-release-androidTest.apk
+            adb install -r app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
             adb shell appwidget grantbind --package app.sitara.music --user 0
             adb logcat -c
             adb shell am instrument -w app.sitara.music.test/app.sitara.music.WidgetCheckInstrumentation | tee artifacts/device-screens/widget-check.txt

@@ -17,9 +17,6 @@ android {
         testInstrumentationRunner = "app.sitara.music.WidgetCheckInstrumentation"
     }
 
-    // The one instrumented check (placing the widget) runs against the minified build, where the release-only bug was.
-    testBuildType = "release"
-
     signingConfigs {
         create("release") {
             val keystore = System.getenv("SITARA_KEYSTORE_PATH")

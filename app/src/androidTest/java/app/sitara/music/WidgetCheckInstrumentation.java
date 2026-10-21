@@ -23,7 +23,7 @@ import java.io.IOException;
  * test, which CI makes minified like a release, and waits for it to leave Glance's loading layout and offer Play
  * something. Prints "WIDGET DRAWN" or "WIDGET CHECK FAILED" for {@code am instrument -w}, and keeps a picture of the
  * placed widget. Needs the bind permission: adb shell appwidget grantbind --package app.sitara.music.
- * A plain Instrumentation in Java: the test APK then needs nothing from the app's minified code or libraries.
+ * A plain Instrumentation in Java that uses no app code, so CI drives the minified app with the debug test APK.
  */
 public class WidgetCheckInstrumentation extends Instrumentation {
     private static final String RECEIVER = "app.sitara.music.widget.SitaraWidgetReceiver";
