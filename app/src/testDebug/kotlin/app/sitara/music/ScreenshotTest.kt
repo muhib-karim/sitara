@@ -12,6 +12,7 @@ import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isSelectable
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.longClick
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -38,6 +39,10 @@ import app.sitara.music.core.model.ImportResult
 import app.sitara.music.core.model.Library
 import app.sitara.music.core.model.LibraryLayout
 import app.sitara.music.core.model.ListeningStats
+import app.sitara.music.core.model.Lyrics
+import app.sitara.music.core.model.LyricsLine
+import app.sitara.music.core.model.LyricsSong
+import app.sitara.music.core.model.LyricsTranslation
 import app.sitara.music.core.model.PlaybackTuning
 import app.sitara.music.core.model.ScrobbleAccount
 import app.sitara.music.core.model.ScrobbleService
@@ -62,6 +67,9 @@ import app.sitara.music.feature.library.SongActions
 import app.sitara.music.feature.library.StatsShareCard
 import app.sitara.music.feature.library.StatsState
 import app.sitara.music.feature.player.EqualiserPanel
+import app.sitara.music.feature.player.LyricCardStyle
+import app.sitara.music.feature.player.LyricShareCard
+import app.sitara.music.feature.player.LyricsSourceList
 import app.sitara.music.feature.player.LyricsState
 import app.sitara.music.feature.player.PlayerActions
 import app.sitara.music.feature.player.PlayerMoreOptions
@@ -70,6 +78,8 @@ import app.sitara.music.feature.player.SleepTimerOptions
 import app.sitara.music.feature.player.SleepTimerStatus
 import app.sitara.music.feature.player.SongVolume
 import app.sitara.music.feature.player.SpeedAndPitch
+import app.sitara.music.feature.player.TranslationLanguages
+import app.sitara.music.feature.player.TranslationState
 import app.sitara.music.feature.search.MoodsState
 import app.sitara.music.feature.search.SearchLanding
 import app.sitara.music.feature.search.SearchState
@@ -79,6 +89,8 @@ import app.sitara.music.feature.settings.SignInProblem
 import app.sitara.music.feature.settings.SignInStep
 import app.sitara.music.source.fake.FakeMusicSource
 import app.sitara.music.source.fake.SampleCatalog
+import app.sitara.music.source.lyrics.LyricsMatch
+import app.sitara.music.source.lyrics.TranslationProblem
 import coil3.SingletonImageLoader
 import coil3.annotation.DelicateCoilApi
 import com.github.takahirom.roborazzi.captureRoboImage
@@ -124,6 +136,21 @@ class ScreenshotTest {
         durationMs = track.durationMs,
         upNext = SampleCatalog.tracks.drop(1),
         lyrics = LyricsState.Found(sampleLyrics.copy(source = "LRCLIB")),
+        lyricsSources = listOf("LRCLIB", "YouTube Music"),
+    )
+    private val lrclib = sampleLyrics.copy(source = "LRCLIB", matched = LyricsSong(track.title, track.artist, track.durationMs + 1_000))
+    private val youtubeMusic = Lyrics(
+        sampleLyrics.lines.map { LyricsLine(0, 0, it.text) }, synced = false, source = "YouTube Music", licensor = "Musixmatch",
+        matched = LyricsSong(track.title, track.artist, track.durationMs),
+    )
+    private val bothSources = LyricsState.Found(lrclib, listOf(LyricsMatch("lrclib", lrclib), LyricsMatch("youtube-music", youtubeMusic)))
+    private val spanish = LyricsTranslation(
+        listOf(
+            "Las farolas tararean una melodía tranquila", "Lunas de papel sobre los tejados", "Cada ventana guarda una chispa", "Sitara, ilumina la oscuridad",
+            "Sostén el estribillo en tus manos", "Dobla la estática en planes", "Nunca nos quedamos sin tiempo", "Solo un poco fuera de lugar",
+            "Sitara, quédate, quédate un rato", "Convierte toda la noche en una sonrisa",
+        ),
+        fromLanguage = "en", toLanguage = "es",
     )
 
     // The sample catalogue answers each filter on its own; merged, every result group shows at once.
@@ -131,6 +158,18 @@ class ScreenshotTest {
         SearchFilter.entries.map { source.search(query, it) }
             .reduce { all, more -> all.copy(tracks = all.tracks + more.tracks, albums = all.albums + more.albums, artists = all.artists + more.artists) }
     }
+
+    private val cardLines = listOf("Every window keeps a spark", "Sitara, light the dark")
+
+    // Public-domain verse in each script: Rabindranath Tagore (Bangla), Kabir (Hindi, Devanagari), Mirza Ghalib (Urdu, right to left).
+    private val bangla = listOf("আমার সোনার বাংলা, আমি তোমায় ভালোবাসি।", "চিরদিন তোমার আকাশ, তোমার বাতাস, আমার প্রাণে বাজায় বাঁশি॥")
+    private val hindi = listOf("पोथी पढ़ि पढ़ि जग मुआ, पंडित भया न कोय।", "ढाई आखर प्रेम का, पढ़े सो पंडित होय॥")
+    private val urdu = listOf("ہزاروں خواہشیں ایسی کہ ہر خواہش پہ دم نکلے", "بہت نکلے مرے ارمان لیکن پھر بھی کم نکلے")
+
+    private fun lyricsIn(lines: List<String>) = playing.copy(
+        lyrics = LyricsState.Found(Lyrics(lines.mapIndexed { i, text -> LyricsLine(i * 10_000L, (i + 1) * 10_000L, text) }, synced = true, source = "LRCLIB")),
+        positionMs = 3_000,
+    )
 
     private val searchLanding = SearchLanding(recent = listOf("Lumen Drift", "night drive", "jazz piano"), moods = MoodsState.Ready(runBlocking { source.moods() }))
 
@@ -256,6 +295,44 @@ class ScreenshotTest {
 
     @Test fun lyricsPlain() = shot("lyrics_plain", dark = true, expanded = true, page = 1, playerState = playing.copy(lyrics = LyricsState.Found(sampleLyrics.copy(synced = false, source = "LRCLIB"))))
 
+    @Test fun lyricsSourceSheet() = sheet("lyrics_sources") { LyricsSourceList(playing.copy(lyrics = bothSources)) {} }
+    @Test fun lyricsSourceSheetOneSource() = sheet("lyrics_sources_one") { LyricsSourceList(playing.copy(lyrics = LyricsState.Found(lrclib, listOf(LyricsMatch("lrclib", lrclib))))) {} }
+    @Test fun lyricsTranslatedDark() = shot("lyrics_translated", dark = true, expanded = true, page = 1, playerState = playing.copy(translation = TranslationState.Translated(spanish)))
+    @Test fun lyricsTranslatedLight() = shot("lyrics_translated", dark = false, expanded = true, page = 1, playerState = playing.copy(translation = TranslationState.Translated(spanish)))
+    @Test fun lyricsTranslatedPlain() = shot(
+        "lyrics_translated_plain", dark = true, expanded = true, page = 1,
+        playerState = playing.copy(lyrics = LyricsState.Found(youtubeMusic), translation = TranslationState.Translated(spanish)),
+    )
+    @Test fun lyricsTranslating() = shot("lyrics_translating", dark = true, expanded = true, page = 1, playerState = playing.copy(translation = TranslationState.Translating("es")))
+    @Test fun lyricsTranslationOffline() = shot(
+        "lyrics_translation_offline", dark = true, expanded = true, page = 1, playerState = playing.copy(translation = TranslationState.Failed(TranslationProblem.OFFLINE, "es")),
+    )
+    @Test fun lyricsTranslationDailyLimit() = shot(
+        "lyrics_translation_limit", dark = true, expanded = true, page = 1, playerState = playing.copy(translation = TranslationState.Failed(TranslationProblem.DAILY_LIMIT, "es")),
+    )
+    @Test fun translationLanguages() = sheet("translation_languages") { TranslationLanguages("es") {} }
+    @Test fun lyricsPicking() = shot("lyrics_picking", dark = true, expanded = true, page = 1) {
+        compose.onNodeWithText("Every window keeps a spark").performTouchInput { longClick() }
+        compose.onNodeWithText("Sitara, light the dark").performClick()
+    }
+    @Test fun lyricCardArtwork() = sheet("lyric_card_artwork") { LyricShareCard(LyricCardStyle.ARTWORK, cardLines, track, "Lyrics from LRCLIB") }
+    @Test fun lyricCardColour() = sheet("lyric_card_colour") { LyricShareCard(LyricCardStyle.COLOUR, cardLines, track, "Lyrics from LRCLIB") }
+    @Test fun lyricCardLight() = sheet("lyric_card_light") { LyricShareCard(LyricCardStyle.LIGHT, cardLines, track, "Lyrics from YouTube Music · Musixmatch") }
+    @Test fun lyricCardFiveLines() = sheet("lyric_card_five_lines") { LyricShareCard(LyricCardStyle.ARTWORK, sampleLyrics.lines.take(5).map { it.text }, track, "Lyrics from LRCLIB") }
+    @Test fun lyricsBangla() = shot("lyrics_bangla", dark = true, expanded = true, page = 1, playerState = lyricsIn(bangla))
+    @Test fun lyricsHindi() = shot("lyrics_hindi", dark = true, expanded = true, page = 1, playerState = lyricsIn(hindi))
+    @Test fun lyricsUrdu() = shot("lyrics_urdu", dark = true, expanded = true, page = 1, playerState = lyricsIn(urdu))
+    @Test fun lyricsUrduTranslated() = shot(
+        "lyrics_urdu_translated", dark = true, expanded = true, page = 1,
+        playerState = lyricsIn(urdu).copy(
+            translation = TranslationState.Translated(
+                LyricsTranslation(listOf("Thousands of desires, each worth dying for", "Many of my wishes came true, yet still too few"), fromLanguage = "ur", toLanguage = "en"),
+            ),
+        ),
+    )
+    @Test fun lyricCardBangla() = sheet("lyric_card_bangla") { LyricShareCard(LyricCardStyle.ARTWORK, bangla, track, "Lyrics from LRCLIB") }
+    @Test fun lyricCardHindi() = sheet("lyric_card_hindi") { LyricShareCard(LyricCardStyle.COLOUR, hindi, track, "Lyrics from LRCLIB") }
+    @Test fun lyricCardUrdu() = sheet("lyric_card_urdu") { LyricShareCard(LyricCardStyle.LIGHT, urdu, track, "Lyrics from LRCLIB") }
     @Test fun lyricsEmpty() = shot("lyrics_empty", dark = true, expanded = true, page = 1, playerState = playing.copy(lyrics = LyricsState.NotFound))
 
     @Test fun lyricsLoading() = shot("lyrics_loading", dark = true, expanded = true, page = 1, playerState = playing.copy(lyrics = LyricsState.Loading))
