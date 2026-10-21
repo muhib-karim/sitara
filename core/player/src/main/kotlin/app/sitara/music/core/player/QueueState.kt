@@ -4,10 +4,11 @@ import app.sitara.music.core.model.RepeatMode
 import app.sitara.music.core.model.Track
 import kotlin.random.Random
 
-/** One slot in the queue. [uid] tells apart the same track queued twice. */
+/** One slot in the queue. [uid] tells apart the same track queued twice; [fromRadio] marks a song radio added. */
 data class QueueEntry(
     val uid: Long,
     val track: Track,
+    val fromRadio: Boolean = false,
 )
 
 /**
@@ -40,6 +41,9 @@ data class QueueState(
         else -> null
     }
 
+    /** How many of the last Up next songs radio added; radio songs stay behind the ones the listener queued. */
+    val upNextFromRadio: Int get() = entries.drop(currentIndex + 1).takeLastWhile { it.fromRadio }.size
+
     /** At most one entry left after the current one and nothing repeats: the moment to extend the queue. */
     val runningOut: Boolean get() = currentIndex >= 0 && repeatMode == RepeatMode.OFF && currentIndex >= entries.lastIndex - 1
 
@@ -50,12 +54,14 @@ data class QueueState(
         nextUid = nextUid + tracks.size,
     )
 
-    fun add(track: Track): QueueState {
-        val entry = QueueEntry(nextUid, track)
+    /** Queues [track] at the end, or, unless [fromRadio], ahead of the songs radio added. */
+    fun add(track: Track, fromRadio: Boolean = false): QueueState {
+        val entry = QueueEntry(nextUid, track, fromRadio)
+        val at = if (fromRadio) entries.size else entries.size - upNextFromRadio
         return copy(
-            entries = entries + entry,
-            currentIndex = if (currentIndex < 0) entries.size else currentIndex,
-            originalOrder = if (shuffled) originalOrder + entry else originalOrder,
+            entries = entries.toMutableList().apply { add(at, entry) },
+            currentIndex = if (currentIndex < 0) at else currentIndex,
+            originalOrder = if (shuffled) originalOrder.toMutableList().apply { add(if (fromRadio) size else size - takeLastWhile { it.fromRadio }.size, entry) } else originalOrder,
             ended = false,
             nextUid = nextUid + 1,
         )
@@ -82,6 +88,17 @@ data class QueueState(
         if (from < 0 || to < 0 || from >= upNext.size || to >= upNext.size) this else move(currentIndex + 1 + from, currentIndex + 1 + to)
 
     fun removeUpNext(index: Int): QueueState = if (index !in upNext.indices) this else remove(currentIndex + 1 + index)
+
+    /** Puts back an [entry] removed from Up next at [index], or as near as the queue now allows; once only. */
+    fun reinsertUpNext(index: Int, entry: QueueEntry): QueueState {
+        if (currentIndex < 0 || entries.any { it.uid == entry.uid }) return this
+        val at = (currentIndex + 1 + index).coerceIn(currentIndex + 1, entries.size)
+        return copy(
+            entries = entries.toMutableList().apply { add(at, entry) },
+            originalOrder = if (shuffled) originalOrder + entry else originalOrder,
+            ended = false,
+        )
+    }
 
     fun move(from: Int, to: Int): QueueState {
         if (from !in entries.indices || to !in entries.indices || from == to) return this
@@ -122,8 +139,9 @@ data class QueueState(
                 originalOrder = emptyList(),
             )
         } else {
-            val rest = entries.filterIndexed { i, _ -> i != currentIndex }.shuffled(random)
-            val list = listOfNotNull(now) + rest
+            // Radio songs are shuffled among themselves, so they still play after the listener's own.
+            val (radio, own) = entries.filterIndexed { i, _ -> i != currentIndex }.partition { it.fromRadio }
+            val list = listOfNotNull(now) + own.shuffled(random) + radio.shuffled(random)
             copy(entries = list, currentIndex = if (now == null) -1 else 0, shuffled = true, originalOrder = entries)
         }
     }

@@ -13,6 +13,8 @@ data class PlayerUiState(
     val positionMs: Long = 0,
     val durationMs: Long = 0,
     val upNext: List<Track> = emptyList(),
+    /** How many of the last [upNext] songs radio added; they show in a section of their own. */
+    val upNextFromRadio: Int = 0,
     val shuffled: Boolean = false,
     val repeatMode: RepeatMode = RepeatMode.OFF,
     val lyrics: LyricsState = LyricsState.NotFound,
@@ -91,6 +93,9 @@ interface PlayerActions {
 
     fun removeUpNext(index: Int)
 
+    /** Puts the Up next song removed last back where it was. */
+    fun undoRemoveUpNext()
+
     /** Looks up the current song's lyrics again after a failure. */
     fun retryLyrics()
 
@@ -124,6 +129,7 @@ interface PlayerActions {
         override fun addToQueue(track: Track) = Unit
         override fun moveUpNext(from: Int, to: Int) = Unit
         override fun removeUpNext(index: Int) = Unit
+        override fun undoRemoveUpNext() = Unit
         override fun retryLyrics() = Unit
         override fun setEqualiser(equaliser: EqualiserSettings) = Unit
         override fun openSystemEqualiser() = Unit

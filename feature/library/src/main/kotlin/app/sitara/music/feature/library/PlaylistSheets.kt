@@ -6,6 +6,8 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.text.KeyboardActions
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
@@ -15,20 +17,48 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.key.Key
+import androidx.compose.ui.input.key.KeyEventType
+import androidx.compose.ui.input.key.key
+import androidx.compose.ui.input.key.onPreviewKeyEvent
+import androidx.compose.ui.input.key.type
+import androidx.compose.ui.platform.LocalFocusManager
+import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import app.sitara.music.core.designsystem.PillButton
 import app.sitara.music.core.designsystem.SitaraSheet
 import app.sitara.music.core.designsystem.SitaraSpacing
 
-/** Asks for a playlist name; the confirm button appears once the name has something in it. */
+/**
+ * Asks for a playlist name; the confirm button appears once the name has something in it. Confirming, from the button,
+ * the keyboard's Done key or a hardware Enter, closes the keyboard itself, so none of it stays open over the dock.
+ */
 @Composable
 fun PlaylistNameSheet(title: String, initial: String, confirmLabel: String, onConfirm: (String) -> Unit, onDismiss: () -> Unit) {
     var name by rememberSaveable { mutableStateOf(initial) }
+    val keyboard = LocalSoftwareKeyboardController.current
+    val focus = LocalFocusManager.current
     SitaraSheet(onDismiss) { close ->
+        val confirm = {
+            keyboard?.hide()
+            focus.clearFocus()
+            if (name.isNotBlank()) close { onConfirm(name.trim()) }
+        }
         SheetForm(title) {
-            OutlinedTextField(name, { name = it.take(MAX_NAME_LENGTH) }, Modifier.fillMaxWidth(), singleLine = true, label = { Text("Name") })
+            OutlinedTextField(
+                name, { name = it.take(MAX_NAME_LENGTH) },
+                Modifier.fillMaxWidth().onPreviewKeyEvent { event ->
+                    val enter = event.key == Key.Enter || event.key == Key.NumPadEnter
+                    if (enter && event.type == KeyEventType.KeyUp) confirm()
+                    enter
+                },
+                singleLine = true, label = { Text("Name") },
+                keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
+                keyboardActions = KeyboardActions(onDone = { confirm() }),
+            )
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                if (name.isNotBlank()) PillButton(confirmLabel, { close { onConfirm(name.trim()) } })
+                if (name.isNotBlank()) PillButton(confirmLabel, confirm)
                 PillButton("Cancel", { close {} }, primary = false)
             }
         }

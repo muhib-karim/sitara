@@ -17,8 +17,8 @@ interface LibraryActions {
 
     fun setSaved(artist: Artist, saved: Boolean)
 
-    /** Creates a playlist named [name], with [first] as its first song when given. */
-    fun createPlaylist(name: String, first: Track?)
+    /** Creates a playlist named [name] holding [tracks] in their order. */
+    fun createPlaylist(name: String, tracks: List<Track>)
 
     fun addToPlaylist(playlist: PlaylistSummary, track: Track)
 
@@ -45,7 +45,7 @@ interface LibraryActions {
         override fun setLiked(track: Track, liked: Boolean) = Unit
         override fun setSaved(album: Album, saved: Boolean) = Unit
         override fun setSaved(artist: Artist, saved: Boolean) = Unit
-        override fun createPlaylist(name: String, first: Track?) = Unit
+        override fun createPlaylist(name: String, tracks: List<Track>) = Unit
         override fun addToPlaylist(playlist: PlaylistSummary, track: Track) = Unit
         override fun renamePlaylist(id: Long, name: String) = Unit
         override fun deletePlaylist(id: Long) = Unit

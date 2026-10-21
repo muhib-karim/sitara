@@ -11,8 +11,10 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalHapticFeedback
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.semantics
@@ -30,43 +32,57 @@ fun reorderShift(index: Int, from: Int, target: Int): Int = when {
     else -> 0
 }
 
-/** One drag at a time over a list of equal-height rows. */
+/** One drag at a time over a list of equal-height rows; [onStep] runs each time the dragged row passes onto another row. */
 @Stable
-class ReorderState {
+class ReorderState(private val onStep: () -> Unit = {}) {
     var dragged by mutableIntStateOf(-1)
         private set
     var offset by mutableFloatStateOf(0f)
         private set
     internal var rowHeight = 0f
+    private var count = 0
 
-    internal fun target(count: Int) = reorderTarget(dragged, offset, rowHeight, count)
+    internal fun target(count: Int = this.count) = reorderTarget(dragged, offset, rowHeight, count)
 
-    internal fun start(index: Int) {
+    internal fun start(index: Int, count: Int) {
         dragged = index
         offset = 0f
+        this.count = count
     }
 
     internal fun drag(by: Float) {
+        val before = target()
         offset += by
+        if (target() != before) onStep()
     }
 
     /** Ends the drag and returns where the row moved, or null when it stayed. */
-    internal fun finish(count: Int): Pair<Int, Int>? {
-        val move = (dragged to target(count)).takeIf { dragged >= 0 && it.first != it.second }
+    internal fun finish(): Pair<Int, Int>? {
+        val move = (dragged to target()).takeIf { dragged >= 0 && it.first != it.second }
         dragged = -1
         offset = 0f
         return move
     }
 }
 
+/** A [ReorderState] whose drags tick the phone's haptics once per row passed. */
 @Composable
-fun rememberReorderState(): ReorderState = remember { ReorderState() }
+fun rememberReorderState(): ReorderState {
+    val haptics = LocalHapticFeedback.current
+    return remember(haptics) { ReorderState { haptics.performHapticFeedback(HapticFeedbackType.SegmentFrequentTick) } }
+}
 
 /**
  * A row of a reorderable list: the dragged row follows the finger above the others, which step aside. TalkBack users
- * get "Move up" and "Move down" actions instead of the drag.
+ * get "Move up" and "Move down" actions instead of the drag, after any [actions] of the row's own.
  */
-fun Modifier.reorderableRow(state: ReorderState, index: Int, count: Int, onMove: (from: Int, to: Int) -> Unit): Modifier = this
+fun Modifier.reorderableRow(
+    state: ReorderState,
+    index: Int,
+    count: Int,
+    onMove: (from: Int, to: Int) -> Unit,
+    actions: List<CustomAccessibilityAction> = emptyList(),
+): Modifier = this
     .onSizeChanged { state.rowHeight = it.height.toFloat() }
     .zIndex(if (state.dragged == index) 1f else 0f)
     .graphicsLayer {
@@ -77,7 +93,7 @@ fun Modifier.reorderableRow(state: ReorderState, index: Int, count: Int, onMove:
         }
     }
     .semantics {
-        customActions = listOfNotNull(
+        customActions = actions + listOfNotNull(
             CustomAccessibilityAction("Move up") { onMove(index, index - 1); true }.takeIf { index > 0 },
             CustomAccessibilityAction("Move down") { onMove(index, index + 1); true }.takeIf { index < count - 1 },
         )
@@ -86,9 +102,9 @@ fun Modifier.reorderableRow(state: ReorderState, index: Int, count: Int, onMove:
 /** The handle that drags its [reorderableRow]; [onMove] runs once, when the row is dropped somewhere new. */
 fun Modifier.dragHandle(state: ReorderState, index: Int, count: Int, onMove: (from: Int, to: Int) -> Unit): Modifier = pointerInput(index, count) {
     detectDragGestures(
-        onDragStart = { _: Offset -> state.start(index) },
-        onDragEnd = { state.finish(count)?.let { (from, to) -> onMove(from, to) } },
-        onDragCancel = { state.finish(count) },
+        onDragStart = { _: Offset -> state.start(index, count) },
+        onDragEnd = { state.finish()?.let { (from, to) -> onMove(from, to) } },
+        onDragCancel = { state.finish() },
         onDrag = { change, amount ->
             change.consume()
             state.drag(amount.y)

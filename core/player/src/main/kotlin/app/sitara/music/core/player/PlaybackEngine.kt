@@ -55,7 +55,11 @@ class PlaybackEngine(
     // The entry last handed to prepareAhead, so each following entry is prepared once.
     private var preparedUid: Long? = null
 
+    // The Up next entry removed last and where it was, for Undo; a new queue forgets it.
+    private var removed: Pair<Int, QueueEntry>? = null
+
     fun play(tracks: List<Track>, index: Int) {
+        removed = null
         val next = queue.setQueue(tracks, index)
         publish(next)
         if (next.currentIndex >= 0) port.setQueue(next.entries, next.currentIndex, play = true)
@@ -64,18 +68,23 @@ class PlaybackEngine(
     /** Plays [tracks] in random order from a random one; turning shuffle off restores the list order. */
     fun shuffle(tracks: List<Track>, random: Random = Random.Default) {
         if (tracks.isEmpty()) return
+        removed = null
         val next = queue.setQueue(tracks, random.nextInt(tracks.size)).toggleShuffle(random)
         publish(next)
         port.setQueue(next.entries, next.currentIndex, play = true)
     }
 
-    /** Extends a non-empty queue after its last entry, keeping the playing item and the ended flag as they are. */
-    fun append(tracks: List<Track>) {
+    /**
+     * Extends a non-empty queue, keeping the playing item and the ended flag as they are: radio's songs ([fromRadio])
+     * after the last entry, the listener's ahead of radio's.
+     */
+    fun append(tracks: List<Track>, fromRadio: Boolean = false) {
         val q = queue
         if (tracks.isEmpty() || q.currentEntry == null) return
-        val next = tracks.fold(q) { acc, track -> acc.add(track) }.copy(ended = q.ended)
+        val at = if (fromRadio) q.entries.size else q.entries.size - q.upNextFromRadio
+        val next = tracks.fold(q) { acc, track -> acc.add(track, fromRadio) }.copy(ended = q.ended)
         publish(next)
-        port.insert(q.entries.size, next.entries.takeLast(tracks.size))
+        port.insert(at, next.entries.subList(at, at + tracks.size))
     }
 
     /** Queues [tracks] after the last entry, or plays them when nothing is queued. */
@@ -103,13 +112,27 @@ class PlaybackEngine(
         val q = queue
         val next = q.removeUpNext(index)
         if (next === q) return
+        removed = index to q.entries[q.currentIndex + 1 + index]
         publish(next)
         port.remove(q.currentIndex + 1 + index)
+    }
+
+    /** Puts the Up next song removed last back where it was. */
+    fun undoRemoveUpNext() {
+        val (index, entry) = removed ?: return
+        removed = null
+        val q = queue
+        val next = q.reinsertUpNext(index, entry)
+        if (next === q) return
+        publish(next)
+        val at = next.entries.indexOfFirst { it.uid == entry.uid }
+        port.insert(at, listOf(entry))
     }
 
     /** Puts back a queue saved before a restart, paused where it was; ignored once the listener has queued anything. */
     fun restore(saved: SavedQueue) {
         if (queue.currentEntry != null) return
+        removed = null
         val restored = saved.toQueueState() ?: return
         publish(restored)
         port.setRepeatMode(restored.repeatMode)

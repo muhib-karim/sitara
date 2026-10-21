@@ -188,6 +188,7 @@ class AppViewModel(private val app: SitaraApplication) :
             positionMs = s.positionMs,
             durationMs = s.durationMs,
             upNext = s.queue.upNext,
+            upNextFromRadio = s.queue.upNextFromRadio,
             shuffled = s.queue.shuffled,
             repeatMode = s.queue.repeatMode,
             lyrics = l,
@@ -297,7 +298,7 @@ class AppViewModel(private val app: SitaraApplication) :
         } catch (e: Exception) {
             emptyList()
         }
-        player.append(picks)
+        player.appendRadio(picks)
         radio.value = if (picks.isEmpty()) RadioStatus.UNAVAILABLE else RadioStatus.READY
     }
 
@@ -378,6 +379,7 @@ class AppViewModel(private val app: SitaraApplication) :
     override fun resetTuning() = player.resetTuning()
     override fun moveUpNext(from: Int, to: Int) = player.moveUpNext(from, to)
     override fun removeUpNext(index: Int) = player.removeUpNext(index)
+    override fun undoRemoveUpNext() = player.undoRemoveUpNext()
 
     // With nothing queued both start playing at once, which needs no message.
     override fun playNext(track: Track) {
@@ -423,9 +425,11 @@ class AppViewModel(private val app: SitaraApplication) :
 
     fun removeAllDownloads() = app.songDownloads.removeAll()
 
-    override fun createPlaylist(name: String, first: Track?) = app.writeLibrary {
+    override fun createPlaylist(name: String, tracks: List<Track>) = app.writeLibrary {
         val id = app.library.playlists.create(name)
-        if (first != null && app.library.playlists.add(id, first)) toast("Added to $name")
+        // A song queued twice goes in once: a playlist holds each song once.
+        val added = tracks.count { app.library.playlists.add(id, it) }
+        if (added > 0) toast(if (tracks.size == 1) "Added to $name" else "Saved $added songs to $name")
     }
 
     override fun addToPlaylist(playlist: PlaylistSummary, track: Track) = app.writeLibrary {

@@ -17,8 +17,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.rememberScrollState
@@ -26,8 +24,6 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.material3.minimumInteractiveComponentSize
@@ -35,7 +31,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -45,7 +40,6 @@ import androidx.compose.ui.draw.BlurredEdgeTreatment
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -58,17 +52,12 @@ import app.sitara.music.core.designsystem.GlassSurface
 import app.sitara.music.core.designsystem.LocalArtworkWash
 import app.sitara.music.core.designsystem.LocalGlassHaze
 import app.sitara.music.core.designsystem.LocalReducedMotion
-import app.sitara.music.core.designsystem.PillButton
 import app.sitara.music.core.designsystem.SitaraColors
 import app.sitara.music.core.designsystem.SitaraIcons
 import app.sitara.music.core.designsystem.SitaraRadius
-import app.sitara.music.core.designsystem.TrackRow
 import app.sitara.music.core.designsystem.animateArtworkColor
-import app.sitara.music.core.designsystem.dragHandle
 import app.sitara.music.core.designsystem.rememberArtworkTheme
 import app.sitara.music.core.designsystem.rememberCoverLook
-import app.sitara.music.core.designsystem.rememberReorderState
-import app.sitara.music.core.designsystem.reorderableRow
 import app.sitara.music.core.designsystem.sitaraColorScheme
 import app.sitara.music.core.model.Track
 import dev.chrisbanes.haze.hazeSource
@@ -84,6 +73,7 @@ internal fun FullPlayer(
     artworkModifier: Modifier,
     onArtist: (String) -> Unit,
     onAddToPlaylist: () -> Unit,
+    onSaveQueue: (List<Track>) -> Unit,
 ) {
     val track = state.track ?: return
     val reduced = LocalReducedMotion.current
@@ -134,19 +124,7 @@ internal fun FullPlayer(
                         when (page) {
                             0 -> PlayingPage(state, theme, actions, artworkModifier, onQueue = { selectPage(2) }, onArtist = onArtist, onMore = { moreOpen = true })
                             1 -> LyricsPanel(state, actions, onMore = { moreOpen = true })
-                            else -> Column(Modifier.fillMaxSize()) {
-                                Row(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-                                    Text("Up next", style = MaterialTheme.typography.headlineMedium, color = SitaraColors.StageContent, modifier = Modifier.weight(1f))
-                                    PillButton("Now playing", { selectPage(0) }, primary = false)
-                                }
-                                RadioControl(state.radio, actions::startRadio, Modifier.padding(horizontal = 24.dp, vertical = 4.dp))
-                                if (state.upNext.isEmpty()) {
-                                    Text("You're at the end of the queue", color = SitaraColors.StageSecondary, modifier = Modifier.padding(24.dp).weight(1f))
-                                } else {
-                                    UpNextList(state.upNext, actions, Modifier.weight(1f))
-                                }
-                                PlayerControls(state, actions, Modifier.padding(horizontal = 24.dp, vertical = 8.dp))
-                            }
+                            else -> UpNextPage(state, actions, onNowPlaying = { selectPage(0) }, onSaveQueue = onSaveQueue)
                         }
                     }
                 }
@@ -283,35 +261,3 @@ private fun LyricsPanel(state: PlayerUiState, actions: PlayerActions, onMore: ()
     }
 }
 
-/** Up next with drag to reorder and remove; shows a moved song in its new place before the queue confirms it. */
-@Composable
-private fun UpNextList(upNext: List<Track>, actions: PlayerActions, modifier: Modifier) {
-    val reorder = rememberReorderState()
-    var order by remember(upNext) { mutableStateOf(upNext) }
-    val move = { from: Int, to: Int ->
-        order = order.toMutableList().apply { add(to, removeAt(from)) }
-        actions.moveUpNext(from, to)
-    }
-    LazyColumn(modifier.testTag("up-next")) {
-        itemsIndexed(order, key = { index, item -> "$index-${item.id}" }, contentType = { _, _ -> "queue track" }) { index, item ->
-            TrackRow(item, onClick = { actions.playQueueIndex(index) }, modifier = Modifier.reorderableRow(reorder, index, order.size, move)) {
-                IconButton(onClick = { actions.removeUpNext(index) }) {
-                    Icon(SitaraIcons.Close, "Remove ${item.title} from the queue", tint = SitaraColors.StageSecondary)
-                }
-                Icon(
-                    SitaraIcons.DragHandle, null, tint = SitaraColors.StageSecondary,
-                    modifier = Modifier.size(48.dp).dragHandle(reorder, index, order.size, move).padding(12.dp),
-                )
-            }
-        }
-    }
-}
-
-@Composable
-private fun RadioControl(status: RadioStatus, onStart: () -> Unit, modifier: Modifier = Modifier) {
-    when (status) {
-        RadioStatus.READY -> PillButton("Start radio", onStart, modifier, primary = false)
-        RadioStatus.LOADING -> Text("Finding similar songs…", color = SitaraColors.StageSecondary, style = MaterialTheme.typography.bodyMedium, modifier = modifier)
-        RadioStatus.UNAVAILABLE -> Text("No similar songs found for this one", color = SitaraColors.StageSecondary, style = MaterialTheme.typography.bodyMedium, modifier = modifier)
-    }
-}

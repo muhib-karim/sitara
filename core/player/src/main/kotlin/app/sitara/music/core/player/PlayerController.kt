@@ -75,7 +75,8 @@ class PlayerController(
 
     fun shuffle(tracks: List<Track>) = gate.run { it.shuffle(tracks) }
 
-    fun append(tracks: List<Track>) = gate.run { it.append(tracks) }
+    /** Radio's songs, after the last entry and behind anything queued later. */
+    fun appendRadio(tracks: List<Track>) = gate.run { it.append(tracks, fromRadio = true) }
 
     fun addToQueue(tracks: List<Track>) = gate.run { it.addToQueue(tracks) }
 
@@ -84,6 +85,8 @@ class PlayerController(
     fun moveUpNext(from: Int, to: Int) = gate.run { it.moveUpNext(from, to) }
 
     fun removeUpNext(index: Int) = gate.run { it.removeUpNext(index) }
+
+    fun undoRemoveUpNext() = gate.run { it.undoRemoveUpNext() }
 
     fun togglePlay() = gate.run { it.togglePlay() }
 

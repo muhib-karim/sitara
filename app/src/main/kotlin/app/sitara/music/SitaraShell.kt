@@ -72,6 +72,7 @@ import app.sitara.music.feature.library.DetailScreen
 import app.sitara.music.feature.library.LibraryActions
 import app.sitara.music.feature.library.LibraryScreen
 import app.sitara.music.feature.library.LibraryState
+import app.sitara.music.feature.library.PlaylistNameSheet
 import app.sitara.music.feature.library.SavedIds
 import app.sitara.music.feature.library.SongActions
 import app.sitara.music.feature.player.EqualiserScreen
@@ -176,6 +177,7 @@ fun SitaraShell(
     val browseState = rememberSaveableStateHolder()
     var menuTrack by remember { mutableStateOf<Track?>(null) }
     var playlistTrack by remember { mutableStateOf<Track?>(null) }
+    var queueToSave by remember { mutableStateOf<List<Track>?>(null) }
     var equaliserOpen by rememberSaveable { mutableStateOf(false) }
     // Reading on (scrolling towards the end) folds the dock into one row; scrolling back or its tab unfolds it.
     var dockFolded by rememberSaveable { mutableStateOf(false) }
@@ -277,7 +279,7 @@ fun SitaraShell(
                                 onPlaylist = { open(DetailRoute.UserPlaylist(it.id)) },
                                 onAlbum = openAlbum,
                                 onArtist = openArtist,
-                                onNewPlaylist = { libraryActions.createPlaylist(it, null) },
+                                onNewPlaylist = { libraryActions.createPlaylist(it, emptyList()) },
                                 onTrackMenu = openMenu,
                                 onFindMusic = { tab = Tab.SEARCH },
                                 library = libraryActions,
@@ -316,6 +318,7 @@ fun SitaraShell(
                 onDockHeightChanged = { measuredDockHeight = maxOf(measuredDockHeight, it) },
                 onArtist = { open(DetailRoute.Artist(it)) },
                 onAddToPlaylist = { playlistTrack = it },
+                onSaveQueue = { queueToSave = it },
             )
             menuTrack?.let { track ->
                 SitaraSheet(onDismiss = { menuTrack = null }) { close ->
@@ -331,12 +334,15 @@ fun SitaraShell(
                     )
                 }
             }
+            queueToSave?.let { tracks ->
+                PlaylistNameSheet("Save queue as playlist", "", "Save", onConfirm = { queueToSave = null; libraryActions.createPlaylist(it, tracks) }, onDismiss = { queueToSave = null })
+            }
             playlistTrack?.let { track ->
                 SitaraSheet(onDismiss = { playlistTrack = null }) { close ->
                     AddToPlaylist(
                         track, playlists,
                         onPick = { close { libraryActions.addToPlaylist(it, track) } },
-                        onCreate = { close { libraryActions.createPlaylist(it, track) } },
+                        onCreate = { close { libraryActions.createPlaylist(it, listOf(track)) } },
                     )
                 }
             }

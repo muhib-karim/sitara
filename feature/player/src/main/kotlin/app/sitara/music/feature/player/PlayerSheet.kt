@@ -81,6 +81,7 @@ fun PlayerSheet(
     onDockHeightChanged: (Dp) -> Unit = {},
     onArtist: (artistId: String) -> Unit = {},
     onAddToPlaylist: (Track) -> Unit = {},
+    onSaveQueue: (List<Track>) -> Unit = {},
 ) {
     var expanded by rememberSaveable { mutableStateOf(initiallyExpanded) }
     val reduced = LocalReducedMotion.current
@@ -113,6 +114,7 @@ fun PlayerSheet(
                     state, actions, onCollapse = { expanded = false }, initialPage = initialPage, artworkModifier = coverModifier,
                     onArtist = { expanded = false; onArtist(it) },
                     onAddToPlaylist = { onAddToPlaylist(track) },
+                    onSaveQueue = onSaveQueue,
                 )
             } else {
                 Box(Modifier.fillMaxSize()) {
