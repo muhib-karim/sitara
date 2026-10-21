@@ -53,3 +53,9 @@ sealed interface ShelfLink {
 
     data class ToArtist(val id: String) : ShelfLink
 }
+
+/** A group of the catalogue's moods and genres ("Moods & moments", "Genres"). */
+data class MoodSection(val title: String, val moods: List<Mood>)
+
+/** A mood or genre with a page of its own; [colorArgb] is its tile's colour and [params] ask the source for the page. */
+data class Mood(val title: String, val colorArgb: Int, val params: String)

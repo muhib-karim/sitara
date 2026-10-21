@@ -5,6 +5,7 @@ import app.sitara.music.core.model.ArtistPage
 import app.sitara.music.core.model.Chart
 import app.sitara.music.core.model.HomePage
 import app.sitara.music.core.model.MoodChip
+import app.sitara.music.core.model.MoodSection
 import app.sitara.music.core.model.Playlist
 import app.sitara.music.core.model.SearchFilter
 import app.sitara.music.core.model.SearchResults
@@ -12,8 +13,10 @@ import app.sitara.music.core.model.Track
 import app.sitara.music.source.api.BrowseSource
 import app.sitara.music.source.api.ChartsSource
 import app.sitara.music.source.api.HomeFeedSource
+import app.sitara.music.source.api.MoodsSource
 import app.sitara.music.source.api.RadioSource
 import app.sitara.music.source.api.SearchSource
+import app.sitara.music.source.api.SearchSuggestionSource
 import com.grack.nanojson.JsonObject
 import com.grack.nanojson.JsonParser
 import com.grack.nanojson.JsonWriter
@@ -43,13 +46,15 @@ import org.schabi.newpipe.extractor.stream.StreamInfo
 import org.schabi.newpipe.extractor.stream.StreamInfoItem
 
 /**
- * YouTube Music search (songs, albums, artists, playlists), their pages, radio from related songs, the YouTube Charts
- * trending list and YouTube Music's own Home; a pasted video link resolves to that one song.
+ * YouTube Music search (songs, albums, artists, playlists) with its suggestions, their pages, radio from related songs, the
+ * YouTube Charts trending list, YouTube Music's own Home and its Moods & genres; a pasted video link resolves to that one song.
  */
 class YouTubeMusicSource :
     SearchSource,
+    SearchSuggestionSource,
     ChartsSource,
     HomeFeedSource,
+    MoodsSource,
     BrowseSource,
     RadioSource {
     private val service = ServiceList.YouTube
@@ -133,8 +138,27 @@ class YouTubeMusicSource :
     }
 
     private suspend fun musicHome(url: String, fields: Map<String, String>): HomePage {
+        val response = music(url, fields)
+        response.getObject("responseContext").getString("visitorData")?.let { visitorData = it }
+        return parseHomePage(response)
+    }
+
+    override suspend fun suggestions(query: String): List<String> {
+        val q = query.trim()
+        if (q.isEmpty()) return emptyList()
+        return parseSuggestions(music(SUGGESTIONS_URL, mapOf("input" to q)))
+    }
+
+    override suspend fun moods(): List<MoodSection> =
+        parseMoods(music(BROWSE_URL, mapOf("browseId" to MOODS_BROWSE_ID))).ifEmpty { throw IOException("YouTube Music sent no moods or genres") }
+
+    override suspend fun moodPage(params: String): HomePage =
+        parseHomePage(music(BROWSE_URL, mapOf("browseId" to MOOD_PAGE_BROWSE_ID, "params" to params)))
+
+    /** A YouTube Music API request as the WEB_REMIX client in the device's language and country, as the Home visitor once there is one. */
+    private suspend fun music(url: String, fields: Map<String, String>): JsonObject {
         val locale = Locale.getDefault()
-        val response = io {
+        return io {
             val client = JsonObject.builder().`object`("context").`object`("client")
                 .value("clientName", "WEB_REMIX")
                 .value("clientVersion", getYoutubeMusicClientVersion())
@@ -147,8 +171,6 @@ class YouTubeMusicSource :
             val headers = getYoutubeMusicHeaders() + visitorData?.let { mapOf("X-Goog-Visitor-Id" to listOf(it)) }.orEmpty()
             JsonParser.`object`().from(getValidJsonResponseBody(NewPipe.getDownloader().postWithContentTypeJson(url, headers, body)))
         }
-        response.getObject("responseContext").getString("visitorData")?.let { visitorData = it }
-        return parseHomePage(response)
     }
 
     // shortcut: stops after MAX_PLAYLIST_ITEMS so a huge playlist stays one quick load; page lazily on scroll if people hit the cap.
@@ -180,6 +202,8 @@ class YouTubeMusicSource :
         const val TRENDING_MUSIC_KIOSK = "trending_music"
         const val FALLBACK_COUNTRY = "GB"
         const val HOME_BROWSE_ID = "FEmusic_home"
+        const val MOODS_BROWSE_ID = "FEmusic_moods_and_genres"
         const val BROWSE_URL = "https://music.youtube.com/youtubei/v1/browse?prettyPrint=false"
+        const val SUGGESTIONS_URL = "https://music.youtube.com/youtubei/v1/music/get_search_suggestions?prettyPrint=false"
     }
 }

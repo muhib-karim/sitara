@@ -81,6 +81,24 @@ class NetworkSmokeTest {
         assertTrue(more.shelves.isNotEmpty(), "the continuation brought no shelves")
     }
 
+    @Test
+    fun `search suggestions complete a half-typed query`() = runBlocking {
+        val suggestions = YouTubeMusicSource().suggestions("lofi")
+        println("suggestions lofi -> ${suggestions.joinToString()}")
+        assertTrue(suggestions.any { it.startsWith("lofi", ignoreCase = true) }, "no completion of lofi among $suggestions")
+    }
+
+    @Test
+    fun `Moods and genres list tiles, and a tile opens a page of shelves`() = runBlocking {
+        val source = YouTubeMusicSource()
+        val sections = source.moods()
+        sections.forEach { println("moods -> ${it.title}: ${it.moods.joinToString { mood -> mood.title }}") }
+        val first = sections.first().moods.first()
+        val page = source.moodPage(first.params)
+        page.shelves.forEach { println("mood ${first.title} -> ${it.title} (${it.layout}, ${it.items.size} items)") }
+        assertTrue(page.shelves.isNotEmpty(), "${first.title} opened no shelves")
+    }
+
     private inline fun <T> unlessBotChecked(block: () -> T): T = try {
         block()
     } catch (e: SignInConfirmNotBotException) {

@@ -1,0 +1,213 @@
+{
+ "contents": [
+  {
+   "searchSuggestionsSectionRenderer": {
+    "contents": [
+     {
+      "searchSuggestionRenderer": {
+       "suggestion": {
+        "runs": [
+         {
+          "text": "lofi",
+          "bold": true
+         }
+        ]
+       },
+       "navigationEndpoint": {
+        "searchEndpoint": {
+         "query": "lofi"
+        }
+       },
+       "icon": {
+        "iconType": "SEARCH"
+       }
+      }
+     },
+     {
+      "searchSuggestionRenderer": {
+       "suggestion": {
+        "runs": [
+         {
+          "text": "lofi",
+          "bold": true
+         },
+         {
+          "text": " girl"
+         }
+        ]
+       },
+       "navigationEndpoint": {
+        "searchEndpoint": {
+         "query": "lofi girl"
+        }
+       },
+       "icon": {
+        "iconType": "SEARCH"
+       }
+      }
+     },
+     {
+      "searchSuggestionRenderer": {
+       "suggestion": {
+        "runs": [
+         {
+          "text": "lofi",
+          "bold": true
+         },
+         {
+          "text": " hip hop"
+         }
+        ]
+       },
+       "navigationEndpoint": {
+        "searchEndpoint": {
+         "query": "lofi hip hop"
+        }
+       },
+       "icon": {
+        "iconType": "SEARCH"
+       }
+      }
+     },
+     {
+      "searchSuggestionRenderer": {
+       "suggestion": {
+        "runs": [
+         {
+          "text": "lofi",
+          "bold": true
+         },
+         {
+          "text": " study music"
+         }
+        ]
+       },
+       "navigationEndpoint": {
+        "searchEndpoint": {
+         "query": "lofi study music"
+        }
+       },
+       "icon": {
+        "iconType": "SEARCH"
+       }
+      }
+     },
+     {
+      "searchSuggestionRenderer": {
+       "suggestion": {
+        "runs": [
+         {
+          "text": "lofi",
+          "bold": true
+         },
+         {
+          "text": " beats"
+         }
+        ]
+       },
+       "navigationEndpoint": {
+        "searchEndpoint": {
+         "query": "lofi beats"
+        }
+       },
+       "icon": {
+        "iconType": "SEARCH"
+       }
+      }
+     },
+     {
+      "searchSuggestionRenderer": {
+       "suggestion": {
+        "runs": [
+         {
+          "text": "lofi",
+          "bold": true
+         },
+         {
+          "text": " music"
+         }
+        ]
+       },
+       "navigationEndpoint": {
+        "searchEndpoint": {
+         "query": "lofi music"
+        }
+       },
+       "icon": {
+        "iconType": "SEARCH"
+       }
+      }
+     }
+    ]
+   }
+  },
+  {
+   "searchSuggestionsSectionRenderer": {
+    "contents": [
+     {
+      "musicResponsiveListItemRenderer": {
+       "thumbnail": {
+        "musicThumbnailRenderer": {
+         "thumbnail": {
+          "thumbnails": [
+           {
+            "url": "https://yt3.googleusercontent.com/3Cs1MajDc1ZQPwSv5fVtShaPCRp6UIQToMy6zSuybMCHpijWuzyo9rQkN83oqMKVmDjiVuUpA3thGg=w60-h60-p-l90-rj",
+            "width": 60,
+            "height": 60
+           },
+           {
+            "url": "https://yt3.googleusercontent.com/3Cs1MajDc1ZQPwSv5fVtShaPCRp6UIQToMy6zSuybMCHpijWuzyo9rQkN83oqMKVmDjiVuUpA3thGg=w120-h120-p-l90-rj",
+            "width": 120,
+            "height": 120
+           }
+          ]
+         },
+         "thumbnailCrop": "MUSIC_THUMBNAIL_CROP_CIRCLE",
+         "thumbnailScale": "MUSIC_THUMBNAIL_SCALE_ASPECT_FILL"
+        }
+       },
+       "flexColumns": [
+        {
+         "musicResponsiveListItemFlexColumnRenderer": {
+          "text": {
+           "runs": [
+            {
+             "text": "Lofi Girl"
+            }
+           ]
+          },
+          "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
+         }
+        },
+        {
+         "musicResponsiveListItemFlexColumnRenderer": {
+          "text": {
+           "runs": [
+            {
+             "text": "6.24M monthly audience"
+            }
+           ]
+          },
+          "displayPriority": "MUSIC_RESPONSIVE_LIST_ITEM_COLUMN_DISPLAY_PRIORITY_HIGH"
+         }
+        }
+       ],
+       "flexColumnDisplayStyle": "MUSIC_RESPONSIVE_LIST_ITEM_FLEX_COLUMN_DISPLAY_STYLE_TWO_LINE_STACK",
+       "navigationEndpoint": {
+        "browseEndpoint": {
+         "browseId": "UCi5YpRRZmwegT235crEZ2YQ",
+         "browseEndpointContextSupportedConfigs": {
+          "browseEndpointContextMusicConfig": {
+           "pageType": "MUSIC_PAGE_TYPE_ARTIST"
+          }
+         }
+        }
+       },
+       "itemHeight": "MUSIC_RESPONSIVE_LIST_ITEM_HEIGHT_MEDIUM"
+      }
+     }
+    ]
+   }
+  }
+ ]
+}

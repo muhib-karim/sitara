@@ -7,6 +7,7 @@ import app.sitara.music.core.model.HomePage
 import app.sitara.music.core.model.Library
 import app.sitara.music.core.model.Lyrics
 import app.sitara.music.core.model.MoodChip
+import app.sitara.music.core.model.MoodSection
 import app.sitara.music.core.model.Playlist
 import app.sitara.music.core.model.SearchFilter
 import app.sitara.music.core.model.SearchResults
@@ -44,6 +45,19 @@ interface HomeFeedSource {
 
     /** The shelves after a page, from that page's [HomePage.continuation]. */
     suspend fun moreHome(continuation: String): HomePage
+}
+
+/** Completions for a half-typed search. */
+interface SearchSuggestionSource {
+    suspend fun suggestions(query: String): List<String>
+}
+
+/** The catalogue's moods and genres, each with a page of shelves. */
+interface MoodsSource {
+    suspend fun moods(): List<MoodSection>
+
+    /** The page of the mood or genre whose [Mood][app.sitara.music.core.model.Mood.params] are [params]. */
+    suspend fun moodPage(params: String): HomePage
 }
 
 /** A whole catalogue with a listener's library, as the offline sample source offers it to tests and fixtures. */
