@@ -36,6 +36,7 @@ import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
@@ -88,7 +89,8 @@ internal fun PlayerControls(state: PlayerUiState, actions: PlayerActions, modifi
                     Modifier.semantics { stateDescription = state.repeatMode.name.lowercase() },
                     tint = if (state.repeatMode == RepeatMode.OFF) SitaraColors.StageSecondary else MaterialTheme.colorScheme.primary,
                 )
-                if (state.repeatMode == RepeatMode.ONE) Text("1", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+                // The button already says "Repeat, one"; the figure is for the eye.
+                if (state.repeatMode == RepeatMode.ONE) Text("1", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary, modifier = Modifier.clearAndSetSemantics {})
             }
         }
     }
