@@ -40,6 +40,7 @@ import app.sitara.music.core.model.EqualiserSettings
 import app.sitara.music.core.model.Lyrics
 import app.sitara.music.core.model.LyricsLine
 import app.sitara.music.core.model.LyricsSong
+import app.sitara.music.core.model.LyricsTranslation
 import app.sitara.music.core.model.PlaybackTuning
 import app.sitara.music.core.model.SearchFilter
 import app.sitara.music.core.model.SitaraSettings
@@ -51,10 +52,12 @@ import app.sitara.music.feature.player.LyricsState
 import app.sitara.music.feature.player.PlayerActions
 import app.sitara.music.feature.player.PlayerUiState
 import app.sitara.music.feature.player.SleepTimerStatus
+import app.sitara.music.feature.player.TranslationState
 import app.sitara.music.feature.search.SearchState
 import app.sitara.music.source.fake.FakeMusicSource
 import app.sitara.music.source.fake.SampleCatalog
 import app.sitara.music.source.lyrics.LyricsMatch
+import app.sitara.music.source.lyrics.TranslationProblem
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
@@ -85,6 +88,7 @@ class PlayerInteractionTest {
         libraryActions: LibraryActions = LibraryActions.None,
         lyricsState: LyricsState? = null,
         lyricsSources: List<String> = emptyList(),
+        translation: TranslationState = TranslationState.Off,
         tuning: PlaybackTuning = PlaybackTuning(),
         sleepTimer: SleepTimerStatus = SleepTimerStatus.Off,
         failed: Boolean = false,
@@ -107,7 +111,7 @@ class PlayerInteractionTest {
                 search = SearchState.Idle,
                 player = PlayerUiState(
                     track = track, durationMs = durationMs, lyrics = lyricsState ?: LyricsState.Found(lyrics), positionMs = 15_300, upNext = upNext, upNextFromRadio = upNextFromRadio, tuning = tuning, sleepTimer = sleepTimer, failed = failed,
-                    lyricsSources = lyricsSources,
+                    lyricsSources = lyricsSources, translation = translation,
                     equaliser = equaliser, systemEqualiser = systemEqualiser, trimDb = trimDb,
                 ),
                 actions = actions,
@@ -438,6 +442,67 @@ class PlayerInteractionTest {
         compose.onNodeWithText("No lyrics found in LRCLIB or YouTube Music").assertIsDisplayed()
         compose.onNodeWithText("Try again").performClick()
         assertEquals(1, retries)
+    }
+
+    @Test
+    fun translateTurnsTranslationOnAndOff() {
+        var toggles = 0
+        render(expanded = true, page = 1, actions = object : PlayerActions by PlayerActions.None {
+            override fun toggleTranslation() { toggles++ }
+        })
+
+        compose.onNodeWithText("Translate").performClick()
+
+        assertEquals(1, toggles)
+    }
+
+    @Test
+    fun translatedLinesShowUnderTheLyricsWithBothLanguagesAndTheService() {
+        val translated = synced.lines.map { "In English: ${it.text}" }
+        render(expanded = true, page = 1, lyricsState = LyricsState.Found(synced), translation = TranslationState.Translated(LyricsTranslation(translated, "es", "en")))
+
+        compose.onNodeWithText("Translated from Spanish by MyMemory").assertIsDisplayed()
+        compose.onNodeWithText(translated.first(), useUnmergedTree = true).assertExists()
+    }
+
+    @Test
+    fun translatingNamesTheLanguage() {
+        render(expanded = true, page = 1, translation = TranslationState.Translating("en"))
+
+        compose.onNodeWithText("Translating to English…").assertIsDisplayed()
+    }
+
+    @Test
+    fun offlineTranslationSaysSoAndTriesAgain() {
+        var retries = 0
+        render(expanded = true, page = 1, translation = TranslationState.Failed(TranslationProblem.OFFLINE, "en"), actions = object : PlayerActions by PlayerActions.None {
+            override fun retryTranslation() { retries++ }
+        })
+
+        compose.onNodeWithText("You’re offline. Connect to translate.").assertIsDisplayed()
+        compose.onNodeWithText("Try again").performClick()
+        assertEquals(1, retries)
+    }
+
+    @Test
+    fun theDailyLimitSaysWhenToComeBackWithNothingToRetry() {
+        render(expanded = true, page = 1, translation = TranslationState.Failed(TranslationProblem.DAILY_LIMIT, "en"))
+
+        compose.onNodeWithText("MyMemory’s free daily translations are used up. Try again tomorrow.").assertIsDisplayed()
+        compose.onNodeWithText("Try again").assertDoesNotExist()
+    }
+
+    @Test
+    fun theTranslationLanguageCanBeChanged() {
+        val languages = mutableListOf<String>()
+        render(expanded = true, page = 1, translation = TranslationState.Failed(TranslationProblem.SAME_LANGUAGE, "en"), actions = object : PlayerActions by PlayerActions.None {
+            override fun setTranslationLanguage(language: String) { languages += language }
+        })
+
+        compose.onNodeWithText("These lyrics are already in English.").assertIsDisplayed()
+        compose.onNodeWithContentDescription("Translate into English. Change language").performClick()
+        compose.onNodeWithText("Hindi").performScrollTo().performClick()
+        assertEquals(listOf("hi"), languages)
     }
 
     @Test

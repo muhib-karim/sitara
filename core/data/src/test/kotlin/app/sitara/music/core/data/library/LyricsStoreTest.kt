@@ -5,6 +5,7 @@ import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import app.sitara.music.core.model.CachedLyrics
 import app.sitara.music.core.model.LyricsSong
+import app.sitara.music.core.model.LyricsTranslation
 import kotlinx.coroutines.test.runTest
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -14,7 +15,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 
-/** Each lyrics source's answer per song, the source the listener picked, and the move from schema 6 (LRCLIB's answers only) to 7. */
+/** Each lyrics source's answer per song, the source the listener picked, translations, and the move from schema 6 (LRCLIB's answers only) to 7. */
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35])
 class LyricsStoreTest {
@@ -73,13 +74,27 @@ class LyricsStoreTest {
     }
 
     @Test
+    fun `a translation is kept per song, source and language, blank lines and all`() = runTest {
+        val store = RoomLyricsCache(inMemory().lyricsCache())
+        val english = LyricsTranslation(listOf("Paper lanterns", "", "Over the water"), fromLanguage = "es", toLanguage = "en")
+        val bangla = LyricsTranslation(listOf("কাগজের লণ্ঠন", "", "জলের উপর"), fromLanguage = null, toLanguage = "bn")
+
+        store.putTranslation("a", "lrclib", english)
+        store.putTranslation("a", "lrclib", bangla)
+
+        assertEquals(english, store.translation("a", "lrclib", "en"))
+        assertEquals(bangla, store.translation("a", "lrclib", "bn"))
+        assertNull(store.translation("a", "youtube-music", "en"))
+    }
+
+    @Test
     fun `lyrics cached by version 6 open in version 7 as LRCLIB's, with no matched song`() = runTest {
         context.deleteDatabase(name)
         createDatabaseAt(6, context.getDatabasePath(name)) { old ->
             old.execSQL("INSERT INTO lyrics_cache (track_id, synced, plain, fetched_at) VALUES ('a', '[00:01.00]Paper lanterns', 'Paper lanterns', 10)")
         }
 
-        // Room runs the 6 -> 7 migration and checks the result against the version 7 schema as it opens.
+        // Room runs the 6 -> 7 and 7 -> 8 migrations and checks the result against the current schema as it opens.
         val store = RoomLyricsCache(Room.databaseBuilder(context, SitaraDatabase::class.java, name).allowMainThreadQueries().build().also(opened::add).lyricsCache())
 
         assertEquals(CachedLyrics("[00:01.00]Paper lanterns", "Paper lanterns", 10), store.get("a", "lrclib"))
