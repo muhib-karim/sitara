@@ -17,6 +17,7 @@ class DetailRouteTest {
             DetailRoute.Mood("ggMPOg1uX2NXUkgxdW0zUHJp", "R&B | Soul: 90s"),
             DetailRoute.Stats,
             DetailRoute.Import,
+            DetailRoute.Scrobbling,
         )
 
         assertEquals(routes, routes.map { decodeDetailRoute(it.encode()) })

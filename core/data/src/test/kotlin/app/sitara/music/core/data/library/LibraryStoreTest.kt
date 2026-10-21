@@ -176,6 +176,19 @@ class LibraryStoreTest {
     }
 
     @Test
+    fun `a song is in a playlist while any playlist holds it`() = runTest {
+        val playlists = RoomPlaylists(db.playlists(), clock)
+        val id = playlists.create("Night drive")
+        assertFalse(playlists.inAnyPlaylist(song(1).id))
+
+        playlists.add(id, song(1))
+        assertTrue(playlists.inAnyPlaylist(song(1).id))
+
+        playlists.delete(id)
+        assertFalse(playlists.inAnyPlaylist(song(1).id))
+    }
+
+    @Test
     fun `moving and removing entries keeps positions contiguous`() = runTest {
         val playlists = RoomPlaylists(db.playlists(), clock)
         val id = playlists.create("Mix")
