@@ -96,6 +96,16 @@ class ListeningTrackerTest {
     }
 
     @Test
+    fun `a checkpoint with nothing more heard reports nothing new`() {
+        tracker.update(song, playing = true)
+        time += 30.seconds
+        tracker.update(song, playing = false)
+        tracker.checkpoint()
+        tracker.update(null, playing = false)
+        assertEquals(listOf(Listen(song.track, 1_000_000, 30_000)), listens)
+    }
+
+    @Test
     fun `starting the same entry over is a new play`() {
         tracker.update(song, playing = true)
         time += 40.seconds
