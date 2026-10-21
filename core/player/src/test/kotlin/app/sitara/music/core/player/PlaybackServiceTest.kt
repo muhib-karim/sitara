@@ -12,6 +12,7 @@ import androidx.media3.database.StandaloneDatabaseProvider
 import androidx.media3.datasource.cache.Cache
 import androidx.media3.datasource.cache.NoOpCacheEvictor
 import androidx.media3.datasource.cache.SimpleCache
+import androidx.media3.session.CommandButton
 import app.sitara.music.core.model.Artwork
 import app.sitara.music.core.model.EqualiserPreset
 import app.sitara.music.core.model.EqualiserSettings
@@ -63,6 +64,14 @@ class PlaybackServiceTest {
         override fun onTrackStarted(track: Track) = Unit
 
         override fun songGainDb(trackId: String) = trims.map { it[trackId] ?: 0 }
+
+        val liked = MutableStateFlow(setOf<String>())
+
+        override fun isLiked(trackId: String) = liked.map { trackId in it }
+
+        override fun setLiked(track: Track, liked: Boolean) {
+            this.liked.value = if (liked) this.liked.value + track.id else this.liked.value - track.id
+        }
 
         override suspend fun savedQueue() = saved
 
@@ -135,6 +144,45 @@ class PlaybackServiceTest {
         assertEquals(custom, service.equaliser.settings)
         assertEquals(custom, service.tailEqualiser.settings)
 
+        controller.destroy()
+    }
+
+    @Test
+    fun `the notification's like, shuffle and repeat buttons show their state and change it`() {
+        val app = RuntimeEnvironment.getApplication() as TestApp
+        app.saved = SavedQueue(songs, currentIndex = 1, positionMs = 0, repeatMode = RepeatMode.OFF)
+        app.liked.value = setOf("id2")
+
+        val controller = Robolectric.buildService(PlaybackService::class.java).create()
+        shadowOf(Looper.getMainLooper()).idle()
+        val service = controller.get()
+        fun icons() = checkNotNull(service.session).mediaButtonPreferences.map { it.icon }
+        assertEquals(listOf(CommandButton.ICON_HEART_FILLED, CommandButton.ICON_SHUFFLE_OFF, CommandButton.ICON_REPEAT_OFF), icons())
+
+        assertTrue(service.onSessionAction(SessionActions.LIKE))
+        assertTrue(service.onSessionAction(SessionActions.SHUFFLE))
+        assertTrue(service.onSessionAction(SessionActions.REPEAT))
+        shadowOf(Looper.getMainLooper()).idle()
+        assertEquals("the heart unlikes the song that plays", emptySet<String>(), app.liked.value)
+        val queue = checkNotNull(PlaybackEngineRegistry.engine.value).state.value.queue
+        assertTrue(queue.shuffled)
+        assertEquals(RepeatMode.ALL, queue.repeatMode)
+        assertEquals(listOf(CommandButton.ICON_HEART_UNFILLED, CommandButton.ICON_SHUFFLE_ON, CommandButton.ICON_REPEAT_ALL), icons())
+
+        service.onSessionAction(SessionActions.REPEAT)
+        shadowOf(Looper.getMainLooper()).idle()
+        assertEquals(CommandButton.ICON_REPEAT_ONE, icons().last())
+        assertFalse("no other commands", service.onSessionAction("com.example.ERASE"))
+
+        controller.destroy()
+    }
+
+    @Test
+    fun `with nothing queued the heart does nothing`() {
+        val controller = Robolectric.buildService(PlaybackService::class.java).create()
+        shadowOf(Looper.getMainLooper()).idle()
+        assertFalse(controller.get().onSessionAction(SessionActions.LIKE))
+        assertEquals(emptySet<String>(), (RuntimeEnvironment.getApplication() as TestApp).liked.value)
         controller.destroy()
     }
 
