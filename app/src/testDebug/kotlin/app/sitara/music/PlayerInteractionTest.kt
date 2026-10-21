@@ -15,6 +15,7 @@ import androidx.compose.ui.test.assertWidthIsAtLeast
 import androidx.compose.ui.test.click
 import androidx.compose.ui.test.hasAnyAncestor
 import androidx.compose.ui.test.hasContentDescription
+import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.createComposeRule
@@ -23,9 +24,11 @@ import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.onRoot
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performImeAction
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performSemanticsAction
+import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.performTouchInput
 import androidx.compose.ui.test.swipe
 import androidx.compose.ui.test.swipeLeft
@@ -39,6 +42,7 @@ import app.sitara.music.core.model.SearchFilter
 import app.sitara.music.core.model.SitaraSettings
 import app.sitara.music.core.model.Track
 import app.sitara.music.feature.home.HomeFeed
+import app.sitara.music.feature.library.LibraryActions
 import app.sitara.music.feature.library.LibraryState
 import app.sitara.music.feature.player.LyricsState
 import app.sitara.music.feature.player.PlayerActions
@@ -69,6 +73,8 @@ class PlayerInteractionTest {
         actions: PlayerActions = PlayerActions.None,
         durationMs: Long = 100_000,
         upNext: List<Track> = emptyList(),
+        upNextFromRadio: Int = 0,
+        libraryActions: LibraryActions = LibraryActions.None,
         lyricsState: LyricsState? = null,
         tuning: PlaybackTuning = PlaybackTuning(),
         sleepTimer: SleepTimerStatus = SleepTimerStatus.Off,
@@ -90,7 +96,7 @@ class PlayerInteractionTest {
                 searchFilter = SearchFilter.SONGS,
                 search = SearchState.Idle,
                 player = PlayerUiState(
-                    track = track, durationMs = durationMs, lyrics = lyricsState ?: LyricsState.Found(lyrics), positionMs = 15_300, upNext = upNext, tuning = tuning, sleepTimer = sleepTimer, failed = failed,
+                    track = track, durationMs = durationMs, lyrics = lyricsState ?: LyricsState.Found(lyrics), positionMs = 15_300, upNext = upNext, upNextFromRadio = upNextFromRadio, tuning = tuning, sleepTimer = sleepTimer, failed = failed,
                     equaliser = equaliser, systemEqualiser = systemEqualiser, trimDb = trimDb,
                 ),
                 actions = actions,
@@ -104,6 +110,7 @@ class PlayerInteractionTest {
                 playerExpanded = expanded,
                 playerPage = page,
                 greetingText = "Good evening",
+                libraryActions = libraryActions,
             )
         }
     }
@@ -472,10 +479,49 @@ class PlayerInteractionTest {
         render(expanded = true, page = 2, upNext = upNext, actions = object : PlayerActions by PlayerActions.None {
             override fun removeUpNext(index: Int) { calls += "remove $index" }
             override fun moveUpNext(from: Int, to: Int) { calls += "move $from $to" }
+            override fun undoRemoveUpNext() { calls += "undo" }
         })
+        // A frozen clock keeps the snackbar up until Undo is tapped.
+        compose.waitForIdle()
+        compose.mainClock.autoAdvance = false
         compose.onNodeWithContentDescription("Remove ${upNext[1].title} from the queue").performClick()
+        compose.onNodeWithText("Removed ${upNext[1].title}").assertIsDisplayed()
+        compose.onNodeWithText("Undo").performClick()
         // Home's quick picks stay composed behind the player, so look inside Up next only.
-        compose.onNode(hasContentDescription("${upNext[0].title} by ${upNext[0].artist}") and hasAnyAncestor(hasTestTag("up-next"))).performCustomAction("Move down")
-        assertEquals(listOf("remove 1", "move 0 1"), calls)
+        val first = compose.onNode(hasContentDescription("${upNext[0].title} by ${upNext[0].artist}") and hasAnyAncestor(hasTestTag("up-next")))
+        first.performCustomAction("Move down")
+        first.performCustomAction("Remove from the queue")
+        first.performTouchInput { swipeLeft() }
+        assertEquals(listOf("remove 1", "undo", "move 0 1", "remove 0", "remove 0"), calls)
+    }
+
+    @Test
+    fun radioSongsHaveTheirOwnSectionAndMoveOnlyAmongThemselves() {
+        val calls = mutableListOf<String>()
+        val upNext = SampleCatalog.tracks.drop(1).take(4)
+        render(expanded = true, page = 2, upNext = upNext, upNextFromRadio = 2, actions = object : PlayerActions by PlayerActions.None {
+            override fun moveUpNext(from: Int, to: Int) { calls += "move $from $to" }
+            override fun removeUpNext(index: Int) { calls += "remove $index" }
+        })
+        compose.onNodeWithText("Up next from radio").assertIsDisplayed()
+        fun row(track: Track) = compose.onNode(hasContentDescription("${track.title} by ${track.artist}") and hasAnyAncestor(hasTestTag("up-next")))
+        assertTrue("the last own song cannot move into radio's", row(upNext[1]).fetchSemanticsNode().config.getOrNull(SemanticsActions.CustomActions).orEmpty().none { it.label == "Move down" })
+        row(upNext[2]).performCustomAction("Move down")
+        row(upNext[3]).performCustomAction("Remove from the queue")
+        assertEquals(listOf("move 2 3", "remove 3"), calls)
+    }
+
+    @Test
+    fun savingTheQueueCreatesAPlaylistInPlayOrder() {
+        var saved: Pair<String, List<Track>>? = null
+        val upNext = SampleCatalog.tracks.drop(1).take(3)
+        render(expanded = true, page = 2, upNext = upNext, libraryActions = object : LibraryActions by LibraryActions.None {
+            override fun createPlaylist(name: String, tracks: List<Track>) { saved = name to tracks }
+        })
+        compose.onNodeWithText("Save as playlist").performClick()
+        compose.onNode(hasSetTextAction()).performTextInput("Road trip")
+        // The keyboard's Done key saves, as the Save button does, and closes the keyboard.
+        compose.onNode(hasSetTextAction()).performImeAction()
+        assertEquals("Road trip" to listOf(SampleCatalog.tracks.first()) + upNext, saved)
     }
 }

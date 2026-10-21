@@ -160,7 +160,7 @@ class BrowseInteractionTest {
     @Test fun newPlaylistIsNamedBeforeItIsCreated() {
         val created = mutableListOf<String>()
         render(Tab.LIBRARY, libraryActions = object : LibraryActions by LibraryActions.None {
-            override fun createPlaylist(name: String, first: Track?) { created += name }
+            override fun createPlaylist(name: String, tracks: List<Track>) { created += name }
         })
         compose.onNodeWithText("New playlist").performClick()
         compose.onNodeWithText("Create").assertDoesNotExist()

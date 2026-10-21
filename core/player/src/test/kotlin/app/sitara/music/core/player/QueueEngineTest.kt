@@ -135,4 +135,63 @@ class QueueEngineTest {
         val q = QueueState().setQueue(five, 1).withRepeat(RepeatMode.ONE)
         assertEquals("t3", q.skipNext().current?.id)
     }
+
+    @Test
+    fun `radio songs wait behind the songs you queue`() {
+        val q = QueueState().setQueue(five, 1).add(t(8), fromRadio = true).add(t(9), fromRadio = true).add(t(7))
+        assertEquals(listOf("t1", "t2", "t3", "t4", "t5", "t7", "t8", "t9"), q.items.map { it.id })
+        assertEquals(2, q.upNextFromRadio)
+        assertEquals(listOf("t8", "t9"), q.upNext.takeLast(q.upNextFromRadio).map { it.id })
+    }
+
+    @Test
+    fun `once radio plays, a queued song goes right after it and no radio song counts as up next twice`() {
+        val q = QueueState().setQueue(five.take(2), 1).add(t(8), fromRadio = true).add(t(9), fromRadio = true).skipNext().add(t(7))
+        assertEquals("t8", q.current?.id)
+        assertEquals(listOf("t7", "t9"), q.upNext.map { it.id })
+        assertEquals(1, q.upNextFromRadio)
+    }
+
+    @Test
+    fun `shuffling keeps radio songs after yours`() {
+        val q = QueueState().setQueue(five, 0).add(t(8), fromRadio = true).add(t(9), fromRadio = true).toggleShuffle(Random(7))
+        assertEquals("t1", q.current?.id)
+        assertEquals(setOf("t8", "t9"), q.items.takeLast(2).map { it.id }.toSet())
+        assertEquals(2, q.upNextFromRadio)
+        assertEquals("unshuffling restores the order", listOf("t1", "t2", "t3", "t4", "t5", "t8", "t9"), q.toggleShuffle().items.map { it.id })
+    }
+
+    @Test
+    fun `a song queued while shuffled still goes ahead of radio's once shuffle is off`() {
+        val q = QueueState().setQueue(five.take(2), 0).add(t(8), fromRadio = true).toggleShuffle(Random(5)).add(t(7)).toggleShuffle()
+        assertEquals(listOf("t1", "t2", "t7", "t8"), q.items.map { it.id })
+        assertEquals(1, q.upNextFromRadio)
+    }
+
+    @Test
+    fun `a removed song comes back where it was, as the same entry`() {
+        val q = QueueState().setQueue(five, 1).add(t(8), fromRadio = true)
+        val removed = q.entries[3]
+        assertEquals(q, q.removeUpNext(1).reinsertUpNext(1, removed))
+        val radio = q.entries.last()
+        assertEquals(q, q.removeUpNext(q.upNext.lastIndex).reinsertUpNext(q.upNext.lastIndex, radio))
+    }
+
+    @Test
+    fun `a song put back after the queue moved on lands as near its place as the queue allows`() {
+        val q = QueueState().setQueue(five, 1)
+        val removed = q.entries[4]
+        val back = q.removeUpNext(2).skipNext().skipNext().reinsertUpNext(2, removed)
+        assertEquals(listOf("t1", "t2", "t3", "t4", "t5"), back.items.map { it.id })
+        assertEquals("t4", back.current?.id)
+    }
+
+    @Test
+    fun `a removed song comes back into the unshuffled order too`() {
+        val q = QueueState().setQueue(five, 0).toggleShuffle(Random(3))
+        val removed = q.entries[2]
+        val back = q.removeUpNext(1).reinsertUpNext(1, removed)
+        assertEquals(q.entries, back.entries)
+        assertEquals(five.map { it.id }.toSet(), back.toggleShuffle().items.map { it.id }.toSet())
+    }
 }

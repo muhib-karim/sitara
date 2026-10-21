@@ -192,6 +192,40 @@ class PlaybackEngineTest {
         assertEquals(listOf("t2"), prepared)
     }
 
+    @Test
+    fun `undo puts the removed song back in the queue and the player, once`() = runTest {
+        val engine = engine()
+        engine.play(five, 0)
+        val before = engine.state.value.queue.entries
+        engine.removeUpNext(1)
+        assertEquals(listOf("t1", "t2", "t4", "t5"), port.entries.map { it.track.id })
+        engine.undoRemoveUpNext()
+        assertEquals(before, engine.state.value.queue.entries)
+        assertEquals(before, port.entries)
+        engine.undoRemoveUpNext()
+        assertEquals("a second undo changes nothing", before, port.entries)
+    }
+
+    @Test
+    fun `undo after the queue was replaced does nothing`() = runTest {
+        val engine = engine()
+        engine.play(five, 0)
+        engine.removeUpNext(0)
+        engine.play(listOf(t(9)), 0)
+        engine.undoRemoveUpNext()
+        assertEquals(listOf("t9"), port.entries.map { it.track.id })
+    }
+
+    @Test
+    fun `radio songs go to the end and the player gets yours ahead of them`() = runTest {
+        val engine = engine()
+        engine.play(five.take(2), 0)
+        engine.append(listOf(t(8), t(9)), fromRadio = true)
+        engine.addToQueue(listOf(t(7)))
+        assertEquals(listOf("t1", "t2", "t7", "t8", "t9"), port.entries.map { it.track.id })
+        assertEquals(engine.state.value.queue.entries, port.entries)
+    }
+
     private fun List<String>.distinctConsecutive() = filterIndexed { i, id -> i == 0 || this[i - 1] != id }
 
     @Test
