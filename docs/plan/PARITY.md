@@ -2,11 +2,12 @@
 
 How Sitara compares with the four apps it is measured against, updated with every release. Competitor columns come from their public documentation and release notes; **Y** = has it, **~** = partial or depends on version or setup, **—** = not offered, **?** = not documented. A Sitara entry says the release that shipped it, or the Phase C slice planned for it ([PHASE_C_PLAN.md](PHASE_C_PLAN.md)).
 
-Last updated: v0.8.0 (c2, on `main`; the owner tags).
+Last updated: polish slice 3 (target v0.9.3, on `main`; the owner tags).
 
 | Capability | BitChord | Metrolist | Meld | ReVanced | Sitara |
 |---|:---:|:---:|:---:|:---:|---|
-| Search, home and catalogue browsing | Y | Y | Y | Y | v0.2.0 search, v0.5.0 Home; YouTube Music's own Home with mood chips in v0.9.2 (signed out, so no personal mixes) |
+| Search, home and catalogue browsing | Y | Y | Y | Y | v0.2.0 search, v0.5.0 Home; YouTube Music's own Home with mood chips in v0.9.2 (signed out, so no personal mixes); recent searches, suggestions and Moods & genres pages in v0.9.3 |
+| Library as a grid or list, with orders and filters | ? | ? | ? | ? | v0.9.3 (orders by plays come from the history kept on the phone) |
 | Play from a pasted YouTube / YouTube Music link | ? | ? | ? | ? | v0.2.0 |
 | Artist, album and playlist pages | Y | Y | Y | Y | v0.3.0 |
 | Radio and autoplay | Y | Y | Y | Y | v0.3.0 |

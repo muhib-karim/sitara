@@ -6,6 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+Polish slice 3: Search and Library that look alive.
+
+### Added
+
+- Search opens on your recent searches, newest first: tap one to search again, remove one with its ×, or Clear all (Sitara asks first). They are kept on the phone only, up to twenty. With none yet, Search says where they will show up and offers Start a search.
+- Moods & genres from YouTube Music under them, as colour blocks in YouTube Music's own colours with black or white names, whichever reads better. A tile opens that mood's or genre's page: songs, featured and community playlists, videos and albums, drawn like Home's shelves. Tiles that lead to a page Sitara cannot show are left out.
+- Suggestions while you type, from YouTube Music, as a row of pills above the filters so the results stay in view. When YouTube Music does not answer, your matching recent searches stand in.
+- Search remembers the filter you used last (Songs, Albums, Artists or Playlists).
+- Library pins Liked songs and Downloads at the top with how many songs each holds, then Recently played, then one kind at a time: Playlists, Songs, Albums, Artists or Downloads.
+- Library as a grid of covers or a list; your choice is kept. Each kind can be ordered: Recently added and A to Z everywhere, plus Recently played and Most played for songs and artists (from your play history on the phone). Only the orders a kind can follow are offered.
+- A playlist with four or more different covers shows them as a 2 × 2 collage, in Library, Add to playlist and Home's Jump back in.
+- A fresh Library shows three fanned covers, what fills it, and Find music.
+- Placeholders in the real layout while Library and Moods & genres load (still with Reduce motion), each announced once to TalkBack.
+
+### Fixed
+
+- On Now Playing, a song that cannot play no longer pushes the seek bar and the play controls below the screen on a small phone (seen on a 360 × 640 dp test phone). The cover now takes the room the controls leave, and "Couldn't play this song" with Try again and Skip is one compact row.
+
 ## [0.9.2] - 2026-10-21
 
 Polish slice 2: a Home that fills the screen.
