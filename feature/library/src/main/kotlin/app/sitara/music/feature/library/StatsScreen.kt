@@ -26,6 +26,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -72,7 +76,8 @@ sealed interface StatsState {
 
 /**
  * The listener's stats for one range, from the history kept on the phone: time heard and plays, when in the day they
- * listen, then their top songs (a tap plays them from there), artists (a tap opens the artist) and albums.
+ * listen, then their top songs (a tap plays them from there), artists (a tap opens the artist) and albums. Share
+ * previews the range as a card and sends it as an image.
  */
 @Composable
 fun StatsScreen(
@@ -84,15 +89,22 @@ fun StatsScreen(
     onArtist: (artistId: String) -> Unit,
     contentPadding: PaddingValues,
 ) {
+    var sharing by rememberSaveable { mutableStateOf(false) }
+    val shareable = (state as? StatsState.Ready)?.stats?.takeUnless { it.isEmpty }
+    if (sharing && shareable != null) StatsShareSheet(shareable, range) { sharing = false }
     LazyColumn(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).testTag("stats-content"), contentPadding = contentPadding) {
         item(key = "header") {
             Row(
-                Modifier.padding(start = 12.dp, end = SitaraSpacing.Gutter, top = 8.dp, bottom = 4.dp),
+                Modifier.fillMaxWidth().padding(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 4.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
                 GlassIconButton(SitaraIcons.Back, "Back", onBack)
-                Text("Your stats", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.semantics { heading() })
+                Text(
+                    "Your stats", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onSurface,
+                    modifier = Modifier.weight(1f).semantics { heading() },
+                )
+                if (shareable != null) GlassIconButton(SitaraIcons.Share, "Share your stats", { sharing = true })
             }
         }
         item(key = "ranges") {

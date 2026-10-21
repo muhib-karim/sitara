@@ -184,6 +184,11 @@ object SitaraIcons {
         moveTo(15f, 20f); lineTo(15f, 10f)
         moveTo(20f, 20f); lineTo(20f, 15f)
     }
+    val Share = icon("share", filled = false) {
+        moveTo(12f, 15f); lineTo(12f, 3.5f)
+        moveTo(7.5f, 8f); lineTo(12f, 3.5f); lineTo(16.5f, 8f)
+        moveTo(8f, 11f); lineTo(5f, 11f); lineTo(5f, 20.5f); lineTo(19f, 20.5f); lineTo(19f, 11f); lineTo(16f, 11f)
+    }
     val Star = icon("star") {
         moveTo(12f, 2f); curveTo(12.8f, 8f, 16f, 11.2f, 22f, 12f)
         curveTo(16f, 12.8f, 12.8f, 16f, 12f, 22f)
