@@ -35,7 +35,7 @@
     <string name="library_on_this_phone">On this phone</string>
     <string name="library_on_this_phone_detail">Songs and folders on your phone</string>
     <string name="library_import_playlist">Import playlist</string>
-    <string name="library_import_detail">From a YouTube or Spotify link, M3U or CSV file</string>
+    <string name="library_import_detail">A YouTube or Spotify link, or a file</string>
     <string name="library_recently_played">Recently played</string>
     <string name="library_kind_playlists">Playlists</string>
     <string name="library_kind_songs">Songs</string>

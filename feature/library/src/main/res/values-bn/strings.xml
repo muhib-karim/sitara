@@ -35,7 +35,7 @@
     <string name="library_on_this_phone">এই ফোনে</string>
     <string name="library_on_this_phone_detail">আপনার ফোনের গান ও ফোল্ডার</string>
     <string name="library_import_playlist">প্লেলিস্ট আমদানি</string>
-    <string name="library_import_detail">YouTube বা Spotify লিংক, M3U বা CSV ফাইল থেকে</string>
+    <string name="library_import_detail">YouTube বা Spotify লিংক, কিংবা একটি ফাইল</string>
     <string name="library_recently_played">সম্প্রতি শোনা</string>
     <string name="library_kind_playlists">প্লেলিস্ট</string>
     <string name="library_kind_songs">গান</string>
