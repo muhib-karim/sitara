@@ -37,6 +37,7 @@ import app.sitara.music.source.lyrics.LyricsCache
 import app.sitara.music.source.lyrics.LyricsChoices
 import app.sitara.music.source.lyrics.LyricsSources
 import app.sitara.music.source.lyrics.TranslationCache
+import app.sitara.music.source.lyrics.kugouLyrics
 import app.sitara.music.source.lyrics.lrclibLyrics
 import app.sitara.music.source.lyrics.myMemoryTranslator
 import app.sitara.music.source.scrobble.LastFmKeys
@@ -78,7 +79,7 @@ internal suspend fun PlayHistoryRepository.recordUnlessPaused(listen: Listen, se
 
 /**
  * Dependencies are wired by hand (see ADR 0001). Home's chart, search, detail pages, radio and streams come from
- * YouTube, lyrics from LRCLIB and YouTube Music, covers through Coil; the library, the play queue, fetched lyrics and downloaded songs are stored on the device.
+ * YouTube, lyrics from LRCLIB, KuGou and YouTube Music, covers through Coil; the library, the play queue, fetched lyrics and downloaded songs are stored on the device.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class SitaraApplication :
@@ -90,9 +91,13 @@ class SitaraApplication :
     val youtube by lazy { YouTubeMusicSource() }
     val settings by lazy { SettingsRepository(this) }
     val library by lazy { LibraryStore(this) }
+    // In this order when their lyrics rank alike: LRCLIB's are checked by people, KuGou's are synced, YouTube Music's plain.
+    private val lyricProviders by lazy {
+        listOf(lrclibLyrics(lyricsCache("lrclib")), kugouLyrics(lyricsCache("kugou")), youtube.lyricsProvider(lyricsCache("youtube-music")))
+    }
     val lyrics: LyricsSources by lazy {
         LyricsSources(
-            listOf(lrclibLyrics(lyricsCache("lrclib")), youtube.lyricsProvider(lyricsCache("youtube-music"))),
+            lyricProviders,
             object : LyricsChoices {
                 override suspend fun get(trackId: String) = library.lyrics.choice(trackId)
 
@@ -139,7 +144,7 @@ class SitaraApplication :
             downloaded = songDownloads::downloaded,
             readWhole = songDownloads::readWhole,
             lyrics = library.lyrics,
-            lyricSources = listOf("lrclib", "youtube-music"),
+            lyricSources = lyricProviders.map { it.id },
             cover = { track -> exportCover(track) },
         )
         DownloadExports(appScope, exporter) { tree -> DocumentTreeFolder(contentResolver, Uri.parse(tree)) }

@@ -67,6 +67,17 @@ class LyricsSourcesTest {
     }
 
     @Test
+    fun `with LRCLIB finding nothing, KuGou's synced lyrics lead YouTube Music's plain ones`() = runTest {
+        val found = sources(
+            Source("lrclib") { null },
+            Source("kugou") { lyrics(synced = true, matched = exact.copy(durationMs = 215_000)) },
+            Source("youtube-music") { lyrics(synced = false, matched = null) },
+        ).lookUp(song)
+
+        assertEquals(listOf("kugou", "youtube-music"), found.map { it.providerId })
+    }
+
+    @Test
     fun `a source that fails leaves the lyrics the others found`() = runTest {
         val found = sources(Source("down") { throw IOException("503") }, Source("up") { lyrics(synced = false) }).lookUp(song)
 
