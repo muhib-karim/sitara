@@ -59,7 +59,8 @@ class CaptureReadinessTest(unittest.TestCase):
             return subprocess.CompletedProcess(cmd, 0, stdout=raw)
 
         with tempfile.TemporaryDirectory() as out, patch.object(capture, "OUTPUT", pathlib.Path(out)), \
-                patch.dict(capture.SCREENS, clear=True), patch.object(capture.subprocess, "run", side_effect=run):
+                patch.dict(capture.SCREENS, clear=True), patch.dict(capture.BANGLA_SCREENS, clear=True), \
+                patch.object(capture.subprocess, "run", side_effect=run):
             capture.main()
             self.assertEqual(raw, (pathlib.Path(out) / "logcat.txt").read_bytes())
 

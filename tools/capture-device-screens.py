@@ -19,6 +19,14 @@ SCREENS = {
     "phone": "Second Light",
 }
 
+# The same app in Bangla (the per-app language of Android 13 and later), checked by Bangla labels.
+BANGLA_SCREENS = {
+    "home": "হোম",
+    "library": "পছন্দের গান",
+    "settings": "চেহারা",
+    "player": "Collapse player",
+}
+
 
 def adb(*args, binary=False):
     return subprocess.run(
@@ -88,6 +96,9 @@ def check_local_index(root):
             raise RuntimeError(f"{row} is listed {found} times on On this phone, not once")
 
 
+LAST_SETTINGS_ROW = "Export to a folder"
+
+
 def swipe_up():
     adb("shell", "input", "swipe", "540", "1700", "540", "500", "300")
     time.sleep(1)
@@ -101,12 +112,12 @@ def scroll_to_end(screen):
     for _ in range(10):
         swipe_up()
         try:
-            wait_for_screen(screen, "Storage used", timeout=2)
+            wait_for_screen(screen, LAST_SETTINGS_ROW, timeout=2)
             break
         except RuntimeError:
             pass
     swipe_up()
-    return wait_for_screen(screen, "Storage used")
+    return wait_for_screen(screen, LAST_SETTINGS_ROW)
 
 
 def type_then_close_keyboard(screen, hierarchy, while_typing):
@@ -150,6 +161,21 @@ def save(name, hierarchy):
     (OUTPUT / f"{name}.xml").write_text(hierarchy)
 
 
+def capture_bangla():
+    """Home, Library, Settings and Now Playing with the app's language set to Bangla, then back to the phone's."""
+    if not BANGLA_SCREENS:
+        return
+    adb("shell", "cmd", "locale", "set-app-locales", "app.sitara.music", "--locales", "bn")
+    time.sleep(2)
+    try:
+        for screen, expected in BANGLA_SCREENS.items():
+            hierarchy = launch_and_wait(screen, expected, True, 30)
+            time.sleep(1)
+            save(f"{screen}_bn_dark", hierarchy)
+    finally:
+        adb("shell", "cmd", "locale", "set-app-locales", "app.sitara.music", "--locales", "")
+
+
 def main():
     OUTPUT.mkdir(parents=True, exist_ok=True)
     timeout = 90  # the first launch also waits out a cold emulator
@@ -177,10 +203,11 @@ def main():
                 check_local_index(ET.fromstring(hierarchy))
             if screen == "settings":
                 root = ET.fromstring(hierarchy)
-                row, dock = bounds(root, "Storage used"), bounds(root, "Open player")
+                row, dock = bounds(root, LAST_SETTINGS_ROW), bounds(root, "Open player")
                 print(f"{name}: last row {row}, mini player {dock}")
                 if row is None or dock is None or hidden_under_dock(row, dock):
                     raise RuntimeError(f"The last Settings row is not clear of the mini player ({name})")
+        capture_bangla()
     finally:
         # Raw bytes: logcat can carry non-UTF-8 output from any process, which must not fail a finished capture.
         (OUTPUT / "logcat.txt").write_bytes(adb("logcat", "-d", "-v", "brief", binary=True))

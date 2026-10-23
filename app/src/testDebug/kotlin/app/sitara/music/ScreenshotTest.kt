@@ -221,6 +221,7 @@ class ScreenshotTest {
         local: LocalLibraryState = LocalLibraryState(),
         backup: BackupStatus = BackupStatus.Idle,
         export: DownloadExport = DownloadExport.Idle,
+        greeting: String = "Good evening",
         beforeCapture: () -> Unit = {},
     ) {
         val settings = SitaraSettings(
@@ -251,7 +252,7 @@ class ScreenshotTest {
                     initialSettingsOpen = settingsOpen,
                     playerExpanded = expanded,
                     playerPage = page,
-                    greetingText = "Good evening",
+                    greetingText = greeting,
                     savedIds = savedIds,
                     downloads = downloads,
                     searchLanding = landing,
@@ -416,6 +417,52 @@ class ScreenshotTest {
     @Test fun lyricsLoading() = shot("lyrics_loading", dark = true, expanded = true, page = 1, playerState = playing.copy(lyrics = LyricsState.Loading))
 
     @Test fun lyricsFailed() = shot("lyrics_failed", dark = true, expanded = true, page = 1, playerState = playing.copy(lyrics = LyricsState.Failed))
+
+    // Bangla, right to left (Arabic locale, no Arabic strings yet, so English text in a mirrored layout) and 200 % text.
+    @Config(qualifiers = "bn-w411dp-h891dp-xxhdpi")
+    @Test fun homeBangla() = shot("home_bn", dark = true, greeting = "শুভ সন্ধ্যা")
+
+    @Config(qualifiers = "bn-w411dp-h891dp-xxhdpi")
+    @Test fun libraryBangla() = shot("library_bn", dark = false, tab = Tab.LIBRARY)
+
+    @Config(qualifiers = "bn-w411dp-h891dp-xxhdpi")
+    @Test fun settingsBangla() = shot("settings_bn", dark = true, settingsOpen = true)
+
+    @Config(qualifiers = "bn-w411dp-h891dp-xxhdpi")
+    @Test fun playerBangla() = shot("player_bn", dark = true, expanded = true)
+
+    @Config(qualifiers = "bn-w411dp-h891dp-xxhdpi")
+    @Test fun upNextBangla() = shot("up_next_bn", dark = true, expanded = true, page = 2)
+
+    @Config(qualifiers = "bn-w411dp-h891dp-xxhdpi")
+    @Test fun searchBangla() = shot("search_bn", dark = true, tab = Tab.SEARCH, query = "lumen")
+
+    @Config(qualifiers = "bn-w411dp-h891dp-xxhdpi")
+    @Test fun settingsBanglaLargeText() = shot("settings_bn_large_text", dark = true, settingsOpen = true, fontScale = 2f)
+
+    @Config(qualifiers = "bn-w411dp-h891dp-xxhdpi")
+    @Test fun libraryBanglaLargeText() = shot("library_bn_large_text", dark = true, tab = Tab.LIBRARY, fontScale = 2f)
+
+    @Config(qualifiers = "ar-ldrtl-w411dp-h891dp-xxhdpi")
+    @Test fun homeRightToLeft() = shot("home_rtl", dark = true)
+
+    @Config(qualifiers = "ar-ldrtl-w411dp-h891dp-xxhdpi")
+    @Test fun playerRightToLeft() = shot("player_rtl", dark = true, expanded = true)
+
+    @Config(qualifiers = "ar-ldrtl-w411dp-h891dp-xxhdpi")
+    @Test fun albumRightToLeft() = shot("album_rtl", dark = true, tab = Tab.SEARCH, detail = DetailState.AlbumReady(Fixtures.album))
+
+    @Test fun libraryLargeText() = shot("library_large_text", dark = true, tab = Tab.LIBRARY, fontScale = 2f)
+
+    @Test fun searchLargeText() = shot("search_large_text", dark = true, tab = Tab.SEARCH, query = "lumen", fontScale = 2f)
+
+    @Test fun settingsLargeText() = shot("settings_large_text", dark = true, settingsOpen = true, fontScale = 2f)
+
+    @Test fun albumLargeText() = shot("album_large_text", dark = true, tab = Tab.SEARCH, detail = DetailState.AlbumReady(Fixtures.album), fontScale = 2f)
+
+    @Test fun upNextLargeText() = shot("up_next_large_text", dark = true, expanded = true, page = 2, fontScale = 2f)
+
+    @Test fun lyricsLargeText() = shot("lyrics_large_text", dark = true, expanded = true, page = 1, fontScale = 2f)
 
     @Test fun miniPlayerLargeText() = shot("mini_large_text", dark = true, fontScale = 2f)
 
