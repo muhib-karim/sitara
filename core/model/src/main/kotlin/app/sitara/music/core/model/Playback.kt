@@ -59,6 +59,8 @@ data class SitaraSettings(
     val downloadOnWifiOnly: Boolean = true,
     /** The player skips silent stretches (Media3 silence skipping in the audio chain). */
     val skipSilence: Boolean = false,
+    /** Songs blend on the beat over whole bars, tempo and level matched, from beats found in each song's first and last half minute. */
+    val automix: Boolean = false,
     val equaliser: EqualiserSettings = EqualiserSettings(),
     /** The search filter used last, so Search opens on it again. */
     val searchFilter: SearchFilter = SearchFilter.SONGS,

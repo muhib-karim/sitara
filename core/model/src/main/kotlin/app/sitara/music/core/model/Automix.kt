@@ -37,3 +37,6 @@ data class SongBeats(
 
 /** One analysed stretch of a song: its beat (null without a steady one), level in dBFS and the span with sound. */
 data class RegionBeats(val grid: BeatGrid?, val loudnessDb: Float, val firstSoundMs: Long, val lastSoundMs: Long)
+
+/** An automix blend while it plays, for the player screen: tempos as heard and the blend's length in bars. */
+data class AutomixBlend(val fromBpm: Int, val toBpm: Int, val bars: Int)

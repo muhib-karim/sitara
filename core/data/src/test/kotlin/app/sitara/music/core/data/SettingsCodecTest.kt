@@ -17,7 +17,7 @@ class SettingsCodecTest {
     @Test
     fun `round trips every field`() {
         val s = SitaraSettings(
-            darkMode = DarkMode.DARK, pureBlack = true, dynamicColor = false, accent = AccentColor.TEAL, artworkColorsAcrossApp = true, reducedMotion = true, crossfadeSeconds = 6, normalisation = false, targetLufs = -16f, downloadOnWifiOnly = false, skipSilence = true,
+            darkMode = DarkMode.DARK, pureBlack = true, dynamicColor = false, accent = AccentColor.TEAL, artworkColorsAcrossApp = true, reducedMotion = true, crossfadeSeconds = 6, normalisation = false, targetLufs = -16f, downloadOnWifiOnly = false, skipSilence = true, automix = true,
             equaliser = EqualiserSettings(enabled = true, bandsDb = listOf(-12, -7, 0, 1, 2, 3, 4, 5, 11, 12), preampDb = -5, useSystem = true),
             searchFilter = SearchFilter.PLAYLISTS, recentSearches = listOf("lo-fi beats", "Jazz, piano"),
             libraryLayout = LibraryLayout.LIST, librarySort = LibrarySort.MOST_PLAYED, pauseListeningHistory = true,
@@ -98,6 +98,13 @@ class SettingsCodecTest {
         assertEquals(false, SettingsCodec.decode(emptyMap()).skipSilence)
         assertEquals(false, SettingsCodec.decode(mapOf(SettingsCodec.SKIP_SILENCE to "1")).skipSilence)
         assertEquals(true, SettingsCodec.decode(mapOf(SettingsCodec.SKIP_SILENCE to "true")).skipSilence)
+    }
+
+    @Test
+    fun `automix is off unless the listener turned it on, and a corrupt value reads as off`() {
+        assertEquals(false, SettingsCodec.decode(emptyMap()).automix)
+        assertEquals(false, SettingsCodec.decode(mapOf(SettingsCodec.AUTOMIX to "yes")).automix)
+        assertEquals(true, SettingsCodec.decode(mapOf(SettingsCodec.AUTOMIX to "true")).automix)
     }
 
     @Test

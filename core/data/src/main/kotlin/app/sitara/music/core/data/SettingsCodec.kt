@@ -28,6 +28,7 @@ object SettingsCodec {
     const val TARGET_LUFS = "target_lufs"
     const val WIFI_ONLY = "download_wifi_only"
     const val SKIP_SILENCE = "skip_silence"
+    const val AUTOMIX = "automix"
     const val EQ_ON = "equaliser_on"
     const val EQ_BANDS = "equaliser_bands"
     const val EQ_PREAMP = "equaliser_preamp"
@@ -53,6 +54,7 @@ object SettingsCodec {
         TARGET_LUFS to s.targetLufs.toString(),
         WIFI_ONLY to s.downloadOnWifiOnly.toString(),
         SKIP_SILENCE to s.skipSilence.toString(),
+        AUTOMIX to s.automix.toString(),
         EQ_ON to s.equaliser.enabled.toString(),
         EQ_BANDS to s.equaliser.bandsDb.joinToString(","),
         EQ_PREAMP to s.equaliser.preampDb.toString(),
@@ -85,6 +87,7 @@ object SettingsCodec {
             targetLufs = map[TARGET_LUFS]?.toFloatOrNull()?.takeIf { it in -30f..-5f } ?: d.targetLufs,
             downloadOnWifiOnly = map[WIFI_ONLY]?.toBooleanStrictOrNull() ?: d.downloadOnWifiOnly,
             skipSilence = map[SKIP_SILENCE]?.toBooleanStrictOrNull() ?: d.skipSilence,
+            automix = map[AUTOMIX]?.toBooleanStrictOrNull() ?: d.automix,
             equaliser = EqualiserSettings(
                 enabled = map[EQ_ON]?.toBooleanStrictOrNull() ?: d.equaliser.enabled,
                 bandsDb = decodeBands(map[EQ_BANDS]) ?: d.equaliser.bandsDb,
