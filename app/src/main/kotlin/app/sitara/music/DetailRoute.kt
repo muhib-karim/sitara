@@ -1,5 +1,6 @@
 package app.sitara.music
 
+import app.sitara.music.core.model.CollectionPreview
 import app.sitara.music.feature.library.LocalKind
 
 /** A detail page on the browse back stack: a catalogue page by its id, or one of the listener's own collections. */
@@ -73,4 +74,12 @@ fun decodeDetailRoute(saved: String): DetailRoute? {
             ?.let { DetailRoute.LocalGroup(it, id.substringAfter('|', "").ifEmpty { return null }) }
         else -> null
     }
+}
+
+/** The page a long-press preview opens. */
+fun CollectionPreview.route(): DetailRoute = when (kind) {
+    CollectionPreview.Kind.ALBUM -> DetailRoute.Album(id)
+    CollectionPreview.Kind.PLAYLIST -> DetailRoute.Playlist(id)
+    CollectionPreview.Kind.ARTIST -> DetailRoute.Artist(id)
+    CollectionPreview.Kind.OWN_PLAYLIST -> DetailRoute.UserPlaylist(id.toLong())
 }

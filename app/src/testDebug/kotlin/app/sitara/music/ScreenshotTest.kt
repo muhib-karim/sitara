@@ -30,6 +30,7 @@ import androidx.test.core.app.ApplicationProvider
 import app.sitara.music.core.designsystem.ShareSheetContent
 import app.sitara.music.core.designsystem.SitaraSpacing
 import app.sitara.music.core.designsystem.SitaraTheme
+import app.sitara.music.core.designsystem.preview
 import app.sitara.music.core.model.AccentColor
 import app.sitara.music.core.model.Artwork
 import app.sitara.music.core.model.AutomixBlend
@@ -67,6 +68,7 @@ import app.sitara.music.feature.home.HomeFeed
 import app.sitara.music.feature.home.OnlineHome
 import app.sitara.music.feature.home.TrendingState
 import app.sitara.music.feature.library.AddToPlaylist
+import app.sitara.music.feature.library.CollectionPreviewSheet
 import app.sitara.music.feature.library.DetailState
 import app.sitara.music.feature.library.ImportState
 import app.sitara.music.feature.library.LibraryState
@@ -610,6 +612,10 @@ class ScreenshotTest {
             }
         }
         compose.onRoot().captureRoboImage("src/test/screenshots/${name}_dark.png")
+    }
+
+    @Test fun collectionPreview() = sheet("collection_preview") {
+        CollectionPreviewSheet(Fixtures.album.preview(), DetailState.AlbumReady(Fixtures.album), { _, _ -> }, {}, {}, {}, onShare = {})
     }
 
     @Test fun shareSheet() = sheet("share_sheet") {

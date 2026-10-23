@@ -33,6 +33,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -62,6 +63,7 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import app.sitara.music.core.data.local.musicPermission
+import app.sitara.music.core.designsystem.LocalCollectionPreview
 import app.sitara.music.core.designsystem.ScrollEdge
 import app.sitara.music.core.designsystem.ShareSheetContent
 import app.sitara.music.core.designsystem.SitaraIcons
@@ -72,6 +74,7 @@ import app.sitara.music.core.designsystem.shareQrCard
 import app.sitara.music.core.designsystem.shareText
 import app.sitara.music.core.model.Album
 import app.sitara.music.core.model.Artist
+import app.sitara.music.core.model.CollectionPreview
 import app.sitara.music.core.model.DownloadExport
 import app.sitara.music.core.model.LibrarySort
 import app.sitara.music.core.model.LocalFolder
@@ -90,6 +93,7 @@ import app.sitara.music.feature.home.HomeFeed
 import app.sitara.music.feature.home.HomeScreen
 import app.sitara.music.feature.home.MoodScreen
 import app.sitara.music.feature.library.AddToPlaylist
+import app.sitara.music.feature.library.CollectionPreviewSheet
 import app.sitara.music.feature.library.DetailScreen
 import app.sitara.music.feature.library.ImportActions
 import app.sitara.music.feature.library.ImportScreen
@@ -265,6 +269,7 @@ fun SitaraShell(
         }
     }
     var shareTarget by remember { mutableStateOf<ShareTarget?>(null) }
+    var previewing by remember { mutableStateOf<CollectionPreview?>(null) }
     val openMenu: (Track) -> Unit = { menuTrack = it }
     val open: (DetailRoute) -> Unit = { detailStack = detailStack + it }
     val closeDetails: () -> Unit = { detailStack = emptyList() }
@@ -300,232 +305,248 @@ fun SitaraShell(
             else -> tab = Tab.HOME
         }
     }
-    SitaraTheme(settings, nowPlaying = player.track?.artwork) {
-        val haze = rememberHazeState()
-        val navBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
-        val fontScale = LocalDensity.current.fontScale
-        val miniHeight = SitaraSpacing.MiniPlayerHeight * fontScale.coerceAtLeast(1f)
-        val minimumDockHeight = SitaraSpacing.NavigationHeight + (if (player.track != null) miniHeight else 0.dp)
-        // The unfolded height: content pads for the dock at its tallest, so folding never moves the page.
-        var measuredDockHeight by remember(player.track != null, fontScale) { mutableStateOf(0.dp) }
-        val dockHeight = maxOf(minimumDockHeight, measuredDockHeight)
-        val contentPadding = PaddingValues(
-            top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding(),
-            bottom = dockHeight + navBottom + SitaraSpacing.DockBottom + SitaraSpacing.Section,
-        )
-        Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
-            Box(Modifier.fillMaxSize().hazeSource(haze).nestedScroll(foldOnScroll)) {
-                val route = detailStack.lastOrNull()
-                val openAlbum: (Album) -> Unit = { open(DetailRoute.Album(it.id)) }
-                val openArtist: (Artist) -> Unit = { open(DetailRoute.Artist(it.id)) }
-                // The stack depth keeps two visits to the same page apart, each with its own scroll position.
-                browseState.SaveableStateProvider(route?.let { "${detailStack.size}-${it.encode()}" } ?: "tab-${tab.name}") {
-                    val onShelfLink: (ShelfLink) -> Unit = { link ->
-                        when (link) {
-                            is ShelfLink.ToPlaylist -> open(DetailRoute.Playlist(link.id))
-                            is ShelfLink.ToArtist -> open(DetailRoute.Artist(link.id))
+    CompositionLocalProvider(LocalCollectionPreview provides { previewing = it }) {
+        SitaraTheme(settings, nowPlaying = player.track?.artwork) {
+            val haze = rememberHazeState()
+            val navBottom = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+            val fontScale = LocalDensity.current.fontScale
+            val miniHeight = SitaraSpacing.MiniPlayerHeight * fontScale.coerceAtLeast(1f)
+            val minimumDockHeight = SitaraSpacing.NavigationHeight + (if (player.track != null) miniHeight else 0.dp)
+            // The unfolded height: content pads for the dock at its tallest, so folding never moves the page.
+            var measuredDockHeight by remember(player.track != null, fontScale) { mutableStateOf(0.dp) }
+            val dockHeight = maxOf(minimumDockHeight, measuredDockHeight)
+            val contentPadding = PaddingValues(
+                top = WindowInsets.statusBars.asPaddingValues().calculateTopPadding(),
+                bottom = dockHeight + navBottom + SitaraSpacing.DockBottom + SitaraSpacing.Section,
+            )
+            Box(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)) {
+                Box(Modifier.fillMaxSize().hazeSource(haze).nestedScroll(foldOnScroll)) {
+                    val route = detailStack.lastOrNull()
+                    val openAlbum: (Album) -> Unit = { open(DetailRoute.Album(it.id)) }
+                    val openArtist: (Artist) -> Unit = { open(DetailRoute.Artist(it.id)) }
+                    // The stack depth keeps two visits to the same page apart, each with its own scroll position.
+                    browseState.SaveableStateProvider(route?.let { "${detailStack.size}-${it.encode()}" } ?: "tab-${tab.name}") {
+                        val onShelfLink: (ShelfLink) -> Unit = { link ->
+                            when (link) {
+                                is ShelfLink.ToPlaylist -> open(DetailRoute.Playlist(link.id))
+                                is ShelfLink.ToArtist -> open(DetailRoute.Artist(link.id))
+                            }
                         }
-                    }
-                    if (route is DetailRoute.Mood) {
-                        val state by remember(details, route) { details.moodPage(route) }.collectAsState()
-                        MoodScreen(
-                            route.title, state,
-                            onBack = { detailStack = detailStack.dropLast(1) },
-                            onRetry = { details.retry(route) },
-                            onPlay = onPlay,
-                            onTrackMenu = openMenu,
-                            onAlbum = openAlbum,
-                            onPlaylist = { open(DetailRoute.Playlist(it.id)) },
-                            onArtist = openArtist,
-                            onShelfLink = onShelfLink,
-                            contentPadding = contentPadding,
-                        )
-                    } else if (route == DetailRoute.Stats) {
-                        var range by rememberSaveable { mutableStateOf(StatsRange.WEEK) }
-                        val state by remember(details, range) { details.stats(range) }.collectAsState()
-                        StatsScreen(
-                            state, range, settings.pauseListeningHistory, onRange = { range = it },
-                            onBack = { detailStack = detailStack.dropLast(1) },
-                            onPlay = onPlay,
-                            onArtist = { open(DetailRoute.Artist(it)) },
-                            contentPadding = contentPadding,
-                        )
-                    } else if (route == DetailRoute.Import) {
-                        ImportScreen(
-                            imports, importActions,
-                            onPickFile = { pickPlaylistFile.launch(PLAYLIST_FILE_TYPES) },
-                            onOpenPlaylist = { id -> importActions.close(); detailStack = detailStack.dropLast(1) + DetailRoute.UserPlaylist(id) },
-                            onBack = { detailStack = detailStack.dropLast(1) },
-                            contentPadding = contentPadding,
-                        )
-                    } else if (route == DetailRoute.Scrobbling) {
-                        // Coming back from Last.fm's page in the browser finishes its sign-in; once per return, not per state change.
-                        val inBrowser by rememberUpdatedState(scrobbling.services.any { it.signIn == SignInStep.InBrowser })
-                        LifecycleResumeEffect(Unit) {
-                            if (inBrowser) scrobblingActions.finishLastFmSignIn()
-                            onPauseOrDispose {}
-                        }
-                        ScrobblingScreen(scrobbling, scrobblingActions, onBack = { detailStack = detailStack.dropLast(1) }, contentPadding = contentPadding)
-                    } else if (route == DetailRoute.Backup) {
-                        BackupScreen(
-                            backup,
-                            onBackUp = { createBackup.launch("sitara-backup-${LocalDate.now()}.json") },
-                            // Some file apps label .json files as plain text or bytes.
-                            onRestore = { openBackup.launch(arrayOf(BACKUP_TYPE, "text/plain", "application/octet-stream")) },
-                            onBack = { detailStack = detailStack.dropLast(1) },
-                            contentPadding = contentPadding,
-                        )
-                    } else if (route == DetailRoute.OnThisPhone) {
-                        // Read again on every return too: access may just have been granted in the system's settings.
-                        LifecycleResumeEffect(Unit) {
-                            localActions.rescan()
-                            onPauseOrDispose {}
-                        }
-                        LocalScreen(
-                            local, settings.libraryLayout, settings.librarySort, (library as? LibraryState.Ready)?.library?.counts.orEmpty(),
-                            onBack = { detailStack = detailStack.dropLast(1) },
-                            onPlay = onPlay,
-                            onShuffle = onShuffle,
-                            onTrackMenu = openMenu,
-                            onGroup = { kind, group -> open(DetailRoute.LocalGroup(kind, group.key)) },
-                            onAllowAccess = { askMusicAccess.launch(musicPermission) },
-                            onChooseFolder = { pickFolder.launch(null) },
-                            onRelink = { relinking = it; pickFolder.launch(Uri.parse(it.uri)) },
-                            actions = localActions,
-                            library = libraryActions,
-                            contentPadding = contentPadding,
-                        )
-                    } else if (route is DetailRoute.LocalGroup) {
-                        val group = remember(local.songs, route) { local.songs.groups(route.kind, LibrarySort.RECENTLY_ADDED).firstOrNull { it.key == route.key } }
-                        LocalGroupScreen(group, onBack = { detailStack = detailStack.dropLast(1) }, onPlay = onPlay, onShuffle = onShuffle, onTrackMenu = openMenu, contentPadding = contentPadding)
-                    } else if (route != null) {
-                        val state by remember(details, route) { details.state(route) }.collectAsState()
-                        DetailScreen(
-                            state, settings, savedIds, libraryActions,
-                            onBack = { detailStack = detailStack.dropLast(1) },
-                            onRetry = { details.retry(route) },
-                            onPlay = onPlay,
-                            onShuffle = onShuffle,
-                            onArtist = { open(DetailRoute.Artist(it)) },
-                            onAlbum = { open(DetailRoute.Album(it)) },
-                            onTrackMenu = openMenu,
-                            contentPadding = contentPadding,
-                            onShare = { shareTarget = it },
-                        )
-                    } else {
-                        when (tab) {
-                            Tab.HOME -> HomeScreen(
-                                greetingText, home, homeActions, onPlay, openMenu, openAlbum,
+                        if (route is DetailRoute.Mood) {
+                            val state by remember(details, route) { details.moodPage(route) }.collectAsState()
+                            MoodScreen(
+                                route.title, state,
+                                onBack = { detailStack = detailStack.dropLast(1) },
+                                onRetry = { details.retry(route) },
+                                onPlay = onPlay,
+                                onTrackMenu = openMenu,
+                                onAlbum = openAlbum,
                                 onPlaylist = { open(DetailRoute.Playlist(it.id)) },
                                 onArtist = openArtist,
-                                onOwnPlaylist = { open(DetailRoute.UserPlaylist(it.id)) },
                                 onShelfLink = onShelfLink,
                                 contentPadding = contentPadding,
                             )
-                            Tab.SEARCH -> SearchScreen(
-                                query, onQueryChange, searchFilter, onSearchFilterChange, search, onRetrySearch, searchLanding, searchActions,
-                                onPlay, openAlbum, openArtist, onPlaylist = { open(DetailRoute.Playlist(it.id)) },
-                                onMood = { open(DetailRoute.Mood(it.params, it.title)) }, onTrackMenu = openMenu, contentPadding = contentPadding,
-                                onThisPhone = remember(query, local.songs) { local.songs.matching(query) },
+                        } else if (route == DetailRoute.Stats) {
+                            var range by rememberSaveable { mutableStateOf(StatsRange.WEEK) }
+                            val state by remember(details, range) { details.stats(range) }.collectAsState()
+                            StatsScreen(
+                                state, range, settings.pauseListeningHistory, onRange = { range = it },
+                                onBack = { detailStack = detailStack.dropLast(1) },
+                                onPlay = onPlay,
+                                onArtist = { open(DetailRoute.Artist(it)) },
+                                contentPadding = contentPadding,
                             )
-                            Tab.LIBRARY -> LibraryScreen(
-                                library, downloads, settings.libraryLayout, settings.librarySort, onPlay,
-                                onLikedSongs = { open(DetailRoute.LikedSongs) },
-                                onStats = { open(DetailRoute.Stats) },
-                                onImport = { open(DetailRoute.Import) },
-                                onOnThisPhone = { open(DetailRoute.OnThisPhone) },
-                                onPlaylist = { open(DetailRoute.UserPlaylist(it.id)) },
-                                onAlbum = openAlbum,
-                                onArtist = openArtist,
-                                onNewPlaylist = { libraryActions.createPlaylist(it, emptyList()) },
+                        } else if (route == DetailRoute.Import) {
+                            ImportScreen(
+                                imports, importActions,
+                                onPickFile = { pickPlaylistFile.launch(PLAYLIST_FILE_TYPES) },
+                                onOpenPlaylist = { id -> importActions.close(); detailStack = detailStack.dropLast(1) + DetailRoute.UserPlaylist(id) },
+                                onBack = { detailStack = detailStack.dropLast(1) },
+                                contentPadding = contentPadding,
+                            )
+                        } else if (route == DetailRoute.Scrobbling) {
+                            // Coming back from Last.fm's page in the browser finishes its sign-in; once per return, not per state change.
+                            val inBrowser by rememberUpdatedState(scrobbling.services.any { it.signIn == SignInStep.InBrowser })
+                            LifecycleResumeEffect(Unit) {
+                                if (inBrowser) scrobblingActions.finishLastFmSignIn()
+                                onPauseOrDispose {}
+                            }
+                            ScrobblingScreen(scrobbling, scrobblingActions, onBack = { detailStack = detailStack.dropLast(1) }, contentPadding = contentPadding)
+                        } else if (route == DetailRoute.Backup) {
+                            BackupScreen(
+                                backup,
+                                onBackUp = { createBackup.launch("sitara-backup-${LocalDate.now()}.json") },
+                                // Some file apps label .json files as plain text or bytes.
+                                onRestore = { openBackup.launch(arrayOf(BACKUP_TYPE, "text/plain", "application/octet-stream")) },
+                                onBack = { detailStack = detailStack.dropLast(1) },
+                                contentPadding = contentPadding,
+                            )
+                        } else if (route == DetailRoute.OnThisPhone) {
+                            // Read again on every return too: access may just have been granted in the system's settings.
+                            LifecycleResumeEffect(Unit) {
+                                localActions.rescan()
+                                onPauseOrDispose {}
+                            }
+                            LocalScreen(
+                                local, settings.libraryLayout, settings.librarySort, (library as? LibraryState.Ready)?.library?.counts.orEmpty(),
+                                onBack = { detailStack = detailStack.dropLast(1) },
+                                onPlay = onPlay,
+                                onShuffle = onShuffle,
                                 onTrackMenu = openMenu,
-                                onFindMusic = { tab = Tab.SEARCH },
+                                onGroup = { kind, group -> open(DetailRoute.LocalGroup(kind, group.key)) },
+                                onAllowAccess = { askMusicAccess.launch(musicPermission) },
+                                onChooseFolder = { pickFolder.launch(null) },
+                                onRelink = { relinking = it; pickFolder.launch(Uri.parse(it.uri)) },
+                                actions = localActions,
                                 library = libraryActions,
                                 contentPadding = contentPadding,
-                                localSongs = local.songs.size,
-                                export = export,
-                                onExportDownloads = { pickExportFolder.launch(null) },
                             )
-                            Tab.SETTINGS -> if (equaliserOpen) {
-                                EqualiserScreen(
-                                    player.equaliser, player.systemEqualiser, actions::setEqualiser, actions::openSystemEqualiser,
-                                    onBack = { equaliserOpen = false }, contentPadding = contentPadding,
+                        } else if (route is DetailRoute.LocalGroup) {
+                            val group = remember(local.songs, route) { local.songs.groups(route.kind, LibrarySort.RECENTLY_ADDED).firstOrNull { it.key == route.key } }
+                            LocalGroupScreen(group, onBack = { detailStack = detailStack.dropLast(1) }, onPlay = onPlay, onShuffle = onShuffle, onTrackMenu = openMenu, contentPadding = contentPadding)
+                        } else if (route != null) {
+                            val state by remember(details, route) { details.state(route) }.collectAsState()
+                            DetailScreen(
+                                state, settings, savedIds, libraryActions,
+                                onBack = { detailStack = detailStack.dropLast(1) },
+                                onRetry = { details.retry(route) },
+                                onPlay = onPlay,
+                                onShuffle = onShuffle,
+                                onArtist = { open(DetailRoute.Artist(it)) },
+                                onAlbum = { open(DetailRoute.Album(it)) },
+                                onTrackMenu = openMenu,
+                                contentPadding = contentPadding,
+                                onShare = { shareTarget = it },
+                            )
+                        } else {
+                            when (tab) {
+                                Tab.HOME -> HomeScreen(
+                                    greetingText, home, homeActions, onPlay, openMenu, openAlbum,
+                                    onPlaylist = { open(DetailRoute.Playlist(it.id)) },
+                                    onArtist = openArtist,
+                                    onOwnPlaylist = { open(DetailRoute.UserPlaylist(it.id)) },
+                                    onShelfLink = onShelfLink,
+                                    contentPadding = contentPadding,
                                 )
-                            } else {
-                                SettingsScreen(
-                                    settings, onSettingsChange, downloads, onRemoveAllDownloads,
-                                    onBack = { tab = Tab.HOME }, contentPadding = contentPadding,
-                                    equaliserSummary = equaliserSummary(player.equaliser, player.systemEqualiser),
-                                    onOpenEqualiser = { equaliserOpen = true },
-                                    onOpenStats = { open(DetailRoute.Stats) },
-                                    onClearHistory = onClearHistory,
-                                    onImportPlaylist = { open(DetailRoute.Import) },
-                                    onOpenBackup = { open(DetailRoute.Backup) },
-                                    scrobblingSummary = scrobbling.summary,
-                                    onOpenScrobbling = { open(DetailRoute.Scrobbling) },
+                                Tab.SEARCH -> SearchScreen(
+                                    query, onQueryChange, searchFilter, onSearchFilterChange, search, onRetrySearch, searchLanding, searchActions,
+                                    onPlay, openAlbum, openArtist, onPlaylist = { open(DetailRoute.Playlist(it.id)) },
+                                    onMood = { open(DetailRoute.Mood(it.params, it.title)) }, onTrackMenu = openMenu, contentPadding = contentPadding,
+                                    onThisPhone = remember(query, local.songs) { local.songs.matching(query) },
+                                )
+                                Tab.LIBRARY -> LibraryScreen(
+                                    library, downloads, settings.libraryLayout, settings.librarySort, onPlay,
+                                    onLikedSongs = { open(DetailRoute.LikedSongs) },
+                                    onStats = { open(DetailRoute.Stats) },
+                                    onImport = { open(DetailRoute.Import) },
+                                    onOnThisPhone = { open(DetailRoute.OnThisPhone) },
+                                    onPlaylist = { open(DetailRoute.UserPlaylist(it.id)) },
+                                    onAlbum = openAlbum,
+                                    onArtist = openArtist,
+                                    onNewPlaylist = { libraryActions.createPlaylist(it, emptyList()) },
+                                    onTrackMenu = openMenu,
+                                    onFindMusic = { tab = Tab.SEARCH },
+                                    library = libraryActions,
+                                    contentPadding = contentPadding,
+                                    localSongs = local.songs.size,
                                     export = export,
                                     onExportDownloads = { pickExportFolder.launch(null) },
                                 )
+                                Tab.SETTINGS -> if (equaliserOpen) {
+                                    EqualiserScreen(
+                                        player.equaliser, player.systemEqualiser, actions::setEqualiser, actions::openSystemEqualiser,
+                                        onBack = { equaliserOpen = false }, contentPadding = contentPadding,
+                                    )
+                                } else {
+                                    SettingsScreen(
+                                        settings, onSettingsChange, downloads, onRemoveAllDownloads,
+                                        onBack = { tab = Tab.HOME }, contentPadding = contentPadding,
+                                        equaliserSummary = equaliserSummary(player.equaliser, player.systemEqualiser),
+                                        onOpenEqualiser = { equaliserOpen = true },
+                                        onOpenStats = { open(DetailRoute.Stats) },
+                                        onClearHistory = onClearHistory,
+                                        onImportPlaylist = { open(DetailRoute.Import) },
+                                        onOpenBackup = { open(DetailRoute.Backup) },
+                                        scrobblingSummary = scrobbling.summary,
+                                        onOpenScrobbling = { open(DetailRoute.Scrobbling) },
+                                        export = export,
+                                        onExportDownloads = { pickExportFolder.launch(null) },
+                                    )
+                                }
                             }
                         }
                     }
                 }
-            }
-            ScrollEdge(haze, Modifier.align(Alignment.TopCenter).fillMaxWidth().height(contentPadding.calculateTopPadding() + 16.dp))
-            ScrollEdge(haze, Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(navBottom + 16.dp), top = false)
-            PlayerSheet(
-                player,
-                actions,
-                bottomReserved = navBottom + SitaraSpacing.DockBottom,
-                initiallyExpanded = playerExpanded,
-                expandRequests = playerRequests,
-                initialPage = playerPage,
-                haze = haze,
-                folded = dockFolded,
-                navigation = { accent, folded ->
-                    FloatingNav(tab, accent, folded, onSelect = { closeDetails(); equaliserOpen = false; dockFolded = false; tab = it }, onUnfold = { dockFolded = false })
-                },
-                onDockHeightChanged = { measuredDockHeight = maxOf(measuredDockHeight, it) },
-                onArtist = { open(DetailRoute.Artist(it)) },
-                onAddToPlaylist = { playlistTrack = it },
-                onSaveQueue = { queueToSave = it },
-            )
-            menuTrack?.let { track ->
-                SitaraSheet(onDismiss = { menuTrack = null }) { close ->
-                    val liked = track.id in savedIds.tracks
-                    SongActions(
-                        track, liked, savedIds.downloads[track.id],
-                        onToggleLike = { close { libraryActions.setLiked(track, !liked) } },
-                        onPlayNext = { close { actions.playNext(track) } },
-                        onAddToQueue = { close { actions.addToQueue(track) } },
-                        onAddToPlaylist = { close { playlistTrack = track } },
-                        onDownload = { close { libraryActions.download(listOf(track)) } },
-                        onRemoveDownload = { close { libraryActions.removeDownload(track.id) } },
-                        onShare = { close { shareTarget = track.shareTarget() } },
-                    )
+                ScrollEdge(haze, Modifier.align(Alignment.TopCenter).fillMaxWidth().height(contentPadding.calculateTopPadding() + 16.dp))
+                ScrollEdge(haze, Modifier.align(Alignment.BottomCenter).fillMaxWidth().height(navBottom + 16.dp), top = false)
+                PlayerSheet(
+                    player,
+                    actions,
+                    bottomReserved = navBottom + SitaraSpacing.DockBottom,
+                    initiallyExpanded = playerExpanded,
+                    expandRequests = playerRequests,
+                    initialPage = playerPage,
+                    haze = haze,
+                    folded = dockFolded,
+                    navigation = { accent, folded ->
+                        FloatingNav(tab, accent, folded, onSelect = { closeDetails(); equaliserOpen = false; dockFolded = false; tab = it }, onUnfold = { dockFolded = false })
+                    },
+                    onDockHeightChanged = { measuredDockHeight = maxOf(measuredDockHeight, it) },
+                    onArtist = { open(DetailRoute.Artist(it)) },
+                    onAddToPlaylist = { playlistTrack = it },
+                    onSaveQueue = { queueToSave = it },
+                )
+                menuTrack?.let { track ->
+                    SitaraSheet(onDismiss = { menuTrack = null }) { close ->
+                        val liked = track.id in savedIds.tracks
+                        SongActions(
+                            track, liked, savedIds.downloads[track.id],
+                            onToggleLike = { close { libraryActions.setLiked(track, !liked) } },
+                            onPlayNext = { close { actions.playNext(track) } },
+                            onAddToQueue = { close { actions.addToQueue(track) } },
+                            onAddToPlaylist = { close { playlistTrack = track } },
+                            onDownload = { close { libraryActions.download(listOf(track)) } },
+                            onRemoveDownload = { close { libraryActions.removeDownload(track.id) } },
+                            onShare = { close { shareTarget = track.shareTarget() } },
+                        )
+                    }
                 }
-            }
-            shareTarget?.let { target ->
-                val context = LocalContext.current
-                val scope = rememberCoroutineScope()
-                SitaraSheet(onDismiss = { shareTarget = null }) { close ->
-                    ShareSheetContent(
-                        target,
-                        onSendLink = { close { shareText(context, "${target.title}: ${target.link}", "Share link") } },
-                        onShareImage = { close { scope.launch { shareQrCard(context, target) } } },
-                    )
+                previewing?.let { preview ->
+                    val route = preview.route()
+                    val state by remember(details, route) { details.state(route) }.collectAsState()
+                    SitaraSheet(onDismiss = { previewing = null }) { close ->
+                        CollectionPreviewSheet(
+                            preview, state,
+                            onPlay = { tracks, index -> close { onPlay(tracks, index) } },
+                            onShuffle = { tracks -> close { onShuffle(tracks) } },
+                            onOpen = { close { open(route) } },
+                            onRetry = { details.retry(route) },
+                            onShare = preview.shareTarget()?.let { target -> { close { shareTarget = target } } },
+                        )
+                    }
                 }
-            }
-            queueToSave?.let { tracks ->
-                PlaylistNameSheet("Save queue as playlist", "", "Save", onConfirm = { queueToSave = null; libraryActions.createPlaylist(it, tracks) }, onDismiss = { queueToSave = null })
-            }
-            playlistTrack?.let { track ->
-                SitaraSheet(onDismiss = { playlistTrack = null }) { close ->
-                    AddToPlaylist(
-                        track, playlists,
-                        onPick = { close { libraryActions.addToPlaylist(it, track) } },
-                        onCreate = { close { libraryActions.createPlaylist(it, listOf(track)) } },
-                    )
+                shareTarget?.let { target ->
+                    val context = LocalContext.current
+                    val scope = rememberCoroutineScope()
+                    SitaraSheet(onDismiss = { shareTarget = null }) { close ->
+                        ShareSheetContent(
+                            target,
+                            onSendLink = { close { shareText(context, "${target.title}: ${target.link}", "Share link") } },
+                            onShareImage = { close { scope.launch { shareQrCard(context, target) } } },
+                        )
+                    }
+                }
+                queueToSave?.let { tracks ->
+                    PlaylistNameSheet("Save queue as playlist", "", "Save", onConfirm = { queueToSave = null; libraryActions.createPlaylist(it, tracks) }, onDismiss = { queueToSave = null })
+                }
+                playlistTrack?.let { track ->
+                    SitaraSheet(onDismiss = { playlistTrack = null }) { close ->
+                        AddToPlaylist(
+                            track, playlists,
+                            onPick = { close { libraryActions.addToPlaylist(it, track) } },
+                            onCreate = { close { libraryActions.createPlaylist(it, listOf(track)) } },
+                        )
+                    }
                 }
             }
         }

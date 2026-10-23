@@ -87,6 +87,7 @@ fun ArtworkTile(
 }
 
 /** Collection metadata is not a synthetic Track; empty collections can still open. */
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
 fun CollectionRow(
     title: String,
@@ -96,10 +97,12 @@ fun CollectionRow(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     covers: List<Artwork>? = null,
+    onLongClick: (() -> Unit)? = null,
 ) {
     Row(
         modifier.fillMaxWidth().clip(RoundedCornerShape(SitaraRadius.Cover))
-            .clickable(enabled = enabled, role = Role.Button, onClick = onClick).semantics(mergeDescendants = true) {}
+            .combinedClickable(enabled = enabled, role = Role.Button, onClick = onClick, onLongClickLabel = onLongClick?.let { "Preview" }, onLongClick = onLongClick)
+            .semantics(mergeDescendants = true) {}
             .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),

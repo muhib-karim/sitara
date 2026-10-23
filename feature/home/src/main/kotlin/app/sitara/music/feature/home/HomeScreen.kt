@@ -40,6 +40,8 @@ import app.sitara.music.core.designsystem.SitaraRadius
 import app.sitara.music.core.designsystem.SitaraSpacing
 import app.sitara.music.core.designsystem.TrackRow
 import app.sitara.music.core.designsystem.byline
+import app.sitara.music.core.designsystem.preview
+import app.sitara.music.core.designsystem.previewOnLongClick
 import app.sitara.music.core.model.Album
 import app.sitara.music.core.model.Artist
 import app.sitara.music.core.model.HomeItem
@@ -117,8 +119,12 @@ fun HomeScreen(
                                 is SavedCollection.OwnPlaylist -> ArtworkTile(
                                     saved.playlist.name, songCount(saved.playlist.songCount), EmptyCollectionArtwork,
                                     { onOwnPlaylist(saved.playlist) }, Modifier.width(CardWidth), covers = saved.playlist.covers,
+                                    onLongClick = previewOnLongClick(saved.playlist.preview()),
                                 )
-                                is SavedCollection.SavedAlbum -> ArtworkTile(saved.album.title, saved.album.byline, saved.album.artwork, { onAlbum(saved.album) }, Modifier.width(CardWidth))
+                                is SavedCollection.SavedAlbum -> ArtworkTile(
+                                    saved.album.title, saved.album.byline, saved.album.artwork, { onAlbum(saved.album) }, Modifier.width(CardWidth),
+                                    onLongClick = previewOnLongClick(saved.album.preview()),
+                                )
                             }
                         }
                     }
@@ -236,9 +242,11 @@ private fun FeedCarousel(
                     item.track.title, item.track.artist, item.track.artwork, { onPlay(songs, songs.indexOf(item.track)) }, card,
                     onLongClick = { onTrackMenu(item.track) },
                 )
-                is HomeItem.AlbumCard -> ArtworkTile(item.album.title, item.album.byline, item.album.artwork, { onAlbum(item.album) }, card)
-                is HomeItem.PlaylistCard -> ArtworkTile(item.playlist.title, item.playlist.curator, item.playlist.artwork, { onPlaylist(item.playlist) }, card)
-                is HomeItem.ArtistCard -> ArtworkTile(item.artist.name, "Artist", item.artist.artwork, { onArtist(item.artist) }, card, round = true)
+                is HomeItem.AlbumCard -> ArtworkTile(item.album.title, item.album.byline, item.album.artwork, { onAlbum(item.album) }, card, onLongClick = previewOnLongClick(item.album.preview()))
+                is HomeItem.PlaylistCard -> ArtworkTile(
+                    item.playlist.title, item.playlist.curator, item.playlist.artwork, { onPlaylist(item.playlist) }, card, onLongClick = previewOnLongClick(item.playlist.preview()),
+                )
+                is HomeItem.ArtistCard -> ArtworkTile(item.artist.name, "Artist", item.artist.artwork, { onArtist(item.artist) }, card, round = true, onLongClick = previewOnLongClick(item.artist.preview()))
             }
         }
     }

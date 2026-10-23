@@ -72,6 +72,8 @@ import app.sitara.music.core.designsystem.SitaraSpacing
 import app.sitara.music.core.designsystem.TrackRow
 import app.sitara.music.core.designsystem.byline
 import app.sitara.music.core.designsystem.exportSummary
+import app.sitara.music.core.designsystem.preview
+import app.sitara.music.core.designsystem.previewOnLongClick
 import app.sitara.music.core.designsystem.rememberPlaceholderPulse
 import app.sitara.music.core.model.Album
 import app.sitara.music.core.model.Artist
@@ -187,11 +189,12 @@ fun LibraryScreen(
                         LibraryKind.PLAYLISTS -> collection(
                             saved.playlists.inOrder(order), grid, "Make a playlist to keep songs in your own order.", key = { "playlist-${it.id}" },
                             tile = { playlist, tile ->
-                                ArtworkTile(playlist.name, songCount(playlist.songCount), EmptyCollectionArtwork, { onPlaylist(playlist) }, tile, covers = playlist.covers)
+                                ArtworkTile(playlist.name, songCount(playlist.songCount), EmptyCollectionArtwork, { onPlaylist(playlist) }, tile, covers = playlist.covers, onLongClick = previewOnLongClick(playlist.preview()))
                             },
                             row = { playlist ->
                                 CollectionRow(
                                     playlist.name, songCount(playlist.songCount), EmptyCollectionArtwork, { onPlaylist(playlist) }, Modifier.libraryRow(), covers = playlist.covers,
+                                    onLongClick = previewOnLongClick(playlist.preview()),
                                 )
                             },
                         )
@@ -207,13 +210,13 @@ fun LibraryScreen(
                         }
                         LibraryKind.ALBUMS -> collection(
                             saved.albums.inOrder(order), grid, "Save an album from its page to keep it here.", key = { "album-${it.id}" },
-                            tile = { album, tile -> ArtworkTile(album.title, album.byline, album.artwork, { onAlbum(album) }, tile) },
-                            row = { album -> CollectionRow(album.title, album.byline, album.artwork, { onAlbum(album) }, Modifier.libraryRow()) },
+                            tile = { album, tile -> ArtworkTile(album.title, album.byline, album.artwork, { onAlbum(album) }, tile, onLongClick = previewOnLongClick(album.preview())) },
+                            row = { album -> CollectionRow(album.title, album.byline, album.artwork, { onAlbum(album) }, Modifier.libraryRow(), onLongClick = previewOnLongClick(album.preview())) },
                         )
                         LibraryKind.ARTISTS -> collection(
                             saved.artists.inOrder(order, saved.counts), grid, "Save an artist from their page to keep them here.", key = { "artist-${it.id}" },
-                            tile = { artist, tile -> ArtworkTile(artist.name, "Artist", artist.artwork, { onArtist(artist) }, tile, round = true) },
-                            row = { artist -> CollectionRow(artist.name, "Artist", artist.artwork, { onArtist(artist) }, Modifier.libraryRow()) },
+                            tile = { artist, tile -> ArtworkTile(artist.name, "Artist", artist.artwork, { onArtist(artist) }, tile, round = true, onLongClick = previewOnLongClick(artist.preview())) },
+                            row = { artist -> CollectionRow(artist.name, "Artist", artist.artwork, { onArtist(artist) }, Modifier.libraryRow(), onLongClick = previewOnLongClick(artist.preview())) },
                         )
                         LibraryKind.DOWNLOADS -> downloadsSection(downloads, onPlay, library, export, onExportDownloads)
                     }

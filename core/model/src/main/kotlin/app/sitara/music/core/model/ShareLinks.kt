@@ -18,3 +18,10 @@ fun Artist.shareTarget(): ShareTarget = ShareTarget(name, "Artist", "$MUSIC/chan
 // YouTube Music's browse ids put "VL" before a playlist id.
 private fun playlistTarget(id: String, title: String, subtitle: String, artwork: Artwork) =
     ShareTarget(title, subtitle, "$MUSIC/playlist?list=${id.removePrefix("VL")}", artwork)
+
+/** What a preview shares: the catalogue page's link; the listener's own playlists have none. */
+fun CollectionPreview.shareTarget(): ShareTarget? = when (kind) {
+    CollectionPreview.Kind.ALBUM, CollectionPreview.Kind.PLAYLIST -> playlistTarget(id, title, subtitle, artwork)
+    CollectionPreview.Kind.ARTIST -> ShareTarget(title, subtitle, "$MUSIC/channel/$id", artwork)
+    CollectionPreview.Kind.OWN_PLAYLIST -> null
+}

@@ -55,6 +55,8 @@ import app.sitara.music.core.designsystem.SitaraSpacing
 import app.sitara.music.core.designsystem.SitaraTheme
 import app.sitara.music.core.designsystem.TrackRow
 import app.sitara.music.core.designsystem.dragHandle
+import app.sitara.music.core.designsystem.preview
+import app.sitara.music.core.designsystem.previewOnLongClick
 import app.sitara.music.core.designsystem.rememberReorderState
 import app.sitara.music.core.designsystem.reorderableRow
 import app.sitara.music.core.model.Album
@@ -162,7 +164,7 @@ fun DetailScreen(
                             horizontalArrangement = Arrangement.spacedBy(16.dp),
                         ) {
                             items(page.releases, key = { it.id }) { album ->
-                                ArtworkTile(album.title, album.year?.toString() ?: "Album", album.artwork, { onAlbum(album.id) }, Modifier.width(156.dp))
+                                ArtworkTile(album.title, album.year?.toString() ?: "Album", album.artwork, { onAlbum(album.id) }, Modifier.width(156.dp), onLongClick = previewOnLongClick(album.preview()))
                             }
                         }
                     }

@@ -77,6 +77,8 @@ import app.sitara.music.core.designsystem.SitaraSheet
 import app.sitara.music.core.designsystem.SitaraSpacing
 import app.sitara.music.core.designsystem.TrackRow
 import app.sitara.music.core.designsystem.byline
+import app.sitara.music.core.designsystem.preview
+import app.sitara.music.core.designsystem.previewOnLongClick
 import app.sitara.music.core.designsystem.rememberPlaceholderPulse
 import app.sitara.music.core.model.Album
 import app.sitara.music.core.model.Artist
@@ -344,19 +346,22 @@ private fun LazyListScope.searchResults(
     if (results.albums.isNotEmpty()) {
         item(key = "albums-title") { SectionHeader("Albums", modifier = Modifier.padding(top = 20.dp)) }
         items(results.albums, key = { "album-${it.id}" }) { album ->
-            CollectionRow(album.title, album.byline, album.artwork, { onAlbum(album) }, Modifier.padding(horizontal = SitaraSpacing.Gutter))
+            CollectionRow(album.title, album.byline, album.artwork, { onAlbum(album) }, Modifier.padding(horizontal = SitaraSpacing.Gutter), onLongClick = previewOnLongClick(album.preview()))
         }
     }
     if (results.artists.isNotEmpty()) {
         item(key = "artists-title") { SectionHeader("Artists", modifier = Modifier.padding(top = 20.dp)) }
         items(results.artists, key = { "artist-${it.id}" }) { artist ->
-            CollectionRow(artist.name, "Artist", artist.artwork, { onArtist(artist) }, Modifier.padding(horizontal = SitaraSpacing.Gutter))
+            CollectionRow(artist.name, "Artist", artist.artwork, { onArtist(artist) }, Modifier.padding(horizontal = SitaraSpacing.Gutter), onLongClick = previewOnLongClick(artist.preview()))
         }
     }
     if (results.playlists.isNotEmpty()) {
         item(key = "playlists-title") { SectionHeader("Playlists", modifier = Modifier.padding(top = 20.dp)) }
         items(results.playlists, key = { "playlist-${it.id}" }) { playlist ->
-            CollectionRow(playlist.title, playlist.curator.ifEmpty { "Playlist" }, playlist.artwork, { onPlaylist(playlist) }, Modifier.padding(horizontal = SitaraSpacing.Gutter))
+            CollectionRow(
+                playlist.title, playlist.curator.ifEmpty { "Playlist" }, playlist.artwork, { onPlaylist(playlist) }, Modifier.padding(horizontal = SitaraSpacing.Gutter),
+                onLongClick = previewOnLongClick(playlist.preview()),
+            )
         }
     }
 }
