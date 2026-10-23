@@ -651,6 +651,7 @@ class ScreenshotTest {
         "library_downloads_exporting", dark = false, tab = Tab.LIBRARY, downloads = Fixtures.downloads, export = DownloadExport.Working(done = 4, total = 12),
     ) {
         compose.onNode(hasText("Downloads") and isSelectable()).performSemanticsAction(SemanticsActions.OnClick)
+        compose.onNodeWithTag("library-content").performScrollToKey("download-${Fixtures.downloads.last().track.id}")
     }
 
     private val rock = EqualiserSettings().withPreset(EqualiserPreset.ROCK)
