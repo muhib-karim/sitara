@@ -27,14 +27,12 @@
 ---
 
 > [!NOTE]
-> Sitara is an early but complete-for-daily-listening preview: **Phase B is done**. Search YouTube Music for songs,
-> albums, artists and playlists, or paste or share a YouTube link; play through a background service with a queue you
-> can edit, radio and a sleep timer; keep liked songs, playlists and saved albums on the device; see what is trending
-> on YouTube Charts; sing along with synced lyrics from LRCLIB; download songs to play offline, with loudness levelling
-> and crossfade (`0.6.0`). Phase C brought real covers, a player coloured by the cover and freely scrolled lyrics
-> (`0.7.0`), then gapless joins, speed and pitch, skip silence and a sleep timer you can extend (`0.8.0`), and an
-> equaliser (`0.9.0`). On `main`: a stage blurred from the cover, hero lyrics and a floating glass dock. Releases are
-> on the [Releases](https://github.com/muhib-karim/sitara/releases) page.
+> Sitara `1.0.0` is the first release candidate: **Phase C is done**. Search YouTube Music, play through a background
+> service with a queue you can edit, radio, lyrics from three sources with translation and share cards, an equaliser,
+> crossfade and automix on the beat, downloads you can export as tagged files, your own music on the phone, playlist
+> imports from YouTube, Spotify and files, scrobbling, Android Auto, a home-screen widget, backups, palettes, QR sharing,
+> and the whole app in English and Bangla. Releases are on the
+> [Releases](https://github.com/muhib-karim/sitara/releases) page; the owner tags them after a check on a phone.
 
 ## Screenshots
 
@@ -44,7 +42,12 @@
 | :---: | :---: | :---: | :---: | :---: | :---: | :---: |
 | <img src="docs/screenshots/home_dark.png" alt="Home with mood chips, Quick picks, Listen again and Your likes over the floating glass dock" width="160"> | <img src="docs/screenshots/player_dark.png" alt="Now Playing on the blurred cover: artwork, title, round glass buttons, thick scrubber and controls" width="160"> | <img src="docs/screenshots/lyrics_dark.png" alt="Hero lyrics on the blurred cover: the sung line in white, the others dimmed and blurred, under a compact header" width="160"> | <img src="docs/screenshots/search_dark.png" alt="Search with recent searches and Moods &amp; genres as colour tiles" width="160"> | <img src="docs/screenshots/library_dark.png" alt="Library with Liked songs and Downloads pinned, Your stats, Recently played, kind chips, the order and a grid of playlists" width="160"> | <img src="docs/screenshots/stats_dark.png" alt="Your stats: this week's time listened and plays, a chart of the hours you listen in, and your top songs" width="160"> | <img src="docs/screenshots/equaliser_dark.png" alt="Equaliser with presets, ten band faders and their gains" width="160"> |
 
-<sub>Recorded by the Record screenshots workflow (Roborazzi on Robolectric) from hand-built fixtures shaped like a listener's library; release builds contain no sample data. Light versions and more screens live in docs/screenshots.</sub>
+
+| Automix | Share | Preview | Palette | বাংলা | Right to left |
+| :---: | :---: | :---: | :---: | :---: | :---: |
+| <img src="docs/screenshots/automix_dark.png" alt="Now Playing during an automix blend, the readout saying Automix, 124 to 128 BPM, 8 bars" width="160"> | <img src="docs/screenshots/share_dark.png" alt="The share sheet with an album's QR code, its link, Send link and Share QR image" width="160"> | <img src="docs/screenshots/preview_dark.png" alt="A long-press preview of an album: cover, name, Play, Shuffle, Open, Share and its first songs" width="160"> | <img src="docs/screenshots/palette_indigo_ink_dark.png" alt="Home in the Indigo ink palette, violet accent on ink-tinted surfaces" width="160"> | <img src="docs/screenshots/library_bn_device.png" alt="The Library in Bangla on the API 34 emulator" width="160"> | <img src="docs/screenshots/album_rtl_dark.png" alt="An album page mirrored for a right-to-left language" width="160"> |
+
+<sub>Recorded by the Record screenshots workflow (Roborazzi on Robolectric) from hand-built fixtures shaped like a listener's library; release builds contain no sample data. The Bangla Library is a capture from the Device screens workflow on the API 34 emulator. Light versions and more screens live in docs/screenshots.</sub>
 
 </div>
 
@@ -76,9 +79,10 @@ Planned, not built yet: *Sitara Sync* (end-to-end encrypted sync through storage
 | | Scrobbling, opt-in: ListenBrainz with your user token, Last.fm by signing in on last.fm in the browser (only in builds made with a Last.fm API key); now playing, plays that count (over 30 s, half or 4 minutes heard) kept on the phone while offline and each sent once, Send now, Disconnect, library songs only, Pause; tokens encrypted with a Keystore key | 🧪 |
 | | Liked songs and Downloads pinned with their counts; playlists, songs, albums, artists or downloads as a grid of covers or a list (kept); ordered by Recently added or A to Z, and for songs and artists also by Recently played or Most played from your play history; 2 × 2 collages for playlists with four covers | 🧪 |
 | | Your own playlists: create, rename, delete, drag to reorder, remove songs; Add to playlist from any song or the player | 🧪 |
-| | Import playlist: a YouTube or YouTube Music playlist link (pasted or shared to Sitara) or an M3U/CSV file; songs found by title, artist and length, uncertain matches reviewed with their covers (Use this, Other matches, Skip); found / to check / not found counts, Cancel, resume after an interruption without duplicates, a repeat import updates its playlist; up to 2,000 songs | 🧪 |
+| | Import playlist: a YouTube or YouTube Music playlist link, a public Spotify playlist or album link (the first 100 songs Spotify shows without an account) or an M3U/CSV file; songs found by title, artist and length, uncertain matches reviewed with their covers (Use this, Other matches, Skip); found / to check / not found counts, Cancel, resume after an interruption without duplicates, a repeat import updates its playlist; up to 2,000 songs | 🧪 |
 | | On this phone: the music saved on the phone (with the music permission) and in folders you pick (no permission needed), as songs, albums, artists or folders, in a grid or list and your order; files without tags are named after the file; the same song in two places is listed once; a folder Sitara can no longer read keeps its songs and offers Relink folder | 🧪 |
 | | Songs on the phone play, queue, like, join playlists, count in stats, scrobble and find lyrics by their tags like streamed songs; Search lists matching ones first with an On this phone badge, with or without a connection | 🧪 |
+| | Export downloads to a folder you pick (Settings → Downloads or Library's Downloads): Opus as `.opus`, AAC as `.m4a`, tagged with title, artist, album, cover and plain lyrics, a `.lrc` beside songs with synced lyrics; exporting again replaces the files | 🧪 |
 | | Backup and restore: likes, saved albums and artists, playlists, listening history, each song's volume and lyrics source, and settings in one JSON file saved where you choose; a restore checks the whole file first and changes nothing if it is damaged | 🧪 |
 | **Offline** | Download a song from its menu, or Download all on an album, a playlist or Liked songs; downloaded songs play with no connection and carry a badge | 🧪 |
 | | Downloads in the Library: progress, waiting for Wi-Fi, failed with retry, cancel and delete; downloads finish in the background with a notification | 🧪 |
@@ -100,25 +104,29 @@ Planned, not built yet: *Sitara Sync* (end-to-end encrypted sync through storage
 | **Sound** | Normalise loudness (on by default): gentle levelling toward −14 LUFS, at most +6 dB, peaks kept under −1 dBFS | 🧪 |
 | | Gapless: the next song's stream is looked up while the current one plays, so songs join without inserted silence | 🧪 |
 | | Crossfade, Off or 1 to 12 s; songs from one album stay gapless | 🧪 |
+| | Automix: tempo, beats and bar lines found in each song's first and last half minute (kept on the phone); blends start on a bar line over 16, 8 or 4 whole bars, the next song starts on its first bar line, tempos within 8 % are matched and held on the beat, the louder song is brought down; Now Playing shows the tempos and bars | 🧪 |
 | | Skip silence (off by default) | 🧪 |
 | | Equaliser: 10 bands (31 Hz to 16 kHz, ±12 dB) on faders that fill from 0 dB, preamp, ten presets and your own bands, applied while playing with a limiter against clipping; or the phone's own equaliser where it has one, never both | 🧪 |
 | | Volume for this song: −6 to +6 dB, kept with the song | 🧪 |
 | **Lyrics** | Synced lyrics from LRCLIB in large heavy type under a compact header (cover, title, artist, Like, More) that follow the song and seek on tap; scrolling by hand pauses following until "Back to current line"; plain lyrics when nothing is synced; cached on the device | 🧪 |
-| | Two sources, LRCLIB and YouTube Music, asked at once: synced lyrics first, then the closest match; a "Source" chip lists every match (synced or plain, lines, length, first lines) and a pick is kept for the song; with none found, the sources are named and Try again asks them again | 🧪 |
+| | Three sources, LRCLIB, KuGou and YouTube Music, asked at once: synced lyrics first, then the closest match; a "Source" chip lists every match (synced or plain, lines, length, first lines) and a pick is kept for the song; with none found, the sources are named and Try again asks them again | 🧪 |
 | | Translate (off by default): each line's translation under it, by MyMemory, into the app's language or one you pick; translating, offline, daily limit and errors each say so | 🧪 |
 | | Lyric cards: pick one to five lines, choose the blurred cover, the cover's colour or paper white, and share a 1080 × 1350 image | 🧪 |
 | | Bangla, Hindi and Urdu lines and cards shape correctly; right-to-left lines start at the right edge | ✅ |
 | | LRC and enhanced LRC parsing (offsets, repeated timestamps, word timing) | ✅ |
-| **Settings** | Appearance with a live preview: System / Light / Dark, Pure black, wallpaper colours (Android 12+, on by default), six accents or From artwork, artwork colours across the app; reduced motion | ✅ |
+| **Settings** | Appearance with a live preview: System / Light / Dark, Pure black, wallpaper colours (Android 12+, on by default), seven palettes (an accent with matching surfaces), six accents or From artwork, artwork colours across the app; reduced motion | ✅ |
+| | Language: the whole app in English and Bangla; on Android 13+ pick the phone's language, English or বাংলা in Appearance or the system's per-app setting; right-to-left layouts mirror | ✅ |
+| **Sharing** | Share a song, album, playlist or artist: a QR code to scan from the screen (Sitara's own encoder), Send link, or a QR card image | ✅ |
+| | Long-press an album, playlist or artist for a preview: cover, first songs, Play, Shuffle, Open, Share | 🧪 |
+| **Access** | Every main screen checked in CI for named controls, 48 dp targets and headings; screenshots at 200 % text, in Bangla and right to left; predictive back on Now Playing | ✅ |
 | **Source** | Live YouTube Music search (songs, albums, artists, playlists) with loading, empty, error and retry states (NewPipeExtractor) | 🧪 |
 | | Playback: audio-only stream (opus or m4a) at the quality set for Wi-Fi or mobile data (Auto, High, Normal, Data saver); codec and bitrate shown in Now Playing | 🧪 |
 | | Links: paste a YouTube Music, YouTube or youtu.be link into Search, or share it to Sitara, to play that song. Tapping a link opens Sitara once it is allowed under Android's "Open by default" settings | 🧪 |
 | | Artist, album and playlist pages with Play all and Shuffle | 🧪 |
 | | Radio: Start radio from Up next, and a queue about to run out continues with related songs | 🧪 |
-| **Later** | Resolver health checks, Spotify import, downloads exported as tagged files | Not started |
-| **Accounts** | Account library sync, Cast | Phase C |
-| | Sitara Sync, LAN remote control, smart offline | Phase C |
-| **Premium** | Animated canvas, automix, lyric translation and transliteration, Wear OS remote, TV layout | Phase D |
+| **Later** | Resolver health checks, Wear OS remote, more translations | Not started |
+| **Not supported** | Google account library sync, Cast, listen together, Discord presence (see [PARITY.md](docs/plan/PARITY.md) for why) | — |
+| **Phase D** | Animated canvas, transliteration, TV layout, LAN remote control | Planned |
 
 ✅ covered by unit or screenshot tests · 🧪 tested on the JVM, awaiting a real-device check
 
@@ -132,6 +140,9 @@ Planned, not built yet: *Sitara Sync* (end-to-end encrypted sync through storage
 - **Lyric cards.** A card is drawn by the app and written as a PNG to its cache, then handed to the app you pick in the share sheet with read access to that file only.
 - **Songs on the phone.** With the music permission (Android 13+ asks for music and audio only), Sitara reads the phone's music through Android's MediaStore; a folder you pick through the system's folder picker is read through the Storage Access Framework, which grants that folder alone, kept across restarts. Tags come from MediaStore or the file itself; covers are copied from the files into the app's storage, one per album. Nothing is uploaded, and the files are never changed.
 - **Backups.** A backup is written only where you choose, through the system's file picker, as plain JSON you can read. It names its format, a schema version and the app version that wrote it.
+- **Exports.** An export copies each whole download out of the cache, rewrites WebM Opus as Ogg Opus (the frames copied, nothing re-encoded) or tags MP4 in place, adds the cover and lyrics from the phone, and writes the file through the folder grant you gave the system's folder picker. Nothing goes over the network.
+- **Automix.** With Automix on, Sitara decodes the first and last 30 seconds of the playing song and the next one with Android's own decoders (from the download, the file on the phone, or the stream's byte ranges), finds the tempo, beats and bar lines on the phone, and keeps them in the on-device database. The crossfade player then starts the blend on a bar line, time-stretches the outgoing song to the next song's tempo and nudges it onto the beat while both play.
+- **Spotify.** A Spotify link is read from the page Spotify serves for embedding a playlist or album in other sites; it needs no account or key and lists at most 100 songs. Each song is then looked up in YouTube Music like a file's.
 - **Downloads.** A download stores the song's audio in an app-private cache through Media3's download manager, resolving a fresh stream URL whenever it starts or resumes. The player always looks in that cache first, so a downloaded song plays with no connection. Downloads wait for Wi-Fi unless you turn off "Download on Wi-Fi only".
 - **Sound.** Loudness levelling runs inside the audio pipeline and adjusts gain slowly as a song plays. Crossfade hands the end of a song to a second player while the next one starts; the main player keeps the queue, so skipping, editing Up next and restoring after a restart behave as usual. While a song plays, the stream of the song that follows it is looked up ahead, so the player has it ready at the join (and a skip to it starts at once). Speed and pitch are applied by the player for as long as playback runs; skip silence is Media3's silence-skipping step in the same audio chain. The equaliser runs after the leveller in Sitara's own audio step (a filter per band, a song's volume trim with the preamp, then a limiter); with the phone's equaliser chosen, Sitara's bands stay flat and the phone's equaliser gets the player's audio session.
 
@@ -153,8 +164,12 @@ Planned, not built yet: *Sitara Sync* (end-to-end encrypted sync through storage
 - Covers are cached on the device, and the cache can drop old covers when storage runs low; a downloaded song played offline then shows its generated cover instead.
 - Android Auto and the widget have been tested on the JVM, not yet on a car head unit, the Desktop Head Unit or a real launcher. Android Auto may not show covers in browse lists, because the browse items carry web image addresses and Auto asks for content addresses there (the playing song's cover shows either way).
 - The widget's progress line moves in 15-second steps, so it can trail the song by up to 15 seconds.
-- Imports have been tested on the JVM and in screenshots, not yet with a real playlist on a phone (YouTube refuses the cloud test machines). A large file is looked up one song at a time, so 2,000 songs take several minutes. Spotify playlists can't be imported yet (that needs an API key).
+- Imports have been tested on the JVM and in screenshots, not yet with a real playlist on a phone (YouTube refuses the cloud test machines). A large file is looked up one song at a time, so 2,000 songs take several minutes. A Spotify link brings in the first 100 songs Spotify shows without an account; for longer playlists, export a CSV (for example with Exportify) and import it too. Reading Spotify's public page can break when Spotify changes it; the import then says so.
 - Stream quality picks from what YouTube offers for a song; YouTube's own bitrates vary, so "High" is usually 128 to 160 kbps. Downloads always take the best stream. A song played from a download shows no codec readout, because the readout comes from looking the stream up.
+- Automix reads the first and last half minute of each song once (again over the network for streamed songs) and has been checked on the CI emulator with a generated drum track, not yet listened to on a phone with real music. Without a clear beat (ambient, classical, spoken word) it falls back to a 6-second crossfade.
+- Exported files have been read back by tests and by ffprobe on generated files, not yet opened by music apps on a phone. A WebM download that is not Opus (rare) is copied untagged.
+- The Bangla translation is complete but has not been reviewed by a native editor yet; text from YouTube Music (shelves, moods) stays as YouTube Music writes it. The language picker needs Android 13; older phones follow the phone's language.
+- Performance gates run on the CI emulator with software rendering, so their thresholds are loose; they catch large regressions, not small ones.
 - An unofficial client can break when YouTube changes; fixes land in `:source:youtube`.
 
 ## Architecture
@@ -245,8 +260,8 @@ The debug APK is written to `app/build/outputs/apk/debug/`.
 
 - **Phase A: foundation** (`v0.1.0`). Design system, navigation, player sheet, service-owned queue, lyrics engine, settings, CI with screenshot verification.
 - **Phase B: real source** (complete, `0.2.0` to `0.6.0`). Search and browse, links, radio, the on-device library and playlists, a real Home, background playback that survives restarts, synced lyrics, downloads and offline play, loudness levelling and crossfade. Carried over: health checks, local files, import and backup.
-- **Phase C: beat the field** (`0.7.0` onward, [plan](docs/plan/PHASE_C_PLAN.md), [parity table](docs/plan/PARITY.md)). Real artwork and an artwork-coloured player first, then gapless playback, speed and a sleep timer, an equaliser, local audio, portable downloads and backup, more lyric sources, automix, widgets, Android Auto and scrobbling, imports and polish.
-- **Phase D: premium touches.** Animated canvas, automix, lyric translation and transliteration, Wear OS remote, TV layout.
+- **Phase C: beat the field** (complete, `0.7.0` to `1.0.0`, [plan](docs/plan/PHASE_C_PLAN.md), [parity table](docs/plan/PARITY.md)). Real artwork and an artwork-coloured player first, then gapless playback, speed and a sleep timer, an equaliser, local audio, portable downloads and backup, more lyric sources, automix, widgets, Android Auto and scrobbling, imports and polish.
+- **Phase D: premium touches.** Animated canvas, transliteration, Wear OS remote, TV layout, more translations.
 
 Follow progress in the [CHANGELOG](CHANGELOG.md) and on the [issue tracker](https://github.com/muhib-karim/sitara/issues).
 

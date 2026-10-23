@@ -4,6 +4,8 @@ Phase B (v0.2.0 to v0.6.0) made Sitara a real player: live YouTube Music search 
 
 Phase C closes the remaining gaps against the four apps Sitara is measured against (BitChord, Metrolist, Meld and ReVanced YouTube Music) and adds the things none of them do well. Each slice is one release with a signed APK, and it ships only when CI, the secret scan and the device screenshot suite are green on the release commit. The live parity table is [PARITY.md](PARITY.md); every slice updates it.
 
+Status (2026-10-23): every slice below is on `main` as the 1.0.0 candidate (c1 to c4 as v0.7.0 to v0.10.0 and polish slices p1 to p10; the rest in SITARA100 pass 1, see [the report](../reports/REPORT_v100.md)). What permitted access cannot do is listed as not supported in [PARITY.md](PARITY.md).
+
 Rules that hold for every slice:
 
 - Tests first for every behaviour change; no network in unit tests.

@@ -6,6 +6,33 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-10-23
+
+The rest of Phase C, and the first release candidate: every slice of the Phase C plan is in.
+
+### Added
+
+- Settings → Downloads → Export to a folder (also Export on Library's Downloads): downloaded songs copied to a folder you pick as files any music app or computer can play, Opus as `.opus` and AAC as `.m4a`, tagged with title, artist, album, the cover and plain lyrics, with a `.lrc` file beside each song that has synced lyrics. Exporting again replaces the files; a song not fully downloaded is skipped and counted.
+- KuGou as a third lyrics source (no key), with synced lyrics for many songs LRCLIB lacks; credit lines are dropped and it ranks with the others.
+- Automix (Settings → Sound): songs blend on the beat. Sitara reads the first and last half minute of each song once, finds its tempo, beats and bar lines, and keeps them on the phone. A blend starts on a bar line and lasts 16, 8 or 4 whole bars, the next song starts on its first bar line, a tempo within 8 % is matched (half and double time count) and kept on the beat while both play, and the louder song is brought down. Without a clear beat it is a 6-second crossfade; songs from one album stay gapless. Now Playing shows "Automix · 124 → 128 BPM · 8 bars" during a blend.
+- Import a public Spotify playlist or album by its link (pasted or shared to Sitara), without an account or key: the first 100 songs Spotify shows publicly are looked up in YouTube Music and reviewed like a file's; a longer playlist says so and points to a CSV export.
+- Share a song (from its menu), an album, a playlist or an artist (from its page): a sheet with a QR code to scan from the screen, Send link, and Share QR image. Songs on the phone have no link and no Share.
+- Long-press an album, playlist or artist anywhere (Home, Search, Library, artist pages) for a preview: cover and name at once, the first songs as they load, Play, Shuffle, Open and Share.
+- Palettes in Appearance: seven ready-made looks (Sitara, Saffron dusk, Lotus, Indigo ink, Harbour, Monsoon, Tea garden), each an accent with a warm, cool, ink or green cast on the surfaces, all readable at 4.5:1 in light, dark and pure black.
+- Predictive back on Now Playing: the stage shrinks toward the dock as you hold the back gesture, springs back if you cancel and collapses when you let go.
+- Bangla: the whole app is translated. On Android 13 and later, Appearance → Language picks the phone's language, English or বাংলা, and Sitara is in the system's per-app language list. Layouts mirror in right-to-left languages.
+
+### Changed
+
+- Every screen's text comes from string resources; section and page titles are headings for TalkBack.
+- The app carries a baseline profile, so its own code is compiled ahead of time on install.
+- The database is at version 11 (a new table for automix's beat analyses, and a column noting an import Spotify showed only part of); existing data is kept.
+
+### Tests and checks
+
+- An accessibility gate over every main screen (each control named, at least 48 × 48 dp, headings present), a translation check (every string has a Bangla one with the same arguments), and screenshots in Bangla, right to left and at 200 % text.
+- Device screens decodes a drum track on the emulator through the platform decoder and checks automix finds 126 BPM, captures four screens in Bangla, and gates cold start and scrolling jank on the minified build.
+
 ## [0.10.0] - 2026-10-21
 
 Polish slice 10: your own music, local audio, backup and restore.
@@ -387,7 +414,8 @@ Phase A: foundation, plus the first UI redesign.
 - GitHub Actions workflows: CI (ktlint, unit tests, screenshot tests, debug APK artifact), release on `v*` tags with SHA256SUMS, GitHub Pages site, gitleaks scanning and a manual screenshot refresh workflow.
 - Project documentation: README, architecture and design system guides, contributing guide, code of conduct, security policy and the project website.
 
-[Unreleased]: https://github.com/muhib-karim/sitara/compare/v0.10.0...HEAD
+[Unreleased]: https://github.com/muhib-karim/sitara/compare/v1.0.0...HEAD
+[1.0.0]: https://github.com/muhib-karim/sitara/compare/v0.10.0...v1.0.0
 [0.10.0]: https://github.com/muhib-karim/sitara/compare/v0.9.9...v0.10.0
 [0.9.9]: https://github.com/muhib-karim/sitara/compare/v0.9.8...v0.9.9
 [0.9.8]: https://github.com/muhib-karim/sitara/compare/v0.9.7...v0.9.8
