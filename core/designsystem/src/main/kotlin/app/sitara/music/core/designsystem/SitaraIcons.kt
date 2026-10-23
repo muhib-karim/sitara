@@ -11,8 +11,9 @@ import androidx.compose.ui.unit.dp
 
 /** Sitara's own geometric icon set, drawn on a 24-unit grid. */
 object SitaraIcons {
-    private fun icon(name: String, filled: Boolean = true, block: PathBuilder.() -> Unit): ImageVector =
-        ImageVector.Builder(name, 24.dp, 24.dp, 24f, 24f).apply {
+    // Icons that point along the reading direction ([mirror]) flip in right-to-left languages; media controls do not.
+    private fun icon(name: String, filled: Boolean = true, mirror: Boolean = false, block: PathBuilder.() -> Unit): ImageVector =
+        ImageVector.Builder(name, 24.dp, 24.dp, 24f, 24f, autoMirror = mirror).apply {
             if (filled) {
                 path(fill = SolidColor(Color.Black), pathBuilder = block)
             } else {
@@ -92,7 +93,7 @@ object SitaraIcons {
         moveTo(16.6f, 7.4f); lineTo(18.4f, 5.6f)
     }
     val ChevronDown = icon("chevron_down", filled = false) { moveTo(6f, 9.5f); lineTo(12f, 15.5f); lineTo(18f, 9.5f) }
-    val Back = icon("back", filled = false) { moveTo(15f, 5f); lineTo(8f, 12f); lineTo(15f, 19f) }
+    val Back = icon("back", filled = false, mirror = true) { moveTo(15f, 5f); lineTo(8f, 12f); lineTo(15f, 19f) }
     val Close = icon("close", filled = false) {
         moveTo(6f, 6f); lineTo(18f, 18f); moveTo(18f, 6f); lineTo(6f, 18f)
     }
