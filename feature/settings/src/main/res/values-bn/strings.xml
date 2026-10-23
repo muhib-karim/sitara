@@ -17,7 +17,7 @@
     <string name="settings_automix">অটোমিক্স</string>
     <string name="settings_automix_description">পুরো বার জুড়ে বিটে বিটে গান মেলায়, টেম্পো ও আওয়াজ মিলিয়ে। বিট খুঁজতে প্রতিটি গানের প্রথম ও শেষ আধা মিনিট একবার পড়ে নেয়।</string>
     <string name="settings_library">লাইব্রেরি</string>
-    <string name="settings_import_playlist">প্লেলিস্ট ইমপোর্ট</string>
+    <string name="settings_import_playlist">প্লেলিস্ট আমদানি</string>
     <string name="settings_import_playlist_value">লিংক বা ফাইল</string>
     <string name="settings_backup_and_restore">ব্যাকআপ ও রিস্টোর</string>
     <string name="settings_backup_and_restore_value">ফাইলে</string>
