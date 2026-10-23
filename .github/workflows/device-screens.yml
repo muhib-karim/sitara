@@ -66,6 +66,12 @@ jobs:
             adb shell content call --uri content://media --method scan_volume --arg external_primary || true
             adb shell pm grant app.sitara.music android.permission.READ_MEDIA_AUDIO
             python3 tools/capture-device-screens.py
+            # Automix decodes songs with the platform's extractor and decoder; check both ends of a 126 BPM track.
+            adb shell am start -W -n app.sitara.music/.AutomixCheckActivity
+            sleep 15
+            adb pull /sdcard/Android/data/app.sitara.music/files/automix-check.txt artifacts/device-screens/automix-check.txt || true
+            cat artifacts/device-screens/automix-check.txt || true
+            python3 tools/check_automix.py artifacts/device-screens/automix-check.txt
             adb install -r app/build/outputs/apk/release/app-release.apk
             adb install -r app/build/outputs/apk/androidTest/debug/app-debug-androidTest.apk
             adb shell appwidget grantbind --package app.sitara.music --user 0

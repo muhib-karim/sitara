@@ -63,7 +63,7 @@ class MediaCodecRegionDecoder(
 }
 
 /** Decodes [REGION_MS] from the start or the end of the selected file to mono floats. */
-internal fun decodeSide(extractor: MediaExtractor, side: SongSide, fallbackDurationMs: Long): Pcm? {
+fun decodeSide(extractor: MediaExtractor, side: SongSide, fallbackDurationMs: Long): Pcm? {
     val index = (0 until extractor.trackCount).firstOrNull { extractor.getTrackFormat(it).getString(MediaFormat.KEY_MIME)?.startsWith("audio/") == true }
         ?: return null
     extractor.selectTrack(index)

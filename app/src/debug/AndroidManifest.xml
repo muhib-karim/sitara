@@ -8,5 +8,10 @@
             android:exported="true"
             android:theme="@style/Theme.Sitara"
             android:windowSoftInputMode="adjustResize" />
+        <!-- Decodes a bundled drum track and logs its tempo, so Device screens checks automix's decoding on a real Android. -->
+        <activity
+            android:name=".AutomixCheckActivity"
+            android:exported="true"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
     </application>
 </manifest>
