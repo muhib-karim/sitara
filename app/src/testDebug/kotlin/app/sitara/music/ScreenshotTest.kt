@@ -419,6 +419,8 @@ class ScreenshotTest {
     @Test fun lyricsFailed() = shot("lyrics_failed", dark = true, expanded = true, page = 1, playerState = playing.copy(lyrics = LyricsState.Failed))
 
     // Bangla, right to left (Arabic locale, no Arabic strings yet, so English text in a mirrored layout) and 200 % text.
+    // Robolectric breaks some Bangla words in the large titles (their negative letter spacing); Android itself does not,
+    // as Device screens' Bangla captures show, so these baselines guard layout, not line breaking.
     @Config(qualifiers = "bn-w411dp-h891dp-xxhdpi")
     @Test fun homeBangla() = shot("home_bn", dark = true, greeting = "শুভ সন্ধ্যা")
 

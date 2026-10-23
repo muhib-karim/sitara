@@ -24,7 +24,7 @@ BANGLA_SCREENS = {
     "home": "হোম",
     "library": "পছন্দের গান",
     "settings": "চেহারা",
-    "player": "Collapse player",
+    "player": "প্লেয়ার ছোট করুন",
 }
 
 
