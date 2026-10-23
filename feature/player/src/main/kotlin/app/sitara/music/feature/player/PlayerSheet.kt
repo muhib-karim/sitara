@@ -2,7 +2,7 @@
 
 package app.sitara.music.feature.player
 
-import androidx.activity.compose.BackHandler
+import androidx.activity.compose.PredictiveBackHandler
 import androidx.compose.animation.AnimatedContent
 import androidx.compose.animation.SharedTransitionLayout
 import androidx.compose.animation.animateContentSize
@@ -24,6 +24,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -31,7 +32,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
@@ -39,6 +42,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
@@ -95,7 +99,17 @@ fun PlayerSheet(
     val track = state.track
     val open = expanded && track != null
     PlayerSystemBars(open)
-    BackHandler(enabled = open) { expanded = false }
+    // Predictive back: while the gesture is held the stage shrinks and drops toward the dock; letting go collapses it,
+    // cancelling springs it back. With reduced motion it only dims.
+    var backProgress by remember { mutableFloatStateOf(0f) }
+    PredictiveBackHandler(enabled = open) { events ->
+        try {
+            events.collect { backProgress = it.progress }
+            expanded = false
+        } finally {
+            backProgress = 0f
+        }
+    }
     LaunchedEffect(expandRequests) { expandRequests.collect { expanded = true } }
     SharedTransitionLayout(modifier.fillMaxSize()) {
         AnimatedContent(
@@ -118,6 +132,18 @@ fun PlayerSheet(
             if (full && track != null) {
                 FullPlayer(
                     state, actions, onCollapse = { expanded = false }, initialPage = initialPage, artworkModifier = coverModifier,
+                    modifier = Modifier.graphicsLayer {
+                        val p = backProgress
+                        if (reduced) {
+                            alpha = 1f - 0.4f * p
+                        } else {
+                            scaleX = 1f - BACK_SHRINK * p
+                            scaleY = 1f - BACK_SHRINK * p
+                            translationY = BACK_DROP_DP.dp.toPx() * p
+                            shape = RoundedCornerShape((SitaraRadius.Artwork.toPx() * p).coerceAtLeast(0f))
+                            clip = p > 0f
+                        }
+                    }.testTag("full-player"),
                     onArtist = { expanded = false; onArtist(it) },
                     onAddToPlaylist = { onAddToPlaylist(track) },
                     onSaveQueue = onSaveQueue,
@@ -248,3 +274,7 @@ private fun MiniPlayer(
         }
     }
 }
+
+// How far the stage shrinks and drops at the end of a back gesture.
+private const val BACK_SHRINK = 0.1f
+private const val BACK_DROP_DP = 96

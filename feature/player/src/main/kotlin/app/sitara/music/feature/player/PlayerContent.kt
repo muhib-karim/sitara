@@ -76,6 +76,7 @@ internal fun FullPlayer(
     onArtist: (String) -> Unit,
     onAddToPlaylist: () -> Unit,
     onSaveQueue: (List<Track>) -> Unit,
+    modifier: Modifier = Modifier,
 ) {
     val track = state.track ?: return
     val reduced = LocalReducedMotion.current
@@ -99,7 +100,7 @@ internal fun FullPlayer(
     val onAccent = animateArtworkColor(theme.onAccent, "stage on accent")
     MaterialTheme(colorScheme = if (wash) stage.copy(primary = accent, onPrimary = onAccent) else stage) {
         CompositionLocalProvider(LocalGlassHaze provides backdrop) {
-            Box(Modifier.fillMaxSize()) {
+            Box(modifier.fillMaxSize()) {
                 ArtworkBackdrop(track.artwork, Modifier.fillMaxSize().hazeSource(backdrop), look, theme)
                 Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
                     Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
