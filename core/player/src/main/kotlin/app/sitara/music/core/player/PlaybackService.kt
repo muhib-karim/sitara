@@ -31,12 +31,16 @@ import androidx.media3.session.MediaSession.MediaItemsWithStartPosition
 import androidx.media3.session.SessionCommand
 import androidx.media3.session.SessionError
 import androidx.media3.session.SessionResult
+import app.sitara.music.core.model.AutomixBlend
 import app.sitara.music.core.model.EqualiserSettings
 import app.sitara.music.core.model.Track
+import app.sitara.music.core.player.automix.MediaCodecRegionDecoder
+import app.sitara.music.core.player.automix.SongAnalyser
 import com.google.common.collect.ImmutableList
 import com.google.common.util.concurrent.Futures
 import com.google.common.util.concurrent.ListenableFuture
 import com.google.common.util.concurrent.SettableFuture
+import kotlin.math.roundToInt
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -87,6 +91,7 @@ class PlaybackService : MediaLibraryService() {
         )
     }
     internal lateinit var crossfader: Crossfader
+    private lateinit var analyser: SongAnalyser
     internal lateinit var player: ExoPlayer
     internal lateinit var tail: ExoPlayer
 
@@ -129,7 +134,16 @@ class PlaybackService : MediaLibraryService() {
         // ExoPlayer creates its audio session in the background and reports it here.
         player.addListener(EqualiserListener())
         port = Media3PlayerPort(player)
-        crossfader = Crossfader(player, tail, scope, trackOf = { item -> item.localConfiguration?.uri?.lastPathSegment?.let(port::track) }) {
+        analyser = SongAnalyser(scope, dependencies.songBeats, MediaCodecRegionDecoder(this, streams, dependencies.downloadCache))
+        crossfader = Crossfader(
+            player, tail, scope,
+            trackOf = { item -> item.localConfiguration?.uri?.lastPathSegment?.let(port::track) },
+            beatsOf = analyser::beatsOf,
+            onBlend = { plan ->
+                val shown = plan?.let { p -> p.outgoingGrid?.let { out -> p.incomingGrid?.let { AutomixBlend(out.bpm.roundToInt(), it.bpm.roundToInt(), p.bars) } } }
+                PlaybackEngineRegistry.showBlend(shown)
+            },
+        ) {
             tailLeveller.startFrom(leveller)
             // The tail plays the end of the song the main player is leaving, at that song's trim.
             tailEqualiser.trimDb = equaliser.trimDb
@@ -165,6 +179,14 @@ class PlaybackService : MediaLibraryService() {
             }
         }
         scope.launch {
+            // Automix reads the end of the playing song and the start of the next while they are known.
+            combine(engine.state.map { it.queue.current to it.queue.upNext.firstOrNull() }.distinctUntilChanged(), dependencies.playbackSettings.map { it.automix }) { songs, on -> songs to on }
+                .collect { (songs, on) ->
+                    analyser.enabled = on
+                    analyser.follow(songs.first, songs.second)
+                }
+        }
+        scope.launch {
             dependencies.playbackSettings.collect { settings ->
                 listOf(leveller, tailLeveller).forEach {
                     it.enabled = settings.normalisation
@@ -173,6 +195,7 @@ class PlaybackService : MediaLibraryService() {
                 equaliserChoice = settings.equaliser
                 routeEqualiser()
                 crossfader.windowMs = settings.crossfadeSeconds * 1_000L
+                crossfader.automix = settings.automix
                 // Turns the silence-skipping processor in each player's audio chain on or off.
                 player.skipSilenceEnabled = settings.skipSilence
                 tail.skipSilenceEnabled = settings.skipSilence

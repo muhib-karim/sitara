@@ -123,6 +123,12 @@ fun SettingsScreen(
                 SwitchRow("Skip silence", "Skips quiet stretches inside and between songs", settings.skipSilence) { onChange(settings.copy(skipSilence = it)) }
                 InsetDivider()
                 CrossfadeRow(settings.crossfadeSeconds) { onChange(settings.copy(crossfadeSeconds = it)) }
+                InsetDivider()
+                SwitchRow(
+                    "Automix",
+                    "Blends songs on the beat over whole bars, matching tempo and loudness. Reads the first and last half minute of each song once to find its beat.",
+                    settings.automix,
+                ) { onChange(settings.copy(automix = it)) }
             }
         }
         item(key = "library") {

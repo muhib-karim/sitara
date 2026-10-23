@@ -27,6 +27,7 @@ import app.sitara.music.core.model.StatsRange
 import app.sitara.music.core.model.Track
 import app.sitara.music.core.model.isLocal
 import app.sitara.music.core.model.toDownload
+import app.sitara.music.core.player.PlaybackEngineRegistry
 import app.sitara.music.core.player.QueueState
 import app.sitara.music.core.player.SleepTimerState
 import app.sitara.music.core.player.hasSystemEqualiser
@@ -288,7 +289,7 @@ class AppViewModel(private val app: SitaraApplication) :
 
     val playerState: StateFlow<PlayerUiState> = combine(nowPlaying, settings, trimDb, app.streamFormats, translation) { ui, s, trim, formats, translated ->
         ui.copy(equaliser = s.equaliser, systemEqualiser = systemEqualiser, trimDb = trim, stream = ui.track?.let { formats[it.id] }, translation = translated)
-    }.stateIn(viewModelScope, SharingStarted.Eagerly, PlayerUiState())
+    }.combine(PlaybackEngineRegistry.blend) { ui, blend -> ui.copy(blend = blend) }.stateIn(viewModelScope, SharingStarted.Eagerly, PlayerUiState())
 
     init {
         player.connect()

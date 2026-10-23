@@ -168,7 +168,18 @@ private fun Scrubber(state: PlayerUiState, actions: PlayerActions) {
         // What the song streams in, between the times; absent while unknown (before its stream is looked up, or played from a download).
         val format = state.stream
         val label = format?.label
-        if (format != null && label != null) {
+        val blend = state.blend
+        if (blend != null) {
+            // During an automix blend the readout says what is being matched.
+            Text(
+                "Automix · ${blend.fromBpm} → ${blend.toBpm} BPM · ${blend.bars} bars", color = SitaraColors.StageSecondary,
+                style = MaterialTheme.typography.labelMedium, textAlign = TextAlign.Center, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f).padding(horizontal = 8.dp).semantics {
+                    contentDescription = "Automix: blending from ${blend.fromBpm} to ${blend.toBpm} beats a minute over ${blend.bars} bars"
+                    liveRegion = LiveRegionMode.Polite
+                },
+            )
+        } else if (format != null && label != null) {
             Text(
                 label, color = SitaraColors.StageSecondary, style = MaterialTheme.typography.labelMedium, textAlign = TextAlign.Center, maxLines = 1,
                 overflow = TextOverflow.Ellipsis,

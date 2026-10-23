@@ -23,6 +23,7 @@ import app.sitara.music.core.model.LyricsTranslation
 import app.sitara.music.core.model.SavedQueue
 import app.sitara.music.core.model.SearchFilter
 import app.sitara.music.core.model.SitaraSettings
+import app.sitara.music.core.model.SongBeats
 import app.sitara.music.core.model.StreamFormat
 import app.sitara.music.core.model.Track
 import app.sitara.music.core.model.streamQuality
@@ -32,6 +33,8 @@ import app.sitara.music.core.player.PlaybackDependencies
 import app.sitara.music.core.player.PlaybackEngineRegistry
 import app.sitara.music.core.player.PlayerController
 import app.sitara.music.core.player.SongDownloads
+import app.sitara.music.core.player.automix.SongAnalyser
+import app.sitara.music.core.player.automix.SongBeatsStore
 import app.sitara.music.source.api.StreamResolver
 import app.sitara.music.source.lyrics.LyricsCache
 import app.sitara.music.source.lyrics.LyricsChoices
@@ -231,6 +234,14 @@ class SitaraApplication :
     override suspend fun savedQueue(): SavedQueue? = library.queue.load()
 
     override fun saveQueue(queue: SavedQueue) = writeLibrary { library.queue.save(queue) }
+
+    override val songBeats: SongBeatsStore by lazy {
+        object : SongBeatsStore {
+            override suspend fun get(trackId: String) = library.beats.get(trackId, SongAnalyser.VERSION)
+
+            override suspend fun put(beats: SongBeats) = library.beats.put(beats, SongAnalyser.VERSION)
+        }
+    }
 
     /** Runs a library write past the screen that asked for it; a failed write (disk full, a playlist deleted meanwhile) is logged, never fatal. */
     fun writeLibrary(write: suspend () -> Unit) {

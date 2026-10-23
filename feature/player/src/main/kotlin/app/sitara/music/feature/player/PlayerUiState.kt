@@ -1,5 +1,6 @@
 package app.sitara.music.feature.player
 
+import app.sitara.music.core.model.AutomixBlend
 import app.sitara.music.core.model.EqualiserSettings
 import app.sitara.music.core.model.Lyrics
 import app.sitara.music.core.model.LyricsTranslation
@@ -42,6 +43,8 @@ data class PlayerUiState(
     val trimDb: Int = 0,
     /** The codec and bitrate the current song streamed in, when its stream was looked up while the app ran. */
     val stream: StreamFormat? = null,
+    /** The automix blend playing now, if any. */
+    val blend: AutomixBlend? = null,
 )
 
 /** The current song's lyrics, looked up when it starts. */

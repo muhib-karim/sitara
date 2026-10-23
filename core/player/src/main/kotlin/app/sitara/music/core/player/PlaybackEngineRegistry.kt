@@ -1,10 +1,12 @@
 package app.sitara.music.core.player
 
 import androidx.media3.datasource.cache.Cache
+import app.sitara.music.core.model.AutomixBlend
 import app.sitara.music.core.model.Listen
 import app.sitara.music.core.model.SavedQueue
 import app.sitara.music.core.model.SitaraSettings
 import app.sitara.music.core.model.Track
+import app.sitara.music.core.player.automix.SongBeatsStore
 import app.sitara.music.source.api.StreamResolver
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -25,6 +27,15 @@ object PlaybackEngineRegistry {
 
     internal fun detach(engine: PlaybackEngine) {
         _engine.compareAndSet(engine, null)
+    }
+
+    private val _blend = MutableStateFlow<AutomixBlend?>(null)
+
+    /** The automix blend playing now, if any. */
+    val blend: StateFlow<AutomixBlend?> = _blend.asStateFlow()
+
+    internal fun showBlend(blend: AutomixBlend?) {
+        _blend.value = blend
     }
 
     /** The running service's audio session, for the device's equaliser panel; [SystemEqualiserSession.NO_SESSION] while none runs. */
@@ -65,4 +76,7 @@ interface PlaybackDependencies {
 
     /** Keeps [queue] for after a restart; called on the main thread and must outlive the service, so implementations hand the write off. */
     fun saveQueue(queue: SavedQueue)
+
+    /** Where automix keeps each song's beat analysis; null keeps none, so songs are analysed again each time the service starts. */
+    val songBeats: SongBeatsStore? get() = null
 }

@@ -31,6 +31,7 @@ import app.sitara.music.core.designsystem.SitaraSpacing
 import app.sitara.music.core.designsystem.SitaraTheme
 import app.sitara.music.core.model.AccentColor
 import app.sitara.music.core.model.Artwork
+import app.sitara.music.core.model.AutomixBlend
 import app.sitara.music.core.model.DarkMode
 import app.sitara.music.core.model.DownloadExport
 import app.sitara.music.core.model.DownloadState
@@ -443,6 +444,8 @@ class ScreenshotTest {
     }
 
     @Test fun playerLight() = shot("player", dark = false, expanded = true)
+
+    @Test fun playerAutomix() = shot("player_automix", dark = true, expanded = true, playerState = playing.copy(blend = AutomixBlend(124, 128, 8)))
 
     @Test fun lyricsDark() = shot("lyrics", dark = true, expanded = true, page = 1)
 
