@@ -9,6 +9,7 @@ import app.sitara.music.core.model.LibraryLayout
 import app.sitara.music.core.model.LibrarySort
 import app.sitara.music.core.model.SearchFilter
 import app.sitara.music.core.model.SitaraSettings
+import app.sitara.music.core.model.SurfaceTone
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertThrows
 import org.junit.Test
@@ -17,7 +18,7 @@ class SettingsCodecTest {
     @Test
     fun `round trips every field`() {
         val s = SitaraSettings(
-            darkMode = DarkMode.DARK, pureBlack = true, dynamicColor = false, accent = AccentColor.TEAL, artworkColorsAcrossApp = true, reducedMotion = true, crossfadeSeconds = 6, normalisation = false, targetLufs = -16f, downloadOnWifiOnly = false, skipSilence = true, automix = true,
+            darkMode = DarkMode.DARK, pureBlack = true, dynamicColor = false, accent = AccentColor.TEAL, artworkColorsAcrossApp = true, surfaceTone = SurfaceTone.COOL, reducedMotion = true, crossfadeSeconds = 6, normalisation = false, targetLufs = -16f, downloadOnWifiOnly = false, skipSilence = true, automix = true,
             equaliser = EqualiserSettings(enabled = true, bandsDb = listOf(-12, -7, 0, 1, 2, 3, 4, 5, 11, 12), preampDb = -5, useSystem = true),
             searchFilter = SearchFilter.PLAYLISTS, recentSearches = listOf("lo-fi beats", "Jazz, piano"),
             libraryLayout = LibraryLayout.LIST, librarySort = LibrarySort.MOST_PLAYED, pauseListeningHistory = true,
@@ -98,6 +99,13 @@ class SettingsCodecTest {
         assertEquals(false, SettingsCodec.decode(emptyMap()).skipSilence)
         assertEquals(false, SettingsCodec.decode(mapOf(SettingsCodec.SKIP_SILENCE to "1")).skipSilence)
         assertEquals(true, SettingsCodec.decode(mapOf(SettingsCodec.SKIP_SILENCE to "true")).skipSilence)
+    }
+
+    @Test
+    fun `surfaces stay neutral unless a tone was picked, and an unknown tone reads as neutral`() {
+        assertEquals(SurfaceTone.NEUTRAL, SettingsCodec.decode(emptyMap()).surfaceTone)
+        assertEquals(SurfaceTone.NEUTRAL, SettingsCodec.decode(mapOf(SettingsCodec.SURFACE_TONE to "PLAID")).surfaceTone)
+        assertEquals(SurfaceTone.INK, SettingsCodec.decode(mapOf(SettingsCodec.SURFACE_TONE to "INK")).surfaceTone)
     }
 
     @Test

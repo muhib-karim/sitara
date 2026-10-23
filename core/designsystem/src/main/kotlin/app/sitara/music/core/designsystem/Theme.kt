@@ -21,6 +21,7 @@ import app.sitara.music.core.model.AccentColor
 import app.sitara.music.core.model.Artwork
 import app.sitara.music.core.model.DarkMode
 import app.sitara.music.core.model.SitaraSettings
+import app.sitara.music.core.model.SurfaceTone
 
 object SitaraColors {
     val Saffron = Color(0xFFFF9F1C)
@@ -109,6 +110,15 @@ fun accentTone(accent: AccentColor, dark: Boolean): Color? = when (accent) {
     AccentColor.ARTWORK -> null
 }
 
+/** The colour [tone] casts over the surfaces, or null for neutral; quiet enough that the tinting keeps text at AA. */
+fun surfaceTint(tone: SurfaceTone): Color? = when (tone) {
+    SurfaceTone.NEUTRAL -> null
+    SurfaceTone.WARM -> Color(0xFF8A5A2B)
+    SurfaceTone.COOL -> Color(0xFF2B5F8A)
+    SurfaceTone.INK -> Color(0xFF3D2B8A)
+    SurfaceTone.GREEN -> Color(0xFF2B6B3E)
+}
+
 /**
  * The app's colours: Sitara's neutral chrome, tinted with the playing cover's main colour when there is a [tint], black
  * in place of dark grey when [pureBlack], and [accent] as primary once it reads at AA on every surface.
@@ -183,7 +193,8 @@ fun SitaraTheme(
         null
     }
     val accent = wallpaper ?: if (settings.accent == AccentColor.ARTWORK) cover?.let { Color(it.accent) } else accentTone(settings.accent, dark)
-    val tint = cover?.takeIf { settings.artworkColorsAcrossApp }?.let { Color(it.backdropTop) }
+    // The playing cover's tint, when the listener asked for it, outranks the palette's tone.
+    val tint = cover?.takeIf { settings.artworkColorsAcrossApp }?.let { Color(it.backdropTop) } ?: surfaceTint(settings.surfaceTone)
     CompositionLocalProvider(
         LocalReducedMotion provides settings.reducedMotion,
         LocalArtworkWash provides !settings.pureBlack,

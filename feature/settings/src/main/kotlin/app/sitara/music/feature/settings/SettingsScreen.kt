@@ -4,6 +4,7 @@ import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -17,9 +18,12 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.navigationBarsPadding
+import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.selection.toggleable
@@ -56,6 +60,7 @@ import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import app.sitara.music.core.common.formatBytes
 import app.sitara.music.core.designsystem.ArtworkPalette
@@ -69,11 +74,14 @@ import app.sitara.music.core.designsystem.SitaraSheet
 import app.sitara.music.core.designsystem.SitaraSpacing
 import app.sitara.music.core.designsystem.accentTone
 import app.sitara.music.core.designsystem.exportSummary
+import app.sitara.music.core.designsystem.sitaraColorScheme
+import app.sitara.music.core.designsystem.surfaceTint
 import app.sitara.music.core.model.AccentColor
 import app.sitara.music.core.model.AudioQuality
 import app.sitara.music.core.model.DarkMode
 import app.sitara.music.core.model.DownloadExport
 import app.sitara.music.core.model.DownloadState
+import app.sitara.music.core.model.Palette
 import app.sitara.music.core.model.SitaraSettings
 import app.sitara.music.core.model.SongDownload
 import kotlin.math.roundToInt
@@ -171,6 +179,22 @@ private fun AppearanceSettings(settings: SitaraSettings, onChange: (SitaraSettin
         InsetDivider()
         Column(Modifier.selectableGroup()) {
             Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp)) {
+                Text("Palette", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+                Text("An accent with surfaces to match", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            }
+            val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f
+            val current = Palette.of(settings.accent, settings.surfaceTone).takeIf { !wallpaper }
+            Row(Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()).padding(horizontal = 8.dp, vertical = 8.dp)) {
+                Palette.entries.forEach { palette ->
+                    PaletteCard(palette, dark, selected = palette == current) {
+                        onChange(settings.copy(accent = palette.accent, surfaceTone = palette.tone, dynamicColor = false))
+                    }
+                }
+            }
+        }
+        InsetDivider()
+        Column(Modifier.selectableGroup()) {
+            Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp)) {
                 Text("Accent", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
                 Text(
                     if (wallpaper) "From your wallpaper now. Pick a colour to use it instead." else "Buttons, highlights and the selected tab",
@@ -242,6 +266,28 @@ private fun Segment(label: String, selected: Boolean, modifier: Modifier, onClic
         contentAlignment = Alignment.Center,
     ) {
         Text(label, style = MaterialTheme.typography.labelLarge, color = if (selected) colors.onPrimary else colors.onSurface)
+    }
+}
+
+/** A palette to pick: its surface and accent side by side in one circle, ringed when chosen, named under it. */
+@Composable
+private fun PaletteCard(palette: Palette, dark: Boolean, selected: Boolean, onClick: () -> Unit) {
+    val scheme = sitaraColorScheme(dark, accent = accentTone(palette.accent, dark), tint = surfaceTint(palette.tone))
+    Column(
+        Modifier.width(76.dp).clip(RoundedCornerShape(SitaraRadius.Cover)).selectable(selected, role = Role.RadioButton, onClick = onClick)
+            .padding(vertical = 8.dp).semantics(mergeDescendants = true) {},
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(6.dp),
+    ) {
+        Box(Modifier.size(52.dp), contentAlignment = Alignment.Center) {
+            if (selected) Box(Modifier.size(52.dp).border(2.dp, MaterialTheme.colorScheme.onSurface, CircleShape))
+            Row(Modifier.size(42.dp).clip(CircleShape).border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape)) {
+                Box(Modifier.weight(1f).fillMaxHeight().background(scheme.surfaceContainerHigh))
+                Box(Modifier.weight(1f).fillMaxHeight().background(scheme.primary))
+            }
+            if (selected) Icon(SitaraIcons.Check, null, tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(18.dp).offset(x = 16.dp, y = 16.dp))
+        }
+        Text(palette.label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface, textAlign = TextAlign.Center, maxLines = 2)
     }
 }
 

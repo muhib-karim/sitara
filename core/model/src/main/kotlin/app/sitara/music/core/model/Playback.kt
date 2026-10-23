@@ -18,6 +18,26 @@ enum class AccentColor(val label: String) {
     ARTWORK("From artwork"),
 }
 
+/** The hue Sitara's surfaces take when no cover tints them: none, or a quiet warm, cool, ink or green cast. */
+enum class SurfaceTone { NEUTRAL, WARM, COOL, INK, GREEN }
+
+/** A ready-made look: an accent and a surface tone that suit each other. */
+enum class Palette(val label: String, val accent: AccentColor, val tone: SurfaceTone) {
+    SITARA("Sitara", AccentColor.SAFFRON, SurfaceTone.NEUTRAL),
+    SAFFRON_DUSK("Saffron dusk", AccentColor.SAFFRON, SurfaceTone.WARM),
+    LOTUS("Lotus", AccentColor.ROSE, SurfaceTone.WARM),
+    INDIGO_INK("Indigo ink", AccentColor.VIOLET, SurfaceTone.INK),
+    HARBOUR("Harbour", AccentColor.BLUE, SurfaceTone.COOL),
+    MONSOON("Monsoon", AccentColor.TEAL, SurfaceTone.COOL),
+    TEA_GARDEN("Tea garden", AccentColor.GREEN, SurfaceTone.GREEN),
+    ;
+
+    companion object {
+        /** The palette [accent] and [tone] make, or null for a mix of the listener's own. */
+        fun of(accent: AccentColor, tone: SurfaceTone): Palette? = entries.firstOrNull { it.accent == accent && it.tone == tone }
+    }
+}
+
 /** How much data a stream may use: Auto is High on Wi-Fi and Normal on mobile data; Normal is up to 96 kbps; Data saver the lowest offered. */
 enum class AudioQuality(val label: String) {
     AUTO("Auto"),
@@ -51,6 +71,8 @@ data class SitaraSettings(
     val accent: AccentColor = AccentColor.SAFFRON,
     /** Backgrounds, cards and chips take a tint from the cover of the song that is playing. */
     val artworkColorsAcrossApp: Boolean = false,
+    /** The surfaces' hue when no cover tints them; palettes set it with the accent. */
+    val surfaceTone: SurfaceTone = SurfaceTone.NEUTRAL,
     val reducedMotion: Boolean = false,
     val crossfadeSeconds: Int = 0,
     val normalisation: Boolean = true,

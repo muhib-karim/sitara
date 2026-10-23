@@ -8,6 +8,7 @@ import app.sitara.music.core.model.LibraryLayout
 import app.sitara.music.core.model.LibrarySort
 import app.sitara.music.core.model.SearchFilter
 import app.sitara.music.core.model.SitaraSettings
+import app.sitara.music.core.model.SurfaceTone
 
 /**
  * Settings <-> flat string map. Unknown or corrupt values fall back to defaults
@@ -19,6 +20,7 @@ object SettingsCodec {
     const val DYNAMIC_COLOR = "dynamic_color"
     const val ACCENT = "accent"
     const val ARTWORK_ACROSS_APP = "artwork_colors_across_app"
+    const val SURFACE_TONE = "surface_tone"
 
     /** Up to 0.9.3: DYNAMIC, ARTWORK or AMOLED; read only to carry AMOLED over to [PURE_BLACK]. */
     const val LEGACY_THEME = "theme_mode"
@@ -48,6 +50,7 @@ object SettingsCodec {
         DYNAMIC_COLOR to s.dynamicColor.toString(),
         ACCENT to s.accent.name,
         ARTWORK_ACROSS_APP to s.artworkColorsAcrossApp.toString(),
+        SURFACE_TONE to s.surfaceTone.name,
         REDUCED_MOTION to s.reducedMotion.toString(),
         CROSSFADE to s.crossfadeSeconds.toString(),
         NORMALISE to s.normalisation.toString(),
@@ -81,6 +84,7 @@ object SettingsCodec {
             dynamicColor = map[DYNAMIC_COLOR]?.toBooleanStrictOrNull() ?: d.dynamicColor,
             accent = map[ACCENT]?.let { v -> AccentColor.entries.firstOrNull { it.name == v } } ?: d.accent,
             artworkColorsAcrossApp = map[ARTWORK_ACROSS_APP]?.toBooleanStrictOrNull() ?: d.artworkColorsAcrossApp,
+            surfaceTone = map[SURFACE_TONE]?.let { v -> SurfaceTone.entries.firstOrNull { it.name == v } } ?: d.surfaceTone,
             reducedMotion = map[REDUCED_MOTION]?.toBooleanStrictOrNull() ?: d.reducedMotion,
             crossfadeSeconds = map[CROSSFADE]?.toIntOrNull()?.coerceIn(0, SitaraSettings.MAX_CROSSFADE_SECONDS) ?: d.crossfadeSeconds,
             normalisation = map[NORMALISE]?.toBooleanStrictOrNull() ?: d.normalisation,

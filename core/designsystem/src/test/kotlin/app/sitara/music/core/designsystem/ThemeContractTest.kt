@@ -5,6 +5,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.toArgb
 import app.sitara.music.core.model.AccentColor
+import app.sitara.music.core.model.Palette
+import app.sitara.music.core.model.SurfaceTone
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertTrue
@@ -30,6 +32,28 @@ class ThemeContractTest {
             val base = sitaraColorScheme(dark)
             assertEquals(if (dark) Color.Black else Color.White, base.background)
             assertReadable(base, "brand dark=$dark")
+        }
+    }
+
+    @Test
+    fun `every palette reads at AA in light, dark and pure black`() {
+        for (palette in Palette.entries) {
+            for (dark in listOf(true, false)) {
+                for (pureBlack in listOf(false, true)) {
+                    val scheme = sitaraColorScheme(dark, pureBlack, accent = accentTone(palette.accent, dark), tint = surfaceTint(palette.tone))
+                    assertReadable(scheme, "$palette dark=$dark black=$pureBlack")
+                }
+            }
+        }
+    }
+
+    @Test
+    fun `a toned palette really tints the surfaces, and neutral leaves them alone`() {
+        for (dark in listOf(true, false)) {
+            assertEquals(sitaraColorScheme(dark).surfaceContainerHigh, sitaraColorScheme(dark, tint = surfaceTint(SurfaceTone.NEUTRAL)).surfaceContainerHigh)
+            for (tone in SurfaceTone.entries - SurfaceTone.NEUTRAL) {
+                assertNotEquals("$tone dark=$dark", sitaraColorScheme(dark).surfaceContainerHigh, sitaraColorScheme(dark, tint = surfaceTint(tone)).surfaceContainerHigh)
+            }
         }
     }
 

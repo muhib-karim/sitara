@@ -59,6 +59,7 @@ import app.sitara.music.core.model.SitaraSettings
 import app.sitara.music.core.model.SongDownload
 import app.sitara.music.core.model.StatsRange
 import app.sitara.music.core.model.StreamFormat
+import app.sitara.music.core.model.SurfaceTone
 import app.sitara.music.core.model.Track
 import app.sitara.music.core.model.UserPlaylist
 import app.sitara.music.core.model.localTrackId
@@ -198,6 +199,7 @@ class ScreenshotTest {
         page: Int = 0,
         pureBlack: Boolean = false,
         accent: AccentColor = AccentColor.SAFFRON,
+        tone: SurfaceTone = SurfaceTone.NEUTRAL,
         artworkAcrossApp: Boolean = false,
         reduced: Boolean = true,
         fontScale: Float = 1f,
@@ -222,7 +224,7 @@ class ScreenshotTest {
         beforeCapture: () -> Unit = {},
     ) {
         val settings = SitaraSettings(
-            darkMode = if (dark) DarkMode.DARK else DarkMode.LIGHT, pureBlack = pureBlack, accent = accent, artworkColorsAcrossApp = artworkAcrossApp,
+            darkMode = if (dark) DarkMode.DARK else DarkMode.LIGHT, pureBlack = pureBlack, accent = accent, surfaceTone = tone, artworkColorsAcrossApp = artworkAcrossApp,
             // Robolectric has no wallpaper to take colours from; the shots show Sitara's own accents.
             dynamicColor = false, reducedMotion = reduced, libraryLayout = libraryLayout,
         )
@@ -460,6 +462,12 @@ class ScreenshotTest {
     @Test fun settingsLight() = shot("settings", dark = false, settingsOpen = true)
 
     @Test fun appearanceAccentDark() = shot("appearance_violet", dark = true, settingsOpen = true, accent = AccentColor.VIOLET)
+
+    @Test fun appearanceMonsoonDark() = shot("appearance_monsoon", dark = true, settingsOpen = true, accent = AccentColor.TEAL, tone = SurfaceTone.COOL)
+
+    @Test fun appearanceMonsoonLight() = shot("appearance_monsoon", dark = false, settingsOpen = true, accent = AccentColor.TEAL, tone = SurfaceTone.COOL)
+
+    @Test fun homeIndigoInk() = shot("home_indigo_ink", dark = true, accent = AccentColor.VIOLET, tone = SurfaceTone.INK)
 
     @Test fun appearanceAccentLight() = shot("appearance_violet", dark = false, settingsOpen = true, accent = AccentColor.VIOLET)
 
