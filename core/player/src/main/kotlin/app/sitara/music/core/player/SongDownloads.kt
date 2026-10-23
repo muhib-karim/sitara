@@ -105,6 +105,9 @@ class SongDownloads(
         }
     }.sortedByDescending { it.startTimeMs }.mapNotNull { DownloadedTrack.decode(it.request.data) }
 
+    /** The downloaded file of [trackId], or null unless all of it is in the cache (see [readWholeDownload]). */
+    suspend fun readWhole(trackId: String): ByteArray? = withContext(Dispatchers.IO) { readWholeDownload(cache, trackId) }
+
     /** Starts the service so downloads left unfinished when the process ended carry on; call while the app is in the foreground. */
     fun resumeUnfinished() = DownloadService.start(context, SitaraDownloadService::class.java)
 
