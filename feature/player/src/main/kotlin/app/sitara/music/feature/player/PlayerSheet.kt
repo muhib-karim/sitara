@@ -71,6 +71,7 @@ import app.sitara.music.core.designsystem.animateArtworkColor
 import app.sitara.music.core.designsystem.rememberArtworkTheme
 import app.sitara.music.core.model.Track
 import kotlin.math.abs
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 
@@ -106,11 +107,15 @@ fun PlayerSheet(
     PredictiveBackHandler(enabled = open) { events ->
         try {
             events.collect { backProgress = it.progress }
+            // Kept as it is while the stage animates out, so it leaves from where the gesture left it.
             expanded = false
-        } finally {
+        } catch (e: CancellationException) {
             backProgress = 0f
+            throw e
         }
     }
+    // Opened again, the stage starts whole.
+    LaunchedEffect(open) { if (open) backProgress = 0f }
     LaunchedEffect(expandRequests) { expandRequests.collect { expanded = true } }
     SharedTransitionLayout(modifier.fillMaxSize()) {
         AnimatedContent(

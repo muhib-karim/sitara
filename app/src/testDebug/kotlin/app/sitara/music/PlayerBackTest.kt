@@ -92,6 +92,21 @@ class PlayerBackTest {
         compose.onNodeWithContentDescription("Open player").assertIsDisplayed()
     }
 
+    @Test fun theStageLeavesFromWhereTheGestureLeftIt() {
+        render()
+        val full = stageWidth()
+        compose.mainClock.autoAdvance = false
+        compose.runOnUiThread {
+            back.dispatchOnBackStarted(event(0f))
+            back.dispatchOnBackProgressed(event(1f))
+            back.onBackPressed()
+        }
+        compose.mainClock.advanceTimeByFrame()
+        // Still on screen as it fades out, and still shrunk: no snap back to full size.
+        assertTrue("width ${stageWidth()} of $full", stageWidth() < full * 0.95f)
+        compose.mainClock.autoAdvance = true
+    }
+
     @Test fun withReducedMotionTheStageKeepsItsSize() {
         render(reduced = true)
         val full = stageWidth()
