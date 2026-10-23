@@ -12,6 +12,7 @@ import java.io.File
 import java.nio.file.Files
 import org.junit.After
 import org.junit.Assert.assertArrayEquals
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -58,6 +59,19 @@ class WholeDownloadTest {
     fun `a partly fetched download gives nothing`() {
         store("song3", song, length = 100_000)
         assertNull(readWholeDownload(cache, "song3"))
+    }
+
+    @Test
+    fun `a whole download reads by ranges for the extractor, and a partial one gives no source`() {
+        store("song4", song)
+        val source = cachedDownloadSource(cache, "song4")!!
+        assertEquals(song.size.toLong(), source.size)
+        val part = ByteArray(1_000)
+        assertEquals(1_000, source.readAt(150_000, part, 0, 1_000))
+        assertArrayEquals(song.copyOfRange(150_000, 151_000), part)
+        assertEquals(-1, source.readAt(song.size.toLong(), part, 0, 10))
+        store("song5", song, length = 100_000)
+        assertNull(cachedDownloadSource(cache, "song5"))
     }
 
     @Test

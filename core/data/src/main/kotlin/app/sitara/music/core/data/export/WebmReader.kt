@@ -1,10 +1,13 @@
 package app.sitara.music.core.data.export
 
+/** One frame of a WebM file, as a range of the file's bytes, so frames are not copied out of it. */
+internal class Frame(val offset: Int, val length: Int)
+
 /** The audio of a WebM (Matroska) file: its first audio track's codec, codec private data and frames in order. */
 internal class WebmAudio(
     val codecId: String,
     val codecPrivate: ByteArray?,
-    val frames: List<ByteArray>,
+    val frames: List<Frame>,
     /** Samples (at 48 kHz) to drop from the end of the last frame, from a block's DiscardPadding. */
     val discardSamples: Long,
 )
@@ -51,7 +54,7 @@ internal object WebmReader {
         var track: Long? = null
         var codecId: String? = null
         var codecPrivate: ByteArray? = null
-        val frames = mutableListOf<ByteArray>()
+        val frames = mutableListOf<Frame>()
         var discardNs = 0L
         fun block(start: Int, end: Int) {
             if (track == null) return
@@ -94,8 +97,9 @@ internal object WebmReader {
         return WebmAudio(codec, codecPrivate, frames, discardSamples = (discardNs.coerceAtLeast(0) * 48_000L) / 1_000_000_000L)
     }
 
-    private fun laced(bytes: ByteArray, start: Int, end: Int, lacing: Int): List<ByteArray> {
-        if (lacing == 0) return listOf(bytes.copyOfRange(start, end))
+    private fun laced(bytes: ByteArray, start: Int, end: Int, lacing: Int): List<Frame> {
+        if (lacing == 0) return listOf(Frame(start, end - start))
+        if (start >= end) throw UnsupportedAudioException("Bad lacing")
         var at = start
         val count = (bytes[at++].toInt() and 0xFF) + 1
         val sizes = LongArray(count)
@@ -103,6 +107,7 @@ internal object WebmReader {
             1 -> for (i in 0 until count - 1) { // Xiph: runs of 255 then the rest
                 var size = 0L
                 do {
+                    if (at >= end) throw UnsupportedAudioException("Bad lacing")
                     val b = bytes[at++].toInt() and 0xFF
                     size += b
                 } while (b == 255)
@@ -127,7 +132,7 @@ internal object WebmReader {
         sizes[count - 1] = (end - at) - sizes.take(count - 1).sum()
         return sizes.map { size ->
             if (size < 0 || at + size > end) throw UnsupportedAudioException("Bad lacing")
-            bytes.copyOfRange(at, (at + size).toInt()).also { at += size.toInt() }
+            Frame(at, size.toInt()).also { at += size.toInt() }
         }
     }
 

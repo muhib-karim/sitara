@@ -1,28 +1,32 @@
 package app.sitara.music.core.data.export
 
 import java.io.ByteArrayOutputStream
+import java.io.OutputStream
 
 /**
  * An MP4 (M4A) file with [tags] written as iTunes-style metadata (`moov/udta/meta/ilst`): title, artist, album, plain
  * lyrics and the cover. Items the file already has for other fields are kept. When `moov` grows and sits before the
  * audio, every absolute offset into the file (chunk offsets, fragment base offsets, the fragment index) moves with it.
  */
-fun tagMp4(file: ByteArray, tags: SongTags): ByteArray {
+fun tagMp4(file: ByteArray, tags: SongTags): ByteArray = ByteArrayOutputStream(file.size + 1024).also { tagMp4(file, tags, it) }.toByteArray()
+
+/** [tagMp4] written straight to [out], so the file is not held twice. Everything is checked before the first byte is written. */
+fun tagMp4(file: ByteArray, tags: SongTags, out: OutputStream) {
     val top = boxes(file, 0, file.size)
     val moov = top.firstOrNull { it.type == "moov" } ?: throw UnsupportedAudioException("No moov box")
     val newMoov = rebuildMoov(file, moov, tags, delta = 0)
     val delta = newMoov.size - moov.size
     val shifted = if (delta == 0) newMoov else rebuildMoov(file, moov, tags, delta)
-    val out = ByteArrayOutputStream(file.size + delta)
-    top.forEach { box ->
+    // Fragment boxes are rewritten first, so a malformed one fails before anything is written.
+    val rewritten = top.associateWith { box ->
         when {
-            box === moov -> out.write(shifted)
-            box.start > moov.start && delta != 0 && box.type == "moof" -> out.write(shiftMoof(file, box, delta, moov.start))
-            box.start > moov.start && delta != 0 && box.type == "mfra" -> out.write(shiftMfra(file, box, delta, moov.start))
-            else -> out.write(file, box.start, box.size)
+            box === moov -> shifted
+            box.start > moov.start && delta != 0 && box.type == "moof" -> shiftMoof(file, box, delta, moov.start)
+            box.start > moov.start && delta != 0 && box.type == "mfra" -> shiftMfra(file, box, delta, moov.start)
+            else -> null
         }
     }
-    return out.toByteArray()
+    top.forEach { box -> rewritten[box]?.let(out::write) ?: out.write(file, box.start, box.size) }
 }
 
 internal class Box(val type: String, val start: Int, val size: Int, val headerSize: Int) {

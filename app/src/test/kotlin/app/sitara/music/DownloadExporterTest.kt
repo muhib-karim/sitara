@@ -7,7 +7,9 @@ import app.sitara.music.core.model.DownloadExport
 import app.sitara.music.core.model.ExportProblem
 import app.sitara.music.core.model.LyricsTranslation
 import app.sitara.music.core.model.Track
+import java.io.ByteArrayOutputStream
 import java.io.IOException
+import java.io.OutputStream
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -15,6 +17,7 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeout
+import org.junit.Assert.assertArrayEquals
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -34,9 +37,9 @@ class DownloadExporterTest {
 
         override fun names(): Set<String> = if (broken) throw IOException("revoked") else files.keys
 
-        override fun write(name: String, bytes: ByteArray) {
+        override fun write(name: String, content: (OutputStream) -> Unit) {
             writes++
-            files[name] = bytes
+            files[name] = ByteArrayOutputStream().also(content).toByteArray()
         }
     }
 
@@ -126,6 +129,40 @@ class DownloadExporterTest {
         val done = exporter(files = mapOf("a1" to vorbis, "b2" to "ID3 not ours".toByteArray())).export(folder) { _, _ -> }
         assertEquals(DownloadExport.Done(exported = 1, withLyrics = 0, untagged = 1, skipped = 1), done)
         assertEquals(setOf("Sitara Ensemble - Saffron Morning.webm"), folder.files.keys)
+    }
+
+    @Test
+    fun `a file the parsers choke on is copied untagged and the export goes on`() = runBlocking {
+        // An MP4 whose moov claims more bytes than the file has: the box walk refuses it.
+        val broken = fixture("tone_frag.m4a").copyOf(4_000)
+        val folder = Folder()
+        val done = exporter(files = mapOf("a1" to fixture("tone.webm"), "b2" to broken)).export(folder) { _, _ -> }
+        assertEquals(DownloadExport.Done(exported = 2, withLyrics = 0, untagged = 1, skipped = 0), done)
+        assertArrayEquals(broken, folder.files.getValue("Sitara Ensemble - Second Light.m4a"))
+    }
+
+    @Test
+    fun `two songs whose names differ only in case or kind keep their own files and lyrics`() = runBlocking {
+        val lower = opusSong.copy(id = "a2", title = "saffron morning", artist = "sitara ensemble")
+        val asAac = opusSong.copy(id = "a3")
+        val lyrics = Lyrics(
+            mapOf(
+                ("a1" to "lrclib") to CachedLyrics("[00:01.00]One", null, 0, null),
+                ("a3" to "lrclib") to CachedLyrics("[00:01.00]Three", null, 0, null),
+            ),
+        )
+        val folder = Folder()
+        exporter(
+            songs = listOf(opusSong, lower, asAac), files = mapOf("a1" to fixture("tone.webm"), "a2" to fixture("tone.webm"), "a3" to fixture("tone_frag.m4a")),
+            lyrics = lyrics,
+        ).export(folder) { _, _ -> }
+        assertEquals(
+            setOf(
+                "Sitara Ensemble - Saffron Morning.opus", "Sitara Ensemble - Saffron Morning.lrc",
+                "sitara ensemble - saffron morning (2).opus", "Sitara Ensemble - Saffron Morning (3).m4a", "Sitara Ensemble - Saffron Morning (3).lrc",
+            ),
+            folder.files.keys,
+        )
     }
 
     @Test

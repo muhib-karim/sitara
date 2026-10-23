@@ -19,7 +19,9 @@ fun webmOpusToOgg(webm: ByteArray, output: OutputStream, tags: SongTags) {
         var granule = 0L
         val pending = mutableListOf<ByteArray>()
         var pendingBytes = 0
-        audio.frames.forEachIndexed { index, frame ->
+        audio.frames.forEachIndexed { index, range ->
+            // Copied one page's worth at a time, never the whole file.
+            val frame = webm.copyOfRange(range.offset, range.offset + range.length)
             granule += opusSamples(frame)
             pending += frame
             pendingBytes += frame.size
@@ -33,6 +35,15 @@ fun webmOpusToOgg(webm: ByteArray, output: OutputStream, tags: SongTags) {
         }
         if (audio.frames.isEmpty()) page(emptyList(), 0, last = true)
     }
+}
+
+/** Whether [webm] is a WebM file whose audio is Opus, the kind [webmOpusToOgg] rewrites. */
+fun isOpusWebm(webm: ByteArray): Boolean = try {
+    WebmReader.read(webm).codecId == "A_OPUS"
+} catch (e: UnsupportedAudioException) {
+    false
+} catch (e: IndexOutOfBoundsException) {
+    false
 }
 
 /** The OpusTags header packet: Vorbis comments for the song, plain lyrics and the cover. */
