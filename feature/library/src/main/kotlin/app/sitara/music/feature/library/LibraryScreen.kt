@@ -43,6 +43,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.toArgb
@@ -140,9 +141,19 @@ fun LibraryScreen(
                 } else {
                     val saved = state.library
                     item(key = "pinned") {
-                        Row(Modifier.padding(horizontal = SitaraSpacing.Gutter, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(TileGap)) {
-                            PinnedTile(SitaraIcons.HeartFilled, stringResource(R.string.library_liked_songs), songCount(saved.liked.size), onLikedSongs, Modifier.weight(1f))
-                            PinnedTile(SitaraIcons.Download, stringResource(R.string.library_downloads), songCount(downloads.size), { kind = LibraryKind.DOWNLOADS }, Modifier.weight(1f))
+                        val liked = stringResource(R.string.library_liked_songs)
+                        val downloaded = stringResource(R.string.library_downloads)
+                        // At large text sizes the two tiles stack, so their names are not cut short.
+                        if (LocalDensity.current.fontScale >= LARGE_TEXT) {
+                            Column(Modifier.padding(horizontal = SitaraSpacing.Gutter, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(TileGap)) {
+                                PinnedTile(SitaraIcons.HeartFilled, liked, songCount(saved.liked.size), onLikedSongs, Modifier.fillMaxWidth())
+                                PinnedTile(SitaraIcons.Download, downloaded, songCount(downloads.size), { kind = LibraryKind.DOWNLOADS }, Modifier.fillMaxWidth())
+                            }
+                        } else {
+                            Row(Modifier.padding(horizontal = SitaraSpacing.Gutter, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(TileGap)) {
+                                PinnedTile(SitaraIcons.HeartFilled, liked, songCount(saved.liked.size), onLikedSongs, Modifier.weight(1f))
+                                PinnedTile(SitaraIcons.Download, downloaded, songCount(downloads.size), { kind = LibraryKind.DOWNLOADS }, Modifier.weight(1f))
+                            }
                         }
                     }
                     item(key = "stats") {
@@ -337,8 +348,9 @@ internal fun PinnedTile(icon: ImageVector, title: String, detail: String, onClic
             Icon(icon, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(22.dp))
         }
         Column(Modifier.weight(1f)) {
-            Text(title, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text(detail, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
+            val lines = if (LocalDensity.current.fontScale >= LARGE_TEXT) 2 else 1
+            Text(title, style = MaterialTheme.typography.titleSmall, color = MaterialTheme.colorScheme.onSurface, maxLines = lines, overflow = TextOverflow.Ellipsis)
+            Text(detail, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = lines, overflow = TextOverflow.Ellipsis)
         }
     }
 }
@@ -495,3 +507,6 @@ private fun LibraryKind.orderTitle(): String = stringResource(
 internal fun LibraryMessage(text: String) {
     Text(text, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium, modifier = Modifier.padding(horizontal = SitaraSpacing.Gutter, vertical = 8.dp))
 }
+
+// From this font scale on, pinned tiles stack and their text gets a second line.
+private const val LARGE_TEXT = 1.5f
