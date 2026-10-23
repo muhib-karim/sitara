@@ -126,8 +126,10 @@ Each push ran CI, Secret scan and Device screens; screenshot baselines came from
   (`7d9b77f`); Device screens at `1d55407` (the Bangla Now Playing pass looked for the English label) and at `21f4150`
   (the jank share is 100 % on the software-rendered emulator; the gate now uses the 90th percentile frame time).
 - Device screens runs cancelled by newer pushes are not listed.
-- The final head's CI and Device screens runs are named in the project brain's session log and the closing line of the
-  pass.
+- **Green on `5f22deb`** (all code, baselines and docs of this pass): CI 40019706248, Secret scan 40019705886, Device
+  screens 40019705866 (automix check passed; Bangla captures; performance gate passed with cold start 1,323 ms median
+  and a 90th percentile frame time of 150 ms against limits of 3,500 ms and 250 ms). The commit that records these runs
+  is checked by its own runs, named in the pass's closing line.
 
 ## Not verified
 
