@@ -43,6 +43,9 @@ jobs:
       # WorkManager (which runs the widget) needs this constructor; without it the widget never drew in 0.9.6.
       - name: R8 kept WorkManager's input merger constructor
         run: grep -A8 "^androidx.work.OverwritingInputMerger -> " app/build/outputs/mapping/release/mapping.txt | grep -q "<init>()"
+      # The APK carries the baseline profile (app/src/main/baseline-prof.txt merged with the libraries' own).
+      - name: Baseline profile is in the minified APK
+        run: unzip -l app/build/outputs/apk/release/app-release.apk | grep -q "assets/dexopt/baseline.prof"
       - name: Enable KVM
         run: |
           echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
@@ -80,6 +83,11 @@ jobs:
             adb logcat -d -v brief > artifacts/device-screens/widget-logcat.txt || true
             adb pull /sdcard/Android/data/app.sitara.music/files/widget-placed.png artifacts/device-screens/widget-placed.png || true
             grep -q "WIDGET DRAWN" artifacts/device-screens/widget-check.txt
+            # Performance gates on the minified build, compiled with its profile as an install would: cold start and Home scrolling.
+            adb shell am broadcast -a androidx.profileinstaller.action.INSTALL_PROFILE -n app.sitara.music/androidx.profileinstaller.ProfileInstallReceiver || true
+            adb shell cmd package compile -f -m speed-profile app.sitara.music || true
+            python3 tools/perf_gate.py measure app.sitara.music .MainActivity artifacts/device-screens/perf.json
+            python3 tools/perf_gate.py check artifacts/device-screens/perf.json tools/perf-thresholds.json
       - name: Upload device screenshots and hierarchy
         if: always()
         uses: actions/upload-artifact@v5

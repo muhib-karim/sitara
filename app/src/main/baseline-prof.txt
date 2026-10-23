@@ -1,0 +1,5 @@
+# Sitara's own code, compiled ahead of time when the app is installed (AGP turns this into the APK's baseline profile;
+# androidx.profileinstaller, which Compose already brings, installs it on sideloaded and store installs alike).
+# Libraries ship their own profiles (Compose, Media3, Coil), merged by AGP.
+HSPLapp/sitara/music/**;->**(**)**
+Lapp/sitara/music/**;

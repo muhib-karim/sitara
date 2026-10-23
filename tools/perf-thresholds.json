@@ -1,0 +1,5 @@
+{
+  "comment": "Device screens (API 34 emulator, software rendering) fails when a median goes past these. Set from the first measured runs with headroom for the emulator's noise; see docs/reports/REPORT_v100.md.",
+  "cold_start_ms": 6000,
+  "janky_frames_percent": 60
+}
