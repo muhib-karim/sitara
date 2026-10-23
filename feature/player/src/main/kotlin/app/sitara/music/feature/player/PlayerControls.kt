@@ -34,6 +34,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -60,21 +61,30 @@ internal fun PlayerControls(state: PlayerUiState, actions: PlayerActions, modifi
         // The scrubber stays where it is on a failed song, still, so the screen keeps its shape and its times.
         Scrubber(state, actions)
         if (state.failed) PlaybackFailed(actions)
+        val shuffleState = stringResource(if (state.shuffled) R.string.player_state_on else R.string.player_state_off)
+        val repeatState = stringResource(
+            when (state.repeatMode) {
+                RepeatMode.OFF -> R.string.player_repeat_off
+                RepeatMode.ALL -> R.string.player_repeat_all
+                RepeatMode.ONE -> R.string.player_repeat_one
+            },
+        )
         Row(Modifier.fillMaxWidth().padding(top = 12.dp, bottom = 8.dp), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
             GlassIconButton(
-                SitaraIcons.Shuffle, "Shuffle", actions::toggleShuffle,
-                Modifier.semantics { stateDescription = if (state.shuffled) "On" else "Off" },
+                SitaraIcons.Shuffle, stringResource(R.string.player_shuffle), actions::toggleShuffle,
+                Modifier.semantics { stateDescription = shuffleState },
                 tint = if (state.shuffled) MaterialTheme.colorScheme.primary else SitaraColors.StageSecondary,
             )
             IconButton(onClick = actions::previous, modifier = Modifier.size(48.dp)) {
-                Icon(SitaraIcons.Previous, "Previous track", tint = Color.White, modifier = Modifier.size(28.dp))
+                Icon(SitaraIcons.Previous, stringResource(R.string.player_previous_track), tint = Color.White, modifier = Modifier.size(28.dp))
             }
             // On a failed song the main button retries it (the engine treats play as retry there).
-            val (mainIcon, mainLabel) = when {
-                state.failed -> SitaraIcons.Retry to "Try again"
-                state.isPlaying -> SitaraIcons.Pause to "Pause"
-                else -> SitaraIcons.Play to "Play"
+            val (mainIcon, mainLabelRes) = when {
+                state.failed -> SitaraIcons.Retry to R.string.player_try_again
+                state.isPlaying -> SitaraIcons.Pause to R.string.player_pause
+                else -> SitaraIcons.Play to R.string.player_play
             }
+            val mainLabel = stringResource(mainLabelRes)
             Box(
                 Modifier.size(72.dp).clip(CircleShape).background(Color.White).clickable(role = Role.Button, onClick = actions::togglePlay)
                     .semantics { contentDescription = mainLabel },
@@ -83,12 +93,12 @@ internal fun PlayerControls(state: PlayerUiState, actions: PlayerActions, modifi
                 Icon(mainIcon, null, tint = Color.Black, modifier = Modifier.size(32.dp))
             }
             IconButton(onClick = actions::next, modifier = Modifier.size(48.dp)) {
-                Icon(SitaraIcons.Next, "Next track", tint = Color.White, modifier = Modifier.size(28.dp))
+                Icon(SitaraIcons.Next, stringResource(R.string.player_next_track), tint = Color.White, modifier = Modifier.size(28.dp))
             }
             Box(contentAlignment = Alignment.Center) {
                 GlassIconButton(
-                    SitaraIcons.Repeat, "Repeat", actions::cycleRepeat,
-                    Modifier.semantics { stateDescription = state.repeatMode.name.lowercase() },
+                    SitaraIcons.Repeat, stringResource(R.string.player_repeat), actions::cycleRepeat,
+                    Modifier.semantics { stateDescription = repeatState },
                     tint = if (state.repeatMode == RepeatMode.OFF) SitaraColors.StageSecondary else MaterialTheme.colorScheme.primary,
                 )
                 // The button already says "Repeat, one"; the figure is for the eye.
@@ -106,13 +116,11 @@ private fun PlaybackFailed(actions: PlayerActions) {
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(PLAYBACK_FAILED, color = SitaraColors.StageContent, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
-        PillButton("Try again", actions::retryPlayback)
-        PillButton("Skip", actions::next, primary = false)
+        Text(stringResource(R.string.player_playback_failed), color = SitaraColors.StageContent, style = MaterialTheme.typography.titleSmall, modifier = Modifier.weight(1f))
+        PillButton(stringResource(R.string.player_try_again), actions::retryPlayback)
+        PillButton(stringResource(R.string.player_skip), actions::next, primary = false)
     }
 }
-
-internal const val PLAYBACK_FAILED = "Couldn’t play this song"
 
 @Composable
 private fun Scrubber(state: PlayerUiState, actions: PlayerActions) {
@@ -127,6 +135,7 @@ private fun Scrubber(state: PlayerUiState, actions: PlayerActions) {
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     val played = MaterialTheme.colorScheme.primary
     val seekable = duration > 0 && !state.failed
+    val seekLabel = stringResource(R.string.player_seek)
     // A thick bar that thickens again under the finger, so a drag shows it has hold of the song.
     val thickness by animateDpAsState(if (dragging) 10.dp else 6.dp, SitaraMotion.orReduced(LocalReducedMotion.current, SitaraMotion.smooth()), label = "scrubber thickness")
     Box(Modifier.fillMaxWidth().height(48.dp)) {
@@ -159,7 +168,7 @@ private fun Scrubber(state: PlayerUiState, actions: PlayerActions) {
                 disabledActiveTrackColor = Color.Transparent,
                 disabledInactiveTrackColor = Color.Transparent,
             ),
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 6.dp).height(48.dp).semantics { contentDescription = "Seek" },
+            modifier = Modifier.fillMaxWidth().padding(horizontal = 6.dp).height(48.dp).semantics { contentDescription = seekLabel },
         )
     }
     Row(Modifier.fillMaxWidth()) {
@@ -167,23 +176,26 @@ private fun Scrubber(state: PlayerUiState, actions: PlayerActions) {
         Text(formatDuration((value * duration).toLong()), color = SitaraColors.StageSecondary, style = timeStyle)
         // What the song streams in, between the times; absent while unknown (before its stream is looked up, or played from a download).
         val format = state.stream
-        val label = format?.label
+        val codec = format?.codec
         val blend = state.blend
         if (blend != null) {
             // During an automix blend the readout says what is being matched.
+            val blendDescription = stringResource(R.string.player_automix_description, blend.fromBpm, blend.toBpm, blend.bars)
             Text(
-                "Automix · ${blend.fromBpm} → ${blend.toBpm} BPM · ${blend.bars} bars", color = SitaraColors.StageSecondary,
+                stringResource(R.string.player_automix_readout, blend.fromBpm, blend.toBpm, blend.bars), color = SitaraColors.StageSecondary,
                 style = MaterialTheme.typography.labelMedium, textAlign = TextAlign.Center, maxLines = 1, overflow = TextOverflow.Ellipsis,
                 modifier = Modifier.weight(1f).padding(horizontal = 8.dp).semantics {
-                    contentDescription = "Automix: blending from ${blend.fromBpm} to ${blend.toBpm} beats a minute over ${blend.bars} bars"
+                    contentDescription = blendDescription
                     liveRegion = LiveRegionMode.Polite
                 },
             )
-        } else if (format != null && label != null) {
+        } else if (format != null && codec != null && format.bitrateKbps > 0) {
+            // The same condition as StreamFormat.label: a codec and a known bitrate.
+            val streamDescription = stringResource(R.string.player_streaming_description, codec, format.bitrateKbps)
             Text(
-                label, color = SitaraColors.StageSecondary, style = MaterialTheme.typography.labelMedium, textAlign = TextAlign.Center, maxLines = 1,
-                overflow = TextOverflow.Ellipsis,
-                modifier = Modifier.weight(1f).padding(horizontal = 8.dp).semantics { contentDescription = "Streaming ${format.codec} at ${format.bitrateKbps} kilobits per second" },
+                stringResource(R.string.player_stream_format, codec, format.bitrateKbps), color = SitaraColors.StageSecondary, style = MaterialTheme.typography.labelMedium,
+                textAlign = TextAlign.Center, maxLines = 1, overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f).padding(horizontal = 8.dp).semantics { contentDescription = streamDescription },
             )
         } else {
             Spacer(Modifier.weight(1f))

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="home_nothing_under">Nothing under %1$s that Sitara can play yet.</string>
+    <string name="home_nothing_under_this_mood">Nothing under this mood that Sitara can play yet.</string>
+    <string name="home_make_home_yours">Make Home yours</string>
+    <string name="home_make_home_yours_description">Songs you play, like and save show up here.</string>
+    <string name="home_listen_again">Listen again</string>
+    <string name="home_your_likes">Your likes</string>
+    <string name="home_jump_back_in">Jump back in</string>
+    <string name="home_more_failed">More of Home didn’t load.</string>
+    <string name="home_try_again">Try again</string>
+    <string name="home_trending_now">Trending now</string>
+    <string name="home_nothing_charting">Nothing is charting here right now.</string>
+    <plurals name="home_songs">
+        <item quantity="one">%1$d song</item>
+        <item quantity="other">%1$d songs</item>
+    </plurals>
+    <string name="home_more">More</string>
+    <string name="home_more_from">More from %1$s</string>
+    <string name="home_artist">Artist</string>
+    <string name="home_didnt_load">Home didn’t load</string>
+    <string name="home_offline_description">YouTube Music didn’t answer. Check your connection, then try again.</string>
+    <string name="home_loading">Loading Home</string>
+    <string name="home_back">Back</string>
+    <string name="home_loading_title">Loading %1$s</string>
+    <string name="home_title_failed">%1$s didn’t load. Check your connection, then try again.</string>
+</resources>

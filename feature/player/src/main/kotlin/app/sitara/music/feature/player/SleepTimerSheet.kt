@@ -21,6 +21,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
@@ -46,27 +47,30 @@ sealed interface SleepTimerStatus {
     data object EndOfTrack : SleepTimerStatus
 }
 
+@Composable
 private fun SleepTimerStatus.describe(): String = when (this) {
-    SleepTimerStatus.Off -> "Off"
-    SleepTimerStatus.EndOfTrack -> "Pauses when this song ends"
-    is SleepTimerStatus.Counting -> "Pauses in ${formatDuration(remainingMs)}"
+    SleepTimerStatus.Off -> stringResource(R.string.player_state_off)
+    SleepTimerStatus.EndOfTrack -> stringResource(R.string.player_sleep_end_of_song)
+    is SleepTimerStatus.Counting -> stringResource(R.string.player_sleep_pauses_in, formatDuration(remainingMs))
 }
 
 /** "45 min", "1 h", "1 h 30 min". */
+@Composable
 private fun minutesLabel(minutes: Int): String = when {
-    minutes < 60 -> "$minutes min"
-    minutes % 60 == 0 -> "${minutes / 60} h"
-    else -> "${minutes / 60} h ${minutes % 60} min"
+    minutes < 60 -> stringResource(R.string.player_minutes, minutes)
+    minutes % 60 == 0 -> stringResource(R.string.player_hours, minutes / 60)
+    else -> stringResource(R.string.player_hours_minutes, minutes / 60, minutes % 60)
 }
 
 /** Top-bar button; accent-coloured while a timer is set. */
 @Composable
 internal fun SleepTimerButton(status: SleepTimerStatus, onClick: () -> Unit) {
+    val described = status.describe()
     GlassIconButton(
         SitaraIcons.Timer,
-        "Sleep timer",
+        stringResource(R.string.player_sleep_timer),
         onClick,
-        Modifier.semantics { stateDescription = status.describe() },
+        Modifier.semantics { stateDescription = described },
         tint = if (status == SleepTimerStatus.Off) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.primary,
     )
 }
@@ -84,8 +88,9 @@ internal fun SleepTimerSheet(status: SleepTimerStatus, actions: PlayerActions, o
 @Composable
 fun SleepTimerOptions(status: SleepTimerStatus, actions: PlayerActions, close: (action: () -> Unit) -> Unit) {
     var custom by rememberSaveable { mutableIntStateOf(DEFAULT_CUSTOM_MINUTES) }
+    val customLabel = minutesLabel(custom)
     Column(Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = SitaraSpacing.Gutter).padding(bottom = 16.dp)) {
-        Text("Sleep timer", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface)
+        Text(stringResource(R.string.player_sleep_timer), style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface)
         if (status != SleepTimerStatus.Off) {
             Text(
                 status.describe(),
@@ -95,26 +100,27 @@ fun SleepTimerOptions(status: SleepTimerStatus, actions: PlayerActions, close: (
             )
             FlowRow(Modifier.padding(top = 12.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 if (status is SleepTimerStatus.Counting) {
-                    PillButton("+5 min", { actions.extendSleepTimer(5) }, primary = false)
-                    PillButton("+15 min", { actions.extendSleepTimer(15) }, primary = false)
+                    PillButton(stringResource(R.string.player_extend_minutes, 5), { actions.extendSleepTimer(5) }, primary = false)
+                    PillButton(stringResource(R.string.player_extend_minutes, 15), { actions.extendSleepTimer(15) }, primary = false)
                 }
-                PillButton("Turn off", { close(actions::cancelSleepTimer) })
+                PillButton(stringResource(R.string.player_turn_off), { close(actions::cancelSleepTimer) })
             }
         }
         Text(
-            "Pause after",
+            stringResource(R.string.player_pause_after),
             style = MaterialTheme.typography.titleMedium,
             color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(top = 24.dp, bottom = 12.dp),
         )
         FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             MinutePresets.forEach { minutes -> PillButton(minutesLabel(minutes), { close { actions.startSleepTimer(minutes) } }, primary = false) }
-            PillButton("End of this song", { close(actions::sleepAtEndOfTrack) }, primary = false)
+            PillButton(stringResource(R.string.player_end_of_song), { close(actions::sleepAtEndOfTrack) }, primary = false)
         }
-        SliderHeading("Custom", minutesLabel(custom), Modifier.padding(top = 16.dp))
+        SliderHeading(stringResource(R.string.player_custom), customLabel, Modifier.padding(top = 16.dp))
+        val customMinutes = stringResource(R.string.player_custom_minutes)
         Row(verticalAlignment = Alignment.CenterVertically) {
             IconButton(onClick = { custom = (custom - 1).coerceAtLeast(1) }) {
-                Icon(SitaraIcons.Minus, "One minute less", tint = MaterialTheme.colorScheme.onSurface)
+                Icon(SitaraIcons.Minus, stringResource(R.string.player_one_minute_less), tint = MaterialTheme.colorScheme.onSurface)
             }
             Slider(
                 value = custom.toFloat(),
@@ -123,16 +129,16 @@ fun SleepTimerOptions(status: SleepTimerStatus, actions: PlayerActions, close: (
                 valueRange = 1f..MAX_CUSTOM_MINUTES.toFloat(),
                 colors = accentSlider(),
                 modifier = Modifier.weight(1f).semantics {
-                    contentDescription = "Custom minutes"
-                    stateDescription = minutesLabel(custom)
+                    contentDescription = customMinutes
+                    stateDescription = customLabel
                 },
             )
             IconButton(onClick = { custom = (custom + 1).coerceAtMost(MAX_CUSTOM_MINUTES) }) {
-                Icon(SitaraIcons.Add, "One minute more", tint = MaterialTheme.colorScheme.onSurface)
+                Icon(SitaraIcons.Add, stringResource(R.string.player_one_minute_more), tint = MaterialTheme.colorScheme.onSurface)
             }
         }
         Row(Modifier.fillMaxWidth().heightIn(min = SitaraSpacing.TouchTarget), horizontalArrangement = Arrangement.End) {
-            PillButton("Start ${minutesLabel(custom)} timer", { close { actions.startSleepTimer(custom) } })
+            PillButton(stringResource(R.string.player_start_timer, customLabel), { close { actions.startSleepTimer(custom) } })
         }
     }
 }

@@ -29,6 +29,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -43,6 +45,7 @@ import app.sitara.music.core.designsystem.LargeTitle
 import app.sitara.music.core.designsystem.PillButton
 import app.sitara.music.core.designsystem.SitaraIcons
 import app.sitara.music.core.designsystem.SitaraSpacing
+import app.sitara.music.core.designsystem.displayName
 import app.sitara.music.core.model.ScrobbleAccount
 import app.sitara.music.core.model.ScrobbleService
 import java.time.Instant
@@ -90,12 +93,12 @@ data class ScrobblingState(
 ) {
     /** What the Settings row says: the connected services, paused, or off. */
     val summary: String
-        get() {
+        @Composable get() {
             val connected = services.filter { it.account != null }
             return when {
-                connected.isEmpty() -> "Off"
-                paused -> "Paused"
-                else -> connected.joinToString(" · ") { it.service.label }
+                connected.isEmpty() -> stringResource(R.string.settings_off)
+                paused -> stringResource(R.string.settings_status_paused)
+                else -> connected.map { it.service.displayName() }.joinToString(" · ")
             }
         }
 }
@@ -154,11 +157,10 @@ fun ScrobblingScreen(
 ) {
     LazyColumn(modifier.fillMaxSize().testTag("scrobbling-content"), contentPadding = contentPadding) {
         item(key = "title") {
-            GlassIconButton(SitaraIcons.Back, "Back", onBack, Modifier.padding(start = 12.dp, top = 8.dp))
-            LargeTitle("Scrobbling")
+            GlassIconButton(SitaraIcons.Back, stringResource(R.string.settings_back), onBack, Modifier.padding(start = 12.dp, top = 8.dp))
+            LargeTitle(stringResource(R.string.settings_scrobbling))
             Text(
-                "Send the songs you listen to to your Last.fm or ListenBrainz profile. A song counts once half of it, or 4 minutes, is heard; " +
-                    "plays wait on this phone while you’re offline and each is sent once.",
+                stringResource(R.string.settings_scrobbling_intro),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(start = SitaraSpacing.Gutter, end = SitaraSpacing.Gutter, bottom = 20.dp),
@@ -166,8 +168,8 @@ fun ScrobblingScreen(
         }
         if (state.services.any { it.account != null }) {
             item(key = "pause") {
-                SettingsGroup("All services") {
-                    SwitchRow("Pause scrobbling", "New plays aren’t sent or kept for sending", state.paused, actions::setPaused)
+                SettingsGroup(stringResource(R.string.settings_all_services)) {
+                    SwitchRow(stringResource(R.string.settings_pause_scrobbling), stringResource(R.string.settings_pause_scrobbling_description), state.paused, actions::setPaused)
                 }
             }
         }
@@ -181,7 +183,7 @@ fun ScrobblingScreen(
 @Composable
 private fun ServiceGroup(state: ScrobbleServiceState, paused: Boolean, actions: ScrobblingActions, zone: ZoneId, nowMs: Long) {
     val account = state.account
-    SettingsGroup(state.service.label) {
+    SettingsGroup(state.service.displayName()) {
         // The chip moves under the title when both do not fit (large text, a long user name).
         FlowRow(
             Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 16.dp),
@@ -191,10 +193,10 @@ private fun ServiceGroup(state: ScrobbleServiceState, paused: Boolean, actions: 
         ) {
             Text(
                 when {
-                    account != null -> "Signed in as ${account.userName}"
-                    !state.available -> "Needs a Last.fm API key"
-                    state.service == ScrobbleService.LISTENBRAINZ -> "Connect with your user token"
-                    else -> "Connect your Last.fm account"
+                    account != null -> stringResource(R.string.settings_signed_in_as, account.userName)
+                    !state.available -> stringResource(R.string.settings_needs_api_key)
+                    state.service == ScrobbleService.LISTENBRAINZ -> stringResource(R.string.settings_connect_token)
+                    else -> stringResource(R.string.settings_connect_lastfm)
                 },
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.onSurface,
@@ -204,7 +206,7 @@ private fun ServiceGroup(state: ScrobbleServiceState, paused: Boolean, actions: 
         }
         Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             when {
-                !state.available -> Description("This build of Sitara was made without a Last.fm API key, so it can’t sign in to Last.fm.")
+                !state.available -> Description(stringResource(R.string.settings_no_api_key_description))
                 account == null || account.signInNeeded -> SignInForm(state, actions)
                 else -> {
                     Row(verticalAlignment = Alignment.CenterVertically) {
@@ -217,7 +219,7 @@ private fun ServiceGroup(state: ScrobbleServiceState, paused: Boolean, actions: 
         }
         if (account != null && !account.signInNeeded) {
             InsetDivider()
-            SwitchRow("Only songs in your library", "Liked songs and songs in your playlists", account.libraryOnly) {
+            SwitchRow(stringResource(R.string.settings_library_only), stringResource(R.string.settings_library_only_description), account.libraryOnly) {
                 actions.setLibraryOnly(state.service, it)
             }
         }
@@ -229,19 +231,23 @@ private fun ServiceGroup(state: ScrobbleServiceState, paused: Boolean, actions: 
 private fun ConnectedActions(state: ScrobbleServiceState, actions: ScrobblingActions) {
     var confirming by rememberSaveable(state.service) { mutableStateOf(false) }
     if (confirming) {
-        val plays = if (state.pending == 1) "1 play waiting to be sent is" else "${state.pending} plays waiting to be sent are"
+        val service = state.service.displayName()
         Text(
-            "Disconnect ${state.service.label}? " + (if (state.pending > 0) "$plays dropped. " else "") + "Scrobbles already sent stay on your profile.",
+            if (state.pending > 0) {
+                pluralStringResource(R.plurals.settings_disconnect_confirm_pending, state.pending, state.pending, service)
+            } else {
+                stringResource(R.string.settings_disconnect_confirm, service)
+            },
             style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface,
         )
         FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            PillButton("Disconnect", { confirming = false; actions.disconnect(state.service) })
-            PillButton("Stay connected", { confirming = false }, primary = false)
+            PillButton(stringResource(R.string.settings_disconnect), { confirming = false; actions.disconnect(state.service) })
+            PillButton(stringResource(R.string.settings_stay_connected), { confirming = false }, primary = false)
         }
     } else {
         FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            if (state.pending > 0) PillButton("Send now", actions::sendNow)
-            PillButton("Disconnect", { confirming = true }, primary = false)
+            if (state.pending > 0) PillButton(stringResource(R.string.settings_send_now), actions::sendNow)
+            PillButton(stringResource(R.string.settings_disconnect), { confirming = true }, primary = false)
         }
     }
 }
@@ -251,24 +257,31 @@ private fun ConnectedActions(state: ScrobbleServiceState, actions: ScrobblingAct
 private fun SignInForm(state: ScrobbleServiceState, actions: ScrobblingActions) {
     val step = state.signIn
     if (state.account?.signInNeeded == true) {
-        val waiting = if (state.pending > 0) " ${waitingWords(state.pending).replaceFirstChar(Char::uppercase)} until you do." else ""
-        Description("${state.service.label} ended the sign-in. Sign in again to keep scrobbling.$waiting")
+        val service = state.service.displayName()
+        Description(
+            if (state.pending > 0) {
+                pluralStringResource(R.plurals.settings_sign_in_ended_pending, state.pending, state.pending, service)
+            } else {
+                stringResource(R.string.settings_sign_in_ended, service)
+            },
+        )
     }
     when (state.service) {
         ScrobbleService.LISTENBRAINZ -> {
             // Not saveable: a token never goes into the state the system keeps for the activity.
             var token by remember { mutableStateOf("") }
             val problem = (step as? SignInStep.Failed)?.problem
+            val problemText = problem?.let { problemWords(state.service, it) }
             OutlinedTextField(
                 token, { token = it; if (problem != null) actions.cancelSignIn(state.service) }, Modifier.fillMaxWidth().testTag("listenbrainz-token"),
-                label = { Text("User token") },
+                label = { Text(stringResource(R.string.settings_user_token)) },
                 singleLine = true,
                 enabled = step != SignInStep.Checking,
                 visualTransformation = PasswordVisualTransformation(),
                 isError = problem != null,
                 supportingText = {
                     Text(
-                        problem?.let { problemWords(state.service, it) } ?: "Copy it from listenbrainz.org/settings",
+                        problemText ?: stringResource(R.string.settings_token_help),
                         Modifier.semantics { if (problem != null) liveRegion = LiveRegionMode.Polite },
                     )
                 },
@@ -276,24 +289,24 @@ private fun SignInForm(state: ScrobbleServiceState, actions: ScrobblingActions) 
                 keyboardActions = KeyboardActions(onDone = { if (token.isNotBlank()) actions.connectListenBrainz(token) }),
             )
             if (step == SignInStep.Checking) {
-                Description("Checking the token…")
+                Description(stringResource(R.string.settings_checking_token))
             } else if (token.isNotBlank()) {
-                PillButton("Connect", { actions.connectListenBrainz(token) })
+                PillButton(stringResource(R.string.settings_connect), { actions.connectListenBrainz(token) })
             }
         }
         ScrobbleService.LASTFM -> when (step) {
             SignInStep.InBrowser -> {
-                Description("Allow Sitara on the Last.fm page in your browser, then come back here.")
+                Description(stringResource(R.string.settings_lastfm_allow))
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    PillButton("I’ve allowed it", actions::finishLastFmSignIn)
-                    PillButton("Cancel", { actions.cancelSignIn(state.service) }, primary = false)
+                    PillButton(stringResource(R.string.settings_allowed_it), actions::finishLastFmSignIn)
+                    PillButton(stringResource(R.string.settings_cancel), { actions.cancelSignIn(state.service) }, primary = false)
                 }
             }
-            SignInStep.Checking -> Description("Checking with Last.fm…")
+            SignInStep.Checking -> Description(stringResource(R.string.settings_checking_lastfm))
             else -> {
                 val problem = (step as? SignInStep.Failed)?.problem
-                Description(problem?.let { problemWords(state.service, it) } ?: "Sign in on last.fm in your browser; Sitara never sees your password.")
-                PillButton(if (state.account == null) "Sign in with Last.fm" else "Sign in again", actions::signInToLastFm)
+                Description(problem?.let { problemWords(state.service, it) } ?: stringResource(R.string.settings_lastfm_sign_in_help))
+                PillButton(stringResource(if (state.account == null) R.string.settings_sign_in_lastfm else R.string.settings_sign_in_again), actions::signInToLastFm)
             }
         }
     }
@@ -304,16 +317,18 @@ private fun SignInForm(state: ScrobbleServiceState, actions: ScrobblingActions) 
 private fun StatusChip(state: ScrobbleServiceState, paused: Boolean) {
     val colors = MaterialTheme.colorScheme
     val account = state.account
-    val (label, dot) = when {
-        !state.available -> "Unavailable" to colors.outline
-        account == null -> "Not connected" to colors.outline
-        account.signInNeeded -> "Sign in again" to colors.error
-        paused -> "Paused" to colors.outline
-        else -> "Connected" to colors.primary
+    val (labelRes, dot) = when {
+        !state.available -> R.string.settings_status_unavailable to colors.outline
+        account == null -> R.string.settings_status_not_connected to colors.outline
+        account.signInNeeded -> R.string.settings_sign_in_again to colors.error
+        paused -> R.string.settings_status_paused to colors.outline
+        else -> R.string.settings_status_connected to colors.primary
     }
+    val label = stringResource(labelRes)
+    val description = stringResource(R.string.settings_status_description, state.service.displayName(), label)
     Row(
         Modifier.clip(CircleShape).background(colors.surfaceContainerHighest).padding(horizontal = 10.dp, vertical = 6.dp)
-            .semantics(mergeDescendants = true) { contentDescription = "${state.service.label}: $label" },
+            .semantics(mergeDescendants = true) { contentDescription = description },
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Box(Modifier.size(8.dp).clip(CircleShape).background(dot))
@@ -323,13 +338,14 @@ private fun StatusChip(state: ScrobbleServiceState, paused: Boolean) {
 
 @Composable
 private fun PendingBadge(count: Int) {
+    val spoken = waitingWords(count)
     Text(
-        "$count waiting",
+        pluralStringResource(R.plurals.settings_pending_badge, count, count),
         style = MaterialTheme.typography.labelMedium,
         color = MaterialTheme.colorScheme.onPrimary,
         maxLines = 1,
         modifier = Modifier.clip(CircleShape).background(MaterialTheme.colorScheme.primary).padding(horizontal = 10.dp, vertical = 4.dp)
-            .clearAndSetSemantics { contentDescription = waitingWords(count) },
+            .clearAndSetSemantics { contentDescription = spoken },
     )
 }
 
@@ -338,23 +354,26 @@ private fun Description(text: String, modifier: Modifier = Modifier) {
     Text(text, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, modifier = modifier)
 }
 
-private fun waitingWords(count: Int) = if (count == 1) "1 play waiting to be sent" else "$count plays waiting to be sent"
+@Composable
+private fun waitingWords(count: Int) = pluralStringResource(R.plurals.settings_plays_waiting, count, count)
 
+@Composable
 private fun problemWords(service: ScrobbleService, problem: SignInProblem) = when (problem) {
-    SignInProblem.OFFLINE -> "${service.label} can’t be reached. Check your connection and try again."
+    SignInProblem.OFFLINE -> stringResource(R.string.settings_problem_offline, service.displayName())
     SignInProblem.REFUSED -> when (service) {
-        ScrobbleService.LISTENBRAINZ -> "ListenBrainz doesn’t know this token. Copy it again from listenbrainz.org/settings."
-        ScrobbleService.LASTFM -> "Last.fm didn’t allow access. Sign in again and choose Yes, allow access."
+        ScrobbleService.LISTENBRAINZ -> stringResource(R.string.settings_problem_refused_listenbrainz)
+        ScrobbleService.LASTFM -> stringResource(R.string.settings_problem_refused_lastfm)
     }
 }
 
 /** "Last sent today at 10:42", or on an earlier day its date. */
+@Composable
 private fun lastSent(sentAt: Long?, zone: ZoneId, nowMs: Long): String {
-    sentAt ?: return "Nothing sent yet"
+    sentAt ?: return stringResource(R.string.settings_nothing_sent)
     val sent = Instant.ofEpochMilli(sentAt).atZone(zone)
     return if (sent.toLocalDate() == Instant.ofEpochMilli(nowMs).atZone(zone).toLocalDate()) {
-        "Last sent today at ${sent.format(DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT))}"
+        stringResource(R.string.settings_last_sent_today, sent.format(DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT)))
     } else {
-        "Last sent ${sent.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM))}"
+        stringResource(R.string.settings_last_sent, sent.format(DateTimeFormatter.ofLocalizedDate(FormatStyle.MEDIUM)))
     }
 }

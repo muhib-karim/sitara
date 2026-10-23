@@ -73,8 +73,8 @@ suspend fun readSpotifyList(reader: SpotifyEmbedReader, link: SpotifyLink): Sour
 
 private const val MAX_FILE_BYTES = 4 * 1024 * 1024
 
-/** The picked file's name and text, read off the main thread; at most 4 MB. */
-suspend fun readPlaylistFile(resolver: ContentResolver, uri: Uri): ImportSource.PlaylistFile = withContext(Dispatchers.IO) {
+/** The picked file's name and text, read off the main thread; at most 4 MB. [fallbackName] names a file that has no name. */
+suspend fun readPlaylistFile(resolver: ContentResolver, uri: Uri, fallbackName: String = "Imported playlist"): ImportSource.PlaylistFile = withContext(Dispatchers.IO) {
     try {
         val name = resolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { if (it.moveToFirst()) it.getString(0) else null }
         val bytes = resolver.openInputStream(uri)?.use { input ->
@@ -88,7 +88,7 @@ suspend fun readPlaylistFile(resolver: ContentResolver, uri: Uri): ImportSource.
             }
             out.toByteArray()
         } ?: throw ImportFailedException(ImportProblem.FILE_UNREADABLE)
-        ImportSource.PlaylistFile(name ?: uri.lastPathSegment ?: "Imported playlist", bytes.decodeToString())
+        ImportSource.PlaylistFile(name ?: uri.lastPathSegment ?: fallbackName, bytes.decodeToString())
     } catch (e: IOException) {
         throw ImportFailedException(ImportProblem.FILE_UNREADABLE, e)
     } catch (e: SecurityException) {

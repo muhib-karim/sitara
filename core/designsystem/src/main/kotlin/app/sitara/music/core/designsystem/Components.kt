@@ -21,8 +21,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -58,7 +60,8 @@ fun HeaderAction(label: String, onClick: () -> Unit, modifier: Modifier = Modifi
 @Composable
 private fun SectionTitle(title: String, subtitle: String?, modifier: Modifier) {
     Column(modifier) {
-        Text(title, style = SectionStyle, color = MaterialTheme.colorScheme.onBackground)
+        // A heading, so TalkBack's heading navigation jumps from section to section.
+        Text(title, style = SectionStyle, color = MaterialTheme.colorScheme.onBackground, modifier = Modifier.semantics { heading() })
         if (subtitle != null) {
             Text(subtitle, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
@@ -71,7 +74,7 @@ fun LargeTitle(title: String, modifier: Modifier = Modifier) {
         title,
         style = MaterialTheme.typography.displaySmall,
         color = MaterialTheme.colorScheme.onBackground,
-        modifier = modifier.padding(start = 20.dp, end = 20.dp, top = 24.dp, bottom = 8.dp),
+        modifier = modifier.padding(start = 20.dp, end = 20.dp, top = 24.dp, bottom = 8.dp).semantics { heading() },
     )
 }
 
@@ -90,10 +93,12 @@ fun TrackRow(
     moreButton: Boolean = true,
     trailing: (@Composable () -> Unit)? = null,
 ) {
+    val moreOptions = stringResource(R.string.ds_more_options)
+    val rowDescription = stringResource(R.string.ds_track_by, track.title, track.artist)
     Row(
         modifier
-            .combinedClickable(role = Role.Button, onClick = onClick, onLongClickLabel = onMore?.let { "More options" }, onLongClick = onMore)
-            .semantics(mergeDescendants = true) { contentDescription = "${track.title} by ${track.artist}" }
+            .combinedClickable(role = Role.Button, onClick = onClick, onLongClickLabel = onMore?.let { moreOptions }, onLongClick = onMore)
+            .semantics(mergeDescendants = true) { contentDescription = rowDescription }
             .padding(contentPadding),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.Start,
@@ -107,7 +112,7 @@ fun TrackRow(
         trailing?.invoke()
         if (onMore != null && moreButton) {
             IconButton(onClick = onMore) {
-                Icon(SitaraIcons.More, "More options for ${track.title}", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                Icon(SitaraIcons.More, stringResource(R.string.ds_more_options_for, track.title), tint = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     }

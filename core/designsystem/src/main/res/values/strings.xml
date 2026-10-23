@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Rows, tiles and actions -->
+    <string name="ds_more_options">More options</string>
+    <string name="ds_more_options_for">More options for %1$s</string>
+    <string name="ds_preview">Preview</string>
+    <string name="ds_track_by">%1$s by %2$s</string>
+    <string name="ds_move_up">Move up</string>
+    <string name="ds_move_down">Move down</string>
+
+    <!-- Collection preview subtitles -->
+    <string name="ds_playlist">Playlist</string>
+    <string name="ds_artist">Artist</string>
+    <string name="ds_your_playlist">Your playlist</string>
+
+    <!-- Share and QR code -->
+    <string name="ds_qr_code_for">QR code for %1$s</string>
+    <string name="ds_send_link">Send link</string>
+    <string name="ds_share_qr_image">Share QR image</string>
+    <string name="ds_share_qr_code">Share QR code</string>
+
+    <!-- Export of downloads -->
+    <string name="ds_export_getting_ready">Getting ready to export</string>
+    <string name="ds_export_progress">Exporting %1$d of %2$d</string>
+    <string name="ds_export_finishing">Finishing the export</string>
+    <plurals name="ds_export_exported">
+        <item quantity="one">Exported %d song</item>
+        <item quantity="other">Exported %d songs</item>
+    </plurals>
+    <string name="ds_export_with_lyrics">%1$d with lyrics</string>
+    <string name="ds_export_without_tags">%1$d without tags</string>
+    <string name="ds_export_skipped">%1$d skipped, not fully downloaded</string>
+    <string name="ds_export_nothing_downloaded">Nothing downloaded to export yet</string>
+    <string name="ds_export_folder_unwritable">Couldn\'t write to that folder. Pick another and try again.</string>
+
+    <!-- SearchFilter -->
+    <string name="ds_label_search_filter_songs">Songs</string>
+    <string name="ds_label_search_filter_albums">Albums</string>
+    <string name="ds_label_search_filter_artists">Artists</string>
+    <string name="ds_label_search_filter_playlists">Playlists</string>
+
+    <!-- ScrobbleService (service names, same in every language) -->
+    <string name="ds_label_scrobble_listenbrainz">ListenBrainz</string>
+    <string name="ds_label_scrobble_lastfm">Last.fm</string>
+
+    <!-- StatsRange -->
+    <string name="ds_label_stats_week">This week</string>
+    <string name="ds_label_stats_month">This month</string>
+    <string name="ds_label_stats_year">This year</string>
+    <string name="ds_label_stats_all_time">All time</string>
+
+    <!-- AccentColor -->
+    <string name="ds_label_accent_saffron">Saffron</string>
+    <string name="ds_label_accent_rose">Rose</string>
+    <string name="ds_label_accent_violet">Violet</string>
+    <string name="ds_label_accent_blue">Blue</string>
+    <string name="ds_label_accent_teal">Teal</string>
+    <string name="ds_label_accent_green">Green</string>
+    <string name="ds_label_accent_artwork">From artwork</string>
+
+    <!-- Palette -->
+    <string name="ds_label_palette_sitara">Sitara</string>
+    <string name="ds_label_palette_saffron_dusk">Saffron dusk</string>
+    <string name="ds_label_palette_lotus">Lotus</string>
+    <string name="ds_label_palette_indigo_ink">Indigo ink</string>
+    <string name="ds_label_palette_harbour">Harbour</string>
+    <string name="ds_label_palette_monsoon">Monsoon</string>
+    <string name="ds_label_palette_tea_garden">Tea garden</string>
+
+    <!-- AudioQuality -->
+    <string name="ds_label_quality_auto">Auto</string>
+    <string name="ds_label_quality_high">High</string>
+    <string name="ds_label_quality_normal">Normal</string>
+    <string name="ds_label_quality_data_saver">Data saver</string>
+
+    <!-- LibrarySort -->
+    <string name="ds_label_sort_recently_added">Recently added</string>
+    <string name="ds_label_sort_recently_played">Recently played</string>
+    <string name="ds_label_sort_a_to_z">A to Z</string>
+    <string name="ds_label_sort_most_played">Most played</string>
+
+    <!-- EqualiserPreset -->
+    <string name="ds_label_eq_flat">Flat</string>
+    <string name="ds_label_eq_bass_boost">Bass boost</string>
+    <string name="ds_label_eq_treble_boost">Treble boost</string>
+    <string name="ds_label_eq_vocal">Vocal</string>
+    <string name="ds_label_eq_rock">Rock</string>
+    <string name="ds_label_eq_pop">Pop</string>
+    <string name="ds_label_eq_classical">Classical</string>
+    <string name="ds_label_eq_electronic">Electronic</string>
+    <string name="ds_label_eq_acoustic">Acoustic</string>
+    <string name="ds_label_eq_late_night">Late night</string>
+</resources>

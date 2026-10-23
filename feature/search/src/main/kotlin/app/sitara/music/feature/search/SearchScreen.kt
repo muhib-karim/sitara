@@ -54,6 +54,8 @@ import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -77,6 +79,7 @@ import app.sitara.music.core.designsystem.SitaraSheet
 import app.sitara.music.core.designsystem.SitaraSpacing
 import app.sitara.music.core.designsystem.TrackRow
 import app.sitara.music.core.designsystem.byline
+import app.sitara.music.core.designsystem.displayName
 import app.sitara.music.core.designsystem.preview
 import app.sitara.music.core.designsystem.previewOnLongClick
 import app.sitara.music.core.designsystem.rememberPlaceholderPulse
@@ -130,7 +133,7 @@ fun SearchScreen(
         send(picked)
     }
     LazyColumn(modifier.fillMaxSize().testTag("search-content"), contentPadding = contentPadding) {
-        item(key = "title") { LargeTitle("Search") }
+        item(key = "title") { LargeTitle(stringResource(R.string.search_title)) }
         item(key = "field") { SearchField(query, onQueryChange, onSearch = { send(query) }, Modifier.focusRequester(field)) }
         if (query.isBlank()) {
             recentSearches(landing.recent, pick, actions::removeRecentSearch, onClearAll = { confirmClear = true }, onStart = { field.requestFocus() })
@@ -142,7 +145,7 @@ fun SearchScreen(
                     Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = SitaraSpacing.Gutter, vertical = 12.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                 ) {
-                    SearchFilter.entries.forEach { SelectionPill(it.label, it == filter, { onFilterChange(it) }) }
+                    SearchFilter.entries.forEach { SelectionPill(it.displayName(), it == filter, { onFilterChange(it) }) }
                 }
             }
             val current = query.trim()
@@ -164,13 +167,13 @@ fun SearchScreen(
                 state is SearchState.Failed && state.query == current && state.filter == filter -> item(key = "failed") {
                     Column(Modifier.padding(SitaraSpacing.Gutter), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                         Text(
-                            "Search isn’t working right now. Check your connection, then try again.",
+                            stringResource(R.string.search_failed),
                             color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyLarge,
                         )
-                        PillButton("Try again", onRetry)
+                        PillButton(stringResource(R.string.search_try_again), onRetry)
                     }
                 }
-                else -> item(key = "searching") { SearchMessage("Searching…") }
+                else -> item(key = "searching") { SearchMessage(stringResource(R.string.search_searching)) }
             }
         }
     }
@@ -182,11 +185,14 @@ private fun LazyListScope.recentSearches(recent: List<String>, onPick: (String) 
         return
     }
     item(key = "recent-title") {
-        SectionHeader("Recent searches", Modifier.padding(top = 12.dp), action = { HeaderAction("Clear all", onClearAll, description = "Clear all recent searches") })
+        SectionHeader(
+            stringResource(R.string.search_recent), Modifier.padding(top = 12.dp),
+            action = { HeaderAction(stringResource(R.string.search_clear_all), onClearAll, description = stringResource(R.string.search_clear_all_description)) },
+        )
     }
     items(recent.take(SHOWN_RECENT_SEARCHES), key = { "recent-$it" }) { searched ->
         Row(
-            Modifier.fillMaxWidth().clickable(role = Role.Button, onClickLabel = "Search again") { onPick(searched) }
+            Modifier.fillMaxWidth().clickable(role = Role.Button, onClickLabel = stringResource(R.string.search_search_again)) { onPick(searched) }
                 .padding(start = SitaraSpacing.Gutter, end = 8.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
@@ -196,7 +202,7 @@ private fun LazyListScope.recentSearches(recent: List<String>, onPick: (String) 
                 modifier = Modifier.weight(1f).padding(start = 16.dp),
             )
             IconButton(onClick = { onRemove(searched) }) {
-                Icon(SitaraIcons.Close, "Remove $searched from recent searches", tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
+                Icon(SitaraIcons.Close, stringResource(R.string.search_remove_recent, searched), tint = MaterialTheme.colorScheme.onSurfaceVariant, modifier = Modifier.size(20.dp))
             }
         }
     }
@@ -215,12 +221,12 @@ private fun NoRecentSearches(onStart: () -> Unit) {
             Icon(SitaraIcons.Recent, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(28.dp))
         }
         Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(4.dp)) {
-            Text("Your searches show up here", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+            Text(stringResource(R.string.search_empty_title), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
             Text(
-                "Find a song, artist or album, then come back to it in one tap.",
+                stringResource(R.string.search_empty_description),
                 style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            PillButton("Start a search", onStart, Modifier.padding(top = 8.dp), primary = false)
+            PillButton(stringResource(R.string.search_start), onStart, Modifier.padding(top = 8.dp), primary = false)
         }
     }
 }
@@ -232,11 +238,11 @@ private fun ClearRecentSheet(onConfirm: () -> Unit, onDismiss: () -> Unit) {
             Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = SitaraSpacing.Gutter, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            Text("Clear recent searches?", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface)
-            Text("They are only kept on this phone, so they can’t be brought back.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+            Text(stringResource(R.string.search_clear_title), style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface)
+            Text(stringResource(R.string.search_clear_description), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                PillButton("Clear", { close(onConfirm) })
-                PillButton("Keep them", { close {} }, primary = false)
+                PillButton(stringResource(R.string.search_clear), { close(onConfirm) })
+                PillButton(stringResource(R.string.search_keep_them), { close {} }, primary = false)
             }
         }
     }
@@ -247,13 +253,13 @@ private fun LazyListScope.moods(moods: MoodsState, onMood: (Mood) -> Unit, onRet
         MoodsState.Loading -> item(key = "moods-loading", contentType = "skeleton") { MoodsSkeleton() }
         MoodsState.Failed -> item(key = "moods-failed") {
             Column(Modifier.padding(top = 12.dp)) {
-                SectionHeader("Moods & genres")
+                SectionHeader(stringResource(R.string.search_moods))
                 Text(
-                    "Moods and genres didn’t load. Check your connection, then try again.",
+                    stringResource(R.string.search_moods_failed),
                     style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = SitaraSpacing.Gutter),
                 )
-                PillButton("Try again", onRetry, Modifier.padding(horizontal = SitaraSpacing.Gutter, vertical = 12.dp))
+                PillButton(stringResource(R.string.search_try_again), onRetry, Modifier.padding(horizontal = SitaraSpacing.Gutter, vertical = 12.dp))
             }
         }
         is MoodsState.Ready -> moods.sections.forEach { section ->
@@ -287,7 +293,8 @@ private fun MoodTile(mood: Mood, onClick: () -> Unit, modifier: Modifier) {
 @Composable
 private fun MoodsSkeleton() {
     val pulse = rememberPlaceholderPulse()
-    Column(Modifier.padding(top = 12.dp).clearAndSetSemantics { contentDescription = "Loading moods and genres" }) {
+    val loading = stringResource(R.string.search_moods_loading)
+    Column(Modifier.padding(top = 12.dp).clearAndSetSemantics { contentDescription = loading }) {
         PlaceholderBlock(pulse, Modifier.padding(horizontal = SitaraSpacing.Gutter, vertical = 12.dp).size(160.dp, 20.dp))
         repeat(3) {
             Row(Modifier.padding(horizontal = SitaraSpacing.Gutter, vertical = 6.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -306,10 +313,11 @@ private fun Suggestions(suggestions: List<String>, onPick: (String) -> Unit) {
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
         items(suggestions, key = { it }) { suggestion ->
+            val description = stringResource(R.string.search_search_for, suggestion)
             Row(
                 Modifier.defaultMinSize(minHeight = SitaraSpacing.TouchTarget).clip(CircleShape)
                     .border(1.dp, MaterialTheme.colorScheme.outlineVariant, CircleShape)
-                    .clickable(role = Role.Button) { onPick(suggestion) }.semantics { contentDescription = "Search for $suggestion" }
+                    .clickable(role = Role.Button) { onPick(suggestion) }.semantics { contentDescription = description }
                     .padding(horizontal = 16.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
@@ -334,32 +342,46 @@ private fun LazyListScope.searchResults(
     onTrackMenu: (Track) -> Unit,
 ) {
     if (results.isEmpty) {
-        item(key = "no-results") { SearchMessage("No ${filter.label.lowercase()} found for “${results.query}”.") }
+        item(key = "no-results") {
+            val none = when (filter) {
+                SearchFilter.SONGS -> R.string.search_no_songs
+                SearchFilter.ALBUMS -> R.string.search_no_albums
+                SearchFilter.ARTISTS -> R.string.search_no_artists
+                SearchFilter.PLAYLISTS -> R.string.search_no_playlists
+            }
+            SearchMessage(stringResource(none, results.query))
+        }
         return
     }
     if (results.tracks.isNotEmpty()) {
-        item(key = "songs-title") { SectionHeader("Songs", subtitle = if (results.tracks.size == 1) "1 result" else "${results.tracks.size} results", modifier = Modifier.padding(top = 20.dp)) }
+        item(key = "songs-title") {
+            SectionHeader(
+                stringResource(R.string.search_songs), subtitle = pluralStringResource(R.plurals.search_results, results.tracks.size, results.tracks.size),
+                modifier = Modifier.padding(top = 20.dp),
+            )
+        }
         itemsIndexed(results.tracks, key = { _, track -> "song-${track.id}" }) { index, track ->
             TrackRow(track, { onPlay(results.tracks, index) }, onMore = { onTrackMenu(track) })
         }
     }
     if (results.albums.isNotEmpty()) {
-        item(key = "albums-title") { SectionHeader("Albums", modifier = Modifier.padding(top = 20.dp)) }
+        item(key = "albums-title") { SectionHeader(stringResource(R.string.search_albums), modifier = Modifier.padding(top = 20.dp)) }
         items(results.albums, key = { "album-${it.id}" }) { album ->
             CollectionRow(album.title, album.byline, album.artwork, { onAlbum(album) }, Modifier.padding(horizontal = SitaraSpacing.Gutter), onLongClick = previewOnLongClick(album.preview()))
         }
     }
     if (results.artists.isNotEmpty()) {
-        item(key = "artists-title") { SectionHeader("Artists", modifier = Modifier.padding(top = 20.dp)) }
+        item(key = "artists-title") { SectionHeader(stringResource(R.string.search_artists), modifier = Modifier.padding(top = 20.dp)) }
         items(results.artists, key = { "artist-${it.id}" }) { artist ->
-            CollectionRow(artist.name, "Artist", artist.artwork, { onArtist(artist) }, Modifier.padding(horizontal = SitaraSpacing.Gutter), onLongClick = previewOnLongClick(artist.preview()))
+            CollectionRow(artist.name, stringResource(R.string.search_artist), artist.artwork, { onArtist(artist) }, Modifier.padding(horizontal = SitaraSpacing.Gutter), onLongClick = previewOnLongClick(artist.preview()))
         }
     }
     if (results.playlists.isNotEmpty()) {
-        item(key = "playlists-title") { SectionHeader("Playlists", modifier = Modifier.padding(top = 20.dp)) }
+        item(key = "playlists-title") { SectionHeader(stringResource(R.string.search_playlists), modifier = Modifier.padding(top = 20.dp)) }
         items(results.playlists, key = { "playlist-${it.id}" }) { playlist ->
+            val fallback = stringResource(R.string.search_playlist)
             CollectionRow(
-                playlist.title, playlist.curator.ifEmpty { "Playlist" }, playlist.artwork, { onPlaylist(playlist) }, Modifier.padding(horizontal = SitaraSpacing.Gutter),
+                playlist.title, playlist.curator.ifEmpty { fallback }, playlist.artwork, { onPlaylist(playlist) }, Modifier.padding(horizontal = SitaraSpacing.Gutter),
                 onLongClick = previewOnLongClick(playlist.preview()),
             )
         }
@@ -368,6 +390,7 @@ private fun LazyListScope.searchResults(
 
 @Composable
 private fun SearchField(query: String, onQueryChange: (String) -> Unit, onSearch: () -> Unit, modifier: Modifier) {
+    val description = stringResource(R.string.search_title)
     Row(
         Modifier.padding(horizontal = SitaraSpacing.Gutter).fillMaxWidth().defaultMinSize(minHeight = 56.dp)
             .clip(CircleShape).background(MaterialTheme.colorScheme.surfaceContainerHigh).padding(start = 16.dp, end = 4.dp),
@@ -382,7 +405,7 @@ private fun SearchField(query: String, onQueryChange: (String) -> Unit, onSearch
             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Search),
             // The search key and a hardware Enter both send the search.
             keyboardActions = KeyboardActions(onSearch = { onSearch() }),
-            modifier = modifier.weight(1f).padding(vertical = 16.dp).semantics { contentDescription = "Search" }
+            modifier = modifier.weight(1f).padding(vertical = 16.dp).semantics { contentDescription = description }
                 .onPreviewKeyEvent { event ->
                     val enter = event.key == Key.Enter || event.key == Key.NumPadEnter
                     if (enter && event.type == KeyEventType.KeyUp) onSearch()
@@ -390,13 +413,13 @@ private fun SearchField(query: String, onQueryChange: (String) -> Unit, onSearch
                 },
             decorationBox = { input ->
                 Box {
-                    if (query.isEmpty()) Text("Songs, albums, artists", color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyLarge)
+                    if (query.isEmpty()) Text(stringResource(R.string.search_hint), color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyLarge)
                     input()
                 }
             },
         )
         if (query.isNotEmpty()) {
-            GlassIconButton(SitaraIcons.Close, "Clear search", { onQueryChange("") })
+            GlassIconButton(SitaraIcons.Close, stringResource(R.string.search_clear_search), { onQueryChange("") })
         } else {
             Spacer(Modifier.width(12.dp))
         }
@@ -420,6 +443,6 @@ private fun OnThisPhoneBadge() {
         horizontalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         Icon(SitaraIcons.Phone, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(14.dp))
-        Text("On this phone", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary, maxLines = 1)
+        Text(stringResource(R.string.search_on_this_phone), style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary, maxLines = 1)
     }
 }

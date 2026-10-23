@@ -17,6 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
@@ -73,30 +74,30 @@ fun CollectionPreviewSheet(
             horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp),
         ) {
             if (!songs.isNullOrEmpty()) {
-                PillButton("Play", { onPlay(songs, 0) })
-                PillButton("Shuffle", { onShuffle(songs) }, primary = false)
+                PillButton(stringResource(R.string.library_play), { onPlay(songs, 0) })
+                PillButton(stringResource(R.string.library_shuffle), { onShuffle(songs) }, primary = false)
             }
-            PillButton("Open", onOpen, primary = false)
-            if (onShare != null) PillButton("Share", onShare, primary = false)
+            PillButton(stringResource(R.string.library_open), onOpen, primary = false)
+            if (onShare != null) PillButton(stringResource(R.string.library_share), onShare, primary = false)
         }
         when {
             state == DetailState.Failed -> Column(Modifier.padding(horizontal = SitaraSpacing.Gutter, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("Couldn’t load the songs. Check your connection, then try again.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                PillButton("Try again", onRetry, primary = false)
+                Text(stringResource(R.string.library_preview_failed), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                PillButton(stringResource(R.string.library_try_again), onRetry, primary = false)
             }
             songs == null -> Text(
-                "Loading songs…", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                stringResource(R.string.library_preview_loading), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(horizontal = SitaraSpacing.Gutter, vertical = 12.dp),
             )
             songs.isEmpty() -> Text(
-                "No songs here yet.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                stringResource(R.string.library_preview_empty), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(horizontal = SitaraSpacing.Gutter, vertical = 12.dp),
             )
             else -> songs.take(PREVIEW_SONGS).forEachIndexed { index, track -> TrackRow(track, { onPlay(songs, index) }, moreButton = false) }
         }
         if (songs != null && songs.size > PREVIEW_SONGS) {
             Text(
-                "and ${songs.size - PREVIEW_SONGS} more", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                stringResource(R.string.library_preview_more, songs.size - PREVIEW_SONGS), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(horizontal = SitaraSpacing.Gutter, vertical = 8.dp),
             )
         }

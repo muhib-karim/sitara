@@ -39,7 +39,9 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.input.pointer.positionChange
+import androidx.compose.ui.platform.LocalResources
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -64,12 +66,14 @@ internal fun UpNextPage(state: PlayerUiState, actions: PlayerActions, onNowPlayi
     val track = state.track ?: return
     val scope = rememberCoroutineScope()
     val snackbar = remember { SnackbarHostState() }
+    val resources = LocalResources.current
+    val undo = stringResource(R.string.player_undo)
     // The queue keeps only the last removal, so a new one replaces the previous offer to undo.
     val remove = { index: Int, removed: Track ->
         actions.removeUpNext(index)
         scope.launch {
             snackbar.currentSnackbarData?.dismiss()
-            if (snackbar.showSnackbar("Removed ${removed.title}", actionLabel = "Undo", duration = SnackbarDuration.Short) == SnackbarResult.ActionPerformed) {
+            if (snackbar.showSnackbar(resources.getString(R.string.player_removed, removed.title), actionLabel = undo, duration = SnackbarDuration.Short) == SnackbarResult.ActionPerformed) {
                 actions.undoRemoveUpNext()
             }
         }
@@ -77,8 +81,8 @@ internal fun UpNextPage(state: PlayerUiState, actions: PlayerActions, onNowPlayi
     }
     Column(Modifier.fillMaxSize()) {
         Row(Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 12.dp), verticalAlignment = Alignment.CenterVertically) {
-            Text("Up next", style = MaterialTheme.typography.headlineMedium, color = SitaraColors.StageContent, modifier = Modifier.weight(1f))
-            PillButton("Now playing", onNowPlaying, primary = false)
+            Text(stringResource(R.string.player_up_next), style = MaterialTheme.typography.headlineMedium, color = SitaraColors.StageContent, modifier = Modifier.weight(1f))
+            PillButton(stringResource(R.string.player_now_playing), onNowPlaying, primary = false)
         }
         FlowRow(
             Modifier.padding(horizontal = 24.dp, vertical = 4.dp),
@@ -88,11 +92,11 @@ internal fun UpNextPage(state: PlayerUiState, actions: PlayerActions, onNowPlayi
         ) {
             // Radio starts from a catalogue song; a song on the phone has none to start from.
             if (state.track?.isLocal != true) RadioControl(state.radio, actions::startRadio)
-            if (state.upNext.isNotEmpty()) PillButton("Save as playlist", { onSaveQueue(listOf(track) + state.upNext) }, primary = false)
+            if (state.upNext.isNotEmpty()) PillButton(stringResource(R.string.player_save_as_playlist), { onSaveQueue(listOf(track) + state.upNext) }, primary = false)
         }
         Box(Modifier.weight(1f).fillMaxWidth()) {
             if (state.upNext.isEmpty()) {
-                Text("You're at the end of the queue", color = SitaraColors.StageSecondary, modifier = Modifier.padding(24.dp))
+                Text(stringResource(R.string.player_queue_end), color = SitaraColors.StageSecondary, modifier = Modifier.padding(24.dp))
             } else {
                 UpNextList(state.upNext, state.upNextFromRadio, actions, remove, Modifier.fillMaxSize())
             }
@@ -113,6 +117,7 @@ private fun UpNextList(upNext: List<Track>, fromRadio: Int, actions: PlayerActio
     val radio = fromRadio.coerceIn(0, order.size)
     val ownReorder = rememberReorderState()
     val radioReorder = rememberReorderState()
+    val removeAction = stringResource(R.string.player_remove_from_queue)
     fun LazyListScope.part(first: Int, count: Int, reorder: ReorderState) {
         val move = { from: Int, to: Int ->
             order = order.toMutableList().apply { add(first + to, removeAt(first + from)) }
@@ -122,7 +127,7 @@ private fun UpNextList(upNext: List<Track>, fromRadio: Int, actions: PlayerActio
             val remove = { onRemove(first + i, item) }
             QueueRow(
                 item, onPlay = { actions.playQueueIndex(first + i) }, onRemove = remove,
-                row = Modifier.reorderableRow(reorder, i, count, move, listOf(CustomAccessibilityAction("Remove from the queue") { remove(); true })),
+                row = Modifier.reorderableRow(reorder, i, count, move, listOf(CustomAccessibilityAction(removeAction) { remove(); true })),
                 handle = Modifier.dragHandle(reorder, i, count, move),
             )
         }
@@ -132,7 +137,7 @@ private fun UpNextList(upNext: List<Track>, fromRadio: Int, actions: PlayerActio
         if (radio > 0) {
             item(key = "radio-heading") {
                 Text(
-                    "Up next from radio", style = MaterialTheme.typography.titleSmall, color = SitaraColors.StageSecondary,
+                    stringResource(R.string.player_up_next_from_radio), style = MaterialTheme.typography.titleSmall, color = SitaraColors.StageSecondary,
                     modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = 16.dp, bottom = 4.dp).semantics { heading() },
                 )
             }
@@ -167,7 +172,7 @@ private fun QueueRow(track: Track, onPlay: () -> Unit, onRemove: () -> Unit, row
     }
     TrackRow(track, onClick = onPlay, modifier = row.then(swipeToRemove).graphicsLayer { translationX = swipe }) {
         IconButton(onClick = onRemove) {
-            Icon(SitaraIcons.Close, "Remove ${track.title} from the queue", tint = SitaraColors.StageSecondary)
+            Icon(SitaraIcons.Close, stringResource(R.string.player_remove_track_from_queue, track.title), tint = SitaraColors.StageSecondary)
         }
         Icon(SitaraIcons.DragHandle, null, tint = SitaraColors.StageSecondary, modifier = Modifier.size(48.dp).then(handle).padding(12.dp))
     }
@@ -176,8 +181,8 @@ private fun QueueRow(track: Track, onPlay: () -> Unit, onRemove: () -> Unit, row
 @Composable
 private fun RadioControl(status: RadioStatus, onStart: () -> Unit, modifier: Modifier = Modifier) {
     when (status) {
-        RadioStatus.READY -> PillButton("Start radio", onStart, modifier, primary = false)
-        RadioStatus.LOADING -> Text("Finding similar songs…", color = SitaraColors.StageSecondary, style = MaterialTheme.typography.bodyMedium, modifier = modifier)
-        RadioStatus.UNAVAILABLE -> Text("No similar songs found for this one", color = SitaraColors.StageSecondary, style = MaterialTheme.typography.bodyMedium, modifier = modifier)
+        RadioStatus.READY -> PillButton(stringResource(R.string.player_start_radio), onStart, modifier, primary = false)
+        RadioStatus.LOADING -> Text(stringResource(R.string.player_radio_loading), color = SitaraColors.StageSecondary, style = MaterialTheme.typography.bodyMedium, modifier = modifier)
+        RadioStatus.UNAVAILABLE -> Text(stringResource(R.string.player_radio_unavailable), color = SitaraColors.StageSecondary, style = MaterialTheme.typography.bodyMedium, modifier = modifier)
     }
 }

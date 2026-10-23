@@ -1,0 +1,236 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Shared -->
+    <string name="library_back">Back</string>
+    <string name="library_play">Play</string>
+    <string name="library_play_all">Play all</string>
+    <string name="library_shuffle">Shuffle</string>
+    <string name="library_share">Share</string>
+    <string name="library_open">Open</string>
+    <string name="library_try_again">Try again</string>
+    <string name="library_cancel">Cancel</string>
+    <string name="library_create">Create</string>
+    <string name="library_save">Save</string>
+    <string name="library_joined">%1$s · %2$s</string>
+    <plurals name="library_song_count">
+        <item quantity="one">%1$d song</item>
+        <item quantity="other">%1$d songs</item>
+    </plurals>
+    <plurals name="library_release_count">
+        <item quantity="one">%1$d release</item>
+        <item quantity="other">%1$d releases</item>
+    </plurals>
+    <plurals name="library_play_count">
+        <item quantity="one">%1$d play</item>
+        <item quantity="other">%1$d plays</item>
+    </plurals>
+
+    <!-- Library tab -->
+    <string name="library_title">Library</string>
+    <string name="library_failed">Your library couldn’t be read. Restart Sitara to try again.</string>
+    <string name="library_liked_songs">Liked songs</string>
+    <string name="library_downloads">Downloads</string>
+    <string name="library_your_stats">Your stats</string>
+    <string name="library_stats_detail">Top songs, artists and when you listen</string>
+    <string name="library_on_this_phone">On this phone</string>
+    <string name="library_on_this_phone_detail">Songs and folders on your phone</string>
+    <string name="library_import_playlist">Import playlist</string>
+    <string name="library_import_detail">From a YouTube or Spotify link, M3U or CSV file</string>
+    <string name="library_recently_played">Recently played</string>
+    <string name="library_kind_playlists">Playlists</string>
+    <string name="library_kind_songs">Songs</string>
+    <string name="library_kind_albums">Albums</string>
+    <string name="library_kind_artists">Artists</string>
+    <string name="library_kind_downloads">Downloads</string>
+    <string name="library_kind_folders">Folders</string>
+    <string name="library_order_playlists_by">Order playlists by</string>
+    <string name="library_order_songs_by">Order songs by</string>
+    <string name="library_order_albums_by">Order albums by</string>
+    <string name="library_order_artists_by">Order artists by</string>
+    <string name="library_order_downloads_by">Order downloads by</string>
+    <string name="library_order_folders_by">Order folders by</string>
+    <string name="library_empty_playlists">Make a playlist to keep songs in your own order.</string>
+    <string name="library_empty_songs">Like a song and it shows up here.</string>
+    <string name="library_empty_albums">Save an album from its page to keep it here.</string>
+    <string name="library_empty_artists">Save an artist from their page to keep them here.</string>
+    <string name="library_artist">Artist</string>
+    <string name="library_new_playlist">New playlist</string>
+    <string name="library_change_order">Change the order</string>
+    <string name="library_order_description">Order: %1$s</string>
+    <string name="library_show_list">Show as a list</string>
+    <string name="library_show_grid">Show as a grid</string>
+    <string name="library_empty_title">Your library starts here</string>
+    <string name="library_empty_body">Like songs, save albums and artists, make playlists, download for offline and play the music on your phone. They all gather here.</string>
+    <string name="library_find_music">Find music</string>
+    <string name="library_import_a_playlist">Import a playlist</string>
+    <string name="library_music_on_this_phone">Music on this phone</string>
+    <string name="library_loading">Loading your library</string>
+    <string name="library_export">Export</string>
+    <string name="library_export_description">Export downloads to a folder</string>
+    <string name="library_downloads_empty">Download a song from its menu, or a whole album with Download all, to play it offline.</string>
+    <string name="library_download_again">Download %1$s again</string>
+    <string name="library_delete_download_of">Delete the download of %1$s</string>
+    <string name="library_remove_from_downloads">Remove %1$s from downloads</string>
+    <string name="library_cancel_download_of">Cancel the download of %1$s</string>
+    <string name="library_download_percent">%1$d%%</string>
+    <string name="library_download_downloading">Downloading</string>
+    <string name="library_download_waiting">Waiting</string>
+    <string name="library_download_waiting_wifi">Waiting for Wi-Fi</string>
+    <string name="library_download_waiting_network">Waiting for a connection</string>
+    <string name="library_download_failed">Failed</string>
+
+    <!-- Detail pages -->
+    <string name="library_rename_playlist">Rename playlist</string>
+    <string name="library_page_loading">Loading…</string>
+    <string name="library_page_failed">This page didn’t load. Check your connection, then try again.</string>
+    <string name="library_playlist_gone">This playlist was deleted.</string>
+    <string name="library_artist_empty">Nothing from this artist yet</string>
+    <string name="library_top_songs">Top songs</string>
+    <string name="library_albums_and_singles">Albums and singles</string>
+    <string name="library_album">Album</string>
+    <string name="library_album_empty">No songs in this album</string>
+    <string name="library_playlist">Playlist</string>
+    <string name="library_playlist_empty">No songs in this playlist</string>
+    <string name="library_your_library">Your library</string>
+    <string name="library_liked_empty">Songs you like show up here. Tap the heart in the player, or Like in a song’s menu.</string>
+    <string name="library_your_playlist">Your playlist</string>
+    <string name="library_rename">Rename</string>
+    <string name="library_delete">Delete</string>
+    <string name="library_user_playlist_empty">No songs yet. Add some with “Add to playlist” in any song’s menu.</string>
+    <string name="library_remove_from_playlist">Remove %1$s from this playlist</string>
+    <string name="library_saved">Saved</string>
+    <string name="library_in_your_library">In your library</string>
+    <string name="library_not_in_your_library">Not in your library</string>
+    <string name="library_download_all">Download all</string>
+    <string name="library_downloaded">Downloaded</string>
+    <string name="library_songs">Songs</string>
+    <string name="library_share_page">Share %1$s</string>
+    <string name="library_open_artist">Open artist</string>
+
+    <!-- Collection preview -->
+    <string name="library_preview_failed">Couldn’t load the songs. Check your connection, then try again.</string>
+    <string name="library_preview_loading">Loading songs…</string>
+    <string name="library_preview_empty">No songs here yet.</string>
+    <string name="library_preview_more">and %1$d more</string>
+
+    <!-- Import -->
+    <string name="library_import_reading">Reading the playlist…</string>
+    <string name="library_import_finish_unfinished">Finish importing “%1$s”</string>
+    <string name="library_import_resume">Resume</string>
+    <string name="library_import_discard">Discard</string>
+    <string name="library_import_from_link">From a link</string>
+    <string name="library_import_from_link_detail">A YouTube, YouTube Music or public Spotify playlist or album</string>
+    <string name="library_import_link_label">Playlist link</string>
+    <string name="library_import_link">Import link</string>
+    <string name="library_import_from_file">From a file</string>
+    <string name="library_import_from_file_detail">M3U, M3U8 or CSV with title and artist columns</string>
+    <string name="library_import_choose_another_file">Choose another file</string>
+    <string name="library_import_choose_file">Choose a file</string>
+    <string name="library_import_limits">Up to 2,000 songs (Spotify shows the first 100 of a playlist). Songs without a YouTube link are found by searching for their title and artist.</string>
+    <string name="library_import_spotify_more">Spotify shows only the first 100 songs of a playlist without an account. For the rest, export the playlist as a CSV file and import it too.</string>
+    <string name="library_import_cancel">Cancel import</string>
+    <string name="library_import_none_found">None of these songs were found.</string>
+    <string name="library_import_discard_import">Discard import</string>
+    <string name="library_import_ready_update">%1$s ready. Update “%2$s” with the songs found; uncertain ones you don’t use are left out.</string>
+    <string name="library_import_ready_add">%1$s ready. Add to your library with the songs found; uncertain ones you don’t use are left out.</string>
+    <string name="library_import_update_playlist">Update playlist</string>
+    <string name="library_import_finish">Finish</string>
+    <string name="library_import_check_matches">Check these matches</string>
+    <string name="library_import_check_matches_detail">Not sure these are the songs on your list</string>
+    <string name="library_import_found">Found</string>
+    <string name="library_import_to_check">To check</string>
+    <string name="library_import_not_found">Not found</string>
+    <string name="library_import_on_your_list">On your list: %1$s</string>
+    <string name="library_import_added">Added</string>
+    <string name="library_import_skipped">Skipped</string>
+    <string name="library_import_not_decided">Not decided</string>
+    <string name="library_import_best_match">Best match: %1$s by %2$s. %3$s</string>
+    <string name="library_import_use_this">Use this</string>
+    <string name="library_import_other_matches">Other matches</string>
+    <string name="library_import_skip">Skip</string>
+    <string name="library_import_matches_for">Matches for %1$s</string>
+    <string name="library_import_use_this_song">Use this song</string>
+    <string name="library_import_chosen">Chosen</string>
+    <string name="library_import_updated">Updated “%1$s”</string>
+    <string name="library_import_in_library">“%1$s” is in your library</string>
+    <string name="library_import_left_out">%1$s · %2$d left out</string>
+    <string name="library_import_open_playlist">Open playlist</string>
+    <string name="library_import_another">Import another</string>
+    <plurals name="library_import_checked">
+        <item quantity="one">%1$d of %2$d song checked</item>
+        <item quantity="other">%1$d of %2$d songs checked</item>
+    </plurals>
+    <string name="library_import_problem_link_not_recognised">That isn’t a YouTube, YouTube Music or Spotify playlist link. In the app, use Share, then Copy link.</string>
+    <string name="library_import_problem_playlist_unavailable">This playlist can’t be opened. It may be private or deleted.</string>
+    <string name="library_import_problem_offline">Couldn’t reach the playlist or YouTube Music. Check your connection and try again.</string>
+    <string name="library_import_problem_spotify_unreadable">Spotify’s page has changed and Sitara can’t read it yet. Export the playlist as a CSV file and import that.</string>
+    <string name="library_import_problem_spotify_song_link">That’s a link to one song. Share the playlist or album instead, or search for the song.</string>
+    <string name="library_import_problem_nothing_to_import">There are no songs to import there.</string>
+    <string name="library_import_problem_file_unreadable">That file couldn’t be read. Choose an M3U, M3U8 or CSV file.</string>
+    <string name="library_import_problem_file_too_large">That file is too large to import (over 4 MB).</string>
+
+    <!-- On this phone -->
+    <string name="library_local_scanning">Looking for music…</string>
+    <string name="library_local_gone">These songs are no longer on this phone.</string>
+    <string name="library_local_none_found">No music found on this phone</string>
+    <string name="library_local_play_your_music">Play the music on your phone</string>
+    <string name="library_local_none_found_body">Songs saved on this phone show up here. Keep music somewhere else, like a card or a downloads folder? Choose that folder.</string>
+    <string name="library_local_no_access_body">Let Sitara see the songs saved on this phone, or choose just the folders it may read. Your files stay where they are.</string>
+    <string name="library_local_allow_access">Allow access</string>
+    <string name="library_local_choose_folder">Choose a folder</string>
+    <string name="library_local_access_card">Songs saved elsewhere on this phone aren’t listed yet.</string>
+    <string name="library_local_picked_folders">Picked folders</string>
+    <string name="library_local_picked_folders_detail">Folders Sitara reads besides the phone’s music</string>
+    <string name="library_local_folder_unlinked">Sitara can no longer read this folder · %1$s kept</string>
+    <string name="library_local_relink">Relink folder</string>
+    <string name="library_local_remove_folder">Remove %1$s and its songs from Sitara</string>
+
+    <!-- Playlist sheets -->
+    <string name="library_playlist_name">Name</string>
+    <string name="library_delete_playlist_title">Delete “%1$s”?</string>
+    <string name="library_delete_playlist_body">The playlist goes; its songs stay wherever else you saved them.</string>
+    <string name="library_delete_playlist">Delete playlist</string>
+
+    <!-- Song sheets -->
+    <string name="library_unlike">Remove from liked songs</string>
+    <string name="library_like">Like</string>
+    <string name="library_play_next">Play next</string>
+    <string name="library_add_to_queue">Add to queue</string>
+    <string name="library_add_to_playlist">Add to playlist</string>
+    <string name="library_download">Download</string>
+    <string name="library_remove_download">Remove download</string>
+    <string name="library_cancel_download">Cancel download</string>
+    <string name="library_no_playlists">No playlists yet. Name one above and this song starts it.</string>
+
+    <!-- Stats -->
+    <string name="library_stats_share">Share your stats</string>
+    <string name="library_stats_paused">Listening history is paused in Settings, so new plays aren’t counted.</string>
+    <string name="library_stats_failed">Your listening history couldn’t be read. Restart Sitara to try again.</string>
+    <string name="library_stats_when">When you listen</string>
+    <string name="library_stats_peak">Most around %1$s</string>
+    <string name="library_stats_top_artists">Top artists</string>
+    <string name="library_stats_top_albums">Top albums</string>
+    <string name="library_stats_listened_week">listened this week</string>
+    <string name="library_stats_listened_month">listened this month</string>
+    <string name="library_stats_listened_year">listened this year</string>
+    <string name="library_stats_listened_all_time">listened in all</string>
+    <string name="library_stats_hours_summary">Listening by hour of the day. %1$s</string>
+    <string name="library_stats_hour_entry">%1$s: %2$s</string>
+    <string name="library_stats_ranked_song">%1$d, %2$s by %3$s, %4$s</string>
+    <string name="library_stats_not_enough">Not enough listening yet</string>
+    <string name="library_stats_nothing_week">Nothing played this week yet</string>
+    <string name="library_stats_nothing_month">Nothing played this month yet</string>
+    <string name="library_stats_nothing_year">Nothing played this year yet</string>
+    <string name="library_stats_empty_body">A play counts after 30 seconds, or half of a short song. Keep listening and your top songs, artists and hours appear here.</string>
+    <string name="library_stats_loading">Loading your stats</string>
+
+    <!-- Stats share card -->
+    <string name="library_share_image">Share image</string>
+    <string name="library_share_heading">%1$s on Sitara</string>
+    <string name="library_share_listened">listened</string>
+    <string name="library_share_listened_summary">%1$s listened</string>
+    <string name="library_share_top_artist">Top artist</string>
+    <string name="library_share_top_artist_summary">Top artist: %1$s</string>
+    <string name="library_share_top_songs_summary">Top songs: %1$s</string>
+    <string name="library_share_song_entry">%1$d, %2$s by %3$s</string>
+</resources>

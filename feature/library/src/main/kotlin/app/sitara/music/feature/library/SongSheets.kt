@@ -26,6 +26,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -57,18 +58,18 @@ fun SongActions(
 ) {
     Column(Modifier.fillMaxWidth().navigationBarsPadding().padding(bottom = 8.dp)) {
         SheetTrackHeading(track)
-        SheetAction(if (liked) SitaraIcons.HeartFilled else SitaraIcons.Heart, if (liked) "Remove from liked songs" else "Like", onToggleLike)
-        SheetAction(SitaraIcons.Next, "Play next", onPlayNext)
-        SheetAction(SitaraIcons.Queue, "Add to queue", onAddToQueue)
-        SheetAction(SitaraIcons.Add, "Add to playlist", onAddToPlaylist)
+        SheetAction(if (liked) SitaraIcons.HeartFilled else SitaraIcons.Heart, stringResource(if (liked) R.string.library_unlike else R.string.library_like), onToggleLike)
+        SheetAction(SitaraIcons.Next, stringResource(R.string.library_play_next), onPlayNext)
+        SheetAction(SitaraIcons.Queue, stringResource(R.string.library_add_to_queue), onAddToQueue)
+        SheetAction(SitaraIcons.Add, stringResource(R.string.library_add_to_playlist), onAddToPlaylist)
         // A song on the phone is already a file; there is nothing to download.
         if (!track.isLocal) {
             when (download) {
-                null, DownloadState.FAILED -> SheetAction(SitaraIcons.Download, "Download", onDownload)
-                DownloadState.DOWNLOADED -> SheetAction(SitaraIcons.Delete, "Remove download", onRemoveDownload)
-                else -> SheetAction(SitaraIcons.Close, "Cancel download", onRemoveDownload)
+                null, DownloadState.FAILED -> SheetAction(SitaraIcons.Download, stringResource(R.string.library_download), onDownload)
+                DownloadState.DOWNLOADED -> SheetAction(SitaraIcons.Delete, stringResource(R.string.library_remove_download), onRemoveDownload)
+                else -> SheetAction(SitaraIcons.Close, stringResource(R.string.library_cancel_download), onRemoveDownload)
             }
-            SheetAction(SitaraIcons.Share, "Share", onShare)
+            SheetAction(SitaraIcons.Share, stringResource(R.string.library_share), onShare)
         }
     }
 }
@@ -79,13 +80,13 @@ fun AddToPlaylist(track: Track, playlists: List<PlaylistSummary>, onPick: (Playl
     var name by rememberSaveable { mutableStateOf("") }
     Column(Modifier.fillMaxWidth().navigationBarsPadding().padding(bottom = 8.dp).testTag("playlist-picker")) {
         SheetTrackHeading(track)
-        Text("Add to playlist", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.padding(horizontal = SitaraSpacing.Gutter, vertical = 8.dp))
+        Text(stringResource(R.string.library_add_to_playlist), style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.padding(horizontal = SitaraSpacing.Gutter, vertical = 8.dp))
         Row(Modifier.fillMaxWidth().padding(horizontal = SitaraSpacing.Gutter), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            OutlinedTextField(name, { name = it.take(MAX_NAME_LENGTH) }, Modifier.weight(1f), singleLine = true, label = { Text("New playlist") })
-            if (name.isNotBlank()) PillButton("Create", { onCreate(name.trim()) })
+            OutlinedTextField(name, { name = it.take(MAX_NAME_LENGTH) }, Modifier.weight(1f), singleLine = true, label = { Text(stringResource(R.string.library_new_playlist)) })
+            if (name.isNotBlank()) PillButton(stringResource(R.string.library_create), { onCreate(name.trim()) })
         }
         if (playlists.isEmpty()) {
-            LibraryMessage("No playlists yet. Name one above and this song starts it.")
+            LibraryMessage(stringResource(R.string.library_no_playlists))
         } else {
             LazyColumn(Modifier.heightIn(max = 360.dp).padding(top = 8.dp)) {
                 items(playlists, key = { it.id }) { playlist ->

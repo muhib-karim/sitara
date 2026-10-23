@@ -1,0 +1,236 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Shared -->
+    <string name="library_back">ফিরে যান</string>
+    <string name="library_play">চালান</string>
+    <string name="library_play_all">সব চালান</string>
+    <string name="library_shuffle">এলোমেলো</string>
+    <string name="library_share">শেয়ার</string>
+    <string name="library_open">খুলুন</string>
+    <string name="library_try_again">আবার চেষ্টা করুন</string>
+    <string name="library_cancel">বাতিল</string>
+    <string name="library_create">তৈরি করুন</string>
+    <string name="library_save">সংরক্ষণ করুন</string>
+    <string name="library_joined">%1$s · %2$s</string>
+    <plurals name="library_song_count">
+        <item quantity="one">%1$dটি গান</item>
+        <item quantity="other">%1$dটি গান</item>
+    </plurals>
+    <plurals name="library_release_count">
+        <item quantity="one">%1$dটি রিলিজ</item>
+        <item quantity="other">%1$dটি রিলিজ</item>
+    </plurals>
+    <plurals name="library_play_count">
+        <item quantity="one">%1$d বার শোনা</item>
+        <item quantity="other">%1$d বার শোনা</item>
+    </plurals>
+
+    <!-- Library tab -->
+    <string name="library_title">লাইব্রেরি</string>
+    <string name="library_failed">আপনার লাইব্রেরি পড়া যায়নি। আবার চেষ্টা করতে Sitara নতুন করে চালু করুন।</string>
+    <string name="library_liked_songs">পছন্দের গান</string>
+    <string name="library_downloads">ডাউনলোড</string>
+    <string name="library_your_stats">আপনার পরিসংখ্যান</string>
+    <string name="library_stats_detail">সেরা গান, শিল্পী আর কখন শোনেন</string>
+    <string name="library_on_this_phone">এই ফোনে</string>
+    <string name="library_on_this_phone_detail">আপনার ফোনের গান ও ফোল্ডার</string>
+    <string name="library_import_playlist">প্লেলিস্ট আমদানি</string>
+    <string name="library_import_detail">YouTube বা Spotify লিংক, M3U বা CSV ফাইল থেকে</string>
+    <string name="library_recently_played">সম্প্রতি শোনা</string>
+    <string name="library_kind_playlists">প্লেলিস্ট</string>
+    <string name="library_kind_songs">গান</string>
+    <string name="library_kind_albums">অ্যালবাম</string>
+    <string name="library_kind_artists">শিল্পী</string>
+    <string name="library_kind_downloads">ডাউনলোড</string>
+    <string name="library_kind_folders">ফোল্ডার</string>
+    <string name="library_order_playlists_by">প্লেলিস্টের ক্রম</string>
+    <string name="library_order_songs_by">গানের ক্রম</string>
+    <string name="library_order_albums_by">অ্যালবামের ক্রম</string>
+    <string name="library_order_artists_by">শিল্পীদের ক্রম</string>
+    <string name="library_order_downloads_by">ডাউনলোডের ক্রম</string>
+    <string name="library_order_folders_by">ফোল্ডারের ক্রম</string>
+    <string name="library_empty_playlists">নিজের পছন্দমতো ক্রমে গান রাখতে একটি প্লেলিস্ট বানান।</string>
+    <string name="library_empty_songs">কোনো গান পছন্দ করলে সেটি এখানে দেখাবে।</string>
+    <string name="library_empty_albums">অ্যালবামের পাতা থেকে সংরক্ষণ করলে সেটি এখানে থাকবে।</string>
+    <string name="library_empty_artists">শিল্পীর পাতা থেকে সংরক্ষণ করলে তিনি এখানে থাকবেন।</string>
+    <string name="library_artist">শিল্পী</string>
+    <string name="library_new_playlist">নতুন প্লেলিস্ট</string>
+    <string name="library_change_order">ক্রম বদলান</string>
+    <string name="library_order_description">ক্রম: %1$s</string>
+    <string name="library_show_list">তালিকা হিসেবে দেখান</string>
+    <string name="library_show_grid">গ্রিড হিসেবে দেখান</string>
+    <string name="library_empty_title">আপনার লাইব্রেরি শুরু এখানেই</string>
+    <string name="library_empty_body">গান পছন্দ করুন, অ্যালবাম ও শিল্পী সংরক্ষণ করুন, প্লেলিস্ট বানান, অফলাইনের জন্য ডাউনলোড করুন আর ফোনের গান চালান। সবকিছু এখানে জমা হয়।</string>
+    <string name="library_find_music">গান খুঁজুন</string>
+    <string name="library_import_a_playlist">একটি প্লেলিস্ট আমদানি করুন</string>
+    <string name="library_music_on_this_phone">এই ফোনের গান</string>
+    <string name="library_loading">আপনার লাইব্রেরি লোড হচ্ছে</string>
+    <string name="library_export">এক্সপোর্ট</string>
+    <string name="library_export_description">ডাউনলোড করা গান একটি ফোল্ডারে এক্সপোর্ট করুন</string>
+    <string name="library_downloads_empty">অফলাইনে শুনতে গানের মেনু থেকে একটি গান, বা “সব ডাউনলোড” দিয়ে পুরো অ্যালবাম ডাউনলোড করুন।</string>
+    <string name="library_download_again">%1$s আবার ডাউনলোড করুন</string>
+    <string name="library_delete_download_of">%1$s-এর ডাউনলোড মুছুন</string>
+    <string name="library_remove_from_downloads">ডাউনলোড থেকে %1$s সরান</string>
+    <string name="library_cancel_download_of">%1$s-এর ডাউনলোড বাতিল করুন</string>
+    <string name="library_download_percent">%1$d%%</string>
+    <string name="library_download_downloading">ডাউনলোড হচ্ছে</string>
+    <string name="library_download_waiting">অপেক্ষায়</string>
+    <string name="library_download_waiting_wifi">Wi-Fi-এর অপেক্ষায়</string>
+    <string name="library_download_waiting_network">সংযোগের অপেক্ষায়</string>
+    <string name="library_download_failed">ব্যর্থ</string>
+
+    <!-- Detail pages -->
+    <string name="library_rename_playlist">প্লেলিস্টের নাম বদলান</string>
+    <string name="library_page_loading">লোড হচ্ছে…</string>
+    <string name="library_page_failed">এই পাতা লোড হয়নি। সংযোগ দেখে আবার চেষ্টা করুন।</string>
+    <string name="library_playlist_gone">এই প্লেলিস্টটি মুছে ফেলা হয়েছে।</string>
+    <string name="library_artist_empty">এই শিল্পীর এখনো কিছু নেই</string>
+    <string name="library_top_songs">সেরা গান</string>
+    <string name="library_albums_and_singles">অ্যালবাম ও সিঙ্গেল</string>
+    <string name="library_album">অ্যালবাম</string>
+    <string name="library_album_empty">এই অ্যালবামে কোনো গান নেই</string>
+    <string name="library_playlist">প্লেলিস্ট</string>
+    <string name="library_playlist_empty">এই প্লেলিস্টে কোনো গান নেই</string>
+    <string name="library_your_library">আপনার লাইব্রেরি</string>
+    <string name="library_liked_empty">আপনার পছন্দের গান এখানে দেখাবে। প্লেয়ারে হার্টে ট্যাপ করুন, বা গানের মেনুতে “পছন্দ” বেছে নিন।</string>
+    <string name="library_your_playlist">আপনার প্লেলিস্ট</string>
+    <string name="library_rename">নাম বদলান</string>
+    <string name="library_delete">মুছুন</string>
+    <string name="library_user_playlist_empty">এখনো কোনো গান নেই। যেকোনো গানের মেনুতে “প্লেলিস্টে যোগ করুন” দিয়ে গান যোগ করুন।</string>
+    <string name="library_remove_from_playlist">এই প্লেলিস্ট থেকে %1$s সরান</string>
+    <string name="library_saved">সংরক্ষিত</string>
+    <string name="library_in_your_library">আপনার লাইব্রেরিতে আছে</string>
+    <string name="library_not_in_your_library">আপনার লাইব্রেরিতে নেই</string>
+    <string name="library_download_all">সব ডাউনলোড</string>
+    <string name="library_downloaded">ডাউনলোড করা</string>
+    <string name="library_songs">গান</string>
+    <string name="library_share_page">%1$s শেয়ার করুন</string>
+    <string name="library_open_artist">শিল্পীর পাতা খুলুন</string>
+
+    <!-- Collection preview -->
+    <string name="library_preview_failed">গানগুলো লোড করা যায়নি। সংযোগ দেখে আবার চেষ্টা করুন।</string>
+    <string name="library_preview_loading">গান লোড হচ্ছে…</string>
+    <string name="library_preview_empty">এখানে এখনো কোনো গান নেই।</string>
+    <string name="library_preview_more">আরও %1$dটি</string>
+
+    <!-- Import -->
+    <string name="library_import_reading">প্লেলিস্ট পড়া হচ্ছে…</string>
+    <string name="library_import_finish_unfinished">“%1$s” আমদানি শেষ করুন</string>
+    <string name="library_import_resume">চালিয়ে যান</string>
+    <string name="library_import_discard">বাদ দিন</string>
+    <string name="library_import_from_link">লিংক থেকে</string>
+    <string name="library_import_from_link_detail">YouTube, YouTube Music বা পাবলিক Spotify প্লেলিস্ট কিংবা অ্যালবাম</string>
+    <string name="library_import_link_label">প্লেলিস্টের লিংক</string>
+    <string name="library_import_link">লিংক আমদানি করুন</string>
+    <string name="library_import_from_file">ফাইল থেকে</string>
+    <string name="library_import_from_file_detail">শিরোনাম ও শিল্পীর কলামসহ M3U, M3U8 বা CSV</string>
+    <string name="library_import_choose_another_file">অন্য ফাইল বেছে নিন</string>
+    <string name="library_import_choose_file">একটি ফাইল বেছে নিন</string>
+    <string name="library_import_limits">সর্বোচ্চ ২,০০০টি গান (Spotify একটি প্লেলিস্টের প্রথম ১০০টি দেখায়)। YouTube লিংক ছাড়া গানগুলো শিরোনাম ও শিল্পীর নাম দিয়ে খুঁজে বের করা হয়।</string>
+    <string name="library_import_spotify_more">অ্যাকাউন্ট ছাড়া Spotify একটি প্লেলিস্টের শুধু প্রথম ১০০টি গান দেখায়। বাকিগুলোর জন্য প্লেলিস্টটি CSV ফাইল হিসেবে এক্সপোর্ট করে সেটিও আমদানি করুন।</string>
+    <string name="library_import_cancel">আমদানি বাতিল করুন</string>
+    <string name="library_import_none_found">এই গানগুলোর কোনোটিই পাওয়া যায়নি।</string>
+    <string name="library_import_discard_import">আমদানি বাদ দিন</string>
+    <string name="library_import_ready_update">%1$s প্রস্তুত। পাওয়া গানগুলো দিয়ে “%2$s” হালনাগাদ করুন; অনিশ্চিত যেগুলো আপনি নেবেন না, সেগুলো বাদ যাবে।</string>
+    <string name="library_import_ready_add">%1$s প্রস্তুত। পাওয়া গানগুলো আপনার লাইব্রেরিতে যোগ করুন; অনিশ্চিত যেগুলো আপনি নেবেন না, সেগুলো বাদ যাবে।</string>
+    <string name="library_import_update_playlist">প্লেলিস্ট হালনাগাদ করুন</string>
+    <string name="library_import_finish">শেষ করুন</string>
+    <string name="library_import_check_matches">এই মিলগুলো যাচাই করুন</string>
+    <string name="library_import_check_matches_detail">এগুলোই আপনার তালিকার গান কি না নিশ্চিত নয়</string>
+    <string name="library_import_found">পাওয়া গেছে</string>
+    <string name="library_import_to_check">যাচাই বাকি</string>
+    <string name="library_import_not_found">পাওয়া যায়নি</string>
+    <string name="library_import_on_your_list">আপনার তালিকায়: %1$s</string>
+    <string name="library_import_added">যোগ হয়েছে</string>
+    <string name="library_import_skipped">বাদ দেওয়া হয়েছে</string>
+    <string name="library_import_not_decided">সিদ্ধান্ত হয়নি</string>
+    <string name="library_import_best_match">সবচেয়ে ভালো মিল: %2$s-এর %1$s। %3$s</string>
+    <string name="library_import_use_this">এটি নিন</string>
+    <string name="library_import_other_matches">অন্য মিল</string>
+    <string name="library_import_skip">বাদ দিন</string>
+    <string name="library_import_matches_for">%1$s-এর মিল</string>
+    <string name="library_import_use_this_song">এই গানটি নিন</string>
+    <string name="library_import_chosen">বেছে নেওয়া হয়েছে</string>
+    <string name="library_import_updated">“%1$s” হালনাগাদ হয়েছে</string>
+    <string name="library_import_in_library">“%1$s” আপনার লাইব্রেরিতে আছে</string>
+    <string name="library_import_left_out">%1$s · %2$dটি বাদ পড়েছে</string>
+    <string name="library_import_open_playlist">প্লেলিস্ট খুলুন</string>
+    <string name="library_import_another">আরেকটি আমদানি করুন</string>
+    <plurals name="library_import_checked">
+        <item quantity="one">%2$dটি গানের মধ্যে %1$dটি যাচাই হয়েছে</item>
+        <item quantity="other">%2$dটি গানের মধ্যে %1$dটি যাচাই হয়েছে</item>
+    </plurals>
+    <string name="library_import_problem_link_not_recognised">এটি YouTube, YouTube Music বা Spotify প্লেলিস্টের লিংক নয়। অ্যাপে শেয়ার করুন, তারপর লিংক কপি করুন।</string>
+    <string name="library_import_problem_playlist_unavailable">এই প্লেলিস্টটি খোলা যাচ্ছে না। এটি হয়তো ব্যক্তিগত বা মুছে ফেলা হয়েছে।</string>
+    <string name="library_import_problem_offline">প্লেলিস্ট বা YouTube Music-এ পৌঁছানো যায়নি। সংযোগ দেখে আবার চেষ্টা করুন।</string>
+    <string name="library_import_problem_spotify_unreadable">Spotify-এর পাতা বদলে গেছে, Sitara এখনো সেটি পড়তে পারে না। প্লেলিস্টটি CSV ফাইল হিসেবে এক্সপোর্ট করে সেটি আমদানি করুন।</string>
+    <string name="library_import_problem_spotify_song_link">এটি একটি গানের লিংক। এর বদলে প্লেলিস্ট বা অ্যালবাম শেয়ার করুন, অথবা গানটি খুঁজুন।</string>
+    <string name="library_import_problem_nothing_to_import">সেখানে আমদানি করার মতো কোনো গান নেই।</string>
+    <string name="library_import_problem_file_unreadable">ফাইলটি পড়া যায়নি। একটি M3U, M3U8 বা CSV ফাইল বেছে নিন।</string>
+    <string name="library_import_problem_file_too_large">ফাইলটি আমদানির জন্য খুব বড় (৪ MB-এর বেশি)।</string>
+
+    <!-- On this phone -->
+    <string name="library_local_scanning">গান খোঁজা হচ্ছে…</string>
+    <string name="library_local_gone">এই গানগুলো আর এই ফোনে নেই।</string>
+    <string name="library_local_none_found">এই ফোনে কোনো গান পাওয়া যায়নি</string>
+    <string name="library_local_play_your_music">আপনার ফোনের গান চালান</string>
+    <string name="library_local_none_found_body">এই ফোনে রাখা গান এখানে দেখাবে। গান অন্য কোথাও রাখেন, যেমন মেমরি কার্ড বা ডাউনলোড ফোল্ডারে? সেই ফোল্ডারটি বেছে নিন।</string>
+    <string name="library_local_no_access_body">Sitara-কে এই ফোনে রাখা গান দেখতে দিন, অথবা শুধু যে ফোল্ডারগুলো পড়তে পারবে সেগুলো বেছে নিন। আপনার ফাইল যেখানে আছে সেখানেই থাকবে।</string>
+    <string name="library_local_allow_access">অনুমতি দিন</string>
+    <string name="library_local_choose_folder">একটি ফোল্ডার বেছে নিন</string>
+    <string name="library_local_access_card">এই ফোনের অন্য জায়গায় রাখা গান এখনো তালিকায় নেই।</string>
+    <string name="library_local_picked_folders">বেছে নেওয়া ফোল্ডার</string>
+    <string name="library_local_picked_folders_detail">ফোনের গান ছাড়াও যে ফোল্ডারগুলো Sitara পড়ে</string>
+    <string name="library_local_folder_unlinked">Sitara আর এই ফোল্ডারটি পড়তে পারে না · %1$s রাখা আছে</string>
+    <string name="library_local_relink">ফোল্ডার আবার যুক্ত করুন</string>
+    <string name="library_local_remove_folder">%1$s ও এর গানগুলো Sitara থেকে সরান</string>
+
+    <!-- Playlist sheets -->
+    <string name="library_playlist_name">নাম</string>
+    <string name="library_delete_playlist_title">“%1$s” মুছবেন?</string>
+    <string name="library_delete_playlist_body">প্লেলিস্টটি মুছে যাবে; এর গানগুলো আপনি অন্য যেখানে সংরক্ষণ করেছেন সেখানেই থাকবে।</string>
+    <string name="library_delete_playlist">প্লেলিস্ট মুছুন</string>
+
+    <!-- Song sheets -->
+    <string name="library_unlike">পছন্দের গান থেকে সরান</string>
+    <string name="library_like">পছন্দ</string>
+    <string name="library_play_next">এরপর চালান</string>
+    <string name="library_add_to_queue">সারিতে যোগ করুন</string>
+    <string name="library_add_to_playlist">প্লেলিস্টে যোগ করুন</string>
+    <string name="library_download">ডাউনলোড</string>
+    <string name="library_remove_download">ডাউনলোড সরান</string>
+    <string name="library_cancel_download">ডাউনলোড বাতিল করুন</string>
+    <string name="library_no_playlists">এখনো কোনো প্লেলিস্ট নেই। ওপরে একটির নাম দিন, এই গান দিয়েই সেটি শুরু হবে।</string>
+
+    <!-- Stats -->
+    <string name="library_stats_share">আপনার পরিসংখ্যান শেয়ার করুন</string>
+    <string name="library_stats_paused">সেটিংসে শোনার ইতিহাস বন্ধ রাখা আছে, তাই নতুন শোনা গোনা হচ্ছে না।</string>
+    <string name="library_stats_failed">আপনার শোনার ইতিহাস পড়া যায়নি। আবার চেষ্টা করতে Sitara নতুন করে চালু করুন।</string>
+    <string name="library_stats_when">কখন শোনেন</string>
+    <string name="library_stats_peak">সবচেয়ে বেশি %1$s-এর দিকে</string>
+    <string name="library_stats_top_artists">সেরা শিল্পী</string>
+    <string name="library_stats_top_albums">সেরা অ্যালবাম</string>
+    <string name="library_stats_listened_week">এই সপ্তাহে শোনা</string>
+    <string name="library_stats_listened_month">এই মাসে শোনা</string>
+    <string name="library_stats_listened_year">এই বছরে শোনা</string>
+    <string name="library_stats_listened_all_time">সব মিলিয়ে শোনা</string>
+    <string name="library_stats_hours_summary">দিনের ঘণ্টা অনুযায়ী শোনা। %1$s</string>
+    <string name="library_stats_hour_entry">%1$s: %2$s</string>
+    <string name="library_stats_ranked_song">%1$d, %3$s-এর %2$s, %4$s</string>
+    <string name="library_stats_not_enough">এখনো যথেষ্ট শোনা হয়নি</string>
+    <string name="library_stats_nothing_week">এই সপ্তাহে এখনো কিছু শোনা হয়নি</string>
+    <string name="library_stats_nothing_month">এই মাসে এখনো কিছু শোনা হয়নি</string>
+    <string name="library_stats_nothing_year">এই বছরে এখনো কিছু শোনা হয়নি</string>
+    <string name="library_stats_empty_body">৩০ সেকেন্ড, বা ছোট গানের অর্ধেক শোনার পর একবার শোনা গোনা হয়। শুনতে থাকুন, আপনার সেরা গান, শিল্পী আর সময় এখানে দেখাবে।</string>
+    <string name="library_stats_loading">আপনার পরিসংখ্যান লোড হচ্ছে</string>
+
+    <!-- Stats share card -->
+    <string name="library_share_image">ছবি শেয়ার করুন</string>
+    <string name="library_share_heading">Sitara-তে %1$s</string>
+    <string name="library_share_listened">শোনা হয়েছে</string>
+    <string name="library_share_listened_summary">%1$s শোনা হয়েছে</string>
+    <string name="library_share_top_artist">সেরা শিল্পী</string>
+    <string name="library_share_top_artist_summary">সেরা শিল্পী: %1$s</string>
+    <string name="library_share_top_songs_summary">সেরা গান: %1$s</string>
+    <string name="library_share_song_entry">%1$d, %3$s-এর %2$s</string>
+</resources>

@@ -9,6 +9,7 @@
 
     <application
         android:name=".SitaraApplication"
+        android:localeConfig="@xml/locales_config"
         android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
         android:roundIcon="@mipmap/ic_launcher"

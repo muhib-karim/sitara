@@ -1,4 +1,32 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="downloads_channel_name">Downloads</string>
+
+    <!-- Android Auto and other media browsers: the four tabs and Library's folders -->
+    <string name="player_service_recently_played">Recently played</string>
+    <string name="player_service_liked_songs">Liked songs</string>
+    <string name="player_service_downloads">Downloads</string>
+    <string name="player_service_downloads_subtitle">Play with no connection</string>
+    <string name="player_service_library">Library</string>
+    <string name="player_service_playlists">Playlists</string>
+    <string name="player_service_albums">Albums</string>
+    <string name="player_service_artists">Artists</string>
+    <!-- A playlist's subtitle in a car's browse list -->
+    <plurals name="player_service_song_count">
+        <item quantity="one">%d song</item>
+        <item quantity="other">%d songs</item>
+    </plurals>
+
+    <!-- Notification and lock screen buttons: each says what a press does -->
+    <string name="player_service_like">Like</string>
+    <string name="player_service_unlike">Remove from liked songs</string>
+    <string name="player_service_shuffle">Shuffle</string>
+    <string name="player_service_shuffle_off">Turn shuffle off</string>
+    <string name="player_service_repeat_all">Repeat all</string>
+    <string name="player_service_repeat_one">Repeat one</string>
+    <string name="player_service_repeat_off">Turn repeat off</string>
+
+    <!-- Errors shown by cars, the lock screen and Bluetooth devices -->
+    <string name="player_service_song_failed">Couldn’t play this song. Try again, skip it, or play a download.</string>
+    <string name="player_service_catalogue_unreachable">Can’t reach YouTube Music right now. Downloads play with no connection.</string>
 </resources>

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="search_title">Search</string>
+    <string name="search_failed">Search isn’t working right now. Check your connection, then try again.</string>
+    <string name="search_try_again">Try again</string>
+    <string name="search_searching">Searching…</string>
+    <string name="search_recent">Recent searches</string>
+    <string name="search_clear_all">Clear all</string>
+    <string name="search_clear_all_description">Clear all recent searches</string>
+    <string name="search_search_again">Search again</string>
+    <string name="search_remove_recent">Remove %1$s from recent searches</string>
+    <string name="search_empty_title">Your searches show up here</string>
+    <string name="search_empty_description">Find a song, artist or album, then come back to it in one tap.</string>
+    <string name="search_start">Start a search</string>
+    <string name="search_clear_title">Clear recent searches?</string>
+    <string name="search_clear_description">They are only kept on this phone, so they can’t be brought back.</string>
+    <string name="search_clear">Clear</string>
+    <string name="search_keep_them">Keep them</string>
+    <string name="search_moods">Moods &amp; genres</string>
+    <string name="search_moods_failed">Moods and genres didn’t load. Check your connection, then try again.</string>
+    <string name="search_moods_loading">Loading moods and genres</string>
+    <string name="search_search_for">Search for %1$s</string>
+    <string name="search_no_songs">No songs found for “%1$s”.</string>
+    <string name="search_no_albums">No albums found for “%1$s”.</string>
+    <string name="search_no_artists">No artists found for “%1$s”.</string>
+    <string name="search_no_playlists">No playlists found for “%1$s”.</string>
+    <plurals name="search_results">
+        <item quantity="one">%1$d result</item>
+        <item quantity="other">%1$d results</item>
+    </plurals>
+    <string name="search_songs">Songs</string>
+    <string name="search_albums">Albums</string>
+    <string name="search_artists">Artists</string>
+    <string name="search_playlists">Playlists</string>
+    <string name="search_artist">Artist</string>
+    <string name="search_playlist">Playlist</string>
+    <string name="search_hint">Songs, albums, artists</string>
+    <string name="search_clear_search">Clear search</string>
+    <string name="search_on_this_phone">On this phone</string>
+</resources>

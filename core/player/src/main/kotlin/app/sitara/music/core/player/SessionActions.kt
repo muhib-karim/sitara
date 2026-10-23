@@ -1,5 +1,6 @@
 package app.sitara.music.core.player
 
+import android.content.Context
 import android.os.Bundle
 import androidx.annotation.OptIn
 import androidx.media3.common.util.UnstableApi
@@ -18,14 +19,14 @@ internal object SessionActions {
     /** What system surfaces may send besides transport controls. */
     val commands: SessionCommands = SessionCommands.Builder().apply { listOf(LIKE, SHUFFLE, REPEAT).forEach { add(SessionCommand(it, Bundle.EMPTY)) } }.build()
 
-    /** The buttons for what plays now; each icon shows the state and each name says what a press does. */
-    fun buttons(liked: Boolean, shuffled: Boolean, repeat: RepeatMode): List<CommandButton> = listOf(
-        button(LIKE, if (liked) CommandButton.ICON_HEART_FILLED else CommandButton.ICON_HEART_UNFILLED, if (liked) "Remove from liked songs" else "Like"),
-        button(SHUFFLE, if (shuffled) CommandButton.ICON_SHUFFLE_ON else CommandButton.ICON_SHUFFLE_OFF, if (shuffled) "Turn shuffle off" else "Shuffle"),
+    /** The buttons for what plays now, named in [context]'s language; each icon shows the state and each name says what a press does. */
+    fun buttons(context: Context, liked: Boolean, shuffled: Boolean, repeat: RepeatMode): List<CommandButton> = listOf(
+        button(LIKE, if (liked) CommandButton.ICON_HEART_FILLED else CommandButton.ICON_HEART_UNFILLED, context.getString(if (liked) R.string.player_service_unlike else R.string.player_service_like)),
+        button(SHUFFLE, if (shuffled) CommandButton.ICON_SHUFFLE_ON else CommandButton.ICON_SHUFFLE_OFF, context.getString(if (shuffled) R.string.player_service_shuffle_off else R.string.player_service_shuffle)),
         when (repeat) {
-            RepeatMode.OFF -> button(REPEAT, CommandButton.ICON_REPEAT_OFF, "Repeat all")
-            RepeatMode.ALL -> button(REPEAT, CommandButton.ICON_REPEAT_ALL, "Repeat one")
-            RepeatMode.ONE -> button(REPEAT, CommandButton.ICON_REPEAT_ONE, "Turn repeat off")
+            RepeatMode.OFF -> button(REPEAT, CommandButton.ICON_REPEAT_OFF, context.getString(R.string.player_service_repeat_all))
+            RepeatMode.ALL -> button(REPEAT, CommandButton.ICON_REPEAT_ALL, context.getString(R.string.player_service_repeat_one))
+            RepeatMode.ONE -> button(REPEAT, CommandButton.ICON_REPEAT_ONE, context.getString(R.string.player_service_repeat_off))
         },
     )
 

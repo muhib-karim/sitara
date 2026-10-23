@@ -1,0 +1,190 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Settings -->
+    <string name="settings_back">ফিরে যান</string>
+    <string name="settings_title">সেটিংস</string>
+    <string name="settings_off">বন্ধ</string>
+    <string name="settings_motion">অ্যানিমেশন</string>
+    <string name="settings_reduced_motion">কম অ্যানিমেশন</string>
+    <string name="settings_reduced_motion_description">ব্লার ছাড়া, তাৎক্ষণিক ট্রানজিশন</string>
+    <string name="settings_playback">প্লেব্যাক</string>
+    <string name="settings_sound">শব্দ</string>
+    <string name="settings_equaliser">ইকুয়ালাইজার</string>
+    <string name="settings_normalise_loudness">আওয়াজ সমান রাখুন</string>
+    <string name="settings_normalise_loudness_description">সব গান কাছাকাছি ভলিউমে বাজে</string>
+    <string name="settings_skip_silence">নীরবতা বাদ দিন</string>
+    <string name="settings_skip_silence_description">গানের ভেতরের ও দুই গানের মাঝের চুপচাপ অংশ বাদ দেয়</string>
+    <string name="settings_automix">অটোমিক্স</string>
+    <string name="settings_automix_description">পুরো বার জুড়ে বিটে বিটে গান মেলায়, টেম্পো ও আওয়াজ মিলিয়ে। বিট খুঁজতে প্রতিটি গানের প্রথম ও শেষ আধা মিনিট একবার পড়ে নেয়।</string>
+    <string name="settings_library">লাইব্রেরি</string>
+    <string name="settings_import_playlist">প্লেলিস্ট ইমপোর্ট</string>
+    <string name="settings_import_playlist_value">লিংক বা ফাইল</string>
+    <string name="settings_backup_and_restore">ব্যাকআপ ও রিস্টোর</string>
+    <string name="settings_backup_and_restore_value">ফাইলে</string>
+
+    <!-- Appearance -->
+    <string name="settings_appearance">চেহারা</string>
+    <string name="settings_theme_system">সিস্টেম</string>
+    <string name="settings_theme_light">লাইট</string>
+    <string name="settings_theme_dark">ডার্ক</string>
+    <string name="settings_pure_black">একদম কালো</string>
+    <string name="settings_pure_black_description">ডার্ক থিমে গাঢ় ধূসরের বদলে কালো, আর এখন বাজছে স্ক্রিনে কভারের ব্লার ছাড়া</string>
+    <string name="settings_wallpaper_colours">ওয়ালপেপারের রং</string>
+    <string name="settings_wallpaper_colours_description">অ্যাকসেন্ট রং আসে আপনার ওয়ালপেপার থেকে</string>
+    <string name="settings_palette">প্যালেট</string>
+    <string name="settings_palette_description">একটি অ্যাকসেন্ট, সঙ্গে মানানসই সারফেস</string>
+    <string name="settings_accent">অ্যাকসেন্ট রং</string>
+    <string name="settings_accent_description_wallpaper">এখন আপনার ওয়ালপেপার থেকে। এর বদলে ব্যবহার করতে একটি রং বেছে নিন।</string>
+    <string name="settings_accent_description">বোতাম, হাইলাইট আর বাছাই করা ট্যাব</string>
+    <string name="settings_accent_artwork_description">যে গান বাজছে তার কভার অনুসরণ করে; কিছু না বাজলে জাফরানি</string>
+    <string name="settings_artwork_colours">পুরো অ্যাপে আর্টওয়ার্কের রং</string>
+    <string name="settings_artwork_colours_description">ব্যাকগ্রাউন্ড, কার্ড আর চিপে বাজতে থাকা গানের কভারের আভা লাগে</string>
+    <string name="settings_preview_description">বাছাই করা রঙের প্রিভিউ</string>
+    <string name="settings_preview_chill">চিল</string>
+    <string name="settings_preview_focus">ফোকাস</string>
+    <string name="settings_preview_party">পার্টি</string>
+    <string name="settings_preview_song_title">গানের নাম</string>
+    <string name="settings_preview_artist">শিল্পী</string>
+
+    <!-- Playback quality -->
+    <string name="settings_quality_wifi">Wi-Fi-তে কোয়ালিটি</string>
+    <string name="settings_quality_mobile">মোবাইল ডেটায় কোয়ালিটি</string>
+    <string name="settings_quality_auto_wifi">Wi-Fi-তে হাই</string>
+    <string name="settings_quality_auto_mobile">মোবাইল ডেটায় নরমাল</string>
+    <string name="settings_quality_high_description">গানটির সেরা মান, সাধারণত ১২৮–১৬০ kbps</string>
+    <string name="settings_quality_normal_description">সর্বোচ্চ ৯৬ kbps</string>
+    <string name="settings_quality_data_saver_description">সবচেয়ে কম মান, প্রায় ৫০ kbps</string>
+
+    <!-- Listening history -->
+    <string name="settings_listening_history">শোনার ইতিহাস</string>
+    <string name="settings_your_stats">আপনার পরিসংখ্যান</string>
+    <string name="settings_your_stats_value">এই ফোনে</string>
+    <string name="settings_scrobbling">স্ক্রবলিং</string>
+    <string name="settings_pause_history">শোনার ইতিহাস থামিয়ে রাখুন</string>
+    <string name="settings_pause_history_description">নতুন প্লে সম্প্রতি বাজানো, প্লে সংখ্যা বা পরিসংখ্যানের জন্য রাখা হয় না</string>
+    <string name="settings_clear_history_confirm">শোনার ইতিহাস মুছবেন? সম্প্রতি বাজানো, প্লে সংখ্যা আর পরিসংখ্যান নতুন করে শুরু হবে। পছন্দের গান, প্লেলিস্ট আর ডাউনলোড থেকে যাবে।</string>
+    <string name="settings_clear_history_button">ইতিহাস মুছুন</string>
+    <string name="settings_keep_history">ইতিহাস রাখুন</string>
+    <string name="settings_clear_history">শোনার ইতিহাস মুছুন</string>
+    <string name="settings_clear_history_description">সম্প্রতি বাজানো, প্লে সংখ্যা আর পরিসংখ্যান</string>
+
+    <!-- Downloads -->
+    <string name="settings_downloads">ডাউনলোড</string>
+    <plurals name="settings_songs">
+        <item quantity="one">%1$dটি গান</item>
+        <item quantity="other">%1$dটি গান</item>
+    </plurals>
+    <string name="settings_wifi_only">শুধু Wi-Fi-তে ডাউনলোড</string>
+    <string name="settings_wifi_only_description">মোবাইল ডেটা ব্যবহার না করে ডাউনলোড Wi-Fi-এর জন্য অপেক্ষা করে</string>
+    <string name="settings_storage_used">ব্যবহৃত স্টোরেজ</string>
+    <string name="settings_nothing_downloaded">কিছুই ডাউনলোড করা নেই</string>
+    <string name="settings_storage_summary">%1$s · %2$s</string>
+    <string name="settings_remove_all">সব সরান</string>
+    <string name="settings_export_folder">ফোল্ডারে এক্সপোর্ট</string>
+    <string name="settings_export_description">কভারসহ ট্যাগ করা ফাইল, আর যেখানে সিঙ্ক করা লিরিক্স আছে সেখানে .lrc লিরিক্স, যেকোনো মিউজিক অ্যাপের জন্য</string>
+    <string name="settings_export">এক্সপোর্ট</string>
+    <plurals name="settings_remove_all_confirm">
+        <item quantity="one">সব ডাউনলোড সরাবেন? %1$dটি গান আবার স্ট্রিম হবে এবং ইন্টারনেট সংযোগ লাগবে।</item>
+        <item quantity="other">সব ডাউনলোড সরাবেন? %1$dটি গান আবার স্ট্রিম হবে এবং ইন্টারনেট সংযোগ লাগবে।</item>
+    </plurals>
+    <string name="settings_remove_all_downloads">সব ডাউনলোড সরান</string>
+    <string name="settings_keep">রাখুন</string>
+
+    <!-- Crossfade -->
+    <string name="settings_crossfade">ক্রসফেড</string>
+    <string name="settings_crossfade_value">%1$d সে.</string>
+    <plurals name="settings_crossfade_seconds">
+        <item quantity="one">%1$d সেকেন্ড</item>
+        <item quantity="other">%1$d সেকেন্ড</item>
+    </plurals>
+    <string name="settings_crossfade_description">একটি গানের শেষের সঙ্গে পরেরটির শুরু মিশিয়ে দেয়। একই অ্যালবামের গান তবুও বিরতি ছাড়াই বাজে।</string>
+
+    <!-- Scrobbling -->
+    <string name="settings_scrobbling_intro">আপনি যে গান শোনেন তা আপনার Last.fm বা ListenBrainz প্রোফাইলে পাঠান। গানের অর্ধেক বা ৪ মিনিট শোনা হলে সেটি গোনা হয়; আপনি অফলাইনে থাকলে প্লেগুলো এই ফোনে অপেক্ষা করে এবং প্রতিটি একবারই পাঠানো হয়।</string>
+    <string name="settings_all_services">সব সার্ভিস</string>
+    <string name="settings_pause_scrobbling">স্ক্রবলিং থামিয়ে রাখুন</string>
+    <string name="settings_pause_scrobbling_description">নতুন প্লে পাঠানো বা পাঠানোর জন্য রাখা হয় না</string>
+    <string name="settings_signed_in_as">%1$s হিসেবে সাইন ইন করা আছে</string>
+    <string name="settings_needs_api_key">Last.fm API কী দরকার</string>
+    <string name="settings_connect_token">আপনার ইউজার টোকেন দিয়ে যুক্ত করুন</string>
+    <string name="settings_connect_lastfm">আপনার Last.fm অ্যাকাউন্ট যুক্ত করুন</string>
+    <string name="settings_no_api_key_description">Sitara-র এই বিল্ড Last.fm API কী ছাড়া তৈরি, তাই এটি Last.fm-এ সাইন ইন করতে পারে না।</string>
+    <string name="settings_library_only">শুধু আপনার লাইব্রেরির গান</string>
+    <string name="settings_library_only_description">পছন্দের গান আর আপনার প্লেলিস্টের গান</string>
+    <string name="settings_disconnect_confirm">%1$s বিচ্ছিন্ন করবেন? আগে পাঠানো স্ক্রবল আপনার প্রোফাইলে থেকে যাবে।</string>
+    <plurals name="settings_disconnect_confirm_pending">
+        <item quantity="one">%2$s বিচ্ছিন্ন করবেন? পাঠানোর অপেক্ষায় থাকা %1$dটি প্লে বাদ যাবে। আগে পাঠানো স্ক্রবল আপনার প্রোফাইলে থেকে যাবে।</item>
+        <item quantity="other">%2$s বিচ্ছিন্ন করবেন? পাঠানোর অপেক্ষায় থাকা %1$dটি প্লে বাদ যাবে। আগে পাঠানো স্ক্রবল আপনার প্রোফাইলে থেকে যাবে।</item>
+    </plurals>
+    <string name="settings_disconnect">বিচ্ছিন্ন করুন</string>
+    <string name="settings_stay_connected">যুক্ত থাকুন</string>
+    <string name="settings_send_now">এখনই পাঠান</string>
+    <string name="settings_sign_in_ended">%1$s সাইন-ইন শেষ করে দিয়েছে। স্ক্রবলিং চালিয়ে যেতে আবার সাইন ইন করুন।</string>
+    <plurals name="settings_sign_in_ended_pending">
+        <item quantity="one">%2$s সাইন-ইন শেষ করে দিয়েছে। স্ক্রবলিং চালিয়ে যেতে আবার সাইন ইন করুন। ততক্ষণ %1$dটি প্লে পাঠানোর অপেক্ষায় থাকবে।</item>
+        <item quantity="other">%2$s সাইন-ইন শেষ করে দিয়েছে। স্ক্রবলিং চালিয়ে যেতে আবার সাইন ইন করুন। ততক্ষণ %1$dটি প্লে পাঠানোর অপেক্ষায় থাকবে।</item>
+    </plurals>
+    <string name="settings_user_token">ইউজার টোকেন</string>
+    <string name="settings_token_help">listenbrainz.org/settings থেকে কপি করুন</string>
+    <string name="settings_checking_token">টোকেন যাচাই করা হচ্ছে…</string>
+    <string name="settings_connect">যুক্ত করুন</string>
+    <string name="settings_lastfm_allow">ব্রাউজারে Last.fm পেজে Sitara-কে অনুমতি দিন, তারপর এখানে ফিরে আসুন।</string>
+    <string name="settings_allowed_it">অনুমতি দিয়েছি</string>
+    <string name="settings_cancel">বাতিল</string>
+    <string name="settings_checking_lastfm">Last.fm-এর সঙ্গে যাচাই করা হচ্ছে…</string>
+    <string name="settings_lastfm_sign_in_help">ব্রাউজারে last.fm-এ সাইন ইন করুন; Sitara কখনো আপনার পাসওয়ার্ড দেখে না।</string>
+    <string name="settings_sign_in_lastfm">Last.fm দিয়ে সাইন ইন করুন</string>
+    <string name="settings_sign_in_again">আবার সাইন ইন করুন</string>
+    <string name="settings_status_unavailable">উপলভ্য নয়</string>
+    <string name="settings_status_not_connected">যুক্ত নয়</string>
+    <string name="settings_status_paused">থামানো</string>
+    <string name="settings_status_connected">যুক্ত</string>
+    <string name="settings_status_description">%1$s: %2$s</string>
+    <plurals name="settings_pending_badge">
+        <item quantity="one">%1$dটি অপেক্ষায়</item>
+        <item quantity="other">%1$dটি অপেক্ষায়</item>
+    </plurals>
+    <plurals name="settings_plays_waiting">
+        <item quantity="one">%1$dটি প্লে পাঠানোর অপেক্ষায়</item>
+        <item quantity="other">%1$dটি প্লে পাঠানোর অপেক্ষায়</item>
+    </plurals>
+    <string name="settings_problem_offline">%1$s-এ পৌঁছানো যাচ্ছে না। সংযোগ দেখে আবার চেষ্টা করুন।</string>
+    <string name="settings_problem_refused_listenbrainz">ListenBrainz এই টোকেন চেনে না। listenbrainz.org/settings থেকে আবার কপি করুন।</string>
+    <string name="settings_problem_refused_lastfm">Last.fm অনুমতি দেয়নি। আবার সাইন ইন করে Yes, allow access বেছে নিন।</string>
+    <string name="settings_nothing_sent">এখনও কিছু পাঠানো হয়নি</string>
+    <string name="settings_last_sent_today">শেষ পাঠানো হয়েছে আজ %1$s-এ</string>
+    <string name="settings_last_sent">শেষ পাঠানো হয়েছে %1$s</string>
+
+    <!-- Backup and restore -->
+    <string name="settings_backup_intro">ব্যাকআপ হলো একটি ফাইল, যাতে থাকে আপনার পছন্দের গান, সেভ করা অ্যালবাম ও শিল্পী, প্লেলিস্ট, শোনার ইতিহাস, প্রতিটি গানের ভলিউম ও লিরিক্সের উৎস, আর আপনার সেটিংস। যেকোনো জায়গায় রাখুন, তারপর এই ফোনে বা নতুন ফোনে রিস্টোর করুন।</string>
+    <string name="settings_back_up">ব্যাকআপ</string>
+    <string name="settings_back_up_description">ডাউনলোড, এই ফোনের গান আর স্ক্রবলিং সাইন-ইন বাদ থাকে: ফোনের গান কপি হয় না, শুধু কোথায় আছে তা লেখা থাকে।</string>
+    <string name="settings_back_up_button">ফাইলে ব্যাকআপ নিন</string>
+    <string name="settings_restore">রিস্টোর</string>
+    <string name="settings_restore_confirm">লাইব্রেরি একটি ব্যাকআপ দিয়ে বদলে দেবেন? এই ফোনের পছন্দের গান, প্লেলিস্ট, ইতিহাস আর সেটিংস ব্যাকআপের মতো হয়ে যাবে। ক্ষতিগ্রস্ত ফাইলে কিছুই বদলায় না।</string>
+    <string name="settings_choose_backup">একটি ব্যাকআপ বেছে নিন</string>
+    <string name="settings_restore_description">রিস্টোর করলে এই ফোনে এখন যা আছে তা বদলে যায়।</string>
+    <string name="settings_restore_button">ফাইল থেকে রিস্টোর করুন</string>
+    <string name="settings_working">কাজ চলছে…</string>
+    <string name="settings_backed_up">ব্যাকআপ নেওয়া হয়েছে: %1$s, %2$s এবং %3$s।</string>
+    <string name="settings_restored">রিস্টোর হয়েছে: %1$s, %2$s এবং %3$s, সঙ্গে আপনার সেটিংস।</string>
+    <plurals name="settings_backup_liked_songs">
+        <item quantity="one">%1$sটি পছন্দের গান</item>
+        <item quantity="other">%1$sটি পছন্দের গান</item>
+    </plurals>
+    <plurals name="settings_backup_playlists">
+        <item quantity="one">%1$sটি প্লেলিস্ট</item>
+        <item quantity="other">%1$sটি প্লেলিস্ট</item>
+    </plurals>
+    <plurals name="settings_backup_plays">
+        <item quantity="one">%1$sটি প্লে</item>
+        <item quantity="other">%1$sটি প্লে</item>
+    </plurals>
+    <string name="settings_backup_not_a_backup">ফাইলটি Sitara-র ব্যাকআপ নয়। কিছুই বদলানো হয়নি।</string>
+    <string name="settings_backup_damaged">ব্যাকআপটি ক্ষতিগ্রস্ত বা অসম্পূর্ণ, তাই কিছুই বদলানো হয়নি। অন্য একটি কপি চেষ্টা করুন।</string>
+    <string name="settings_backup_newer_version">ব্যাকআপটি Sitara-র নতুন সংস্করণে তৈরি। Sitara আপডেট করে তারপর রিস্টোর করুন। কিছুই বদলানো হয়নি।</string>
+    <string name="settings_backup_unreadable">ফাইলটি খোলা যায়নি। কিছুই বদলানো হয়নি।</string>
+    <string name="settings_backup_unwritable">ব্যাকআপটি সেখানে সেভ করা যায়নি। অন্য জায়গা চেষ্টা করুন।</string>
+    <string name="settings_language">ভাষা</string>
+    <string name="settings_language_system">ফোনের ভাষা</string>
+</resources>

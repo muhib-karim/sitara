@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="downloads_channel_name">ডাউনলোড</string>
+
+    <string name="player_service_recently_played">সম্প্রতি শোনা</string>
+    <string name="player_service_liked_songs">পছন্দের গান</string>
+    <string name="player_service_downloads">ডাউনলোড</string>
+    <string name="player_service_downloads_subtitle">ইন্টারনেট ছাড়াই শুনুন</string>
+    <string name="player_service_library">লাইব্রেরি</string>
+    <string name="player_service_playlists">প্লেলিস্ট</string>
+    <string name="player_service_albums">অ্যালবাম</string>
+    <string name="player_service_artists">শিল্পী</string>
+    <plurals name="player_service_song_count">
+        <item quantity="one">%dটি গান</item>
+        <item quantity="other">%dটি গান</item>
+    </plurals>
+
+    <string name="player_service_like">পছন্দ করুন</string>
+    <string name="player_service_unlike">পছন্দের গান থেকে সরান</string>
+    <string name="player_service_shuffle">শাফল</string>
+    <string name="player_service_shuffle_off">শাফল বন্ধ করুন</string>
+    <string name="player_service_repeat_all">সব রিপিট</string>
+    <string name="player_service_repeat_one">একটি গান রিপিট</string>
+    <string name="player_service_repeat_off">রিপিট বন্ধ করুন</string>
+
+    <string name="player_service_song_failed">গানটি বাজানো গেল না। আবার চেষ্টা করুন, এড়িয়ে যান, বা একটি ডাউনলোড বাজান।</string>
+    <string name="player_service_catalogue_unreachable">এখন YouTube Music-এ পৌঁছানো যাচ্ছে না। ডাউনলোড করা গান ইন্টারনেট ছাড়াই বাজে।</string>
+</resources>

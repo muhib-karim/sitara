@@ -48,6 +48,7 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
@@ -226,14 +227,17 @@ private fun MiniPlayer(
     val track = state.track ?: return
     val content = MaterialTheme.colorScheme.onSurface
     val height = SitaraSpacing.MiniPlayerHeight * LocalDensity.current.fontScale.coerceAtLeast(1f)
+    val openPlayer = stringResource(R.string.player_open_player)
+    val nextTrack = stringResource(R.string.player_next_track)
+    val previousTrack = stringResource(R.string.player_previous_track)
     Column(modifier.fillMaxWidth().height(height)) {
         Row(Modifier.weight(1f).padding(horizontal = 12.dp), verticalAlignment = Alignment.CenterVertically) {
             Row(
                 Modifier.weight(1f).fillMaxHeight().clickable(role = Role.Button, onClick = onExpand).semantics {
-                    contentDescription = "Open player"
+                    contentDescription = openPlayer
                     customActions = listOf(
-                        CustomAccessibilityAction("Next track") { actions.next(); true },
-                        CustomAccessibilityAction("Previous track") { actions.previous(); true },
+                        CustomAccessibilityAction(nextTrack) { actions.next(); true },
+                        CustomAccessibilityAction(previousTrack) { actions.previous(); true },
                     )
                 },
                 verticalAlignment = Alignment.CenterVertically,
@@ -245,7 +249,7 @@ private fun MiniPlayer(
                     // Folded, the row is shared with the open tab: the title stays, the artist goes, a failure still shows.
                     if (!folded || state.failed) {
                         Text(
-                            if (state.failed) PLAYBACK_FAILED else track.artist,
+                            if (state.failed) stringResource(R.string.player_playback_failed) else track.artist,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             style = MaterialTheme.typography.bodySmall,
                             maxLines = 1,
@@ -257,14 +261,14 @@ private fun MiniPlayer(
             }
             if (state.failed) {
                 IconButton(onClick = actions::retryPlayback, modifier = Modifier.size(48.dp)) {
-                    Icon(SitaraIcons.Retry, "Try again", tint = content)
+                    Icon(SitaraIcons.Retry, stringResource(R.string.player_try_again), tint = content)
                 }
                 IconButton(onClick = actions::next, modifier = Modifier.size(48.dp)) {
-                    Icon(SitaraIcons.Next, "Skip to next song", tint = content)
+                    Icon(SitaraIcons.Next, stringResource(R.string.player_skip_to_next), tint = content)
                 }
             } else {
                 IconButton(onClick = actions::togglePlay, modifier = Modifier.size(48.dp)) {
-                    Icon(if (state.isPlaying) SitaraIcons.Pause else SitaraIcons.Play, if (state.isPlaying) "Pause" else "Play", tint = content)
+                    Icon(if (state.isPlaying) SitaraIcons.Pause else SitaraIcons.Play, stringResource(if (state.isPlaying) R.string.player_pause else R.string.player_play), tint = content)
                 }
             }
         }

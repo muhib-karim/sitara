@@ -14,6 +14,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.dp
@@ -49,26 +50,26 @@ fun MoodScreen(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                GlassIconButton(SitaraIcons.Back, "Back", onBack)
+                GlassIconButton(SitaraIcons.Back, stringResource(R.string.home_back), onBack)
                 Text(title, style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.semantics { heading() })
             }
         }
         when (state) {
             FeedState.Loading -> {
-                item(key = "loading", contentType = "skeleton") { RowsSkeleton(label = "Loading $title") }
+                item(key = "loading", contentType = "skeleton") { RowsSkeleton(label = stringResource(R.string.home_loading_title, title)) }
                 items(2, key = { "loading-$it" }, contentType = { "skeleton" }) { CarouselSkeleton() }
             }
             FeedState.Failed -> item(key = "failed") {
                 Column(Modifier.padding(SitaraSpacing.Gutter), verticalArrangement = Arrangement.spacedBy(16.dp)) {
                     Text(
-                        "$title didn’t load. Check your connection, then try again.",
+                        stringResource(R.string.home_title_failed, title),
                         color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyLarge,
                     )
-                    PillButton("Try again", onRetry)
+                    PillButton(stringResource(R.string.home_try_again), onRetry)
                 }
             }
             is FeedState.Ready -> if (state.shelves.isEmpty()) {
-                item(key = "nothing") { HomeMessage("Nothing under $title that Sitara can play yet.") }
+                item(key = "nothing") { HomeMessage(stringResource(R.string.home_nothing_under, title)) }
             } else {
                 state.shelves.forEachIndexed { index, shelf -> feedShelf("$title-$index", index, shelf, onPlay, onTrackMenu, onAlbum, onPlaylist, onArtist, onShelfLink) }
             }

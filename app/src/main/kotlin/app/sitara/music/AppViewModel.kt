@@ -121,7 +121,7 @@ class AppViewModel(private val app: SitaraApplication) :
     /** Import playlist: runs here, so an import goes on while the listener browses. */
     private val spotifyReader by lazy { spotifyEmbedReader() }
     val imports = PlaylistImports(viewModelScope, app.library.importer(YouTubeImportCatalogue(app.youtube)) { readSpotifyList(spotifyReader, it) }) { uri ->
-        readPlaylistFile(app.contentResolver, Uri.parse(uri))
+        readPlaylistFile(app.contentResolver, Uri.parse(uri), app.getString(R.string.app_imported_playlist))
     }
     private val importRequests = Channel<Unit>(Channel.CONFLATED)
 
@@ -130,7 +130,7 @@ class AppViewModel(private val app: SitaraApplication) :
         try {
             app.startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
         } catch (e: ActivityNotFoundException) {
-            toast("No browser to open Last.fm in")
+            toast(app.getString(R.string.app_no_browser_for_lastfm))
         }
     }
 
@@ -501,7 +501,7 @@ class AppViewModel(private val app: SitaraApplication) :
         try {
             app.startActivity(systemEqualiserPanel(app, player.audioSessionId).addFlags(Intent.FLAG_ACTIVITY_NEW_TASK))
         } catch (e: ActivityNotFoundException) {
-            toast("Your phone's equaliser could not be opened")
+            toast(app.getString(R.string.app_system_equaliser_unavailable))
         }
     }
 
@@ -527,12 +527,12 @@ class AppViewModel(private val app: SitaraApplication) :
 
     // With nothing queued both start playing at once, which needs no message.
     override fun playNext(track: Track) {
-        if (player.state.value.queue.current != null) toast("Playing next")
+        if (player.state.value.queue.current != null) toast(app.getString(R.string.app_playing_next))
         player.playNext(listOf(track))
     }
 
     override fun addToQueue(track: Track) {
-        if (player.state.value.queue.current != null) toast("Added to queue")
+        if (player.state.value.queue.current != null) toast(app.getString(R.string.app_added_to_queue))
         player.addToQueue(listOf(track))
     }
 
@@ -553,7 +553,7 @@ class AppViewModel(private val app: SitaraApplication) :
         // Straight from the download manager: the saved ids wait for the library store before they say anything.
         val wanted = tracks.toDownload(downloads.value.associate { it.track.id to it.state })
         if (wanted.isEmpty()) return
-        toast(if (wanted.size == 1) "Downloading" else "Downloading ${wanted.size} songs")
+        toast(if (wanted.size == 1) app.getString(R.string.app_downloading) else app.resources.getQuantityString(R.plurals.app_downloading_songs, wanted.size, wanted.size))
         app.songDownloads.download(wanted)
     }
 
@@ -605,7 +605,7 @@ class AppViewModel(private val app: SitaraApplication) :
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            toast("Some music on this phone couldn’t be read")
+            toast(app.getString(R.string.app_local_read_failed))
         } finally {
             scanning.value = false
         }
@@ -617,11 +617,11 @@ class AppViewModel(private val app: SitaraApplication) :
         val id = app.library.playlists.create(name)
         // A song queued twice goes in once: a playlist holds each song once.
         val added = tracks.count { app.library.playlists.add(id, it) }
-        if (added > 0) toast(if (tracks.size == 1) "Added to $name" else "Saved $added songs to $name")
+        if (added > 0) toast(if (tracks.size == 1) app.getString(R.string.app_added_to_playlist, name) else app.resources.getQuantityString(R.plurals.app_saved_songs_to_playlist, added, added, name))
     }
 
     override fun addToPlaylist(playlist: PlaylistSummary, track: Track) = app.writeLibrary {
-        toast(if (app.library.playlists.add(playlist.id, track)) "Added to ${playlist.name}" else "Already in ${playlist.name}")
+        toast(app.getString(if (app.library.playlists.add(playlist.id, track)) R.string.app_added_to_playlist else R.string.app_already_in_playlist, playlist.name))
     }
 
     private fun toast(text: String) = Toast.makeText(app, text, Toast.LENGTH_SHORT).show()

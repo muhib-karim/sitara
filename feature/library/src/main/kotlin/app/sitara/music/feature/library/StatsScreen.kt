@@ -37,6 +37,8 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -55,6 +57,7 @@ import app.sitara.music.core.designsystem.SelectionPill
 import app.sitara.music.core.designsystem.SitaraIcons
 import app.sitara.music.core.designsystem.SitaraRadius
 import app.sitara.music.core.designsystem.SitaraSpacing
+import app.sitara.music.core.designsystem.displayName
 import app.sitara.music.core.designsystem.rememberPlaceholderPulse
 import app.sitara.music.core.model.Artwork
 import app.sitara.music.core.model.ListeningStats
@@ -100,12 +103,12 @@ fun StatsScreen(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                GlassIconButton(SitaraIcons.Back, "Back", onBack)
+                GlassIconButton(SitaraIcons.Back, stringResource(R.string.library_back), onBack)
                 Text(
-                    "Your stats", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onSurface,
+                    stringResource(R.string.library_your_stats), style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.weight(1f).semantics { heading() },
                 )
-                if (shareable != null) GlassIconButton(SitaraIcons.Share, "Share your stats", { sharing = true })
+                if (shareable != null) GlassIconButton(SitaraIcons.Share, stringResource(R.string.library_stats_share), { sharing = true })
             }
         }
         item(key = "ranges") {
@@ -113,16 +116,16 @@ fun StatsScreen(
                 Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = SitaraSpacing.Gutter, vertical = 8.dp).selectableGroup(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                StatsRange.entries.forEach { SelectionPill(it.label, it == range, { onRange(it) }) }
+                StatsRange.entries.forEach { SelectionPill(it.displayName(), it == range, { onRange(it) }) }
             }
         }
         if (historyPaused) {
-            item(key = "paused") { StatsMessage("Listening history is paused in Settings, so new plays aren’t counted.") }
+            item(key = "paused") { StatsMessage(stringResource(R.string.library_stats_paused)) }
         }
         when (state) {
             StatsState.Loading -> item(key = "loading", contentType = "skeleton") { StatsSkeleton() }
             StatsState.Failed -> item(key = "failed") {
-                StatsMessage("Your listening history couldn’t be read. Restart Sitara to try again.")
+                StatsMessage(stringResource(R.string.library_stats_failed))
             }
             is StatsState.Ready -> if (state.stats.isEmpty) {
                 item(key = "empty") { EmptyStats(range) }
@@ -141,23 +144,23 @@ private fun LazyListScope.statsSections(
 ) {
     item(key = "totals") { Totals(stats, range) }
     item(key = "hours-heading") {
-        SectionHeader("When you listen", Modifier.padding(top = 12.dp), subtitle = stats.peakHour?.let { "Most around ${hourLabel(it)}" })
+        SectionHeader(stringResource(R.string.library_stats_when), Modifier.padding(top = 12.dp), subtitle = stats.peakHour?.let { stringResource(R.string.library_stats_peak, hourLabel(it)) })
     }
     item(key = "hours") { HourChart(stats) }
-    item(key = "songs-heading") { SectionHeader("Top songs", Modifier.padding(top = 12.dp)) }
+    item(key = "songs-heading") { SectionHeader(stringResource(R.string.library_top_songs), Modifier.padding(top = 12.dp)) }
     val tracks = stats.topSongs.map { it.track }
     itemsIndexed(stats.topSongs, key = { _, song -> "song-${song.track.id}" }) { index, song -> RankedSong(index + 1, song) { onPlay(tracks, index) } }
-    item(key = "artists-heading") { SectionHeader("Top artists", Modifier.padding(top = 12.dp)) }
+    item(key = "artists-heading") { SectionHeader(stringResource(R.string.library_stats_top_artists), Modifier.padding(top = 12.dp)) }
     item(key = "artists") {
         StatRail(stats.topArtists, key = { it.artistId ?: it.name }) { artist ->
             StatTile(artist.name, playsAndTime(artist.plays, artist.listenedMs), artist.artwork, round = true, onClick = artist.artistId?.let { id -> { onArtist(id) } })
         }
     }
     if (stats.topAlbums.isNotEmpty()) {
-        item(key = "albums-heading") { SectionHeader("Top albums", Modifier.padding(top = 12.dp)) }
+        item(key = "albums-heading") { SectionHeader(stringResource(R.string.library_stats_top_albums), Modifier.padding(top = 12.dp)) }
         item(key = "albums") {
             StatRail(stats.topAlbums, key = { "${it.title}|${it.artist}" }) { album ->
-                StatTile(album.title, "${album.artist} · ${playsAndTime(album.plays, album.listenedMs)}", album.artwork, round = false, onClick = null)
+                StatTile(album.title, stringResource(R.string.library_joined, album.artist, playsAndTime(album.plays, album.listenedMs)), album.artwork, round = false, onClick = null)
             }
         }
     }
@@ -173,7 +176,7 @@ private fun Totals(stats: ListeningStats, range: StatsRange) {
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
         Text(formatListening(stats.listenedMs), style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.SemiBold, color = colors.primary)
-        Text("listened ${range.phrase}", style = MaterialTheme.typography.bodyLarge, color = colors.onSurface)
+        Text(listenedIn(range), style = MaterialTheme.typography.bodyLarge, color = colors.onSurface)
         Text(plays(stats.plays), style = MaterialTheme.typography.titleMedium, color = colors.onSurfaceVariant, modifier = Modifier.padding(top = 8.dp))
     }
 }
@@ -187,7 +190,10 @@ private fun HourChart(stats: ListeningStats) {
     val hours = stats.listenedByHour
     val peakHour = stats.peakHour
     val busiest = hours.indices.filter { hours[it] > 0 }.sortedByDescending { hours[it] }.take(3)
-    val summary = "Listening by hour of the day. " + busiest.joinToString("; ") { "${hourLabel(it)}: ${formatListening(hours[it])}" }
+    val summary = stringResource(
+        R.string.library_stats_hours_summary,
+        busiest.map { stringResource(R.string.library_stats_hour_entry, hourLabel(it), formatListening(hours[it])) }.joinToString("; "),
+    )
     val peak = MaterialTheme.colorScheme.primary
     val rest = peak.copy(alpha = 0.45f)
     val baseline = MaterialTheme.colorScheme.outlineVariant
@@ -223,9 +229,10 @@ private fun HourChart(stats: ListeningStats) {
 private fun RankedSong(rank: Int, song: SongTotal, onClick: () -> Unit) {
     val track = song.track
     val detail = playsAndTime(song.plays, song.listenedMs)
+    val description = stringResource(R.string.library_stats_ranked_song, rank, track.title, track.artist, detail)
     Row(
         Modifier.fillMaxWidth().clickable(role = Role.Button, onClick = onClick)
-            .semantics(mergeDescendants = true) { contentDescription = "$rank, ${track.title} by ${track.artist}, $detail" }
+            .semantics(mergeDescendants = true) { contentDescription = description }
             .padding(horizontal = SitaraSpacing.Gutter, vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(14.dp),
@@ -237,7 +244,7 @@ private fun RankedSong(rank: Int, song: SongTotal, onClick: () -> Unit) {
         ArtworkImage(track.artwork, Modifier.size(48.dp), cornerRadius = SitaraRadius.Cover)
         Column(Modifier.weight(1f)) {
             Text(track.title, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis)
-            Text("${track.artist} · $detail", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
+            Text(stringResource(R.string.library_joined, track.artist, detail), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1, overflow = TextOverflow.Ellipsis)
         }
     }
 }
@@ -274,11 +281,18 @@ private fun EmptyStats(range: StatsRange) {
     ) {
         FannedCovers()
         Text(
-            if (range == StatsRange.ALL_TIME) "Not enough listening yet" else "Nothing played ${range.phrase} yet",
+            stringResource(
+                when (range) {
+                    StatsRange.WEEK -> R.string.library_stats_nothing_week
+                    StatsRange.MONTH -> R.string.library_stats_nothing_month
+                    StatsRange.YEAR -> R.string.library_stats_nothing_year
+                    StatsRange.ALL_TIME -> R.string.library_stats_not_enough
+                },
+            ),
             style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface, textAlign = TextAlign.Center,
         )
         Text(
-            "A play counts after 30 seconds, or half of a short song. Keep listening and your top songs, artists and hours appear here.",
+            stringResource(R.string.library_stats_empty_body),
             style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center,
         )
     }
@@ -292,8 +306,9 @@ private fun StatsMessage(text: String) {
 @Composable
 private fun StatsSkeleton() {
     val pulse = rememberPlaceholderPulse()
+    val loading = stringResource(R.string.library_stats_loading)
     Column(
-        Modifier.padding(horizontal = SitaraSpacing.Gutter, vertical = 8.dp).clearAndSetSemantics { contentDescription = "Loading your stats" },
+        Modifier.padding(horizontal = SitaraSpacing.Gutter, vertical = 8.dp).clearAndSetSemantics { contentDescription = loading },
         verticalArrangement = Arrangement.spacedBy(16.dp),
     ) {
         PlaceholderBlock(pulse, Modifier.fillMaxWidth().height(132.dp), RoundedCornerShape(SitaraRadius.Artwork))
@@ -302,11 +317,22 @@ private fun StatsSkeleton() {
     }
 }
 
-private val StatsRange.phrase: String get() = if (this == StatsRange.ALL_TIME) "in all" else label.lowercase()
+/** "listened this week", "listened in all": the line under the time heard. */
+@Composable
+private fun listenedIn(range: StatsRange): String = stringResource(
+    when (range) {
+        StatsRange.WEEK -> R.string.library_stats_listened_week
+        StatsRange.MONTH -> R.string.library_stats_listened_month
+        StatsRange.YEAR -> R.string.library_stats_listened_year
+        StatsRange.ALL_TIME -> R.string.library_stats_listened_all_time
+    },
+)
 
-private fun plays(count: Int) = if (count == 1) "1 play" else "$count plays"
+@Composable
+private fun plays(count: Int): String = pluralStringResource(R.plurals.library_play_count, count, count)
 
-private fun playsAndTime(count: Int, ms: Long) = "${plays(count)} · ${formatListening(ms)}"
+@Composable
+private fun playsAndTime(count: Int, ms: Long): String = stringResource(R.string.library_joined, plays(count), formatListening(ms))
 
 /** The hour in the phone's own clock style: "9:00 PM" or "21:00". */
 private fun hourLabel(hour: Int): String = LocalTime.of(hour, 0).format(DateTimeFormatter.ofLocalizedTime(FormatStyle.SHORT))

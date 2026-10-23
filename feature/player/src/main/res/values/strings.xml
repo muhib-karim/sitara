@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Now Playing: top bar, tabs and heading -->
+    <string name="player_collapse">Collapse player</string>
+    <string name="player_tab_playing">Playing</string>
+    <string name="player_tab_lyrics">Lyrics</string>
+    <string name="player_up_next">Up next</string>
+    <string name="player_open_artist">Open artist</string>
+    <string name="player_like">Like</string>
+    <string name="player_unlike">Remove from liked songs</string>
+    <string name="player_open_queue">Open queue</string>
+    <string name="player_more_options">More options</string>
+
+    <!-- Transport and scrubber -->
+    <string name="player_shuffle">Shuffle</string>
+    <string name="player_state_on">On</string>
+    <string name="player_state_off">Off</string>
+    <string name="player_previous_track">Previous track</string>
+    <string name="player_next_track">Next track</string>
+    <string name="player_try_again">Try again</string>
+    <string name="player_pause">Pause</string>
+    <string name="player_play">Play</string>
+    <string name="player_repeat">Repeat</string>
+    <string name="player_repeat_off">off</string>
+    <string name="player_repeat_all">all</string>
+    <string name="player_repeat_one">one</string>
+    <string name="player_playback_failed">Couldn’t play this song</string>
+    <string name="player_skip">Skip</string>
+    <string name="player_seek">Seek</string>
+    <string name="player_automix_readout">Automix · %1$d → %2$d BPM · %3$d bars</string>
+    <string name="player_automix_description">Automix: blending from %1$d to %2$d beats a minute over %3$d bars</string>
+    <string name="player_stream_format">%1$s · %2$d kbps</string>
+    <string name="player_streaming_description">Streaming %1$s at %2$d kilobits per second</string>
+
+    <!-- Mini player -->
+    <string name="player_open_player">Open player</string>
+    <string name="player_skip_to_next">Skip to next song</string>
+
+    <!-- More options and song volume -->
+    <string name="player_add_to_playlist">Add to playlist</string>
+    <string name="player_equaliser">Equaliser</string>
+    <string name="player_song_volume">Volume for this song</string>
+    <string name="player_reset">Reset</string>
+    <string name="player_trim">Trim</string>
+    <string name="player_volume_for">Volume for %1$s</string>
+    <string name="player_song_volume_hint">For a song mastered louder or quieter than the rest. Sitara keeps it with the song and applies it every time it plays.</string>
+
+    <!-- Lyrics -->
+    <string name="player_lyrics_credit">Lyrics from %1$s</string>
+    <string name="player_lyrics_loading">Looking for lyrics…</string>
+    <string name="player_lyrics_not_found">No lyrics found</string>
+    <string name="player_lyrics_not_found_in">No lyrics found in %1$s</string>
+    <string name="player_lyrics_not_found_in_either">No lyrics found in %1$s or %2$s</string>
+    <string name="player_lyrics_failed">Lyrics didn’t load. Check your connection, then try again.</string>
+    <string name="player_cancel">Cancel</string>
+    <plurals name="player_share_lines">
+        <item quantity="one">Share %1$d line</item>
+        <item quantity="other">Share %1$d lines</item>
+    </plurals>
+    <string name="player_lyrics_not_synced">These lyrics are not time-synced</string>
+    <string name="player_pick_for_card">Pick for a lyric card</string>
+    <string name="player_back_to_current_line">Back to current line</string>
+
+    <!-- Lyrics toolbar, sources and translation -->
+    <string name="player_share_lyrics">Share lyrics</string>
+    <string name="player_translate">Translate</string>
+    <string name="player_translating_to">Translating to %1$s…</string>
+    <string name="player_translated_from">Translated from %1$s by MyMemory</string>
+    <string name="player_translated">Translated by MyMemory</string>
+    <string name="player_translation_offline">You’re offline. Connect to translate.</string>
+    <string name="player_translation_daily_limit">MyMemory’s free daily translations are used up. Try again tomorrow.</string>
+    <string name="player_translation_same_language">These lyrics are already in %1$s.</string>
+    <string name="player_translation_service">MyMemory couldn’t translate these lyrics.</string>
+    <string name="player_translate_into_change">Translate into %1$s. Change language</string>
+    <string name="player_translate_into">Translate into</string>
+    <string name="player_source_synced">Source: %1$s, synced</string>
+    <string name="player_source_plain">Source: %1$s, plain</string>
+    <string name="player_source_unknown">unknown</string>
+    <string name="player_lyrics_source">Lyrics source</string>
+    <string name="player_source_has_none">%1$s has no lyrics for this song</string>
+    <string name="player_synced">Synced</string>
+    <string name="player_plain">Plain</string>
+    <plurals name="player_line_count">
+        <item quantity="one">%1$d line</item>
+        <item quantity="other">%1$d lines</item>
+    </plurals>
+    <string name="player_same_length">same length</string>
+    <string name="player_seconds_longer">%1$d s longer</string>
+    <string name="player_seconds_shorter">%1$d s shorter</string>
+
+    <!-- Lyric cards -->
+    <string name="player_share_image">Share image</string>
+    <string name="player_card_style_artwork">Artwork</string>
+    <string name="player_card_style_colour">Colour</string>
+    <string name="player_card_style_light">Light</string>
+    <string name="player_lyric_card_description">Lyric card: %1$s. %2$s by %3$s. %4$s</string>
+
+    <!-- Up next -->
+    <string name="player_removed">Removed %1$s</string>
+    <string name="player_undo">Undo</string>
+    <string name="player_now_playing">Now playing</string>
+    <string name="player_save_as_playlist">Save as playlist</string>
+    <string name="player_queue_end">You\'re at the end of the queue</string>
+    <string name="player_remove_from_queue">Remove from the queue</string>
+    <string name="player_up_next_from_radio">Up next from radio</string>
+    <string name="player_remove_track_from_queue">Remove %1$s from the queue</string>
+    <string name="player_start_radio">Start radio</string>
+    <string name="player_radio_loading">Finding similar songs…</string>
+    <string name="player_radio_unavailable">No similar songs found for this one</string>
+
+    <!-- Sleep timer -->
+    <string name="player_sleep_timer">Sleep timer</string>
+    <string name="player_sleep_end_of_song">Pauses when this song ends</string>
+    <string name="player_sleep_pauses_in">Pauses in %1$s</string>
+    <string name="player_minutes">%1$d min</string>
+    <string name="player_hours">%1$d h</string>
+    <string name="player_hours_minutes">%1$d h %2$d min</string>
+    <string name="player_extend_minutes">+%1$d min</string>
+    <string name="player_turn_off">Turn off</string>
+    <string name="player_pause_after">Pause after</string>
+    <string name="player_end_of_song">End of this song</string>
+    <string name="player_custom">Custom</string>
+    <string name="player_one_minute_less">One minute less</string>
+    <string name="player_custom_minutes">Custom minutes</string>
+    <string name="player_one_minute_more">One minute more</string>
+    <string name="player_start_timer">Start %1$s timer</string>
+
+    <!-- Speed and pitch -->
+    <string name="player_speed_and_pitch">Speed and pitch</string>
+    <string name="player_tuning_state">%1$s, %2$s</string>
+    <string name="player_speed">Speed</string>
+    <string name="player_pitch">Pitch</string>
+    <string name="player_original_key">Original key</string>
+    <plurals name="player_pitch_up">
+        <item quantity="one">+%1$d semitone</item>
+        <item quantity="other">+%1$d semitones</item>
+    </plurals>
+    <plurals name="player_pitch_down">
+        <item quantity="one">−%1$d semitone</item>
+        <item quantity="other">−%1$d semitones</item>
+    </plurals>
+    <string name="player_tuning_hint">Pitch changes the key without changing the speed. Both last until playback stops; lyrics keep time at any speed.</string>
+
+    <!-- Equaliser -->
+    <string name="player_band_khz">%1$d kHz</string>
+    <string name="player_band_hz">%1$d Hz</string>
+    <string name="player_db_boost">+%1$d dB</string>
+    <string name="player_db_cut">−%1$d dB</string>
+    <string name="player_db_zero">0 dB</string>
+    <string name="player_phone_equaliser">Phone equaliser</string>
+    <string name="player_back">Back</string>
+    <string name="player_use_phone_equaliser">Use phone equaliser</string>
+    <string name="player_use_phone_equaliser_summary">Sitara\'s bands turn off while your phone\'s equaliser shapes the sound</string>
+    <string name="player_open_phone_equaliser">Open phone equaliser</string>
+    <string name="player_equaliser_off_summary">Songs play as they were mastered</string>
+    <string name="player_preamp">Preamp</string>
+    <string name="player_preamp_hint">Lower the preamp if loud songs sound squashed: a limiter keeps boosts from clipping.</string>
+</resources>

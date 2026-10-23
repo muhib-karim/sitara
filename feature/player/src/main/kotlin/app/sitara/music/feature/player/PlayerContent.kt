@@ -41,6 +41,7 @@ import androidx.compose.ui.draw.BlurredEdgeTreatment
 import androidx.compose.ui.draw.blur
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
@@ -104,10 +105,10 @@ internal fun FullPlayer(
                 ArtworkBackdrop(track.artwork, Modifier.fillMaxSize().hazeSource(backdrop), look, theme)
                 Column(Modifier.fillMaxSize().statusBarsPadding().navigationBarsPadding()) {
                     Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                        GlassIconButton(SitaraIcons.ChevronDown, "Collapse player", onCollapse)
+                        GlassIconButton(SitaraIcons.ChevronDown, stringResource(R.string.player_collapse), onCollapse)
                         GlassSurface(Modifier.weight(1f), shape = CircleShape) {
                             Row(Modifier.fillMaxWidth().padding(4.dp)) {
-                                listOf("Playing", "Lyrics", "Up next").forEachIndexed { index, label ->
+                                listOf(R.string.player_tab_playing, R.string.player_tab_lyrics, R.string.player_up_next).map { stringResource(it) }.forEachIndexed { index, label ->
                                     val selected = pager.currentPage == index
                                     Box(
                                         Modifier.weight(1f).heightIn(min = 48.dp).clip(CircleShape)
@@ -222,8 +223,9 @@ private fun TrackHeading(
             val titleStyle = if (compact) MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold) else MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.ExtraBold)
             Text(track.title, color = SitaraColors.StageContent, style = titleStyle, maxLines = 2, overflow = TextOverflow.Ellipsis)
             val artistId = track.artistId
+            val openArtist = stringResource(R.string.player_open_artist)
             val link = if (onArtist != null && artistId != null) {
-                Modifier.minimumInteractiveComponentSize().clickable(role = Role.Button, onClickLabel = "Open artist") { onArtist(artistId) }
+                Modifier.minimumInteractiveComponentSize().clickable(role = Role.Button, onClickLabel = openArtist) { onArtist(artistId) }
             } else {
                 Modifier
             }
@@ -233,13 +235,13 @@ private fun TrackHeading(
         if (onLike != null) {
             GlassIconButton(
                 if (state.liked) SitaraIcons.HeartFilled else SitaraIcons.Heart,
-                if (state.liked) "Remove from liked songs" else "Like",
+                stringResource(if (state.liked) R.string.player_unlike else R.string.player_like),
                 onLike,
                 tint = if (state.liked) MaterialTheme.colorScheme.primary else SitaraColors.StageContent,
             )
         }
-        if (onQueue != null) GlassIconButton(SitaraIcons.Queue, "Open queue", onQueue)
-        if (onMore != null) GlassIconButton(SitaraIcons.More, "More options", onMore)
+        if (onQueue != null) GlassIconButton(SitaraIcons.Queue, stringResource(R.string.player_open_queue), onQueue)
+        if (onMore != null) GlassIconButton(SitaraIcons.More, stringResource(R.string.player_more_options), onMore)
     }
 }
 
@@ -261,7 +263,7 @@ private fun LyricsPanel(state: PlayerUiState, actions: PlayerActions, onMore: ()
     val found = state.lyrics as? LyricsState.Found
     val picked = selection
     if (sharing && found != null && picked != null && state.track != null) {
-        val credit = "Lyrics from " + listOfNotNull(found.lyrics.source, found.lyrics.licensor).joinToString(" · ")
+        val credit = stringResource(R.string.player_lyrics_credit, listOfNotNull(found.lyrics.source, found.lyrics.licensor).joinToString(" · "))
         LyricShareSheet(found.lyrics.lines.slice(picked).map { it.text }, state.track, credit) {
             sharing = false
             selection = null

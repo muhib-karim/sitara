@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="search_title">খুঁজুন</string>
+    <string name="search_failed">এই মুহূর্তে খোঁজা যাচ্ছে না। সংযোগ দেখে আবার চেষ্টা করুন।</string>
+    <string name="search_try_again">আবার চেষ্টা করুন</string>
+    <string name="search_searching">খোঁজা হচ্ছে…</string>
+    <string name="search_recent">সাম্প্রতিক খোঁজ</string>
+    <string name="search_clear_all">সব মুছুন</string>
+    <string name="search_clear_all_description">সব সাম্প্রতিক খোঁজ মুছুন</string>
+    <string name="search_search_again">আবার খুঁজুন</string>
+    <string name="search_remove_recent">সাম্প্রতিক খোঁজ থেকে %1$s সরান</string>
+    <string name="search_empty_title">আপনার খোঁজগুলো এখানে দেখা যাবে</string>
+    <string name="search_empty_description">একটি গান, শিল্পী বা অ্যালবাম খুঁজুন, তারপর এক ট্যাপেই আবার ফিরে আসুন।</string>
+    <string name="search_start">খোঁজা শুরু করুন</string>
+    <string name="search_clear_title">সাম্প্রতিক খোঁজ মুছবেন?</string>
+    <string name="search_clear_description">এগুলো শুধু এই ফোনেই রাখা থাকে, তাই আর ফিরিয়ে আনা যাবে না।</string>
+    <string name="search_clear">মুছুন</string>
+    <string name="search_keep_them">রেখে দিন</string>
+    <string name="search_moods">মুড ও ধরন</string>
+    <string name="search_moods_failed">মুড ও ধরন লোড হয়নি। সংযোগ দেখে আবার চেষ্টা করুন।</string>
+    <string name="search_moods_loading">মুড ও ধরন লোড হচ্ছে</string>
+    <string name="search_search_for">%1$s খুঁজুন</string>
+    <string name="search_no_songs">“%1$s”-এর জন্য কোনো গান পাওয়া যায়নি।</string>
+    <string name="search_no_albums">“%1$s”-এর জন্য কোনো অ্যালবাম পাওয়া যায়নি।</string>
+    <string name="search_no_artists">“%1$s”-এর জন্য কোনো শিল্পী পাওয়া যায়নি।</string>
+    <string name="search_no_playlists">“%1$s”-এর জন্য কোনো প্লেলিস্ট পাওয়া যায়নি।</string>
+    <plurals name="search_results">
+        <item quantity="one">%1$dটি ফলাফল</item>
+        <item quantity="other">%1$dটি ফলাফল</item>
+    </plurals>
+    <string name="search_songs">গান</string>
+    <string name="search_albums">অ্যালবাম</string>
+    <string name="search_artists">শিল্পী</string>
+    <string name="search_playlists">প্লেলিস্ট</string>
+    <string name="search_artist">শিল্পী</string>
+    <string name="search_playlist">প্লেলিস্ট</string>
+    <string name="search_hint">গান, অ্যালবাম, শিল্পী</string>
+    <string name="search_clear_search">খোঁজ মুছুন</string>
+    <string name="search_on_this_phone">এই ফোনে</string>
+</resources>

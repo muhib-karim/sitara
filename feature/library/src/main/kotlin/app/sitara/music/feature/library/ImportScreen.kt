@@ -37,6 +37,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -141,9 +143,9 @@ fun ImportScreen(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
             ) {
-                GlassIconButton(SitaraIcons.Back, "Back", onBack)
+                GlassIconButton(SitaraIcons.Back, stringResource(R.string.library_back), onBack)
                 Text(
-                    "Import playlist", style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onSurface,
+                    stringResource(R.string.library_import_playlist), style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.weight(1f).semantics { heading() },
                 )
             }
@@ -152,9 +154,9 @@ fun ImportScreen(
             is ImportState.Start -> start(state, actions, onPickFile)
             ImportState.Reading -> item(key = "reading") {
                 ImportCard {
-                    Text("Reading the playlist…", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+                    Text(stringResource(R.string.library_import_reading), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
                     LinearProgressIndicator(Modifier.fillMaxWidth().padding(vertical = 8.dp))
-                    PillButton("Cancel", actions::cancel, primary = false)
+                    PillButton(stringResource(R.string.library_cancel), actions::cancel, primary = false)
                 }
             }
             is ImportState.Running -> running(state, actions, onReviewOthers = { choosingFor = it })
@@ -168,22 +170,27 @@ private fun LazyListScope.start(state: ImportState.Start, actions: ImportActions
     state.unfinished?.let { job ->
         item(key = "unfinished") {
             ImportCard {
-                Text("Finish importing “${job.name}”", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+                Text(stringResource(R.string.library_import_finish_unfinished, job.name), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
                 Text(checkedOf(job), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
                 FlowRow(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    PillButton("Resume", actions::resume)
-                    PillButton("Discard", actions::cancel, primary = false)
+                    PillButton(stringResource(R.string.library_import_resume), actions::resume)
+                    PillButton(stringResource(R.string.library_import_discard), actions::cancel, primary = false)
                 }
             }
         }
     }
-    item(key = "link-heading") { SectionHeader("From a link", Modifier.padding(top = 8.dp), subtitle = "A YouTube, YouTube Music or public Spotify playlist or album") }
+    item(key = "link-heading") {
+        SectionHeader(
+            stringResource(R.string.library_import_from_link), Modifier.padding(top = 8.dp),
+            subtitle = stringResource(R.string.library_import_from_link_detail),
+        )
+    }
     item(key = "link") {
         val linkProblem = state.problem?.takeIf { it in LINK_PROBLEMS }
         Column(Modifier.padding(horizontal = SitaraSpacing.Gutter, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             OutlinedTextField(
                 state.link, actions::setLink, Modifier.fillMaxWidth().testTag("import-link"),
-                label = { Text("Playlist link") },
+                label = { Text(stringResource(R.string.library_import_link_label)) },
                 placeholder = { Text("music.youtube.com/playlist?list=…") },
                 singleLine = true,
                 isError = linkProblem != null,
@@ -196,19 +203,27 @@ private fun LazyListScope.start(state: ImportState.Start, actions: ImportActions
                 keyboardActions = KeyboardActions(onGo = { actions.importLink() }),
             )
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                PillButton("Import link", actions::importLink)
-                if (state.problem == ImportProblem.OFFLINE) PillButton("Try again", actions::importLink, primary = false)
+                PillButton(stringResource(R.string.library_import_link), actions::importLink)
+                if (state.problem == ImportProblem.OFFLINE) PillButton(stringResource(R.string.library_try_again), actions::importLink, primary = false)
             }
         }
     }
-    item(key = "file-heading") { SectionHeader("From a file", Modifier.padding(top = 12.dp), subtitle = "M3U, M3U8 or CSV with title and artist columns") }
+    item(key = "file-heading") {
+        SectionHeader(
+            stringResource(R.string.library_import_from_file), Modifier.padding(top = 12.dp),
+            subtitle = stringResource(R.string.library_import_from_file_detail),
+        )
+    }
     item(key = "file") {
         val fileProblem = state.problem?.takeIf { it !in LINK_PROBLEMS }
         Column(Modifier.padding(horizontal = SitaraSpacing.Gutter, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
             fileProblem?.let { ProblemText(wording(it)) }
-            PillButton(if (fileProblem != null) "Choose another file" else "Choose a file", onPickFile, primary = false)
+            PillButton(
+                stringResource(if (fileProblem != null) R.string.library_import_choose_another_file else R.string.library_import_choose_file),
+                onPickFile, primary = false,
+            )
             Text(
-                "Up to 2,000 songs (Spotify shows the first 100 of a playlist). Songs without a YouTube link are found by searching for their title and artist.",
+                stringResource(R.string.library_import_limits),
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
@@ -223,15 +238,16 @@ private fun LazyListScope.running(state: ImportState.Running, actions: ImportAct
             Text(job.name, style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface, maxLines = 2, overflow = TextOverflow.Ellipsis)
             val checked = job.total - job.pending
             if (job.pending > 0) {
+                val checkedText = checkedOf(job)
                 LinearProgressIndicator(
                     progress = { checked.toFloat() / job.total.coerceAtLeast(1) },
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp).clearAndSetSemantics { contentDescription = checkedOf(job) },
+                    modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp).clearAndSetSemantics { contentDescription = checkedText },
                 )
             }
             Counts(job)
             if (job.mayHaveMore) {
                 Text(
-                    "Spotify shows only the first 100 songs of a playlist without an account. For the rest, export the playlist as a CSV file and import it too.",
+                    stringResource(R.string.library_import_spotify_more),
                     style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
@@ -239,31 +255,40 @@ private fun LazyListScope.running(state: ImportState.Running, actions: ImportAct
                 state.problem != null -> {
                     ProblemText(wording(state.problem))
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        PillButton("Try again", actions::resume)
-                        PillButton("Cancel import", actions::cancel, primary = false)
+                        PillButton(stringResource(R.string.library_try_again), actions::resume)
+                        PillButton(stringResource(R.string.library_import_cancel), actions::cancel, primary = false)
                     }
                 }
-                job.pending > 0 -> PillButton("Cancel import", actions::cancel, Modifier.padding(top = 4.dp), primary = false)
+                job.pending > 0 -> PillButton(stringResource(R.string.library_import_cancel), actions::cancel, Modifier.padding(top = 4.dp), primary = false)
                 job.matched == 0 -> {
-                    Text("None of these songs were found.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                    PillButton("Discard import", actions::cancel, primary = false)
+                    Text(stringResource(R.string.library_import_none_found), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                    PillButton(stringResource(R.string.library_import_discard_import), actions::cancel, primary = false)
                 }
                 else -> {
-                    val target = if (job.updatesPlaylist) "Update “${job.name}”" else "Add to your library"
+                    val ready = songCount(job.matched)
                     Text(
-                        "${songCount(job.matched)} ready. $target with the songs found; uncertain ones you don’t use are left out.",
+                        if (job.updatesPlaylist) {
+                            stringResource(R.string.library_import_ready_update, ready, job.name)
+                        } else {
+                            stringResource(R.string.library_import_ready_add, ready)
+                        },
                         style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                     FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        PillButton(if (job.updatesPlaylist) "Update playlist" else "Finish", actions::finish)
-                        PillButton("Cancel import", actions::cancel, primary = false)
+                        PillButton(stringResource(if (job.updatesPlaylist) R.string.library_import_update_playlist else R.string.library_import_finish), actions::finish)
+                        PillButton(stringResource(R.string.library_import_cancel), actions::cancel, primary = false)
                     }
                 }
             }
         }
     }
     if (job.pending == 0 && job.review.isNotEmpty()) {
-        item(key = "review-heading") { SectionHeader("Check these matches", Modifier.padding(top = 8.dp), subtitle = "Not sure these are the songs on your list") }
+        item(key = "review-heading") {
+            SectionHeader(
+                stringResource(R.string.library_import_check_matches), Modifier.padding(top = 8.dp),
+                subtitle = stringResource(R.string.library_import_check_matches_detail),
+            )
+        }
         items(job.review, key = { "review-${it.position}" }) { row -> ReviewRow(row, actions, onReviewOthers) }
     }
 }
@@ -271,7 +296,11 @@ private fun LazyListScope.running(state: ImportState.Running, actions: ImportAct
 /** Found, to check and not found, each with its number, read as one line by TalkBack. */
 @Composable
 private fun Counts(job: ImportJob) {
-    val counts = listOf("Found" to job.matched, "To check" to job.uncertain, "Not found" to job.notFound)
+    val counts = listOf(
+        stringResource(R.string.library_import_found) to job.matched,
+        stringResource(R.string.library_import_to_check) to job.uncertain,
+        stringResource(R.string.library_import_not_found) to job.notFound,
+    )
     Row(
         Modifier.fillMaxWidth().padding(vertical = 4.dp).semantics(mergeDescendants = true) {}.semantics { liveRegion = LiveRegionMode.Polite },
         horizontalArrangement = Arrangement.spacedBy(8.dp),
@@ -293,15 +322,16 @@ private fun Counts(job: ImportJob) {
 private fun ReviewRow(row: ImportReviewRow, actions: ImportActions, onReviewOthers: (Int) -> Unit) {
     val match = row.match
     Column(Modifier.fillMaxWidth().padding(horizontal = SitaraSpacing.Gutter, vertical = 10.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        Text("On your list: ${row.source.label}", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        Text(stringResource(R.string.library_import_on_your_list, row.source.label), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         if (match != null) {
             val status = when (row.state) {
-                MatchState.MATCHED -> "Added"
-                MatchState.SKIPPED -> "Skipped"
-                else -> "Not decided"
+                MatchState.MATCHED -> stringResource(R.string.library_import_added)
+                MatchState.SKIPPED -> stringResource(R.string.library_import_skipped)
+                else -> stringResource(R.string.library_import_not_decided)
             }
+            val description = stringResource(R.string.library_import_best_match, match.title, match.artist, status)
             Row(
-                Modifier.semantics(mergeDescendants = true) { contentDescription = "Best match: ${match.title} by ${match.artist}. $status" },
+                Modifier.semantics(mergeDescendants = true) { contentDescription = description },
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(12.dp),
             ) {
@@ -313,9 +343,9 @@ private fun ReviewRow(row: ImportReviewRow, actions: ImportActions, onReviewOthe
                 if (row.state == MatchState.MATCHED) Icon(SitaraIcons.Check, null, tint = MaterialTheme.colorScheme.primary)
             }
             FlowRow(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                if (row.state != MatchState.MATCHED) PillButton("Use this", { actions.choose(row.position, match) })
-                if (row.candidates.size > 1) PillButton("Other matches", { onReviewOthers(row.position) }, primary = false)
-                if (row.state != MatchState.SKIPPED) PillButton("Skip", { actions.skip(row.position) }, primary = false)
+                if (row.state != MatchState.MATCHED) PillButton(stringResource(R.string.library_import_use_this), { actions.choose(row.position, match) })
+                if (row.candidates.size > 1) PillButton(stringResource(R.string.library_import_other_matches), { onReviewOthers(row.position) }, primary = false)
+                if (row.state != MatchState.SKIPPED) PillButton(stringResource(R.string.library_import_skip), { actions.skip(row.position) }, primary = false)
             }
         }
     }
@@ -327,14 +357,14 @@ private fun OtherMatchesSheet(row: ImportReviewRow, onPick: (Track) -> Unit, onD
     SitaraSheet(onDismiss) { close ->
         Column(Modifier.fillMaxWidth().navigationBarsPadding().padding(vertical = 8.dp)) {
             Text(
-                "Matches for ${row.source.label}", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface,
+                stringResource(R.string.library_import_matches_for, row.source.label), style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface,
                 modifier = Modifier.padding(horizontal = SitaraSpacing.Gutter, vertical = 8.dp),
             )
             LazyColumn(Modifier.heightIn(max = 420.dp)) {
                 items(row.candidates, key = { it.id }) { track ->
                     Row(
                         Modifier.fillMaxWidth().defaultMinSize(minHeight = 64.dp)
-                            .clickable(role = Role.Button, onClickLabel = "Use this song") { close { onPick(track) } }
+                            .clickable(role = Role.Button, onClickLabel = stringResource(R.string.library_import_use_this_song)) { close { onPick(track) } }
                             .semantics(mergeDescendants = true) {}
                             .padding(horizontal = SitaraSpacing.Gutter, vertical = 8.dp),
                         verticalAlignment = Alignment.CenterVertically,
@@ -345,7 +375,7 @@ private fun OtherMatchesSheet(row: ImportReviewRow, onPick: (Track) -> Unit, onD
                             Text(track.title, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface, maxLines = 2, overflow = TextOverflow.Ellipsis)
                             Text(track.artist, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 1)
                         }
-                        if (track == row.match && row.state == MatchState.MATCHED) Icon(SitaraIcons.Check, "Chosen", tint = MaterialTheme.colorScheme.primary)
+                        if (track == row.match && row.state == MatchState.MATCHED) Icon(SitaraIcons.Check, stringResource(R.string.library_import_chosen), tint = MaterialTheme.colorScheme.primary)
                     }
                 }
             }
@@ -365,17 +395,17 @@ private fun DoneCard(state: ImportState.Done, onOpenPlaylist: (Long) -> Unit, on
             Icon(SitaraIcons.Check, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(28.dp))
         }
         Text(
-            if (result.updated) "Updated “${result.name}”" else "“${result.name}” is in your library",
+            stringResource(if (result.updated) R.string.library_import_updated else R.string.library_import_in_library, result.name),
             style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.semantics { heading() },
         )
         Text(
-            songCount(result.added) + (if (state.leftOut > 0) " · ${state.leftOut} left out" else ""),
+            if (state.leftOut > 0) stringResource(R.string.library_import_left_out, songCount(result.added), state.leftOut) else songCount(result.added),
             style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         FlowRow(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            PillButton("Open playlist", { onOpenPlaylist(result.playlistId) })
-            PillButton("Import another", onImportAnother, primary = false)
+            PillButton(stringResource(R.string.library_import_open_playlist), { onOpenPlaylist(result.playlistId) })
+            PillButton(stringResource(R.string.library_import_another), onImportAnother, primary = false)
         }
     }
 }
@@ -399,15 +429,19 @@ private val LINK_PROBLEMS = setOf(
     ImportProblem.SPOTIFY_SONG_LINK,
 )
 
-private fun checkedOf(job: ImportJob) = "${job.total - job.pending} of ${songCount(job.total)} checked"
+@Composable
+private fun checkedOf(job: ImportJob): String = pluralStringResource(R.plurals.library_import_checked, job.total, job.total - job.pending, job.total)
 
-internal fun wording(problem: ImportProblem): String = when (problem) {
-    ImportProblem.LINK_NOT_RECOGNISED -> "That isn’t a YouTube, YouTube Music or Spotify playlist link. In the app, use Share, then Copy link."
-    ImportProblem.PLAYLIST_UNAVAILABLE -> "This playlist can’t be opened. It may be private or deleted."
-    ImportProblem.OFFLINE -> "Couldn’t reach the playlist or YouTube Music. Check your connection and try again."
-    ImportProblem.SPOTIFY_UNREADABLE -> "Spotify’s page has changed and Sitara can’t read it yet. Export the playlist as a CSV file and import that."
-    ImportProblem.SPOTIFY_SONG_LINK -> "That’s a link to one song. Share the playlist or album instead, or search for the song."
-    ImportProblem.NOTHING_TO_IMPORT -> "There are no songs to import there."
-    ImportProblem.FILE_UNREADABLE -> "That file couldn’t be read. Choose an M3U, M3U8 or CSV file."
-    ImportProblem.FILE_TOO_LARGE -> "That file is too large to import (over 4 MB)."
-}
+@Composable
+internal fun wording(problem: ImportProblem): String = stringResource(
+    when (problem) {
+        ImportProblem.LINK_NOT_RECOGNISED -> R.string.library_import_problem_link_not_recognised
+        ImportProblem.PLAYLIST_UNAVAILABLE -> R.string.library_import_problem_playlist_unavailable
+        ImportProblem.OFFLINE -> R.string.library_import_problem_offline
+        ImportProblem.SPOTIFY_UNREADABLE -> R.string.library_import_problem_spotify_unreadable
+        ImportProblem.SPOTIFY_SONG_LINK -> R.string.library_import_problem_spotify_song_link
+        ImportProblem.NOTHING_TO_IMPORT -> R.string.library_import_problem_nothing_to_import
+        ImportProblem.FILE_UNREADABLE -> R.string.library_import_problem_file_unreadable
+        ImportProblem.FILE_TOO_LARGE -> R.string.library_import_problem_file_too_large
+    },
+)

@@ -1,6 +1,9 @@
 package app.sitara.music.feature.settings
 
+import android.app.LocaleManager
 import android.os.Build
+import android.os.LocaleList
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -42,6 +45,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -52,7 +56,10 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.toArgb
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
@@ -73,6 +80,7 @@ import app.sitara.music.core.designsystem.SitaraRadius
 import app.sitara.music.core.designsystem.SitaraSheet
 import app.sitara.music.core.designsystem.SitaraSpacing
 import app.sitara.music.core.designsystem.accentTone
+import app.sitara.music.core.designsystem.displayName
 import app.sitara.music.core.designsystem.exportSummary
 import app.sitara.music.core.designsystem.sitaraColorScheme
 import app.sitara.music.core.designsystem.surfaceTint
@@ -94,13 +102,13 @@ fun SettingsScreen(
     onRemoveAllDownloads: () -> Unit,
     onBack: () -> Unit,
     modifier: Modifier = Modifier,
-    equaliserSummary: String = "Off",
+    equaliserSummary: String = stringResource(R.string.settings_off),
     onOpenEqualiser: () -> Unit = {},
     onOpenStats: () -> Unit = {},
     onClearHistory: () -> Unit = {},
     onImportPlaylist: () -> Unit = {},
     onOpenBackup: () -> Unit = {},
-    scrobblingSummary: String = "Off",
+    scrobblingSummary: String = stringResource(R.string.settings_off),
     onOpenScrobbling: () -> Unit = {},
     contentPadding: PaddingValues = PaddingValues(),
     export: DownloadExport = DownloadExport.Idle,
@@ -108,42 +116,44 @@ fun SettingsScreen(
 ) {
     LazyColumn(modifier.fillMaxSize().testTag("settings-content"), contentPadding = contentPadding) {
         item(key = "title") {
-            GlassIconButton(SitaraIcons.Back, "Back", onBack, Modifier.padding(start = 12.dp, top = 8.dp))
-            LargeTitle("Settings")
+            GlassIconButton(SitaraIcons.Back, stringResource(R.string.settings_back), onBack, Modifier.padding(start = 12.dp, top = 8.dp))
+            LargeTitle(stringResource(R.string.settings_title))
         }
         item(key = "appearance") {
             AppearanceSettings(settings, onChange)
         }
         item(key = "motion") {
-            SettingsGroup("Motion") {
-                SwitchRow("Reduced motion", "Instant transitions, without blur", settings.reducedMotion) { onChange(settings.copy(reducedMotion = it)) }
+            SettingsGroup(stringResource(R.string.settings_motion)) {
+                SwitchRow(
+                    stringResource(R.string.settings_reduced_motion), stringResource(R.string.settings_reduced_motion_description), settings.reducedMotion,
+                ) { onChange(settings.copy(reducedMotion = it)) }
             }
         }
         item(key = "playback") {
             PlaybackSettings(settings, onChange)
         }
         item(key = "sound") {
-            SettingsGroup("Sound") {
-                LinkRow("Equaliser", equaliserSummary, onOpenEqualiser)
+            SettingsGroup(stringResource(R.string.settings_sound)) {
+                LinkRow(stringResource(R.string.settings_equaliser), equaliserSummary, onOpenEqualiser)
                 InsetDivider()
-                SwitchRow("Normalise loudness", "Songs play at a similar volume", settings.normalisation) { onChange(settings.copy(normalisation = it)) }
+                SwitchRow(stringResource(R.string.settings_normalise_loudness), stringResource(R.string.settings_normalise_loudness_description), settings.normalisation) { onChange(settings.copy(normalisation = it)) }
                 InsetDivider()
-                SwitchRow("Skip silence", "Skips quiet stretches inside and between songs", settings.skipSilence) { onChange(settings.copy(skipSilence = it)) }
+                SwitchRow(stringResource(R.string.settings_skip_silence), stringResource(R.string.settings_skip_silence_description), settings.skipSilence) { onChange(settings.copy(skipSilence = it)) }
                 InsetDivider()
                 CrossfadeRow(settings.crossfadeSeconds) { onChange(settings.copy(crossfadeSeconds = it)) }
                 InsetDivider()
                 SwitchRow(
-                    "Automix",
-                    "Blends songs on the beat over whole bars, matching tempo and loudness. Reads the first and last half minute of each song once to find its beat.",
+                    stringResource(R.string.settings_automix),
+                    stringResource(R.string.settings_automix_description),
                     settings.automix,
                 ) { onChange(settings.copy(automix = it)) }
             }
         }
         item(key = "library") {
-            SettingsGroup("Library") {
-                LinkRow("Import playlist", "Link or file", onImportPlaylist)
+            SettingsGroup(stringResource(R.string.settings_library)) {
+                LinkRow(stringResource(R.string.settings_import_playlist), stringResource(R.string.settings_import_playlist_value), onImportPlaylist)
                 InsetDivider()
-                LinkRow("Backup and restore", "To a file", onOpenBackup)
+                LinkRow(stringResource(R.string.settings_backup_and_restore), stringResource(R.string.settings_backup_and_restore_value), onOpenBackup)
             }
         }
         item(key = "history") {
@@ -161,26 +171,30 @@ private fun AppearanceSettings(settings: SitaraSettings, onChange: (SitaraSettin
     val wallpaperAvailable = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
     val wallpaper = wallpaperAvailable && settings.dynamicColor
     val pick: (AccentColor) -> Unit = { onChange(settings.copy(accent = it, dynamicColor = false)) }
-    SettingsGroup("Appearance") {
+    SettingsGroup(stringResource(R.string.settings_appearance)) {
         AppearancePreview()
         Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp).selectableGroup(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            listOf(DarkMode.SYSTEM to "System", DarkMode.LIGHT to "Light", DarkMode.DARK to "Dark").forEach { (mode, label) ->
+            listOf(
+                DarkMode.SYSTEM to stringResource(R.string.settings_theme_system),
+                DarkMode.LIGHT to stringResource(R.string.settings_theme_light),
+                DarkMode.DARK to stringResource(R.string.settings_theme_dark),
+            ).forEach { (mode, label) ->
                 Segment(label, settings.darkMode == mode, Modifier.weight(1f)) { onChange(settings.copy(darkMode = mode)) }
             }
         }
         InsetDivider()
-        SwitchRow("Pure black", "Black instead of dark grey in the dark theme, and Now Playing without the cover’s blur", settings.pureBlack) {
+        SwitchRow(stringResource(R.string.settings_pure_black), stringResource(R.string.settings_pure_black_description), settings.pureBlack) {
             onChange(settings.copy(pureBlack = it))
         }
         if (wallpaperAvailable) {
             InsetDivider()
-            SwitchRow("Wallpaper colours", "The accent comes from your wallpaper", settings.dynamicColor) { onChange(settings.copy(dynamicColor = it)) }
+            SwitchRow(stringResource(R.string.settings_wallpaper_colours), stringResource(R.string.settings_wallpaper_colours_description), settings.dynamicColor) { onChange(settings.copy(dynamicColor = it)) }
         }
         InsetDivider()
         Column(Modifier.selectableGroup()) {
             Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp)) {
-                Text("Palette", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
-                Text("An accent with surfaces to match", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(R.string.settings_palette), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+                Text(stringResource(R.string.settings_palette_description), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
             val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f
             val current = Palette.of(settings.accent, settings.surfaceTone).takeIf { !wallpaper }
@@ -195,26 +209,58 @@ private fun AppearanceSettings(settings: SitaraSettings, onChange: (SitaraSettin
         InsetDivider()
         Column(Modifier.selectableGroup()) {
             Column(Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp)) {
-                Text("Accent", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+                Text(stringResource(R.string.settings_accent), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
                 Text(
-                    if (wallpaper) "From your wallpaper now. Pick a colour to use it instead." else "Buttons, highlights and the selected tab",
+                    stringResource(if (wallpaper) R.string.settings_accent_description_wallpaper else R.string.settings_accent_description),
                     style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
             val dark = MaterialTheme.colorScheme.background.luminance() < 0.5f
             Row(Modifier.fillMaxWidth().padding(horizontal = 12.dp, vertical = 8.dp), horizontalArrangement = Arrangement.SpaceBetween) {
                 AccentColor.entries.forEach { accent ->
-                    accentTone(accent, dark)?.let { tone -> Swatch(accent.label, tone, selected = !wallpaper && settings.accent == accent) { pick(accent) } }
+                    accentTone(accent, dark)?.let { tone -> Swatch(accent.displayName(), tone, selected = !wallpaper && settings.accent == accent) { pick(accent) } }
                 }
             }
             Choice(
-                AccentColor.ARTWORK.label, !wallpaper && settings.accent == AccentColor.ARTWORK,
-                description = "Follows the cover of the song that’s playing; saffron when nothing plays",
+                AccentColor.ARTWORK.displayName(), !wallpaper && settings.accent == AccentColor.ARTWORK,
+                description = stringResource(R.string.settings_accent_artwork_description),
             ) { pick(AccentColor.ARTWORK) }
         }
         InsetDivider()
-        SwitchRow("Use artwork colours across the app", "Backgrounds, cards and chips take a tint from the cover of the song that’s playing", settings.artworkColorsAcrossApp) {
+        SwitchRow(stringResource(R.string.settings_artwork_colours), stringResource(R.string.settings_artwork_colours_description), settings.artworkColorsAcrossApp) {
             onChange(settings.copy(artworkColorsAcrossApp = it))
+        }
+        // Android 13 and later keep a language per app; before that Sitara follows the phone's language.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            InsetDivider()
+            LanguageRow()
+        }
+    }
+}
+
+/** The app's language: the phone's, English or Bangla, kept by the system (LocaleManager) like its own per-app setting. */
+@RequiresApi(Build.VERSION_CODES.TIRAMISU)
+@Composable
+private fun LanguageRow() {
+    val context = LocalContext.current
+    val manager = remember(context) { context.getSystemService(LocaleManager::class.java) }
+    var current by remember { mutableStateOf(manager?.applicationLocales?.toLanguageTags().orEmpty()) }
+    var picking by rememberSaveable { mutableStateOf(false) }
+    val choices = listOf("" to stringResource(R.string.settings_language_system), "en" to "English", "bn" to "বাংলা")
+    LinkRow(stringResource(R.string.settings_language), choices.firstOrNull { current.startsWith(it.first) && it.first.isNotEmpty() }?.second ?: choices[0].second) { picking = true }
+    if (picking) {
+        SitaraSheet(onDismiss = { picking = false }) { close ->
+            Column(Modifier.fillMaxWidth().navigationBarsPadding().padding(vertical = 8.dp).selectableGroup()) {
+                choices.forEach { (tag, label) ->
+                    Choice(label, selected = if (tag.isEmpty()) current.isEmpty() else current.startsWith(tag)) {
+                        close {
+                            current = tag
+                            // The system recreates the screens in the new language.
+                            manager?.applicationLocales = if (tag.isEmpty()) LocaleList.getEmptyLocaleList() else LocaleList.forLanguageTags(tag)
+                        }
+                    }
+                }
+            }
         }
     }
 }
@@ -223,13 +269,18 @@ private fun AppearanceSettings(settings: SitaraSettings, onChange: (SitaraSettin
 @Composable
 private fun AppearancePreview() {
     val colors = MaterialTheme.colorScheme
+    val description = stringResource(R.string.settings_preview_description)
     Column(
         Modifier.padding(16.dp).fillMaxWidth().clip(RoundedCornerShape(SitaraRadius.Tile)).background(colors.background).padding(12.dp)
-            .testTag("appearance-preview").clearAndSetSemantics { contentDescription = "Preview of the chosen colours" },
+            .testTag("appearance-preview").clearAndSetSemantics { contentDescription = description },
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            listOf("Chill" to true, "Focus" to false, "Party" to false).forEach { (label, selected) ->
+            listOf(
+                stringResource(R.string.settings_preview_chill) to true,
+                stringResource(R.string.settings_preview_focus) to false,
+                stringResource(R.string.settings_preview_party) to false,
+            ).forEach { (label, selected) ->
                 Text(
                     label, style = MaterialTheme.typography.labelLarge, color = if (selected) colors.onPrimary else colors.onSurfaceVariant,
                     modifier = Modifier.clip(CircleShape).background(if (selected) colors.primary else colors.surfaceContainerHigh).padding(horizontal = 14.dp, vertical = 8.dp),
@@ -243,8 +294,8 @@ private fun AppearancePreview() {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Box(Modifier.size(48.dp).clip(RoundedCornerShape(SitaraRadius.Cover)).background(Brush.linearGradient(listOf(colors.primary, colors.surfaceContainerHighest))))
                 Column(Modifier.weight(1f).padding(horizontal = 12.dp)) {
-                    Text("Song title", style = MaterialTheme.typography.titleMedium, color = colors.onSurface)
-                    Text("Artist", style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
+                    Text(stringResource(R.string.settings_preview_song_title), style = MaterialTheme.typography.titleMedium, color = colors.onSurface)
+                    Text(stringResource(R.string.settings_preview_artist), style = MaterialTheme.typography.bodySmall, color = colors.onSurfaceVariant)
                 }
                 Box(Modifier.size(40.dp).clip(CircleShape).background(colors.primary), contentAlignment = Alignment.Center) {
                     Icon(SitaraIcons.Play, null, tint = colors.onPrimary, modifier = Modifier.size(20.dp))
@@ -287,7 +338,7 @@ private fun PaletteCard(palette: Palette, dark: Boolean, selected: Boolean, onCl
             }
             if (selected) Icon(SitaraIcons.Check, null, tint = MaterialTheme.colorScheme.onSurface, modifier = Modifier.size(18.dp).offset(x = 16.dp, y = 16.dp))
         }
-        Text(palette.label, style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface, textAlign = TextAlign.Center, maxLines = 2)
+        Text(palette.displayName(), style = MaterialTheme.typography.labelMedium, color = MaterialTheme.colorScheme.onSurface, textAlign = TextAlign.Center, maxLines = 2)
     }
 }
 
@@ -310,21 +361,21 @@ private fun Swatch(label: String, tone: Color, selected: Boolean, onClick: () ->
 @Composable
 private fun PlaybackSettings(settings: SitaraSettings, onChange: (SitaraSettings) -> Unit) {
     var picking by rememberSaveable { mutableStateOf<Boolean?>(null) } // true: Wi-Fi, false: mobile data
-    SettingsGroup("Playback") {
-        LinkRow("Quality on Wi-Fi", settings.wifiQuality.label) { picking = true }
+    SettingsGroup(stringResource(R.string.settings_playback)) {
+        LinkRow(stringResource(R.string.settings_quality_wifi), settings.wifiQuality.displayName()) { picking = true }
         InsetDivider()
-        LinkRow("Quality on mobile data", settings.mobileQuality.label) { picking = false }
+        LinkRow(stringResource(R.string.settings_quality_mobile), settings.mobileQuality.displayName()) { picking = false }
     }
     picking?.let { wifi ->
         val current = if (wifi) settings.wifiQuality else settings.mobileQuality
         SitaraSheet(onDismiss = { picking = null }) { close ->
             Column(Modifier.fillMaxWidth().navigationBarsPadding().padding(vertical = 8.dp).selectableGroup()) {
                 Text(
-                    if (wifi) "Quality on Wi-Fi" else "Quality on mobile data", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface,
+                    stringResource(if (wifi) R.string.settings_quality_wifi else R.string.settings_quality_mobile), style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface,
                     modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
                 )
                 AudioQuality.entries.forEach { quality ->
-                    Choice(quality.label, quality == current, qualityDescription(quality, wifi)) {
+                    Choice(quality.displayName(), quality == current, qualityDescription(quality, wifi)) {
                         close { onChange(if (wifi) settings.copy(wifiQuality = quality) else settings.copy(mobileQuality = quality)) }
                     }
                 }
@@ -333,12 +384,15 @@ private fun PlaybackSettings(settings: SitaraSettings, onChange: (SitaraSettings
     }
 }
 
-private fun qualityDescription(quality: AudioQuality, wifi: Boolean): String = when (quality) {
-    AudioQuality.AUTO -> if (wifi) "High on Wi-Fi" else "Normal on mobile data"
-    AudioQuality.HIGH -> "The best the song offers, usually 128–160 kbps"
-    AudioQuality.NORMAL -> "Up to 96 kbps"
-    AudioQuality.DATA_SAVER -> "The lowest offered, about 50 kbps"
-}
+@Composable
+private fun qualityDescription(quality: AudioQuality, wifi: Boolean): String = stringResource(
+    when (quality) {
+        AudioQuality.AUTO -> if (wifi) R.string.settings_quality_auto_wifi else R.string.settings_quality_auto_mobile
+        AudioQuality.HIGH -> R.string.settings_quality_high_description
+        AudioQuality.NORMAL -> R.string.settings_quality_normal_description
+        AudioQuality.DATA_SAVER -> R.string.settings_quality_data_saver_description
+    },
+)
 
 /** Stats and the listener's say over the plays kept for them on the phone, and scrobbling, which sends plays out. */
 @Composable
@@ -351,30 +405,30 @@ private fun HistorySettings(
     onOpenScrobbling: () -> Unit,
 ) {
     var confirming by rememberSaveable { mutableStateOf(false) }
-    SettingsGroup("Listening history") {
-        LinkRow("Your stats", "On this phone", onOpenStats)
+    SettingsGroup(stringResource(R.string.settings_listening_history)) {
+        LinkRow(stringResource(R.string.settings_your_stats), stringResource(R.string.settings_your_stats_value), onOpenStats)
         InsetDivider()
-        LinkRow("Scrobbling", scrobblingSummary, onOpenScrobbling)
+        LinkRow(stringResource(R.string.settings_scrobbling), scrobblingSummary, onOpenScrobbling)
         InsetDivider()
-        SwitchRow("Pause listening history", "New plays aren’t kept for Recently played, play counts or stats", settings.pauseListeningHistory) {
+        SwitchRow(stringResource(R.string.settings_pause_history), stringResource(R.string.settings_pause_history_description), settings.pauseListeningHistory) {
             onChange(settings.copy(pauseListeningHistory = it))
         }
         InsetDivider()
         if (confirming) {
             Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(
-                    "Clear listening history? Recently played, play counts and stats start over. Liked songs, playlists and downloads stay.",
+                    stringResource(R.string.settings_clear_history_confirm),
                     style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface,
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    PillButton("Clear history", { confirming = false; onClear() })
-                    PillButton("Keep history", { confirming = false }, primary = false)
+                    PillButton(stringResource(R.string.settings_clear_history_button), { confirming = false; onClear() })
+                    PillButton(stringResource(R.string.settings_keep_history), { confirming = false }, primary = false)
                 }
             }
         } else {
             Column(Modifier.fillMaxWidth().clickable(role = Role.Button) { confirming = true }.padding(16.dp)) {
-                Text("Clear listening history", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
-                Text("Recently played, play counts and stats", style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                Text(stringResource(R.string.settings_clear_history), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+                Text(stringResource(R.string.settings_clear_history_description), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     }
@@ -390,44 +444,48 @@ private fun DownloadSettings(
     onExport: () -> Unit,
 ) {
     var confirming by rememberSaveable { mutableStateOf(false) }
-    val songs = if (downloads.size == 1) "1 song" else "${downloads.size} songs"
-    SettingsGroup("Downloads") {
-        SwitchRow("Download on Wi-Fi only", "Downloads wait for Wi-Fi instead of using mobile data", settings.downloadOnWifiOnly) {
+    val songs = pluralStringResource(R.plurals.settings_songs, downloads.size, downloads.size)
+    SettingsGroup(stringResource(R.string.settings_downloads)) {
+        SwitchRow(stringResource(R.string.settings_wifi_only), stringResource(R.string.settings_wifi_only_description), settings.downloadOnWifiOnly) {
             onChange(settings.copy(downloadOnWifiOnly = it))
         }
         InsetDivider()
         Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f).padding(end = 12.dp)) {
-                Text("Storage used", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+                Text(stringResource(R.string.settings_storage_used), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
                 Text(
-                    if (downloads.isEmpty()) "Nothing downloaded" else "$songs · ${formatBytes(downloads.sumOf { it.bytes })}",
+                    if (downloads.isEmpty()) {
+                        stringResource(R.string.settings_nothing_downloaded)
+                    } else {
+                        stringResource(R.string.settings_storage_summary, songs, formatBytes(downloads.sumOf { it.bytes }))
+                    },
                     style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
                 )
             }
-            if (downloads.isNotEmpty() && !confirming) PillButton("Remove all", { confirming = true }, primary = false)
+            if (downloads.isNotEmpty() && !confirming) PillButton(stringResource(R.string.settings_remove_all), { confirming = true }, primary = false)
         }
         InsetDivider()
         Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
             Column(Modifier.weight(1f).padding(end = 12.dp)) {
-                Text("Export to a folder", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+                Text(stringResource(R.string.settings_export_folder), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
                 Text(
-                    exportSummary(export) ?: "Tagged files with their covers, and .lrc lyrics where there are synced lyrics, for any music app",
+                    exportSummary(export) ?: stringResource(R.string.settings_export_description),
                     style = MaterialTheme.typography.bodySmall,
                     color = if (export is DownloadExport.Failed) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
                 )
             }
-            if (downloads.any { it.state == DownloadState.DOWNLOADED } && export !is DownloadExport.Working) PillButton("Export", onExport, primary = false)
+            if (downloads.any { it.state == DownloadState.DOWNLOADED } && export !is DownloadExport.Working) PillButton(stringResource(R.string.settings_export), onExport, primary = false)
         }
         if (downloads.isNotEmpty() && confirming) {
             Column(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Text(
-                    "Remove all downloads? $songs will stream again and need a connection.",
+                    pluralStringResource(R.plurals.settings_remove_all_confirm, downloads.size, downloads.size),
                     style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface,
                 )
                 Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    PillButton("Remove all downloads", { confirming = false; onRemoveAll() })
-                    PillButton("Keep", { confirming = false }, primary = false)
+                    PillButton(stringResource(R.string.settings_remove_all_downloads), { confirming = false; onRemoveAll() })
+                    PillButton(stringResource(R.string.settings_keep), { confirming = false }, primary = false)
                 }
             }
         }
@@ -436,14 +494,17 @@ private fun DownloadSettings(
 
 @Composable
 private fun CrossfadeRow(seconds: Int, onChange: (Int) -> Unit) {
-    val label = if (seconds == 0) "Off" else "$seconds s"
+    val off = stringResource(R.string.settings_off)
+    val label = if (seconds == 0) off else stringResource(R.string.settings_crossfade_value, seconds)
+    val title = stringResource(R.string.settings_crossfade)
+    val spoken = if (seconds == 0) off else pluralStringResource(R.plurals.settings_crossfade_seconds, seconds, seconds)
     Column(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("Crossfade", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
+            Text(title, style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
             Text(label, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
         Text(
-            "Overlaps the end of a song with the start of the next. Songs from one album still play without a gap.",
+            stringResource(R.string.settings_crossfade_description),
             style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
         )
         Slider(
@@ -453,8 +514,8 @@ private fun CrossfadeRow(seconds: Int, onChange: (Int) -> Unit) {
             steps = SitaraSettings.MAX_CROSSFADE_SECONDS - 1,
             colors = SliderDefaults.colors(thumbColor = MaterialTheme.colorScheme.primary, activeTrackColor = MaterialTheme.colorScheme.primary),
             modifier = Modifier.semantics {
-                contentDescription = "Crossfade"
-                stateDescription = if (seconds == 0) "Off" else "$seconds seconds"
+                contentDescription = title
+                stateDescription = spoken
             },
         )
     }

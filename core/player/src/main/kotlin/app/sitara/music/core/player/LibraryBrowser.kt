@@ -1,5 +1,6 @@
 package app.sitara.music.core.player
 
+import android.content.Context
 import app.sitara.music.core.model.Album
 import app.sitara.music.core.model.Artist
 import app.sitara.music.core.model.PlaylistSummary
@@ -129,11 +130,43 @@ interface LibraryContent {
     suspend fun searchSongs(query: String): List<Track>
 }
 
+/** The names the browse tree shows; English by default, the listener's language through [ResourceBrowseLabels]. */
+interface BrowseLabels {
+    val recentlyPlayed: String get() = "Recently played"
+    val likedSongs: String get() = "Liked songs"
+    val downloads: String get() = "Downloads"
+    val downloadsSubtitle: String get() = "Play with no connection"
+    val library: String get() = "Library"
+    val playlists: String get() = "Playlists"
+    val albums: String get() = "Albums"
+    val artists: String get() = "Artists"
+
+    fun songCount(count: Int): String = if (count == 1) "1 song" else "$count songs"
+
+    companion object {
+        val English: BrowseLabels = object : BrowseLabels {}
+    }
+}
+
+/** The tree's names from [context]'s resources, read on each use so a language change shows at the next browse. */
+internal class ResourceBrowseLabels(private val context: Context) : BrowseLabels {
+    override val recentlyPlayed: String get() = context.getString(R.string.player_service_recently_played)
+    override val likedSongs: String get() = context.getString(R.string.player_service_liked_songs)
+    override val downloads: String get() = context.getString(R.string.player_service_downloads)
+    override val downloadsSubtitle: String get() = context.getString(R.string.player_service_downloads_subtitle)
+    override val library: String get() = context.getString(R.string.player_service_library)
+    override val playlists: String get() = context.getString(R.string.player_service_playlists)
+    override val albums: String get() = context.getString(R.string.player_service_albums)
+    override val artists: String get() = context.getString(R.string.player_service_artists)
+
+    override fun songCount(count: Int): String = context.resources.getQuantityString(R.plurals.player_service_song_count, count, count)
+}
+
 /**
  * The library as a tree for a car: four tabs (Recently played, Liked songs, Downloads, Library, since cars show at most
- * four), and Library's playlists, saved albums and saved artists. Call from one thread.
+ * four), and Library's playlists, saved albums and saved artists, named by [labels]. Call from one thread.
  */
-class LibraryBrowser(private val content: LibraryContent) {
+class LibraryBrowser(private val content: LibraryContent, private val labels: BrowseLabels = BrowseLabels.English) {
     // The song list served last, so a song picked from it is queued without asking again.
     private var lastList: Pair<BrowseId.SongList, List<Track>>? = null
 
@@ -142,13 +175,13 @@ class LibraryBrowser(private val content: LibraryContent) {
     /** What [parent] holds, or null when it holds nothing (a song). */
     suspend fun children(parent: BrowseId): List<BrowseNode>? = when (parent) {
         BrowseId.Root -> listOf(
-            BrowseNode(BrowseId.Recent, "Recently played"),
-            BrowseNode(BrowseId.Liked, "Liked songs"),
-            BrowseNode(BrowseId.Downloads, "Downloads", "Play with no connection"),
-            BrowseNode(BrowseId.Library, "Library"),
+            BrowseNode(BrowseId.Recent, labels.recentlyPlayed),
+            BrowseNode(BrowseId.Liked, labels.likedSongs),
+            BrowseNode(BrowseId.Downloads, labels.downloads, labels.downloadsSubtitle),
+            BrowseNode(BrowseId.Library, labels.library),
         )
-        BrowseId.Library -> listOf(BrowseNode(BrowseId.Playlists, "Playlists"), BrowseNode(BrowseId.Albums, "Albums"), BrowseNode(BrowseId.Artists, "Artists"))
-        BrowseId.Playlists -> content.playlists().map { BrowseNode(BrowseId.Playlist(it.id), it.name, if (it.songCount == 1) "1 song" else "${it.songCount} songs", it.artwork?.imageUrl) }
+        BrowseId.Library -> listOf(BrowseNode(BrowseId.Playlists, labels.playlists), BrowseNode(BrowseId.Albums, labels.albums), BrowseNode(BrowseId.Artists, labels.artists))
+        BrowseId.Playlists -> content.playlists().map { BrowseNode(BrowseId.Playlist(it.id), it.name, labels.songCount(it.songCount), it.artwork?.imageUrl) }
         BrowseId.Albums -> content.savedAlbums().map { BrowseNode(BrowseId.Album(it.id), it.title, it.artist, it.artwork.imageUrl) }
         BrowseId.Artists -> content.savedArtists().map { BrowseNode(BrowseId.Artist(it.id), it.name, artworkUrl = it.artwork.imageUrl) }
         is BrowseId.SongList -> songs(parent, reuse = parent is BrowseId.Search).map { BrowseNode(BrowseId.Song(parent, it.id), it.title, it.artist, it.artwork.imageUrl) }

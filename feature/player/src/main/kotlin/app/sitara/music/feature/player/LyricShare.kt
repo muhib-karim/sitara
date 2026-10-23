@@ -41,6 +41,7 @@ import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -79,6 +80,16 @@ private val CardDensity = Density(3f, fontScale = 1f)
 /** How a lyric card is coloured: over the blurred cover, in the cover's colour, or dark on paper white. */
 enum class LyricCardStyle(val label: String) { ARTWORK("Artwork"), COLOUR("Colour"), LIGHT("Light") }
 
+/** [LyricCardStyle.label] in the app's language. */
+@Composable
+private fun LyricCardStyle.displayName(): String = stringResource(
+    when (this) {
+        LyricCardStyle.ARTWORK -> R.string.player_card_style_artwork
+        LyricCardStyle.COLOUR -> R.string.player_card_style_colour
+        LyricCardStyle.LIGHT -> R.string.player_card_style_light
+    },
+)
+
 /**
  * The lines picked for a card after a tap on [tapped]: a tap beyond the run reaches to it (keeping at most five lines,
  * ending at the tapped one), a tap on an end lets that line go, a tap inside ends the run there. The last line stays.
@@ -99,14 +110,15 @@ internal fun LyricShareSheet(lines: List<String>, track: Track, credit: String, 
     val scope = rememberCoroutineScope()
     val card = rememberGraphicsLayer()
     var style by rememberSaveable { mutableStateOf(LyricCardStyle.ARTWORK) }
+    val shareTitle = stringResource(R.string.player_share_lyrics)
     SitaraSheet(onDismiss) { close ->
         Column(Modifier.verticalScroll(rememberScrollState()).navigationBarsPadding().padding(start = SitaraSpacing.Gutter, end = SitaraSpacing.Gutter, bottom = 24.dp)) {
             Row(Modifier.fillMaxWidth().padding(bottom = 8.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text("Share lyrics", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
-                PillButton("Share image", { scope.launch { shareImage(context, card.toImageBitmap().asAndroidBitmap(), "sitara-lyrics.png", "Share lyrics"); close {} } })
+                Text(shareTitle, style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
+                PillButton(stringResource(R.string.player_share_image), { scope.launch { shareImage(context, card.toImageBitmap().asAndroidBitmap(), "sitara-lyrics.png", shareTitle); close {} } })
             }
             Row(Modifier.fillMaxWidth().selectableGroup().padding(bottom = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                LyricCardStyle.entries.forEach { option -> StyleChip(option.label, option == style) { style = option } }
+                LyricCardStyle.entries.forEach { option -> StyleChip(option.displayName(), option == style) { style = option } }
             }
             Box(
                 Modifier.clip(RoundedCornerShape(SitaraRadius.Artwork)).fittedCard()
@@ -171,10 +183,11 @@ fun LyricShareCard(style: LyricCardStyle, lines: List<String>, track: Track, cre
         // A right-to-left line starts at the right edge.
         textDirection = TextDirection.Content,
     )
+    val description = stringResource(R.string.player_lyric_card_description, lines.joinToString(" / "), track.title, track.artist, credit)
     CompositionLocalProvider(LocalDensity provides CardDensity, LocalArtworkWash provides true) {
         Box(
             modifier.size(360.dp, 450.dp).testTag("lyric-share-card")
-                .clearAndSetSemantics { contentDescription = "Lyric card: ${lines.joinToString(" / ")}. ${track.title} by ${track.artist}. $credit" },
+                .clearAndSetSemantics { contentDescription = description },
         ) {
             when (style) {
                 LyricCardStyle.ARTWORK -> ArtworkBackdrop(track.artwork, Modifier.fillMaxSize())

@@ -104,6 +104,7 @@ internal val OpenPlayer = ActionParameters.Key<Boolean>(MainActivity.EXTRA_OPEN_
 /** The widget for [state]; [colors] null draws it in the wallpaper's colours. */
 @Composable
 fun SitaraWidgetContent(state: WidgetState, cover: Bitmap?, colors: WidgetColors?) {
+    val context = LocalContext.current
     val ink = colors?.let(::Ink) ?: Ink.dynamic()
     val tall = LocalSize.current.height >= TALL_MIN_HEIGHT
     val surface = GlanceModifier.fillMaxSize().appWidgetBackground().background(ink.background).cornerRadius(24.dp)
@@ -111,10 +112,10 @@ fun SitaraWidgetContent(state: WidgetState, cover: Bitmap?, colors: WidgetColors
         is WidgetState.Idle -> Row(surface.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
             Image(ImageProvider(R.mipmap.ic_launcher), contentDescription = null, modifier = GlanceModifier.size(48.dp))
             Spacer(GlanceModifier.width(12.dp))
-            Text("Sitara", GlanceModifier.defaultWeight(), style = TextStyle(ink.content, fontSize = 16.sp, fontWeight = FontWeight.Medium), maxLines = 1)
-            val start = if (state.canResume) actionSendBroadcast(resumeIntent(LocalContext.current)) else actionStartActivity<MainActivity>()
+            Text(context.getString(R.string.app_name), GlanceModifier.defaultWeight(), style = TextStyle(ink.content, fontSize = 16.sp, fontWeight = FontWeight.Medium), maxLines = 1)
+            val start = if (state.canResume) actionSendBroadcast(resumeIntent(context)) else actionStartActivity<MainActivity>()
             Text(
-                "Play something",
+                context.getString(R.string.app_widget_play_something),
                 GlanceModifier.height(48.dp).background(ink.accent).cornerRadius(24.dp).padding(horizontal = 20.dp, vertical = 14.dp).clickable(start),
                 style = TextStyle(ink.onAccent, fontSize = 14.sp, fontWeight = FontWeight.Medium),
                 maxLines = 1,
@@ -129,9 +130,9 @@ fun SitaraWidgetContent(state: WidgetState, cover: Bitmap?, colors: WidgetColors
                         Spacer(GlanceModifier.width(12.dp))
                         Titles(state, ink, GlanceModifier.defaultWeight())
                         if (state.liked) {
-                            Control(R.drawable.widget_heart_filled, "Remove from liked songs", actionRunCallback<ToggleLike>(), ink.accent)
+                            Control(R.drawable.widget_heart_filled, context.getString(R.string.app_widget_unlike), actionRunCallback<ToggleLike>(), ink.accent)
                         } else {
-                            Control(R.drawable.widget_heart, "Like", actionRunCallback<ToggleLike>(), ink.content)
+                            Control(R.drawable.widget_heart, context.getString(R.string.app_widget_like), actionRunCallback<ToggleLike>(), ink.content)
                         }
                     }
                     Spacer(GlanceModifier.defaultWeight())
@@ -185,23 +186,24 @@ private fun Cover(cover: Bitmap?, ink: Ink) {
 private fun Titles(state: WidgetState.NowPlaying, ink: Ink, modifier: GlanceModifier) {
     Column(modifier) {
         Text(state.track.title, style = TextStyle(ink.content, fontSize = 15.sp, fontWeight = FontWeight.Medium), maxLines = 1)
-        Text(if (state.failed) "Couldn’t play this song" else state.track.artist, style = TextStyle(ink.content, fontSize = 13.sp), maxLines = 1)
+        Text(if (state.failed) LocalContext.current.getString(R.string.app_widget_song_failed) else state.track.artist, style = TextStyle(ink.content, fontSize = 13.sp), maxLines = 1)
     }
 }
 
 /** Previous, play or pause (Try again after a failure) on the accent, and next; [gap] dp between them. */
 @Composable
 private fun Transport(state: WidgetState.NowPlaying, ink: Ink, gap: Int) {
-    Control(R.drawable.widget_previous, "Previous song", actionRunCallback<SkipPrevious>(), ink.content)
+    val context = LocalContext.current
+    Control(R.drawable.widget_previous, context.getString(R.string.app_widget_previous), actionRunCallback<SkipPrevious>(), ink.content)
     Spacer(GlanceModifier.width(gap.dp))
     val (icon, label) = when {
-        state.failed -> R.drawable.widget_retry to "Try again"
-        state.playing -> R.drawable.widget_pause to "Pause"
-        else -> R.drawable.widget_play to "Play"
+        state.failed -> R.drawable.widget_retry to R.string.app_widget_try_again
+        state.playing -> R.drawable.widget_pause to R.string.app_widget_pause
+        else -> R.drawable.widget_play to R.string.app_widget_play
     }
-    Control(icon, label, actionRunCallback<TogglePlayback>(), ink.onAccent, GlanceModifier.background(ink.accent).cornerRadius(24.dp))
+    Control(icon, context.getString(label), actionRunCallback<TogglePlayback>(), ink.onAccent, GlanceModifier.background(ink.accent).cornerRadius(24.dp))
     Spacer(GlanceModifier.width(gap.dp))
-    Control(R.drawable.widget_next, "Next song", actionRunCallback<SkipNext>(), ink.content)
+    Control(R.drawable.widget_next, context.getString(R.string.app_widget_next), actionRunCallback<SkipNext>(), ink.content)
 }
 
 /** A 48 dp icon button whose name TalkBack reads. */

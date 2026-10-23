@@ -1,5 +1,6 @@
 package app.sitara.music.feature.library
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.horizontalScroll
@@ -47,6 +48,8 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -71,6 +74,7 @@ import app.sitara.music.core.designsystem.SitaraSheet
 import app.sitara.music.core.designsystem.SitaraSpacing
 import app.sitara.music.core.designsystem.TrackRow
 import app.sitara.music.core.designsystem.byline
+import app.sitara.music.core.designsystem.displayName
 import app.sitara.music.core.designsystem.exportSummary
 import app.sitara.music.core.designsystem.preview
 import app.sitara.music.core.designsystem.previewOnLongClick
@@ -120,47 +124,48 @@ fun LibraryScreen(
     var sorting by rememberSaveable { mutableStateOf(false) }
     val order = kind.sortFor(sort)
     if (naming) {
-        PlaylistNameSheet("New playlist", "", "Create", onConfirm = { naming = false; onNewPlaylist(it) }, onDismiss = { naming = false })
+        PlaylistNameSheet(stringResource(R.string.library_new_playlist), "", stringResource(R.string.library_create), onConfirm = { naming = false; onNewPlaylist(it) }, onDismiss = { naming = false })
     }
-    if (sorting) SortSheet("Order ${kind.label.lowercase()} by", kind.sorts, order, library::setLibrarySort) { sorting = false }
+    if (sorting) SortSheet(kind.orderTitle(), kind.sorts, order, library::setLibrarySort) { sorting = false }
     BoxWithConstraints(modifier.fillMaxSize()) {
         // As many 150 dp covers as fit between the gutters, two at least.
         val columns = ((maxWidth - SitaraSpacing.Gutter * 2 + TileGap) / (TileWidth + TileGap)).toInt().coerceAtLeast(2)
         LazyColumn(Modifier.fillMaxSize().testTag("library-content"), contentPadding = contentPadding) {
-            item(key = "title") { LargeTitle("Library") }
+            item(key = "title") { LargeTitle(stringResource(R.string.library_title)) }
             when (state) {
                 LibraryState.Loading -> item(key = "loading", contentType = "skeleton") { LibrarySkeleton(columns) }
-                LibraryState.Failed -> item(key = "failed") { LibraryMessage("Your library couldn’t be read. Restart Sitara to try again.") }
+                LibraryState.Failed -> item(key = "failed") { LibraryMessage(stringResource(R.string.library_failed)) }
                 is LibraryState.Ready -> if (state.library.isEmpty && downloads.isEmpty() && (localSongs ?: 0) == 0) {
                     item(key = "empty") { EmptyLibrary(onFindMusic, onImport, onOnThisPhone) }
                 } else {
                     val saved = state.library
                     item(key = "pinned") {
                         Row(Modifier.padding(horizontal = SitaraSpacing.Gutter, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(TileGap)) {
-                            PinnedTile(SitaraIcons.HeartFilled, "Liked songs", songCount(saved.liked.size), onLikedSongs, Modifier.weight(1f))
-                            PinnedTile(SitaraIcons.Download, "Downloads", songCount(downloads.size), { kind = LibraryKind.DOWNLOADS }, Modifier.weight(1f))
+                            PinnedTile(SitaraIcons.HeartFilled, stringResource(R.string.library_liked_songs), songCount(saved.liked.size), onLikedSongs, Modifier.weight(1f))
+                            PinnedTile(SitaraIcons.Download, stringResource(R.string.library_downloads), songCount(downloads.size), { kind = LibraryKind.DOWNLOADS }, Modifier.weight(1f))
                         }
                     }
                     item(key = "stats") {
                         PinnedTile(
-                            SitaraIcons.Stats, "Your stats", "Top songs, artists and when you listen", onStats,
+                            SitaraIcons.Stats, stringResource(R.string.library_your_stats), stringResource(R.string.library_stats_detail), onStats,
                             Modifier.padding(horizontal = SitaraSpacing.Gutter, vertical = 4.dp).fillMaxWidth(),
                         )
                     }
                     item(key = "on-this-phone") {
                         PinnedTile(
-                            SitaraIcons.Phone, "On this phone", localSongs?.takeIf { it > 0 }?.let(::songCount) ?: "Songs and folders on your phone", onOnThisPhone,
+                            SitaraIcons.Phone, stringResource(R.string.library_on_this_phone),
+                            localSongs?.takeIf { it > 0 }?.let { songCount(it) } ?: stringResource(R.string.library_on_this_phone_detail), onOnThisPhone,
                             Modifier.padding(horizontal = SitaraSpacing.Gutter, vertical = 4.dp).fillMaxWidth(),
                         )
                     }
                     item(key = "import") {
                         PinnedTile(
-                            SitaraIcons.Import, "Import playlist", "From a YouTube or Spotify link, M3U or CSV file", onImport,
+                            SitaraIcons.Import, stringResource(R.string.library_import_playlist), stringResource(R.string.library_import_detail), onImport,
                             Modifier.padding(horizontal = SitaraSpacing.Gutter, vertical = 4.dp).fillMaxWidth(),
                         )
                     }
                     if (saved.recent.isNotEmpty()) {
-                        item(key = "recent-heading") { SectionHeader("Recently played", Modifier.padding(top = 12.dp)) }
+                        item(key = "recent-heading") { SectionHeader(stringResource(R.string.library_recently_played), Modifier.padding(top = 12.dp)) }
                         item(key = "recent") {
                             LazyRow(
                                 Modifier.testTag("rail-recent"),
@@ -178,7 +183,7 @@ fun LibraryScreen(
                             Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = SitaraSpacing.Gutter).padding(top = 12.dp),
                             horizontalArrangement = Arrangement.spacedBy(8.dp),
                         ) {
-                            LibraryKind.entries.forEach { SelectionPill(it.label, it == kind, { kind = it }) }
+                            LibraryKind.entries.forEach { SelectionPill(it.title(), it == kind, { kind = it }) }
                         }
                     }
                     item(key = "controls") {
@@ -187,7 +192,7 @@ fun LibraryScreen(
                     val grid = if (kind == LibraryKind.DOWNLOADS) null else layout.takeIf { it == LibraryLayout.GRID }?.let { columns }
                     when (kind) {
                         LibraryKind.PLAYLISTS -> collection(
-                            saved.playlists.inOrder(order), grid, "Make a playlist to keep songs in your own order.", key = { "playlist-${it.id}" },
+                            saved.playlists.inOrder(order), grid, R.string.library_empty_playlists, key = { "playlist-${it.id}" },
                             tile = { playlist, tile ->
                                 ArtworkTile(playlist.name, songCount(playlist.songCount), EmptyCollectionArtwork, { onPlaylist(playlist) }, tile, covers = playlist.covers, onLongClick = previewOnLongClick(playlist.preview()))
                             },
@@ -201,7 +206,7 @@ fun LibraryScreen(
                         LibraryKind.SONGS -> {
                             val songs = saved.liked.inOrder(order, saved.counts)
                             collection(
-                                songs.withIndex().toList(), grid, "Like a song and it shows up here.", key = { "song-${it.value.id}" },
+                                songs.withIndex().toList(), grid, R.string.library_empty_songs, key = { "song-${it.value.id}" },
                                 tile = { (index, track), tile ->
                                     ArtworkTile(track.title, track.artist, track.artwork, { onPlay(songs, index) }, tile, onLongClick = { onTrackMenu(track) })
                                 },
@@ -209,14 +214,14 @@ fun LibraryScreen(
                             )
                         }
                         LibraryKind.ALBUMS -> collection(
-                            saved.albums.inOrder(order), grid, "Save an album from its page to keep it here.", key = { "album-${it.id}" },
+                            saved.albums.inOrder(order), grid, R.string.library_empty_albums, key = { "album-${it.id}" },
                             tile = { album, tile -> ArtworkTile(album.title, album.byline, album.artwork, { onAlbum(album) }, tile, onLongClick = previewOnLongClick(album.preview())) },
                             row = { album -> CollectionRow(album.title, album.byline, album.artwork, { onAlbum(album) }, Modifier.libraryRow(), onLongClick = previewOnLongClick(album.preview())) },
                         )
                         LibraryKind.ARTISTS -> collection(
-                            saved.artists.inOrder(order, saved.counts), grid, "Save an artist from their page to keep them here.", key = { "artist-${it.id}" },
-                            tile = { artist, tile -> ArtworkTile(artist.name, "Artist", artist.artwork, { onArtist(artist) }, tile, round = true, onLongClick = previewOnLongClick(artist.preview())) },
-                            row = { artist -> CollectionRow(artist.name, "Artist", artist.artwork, { onArtist(artist) }, Modifier.libraryRow(), onLongClick = previewOnLongClick(artist.preview())) },
+                            saved.artists.inOrder(order, saved.counts), grid, R.string.library_empty_artists, key = { "artist-${it.id}" },
+                            tile = { artist, tile -> ArtworkTile(artist.name, stringResource(R.string.library_artist), artist.artwork, { onArtist(artist) }, tile, round = true, onLongClick = previewOnLongClick(artist.preview())) },
+                            row = { artist -> CollectionRow(artist.name, stringResource(R.string.library_artist), artist.artwork, { onArtist(artist) }, Modifier.libraryRow(), onLongClick = previewOnLongClick(artist.preview())) },
                         )
                         LibraryKind.DOWNLOADS -> downloadsSection(downloads, onPlay, library, export, onExportDownloads)
                     }
@@ -228,17 +233,17 @@ fun LibraryScreen(
 
 private val SavedLibrary.isEmpty: Boolean get() = liked.isEmpty() && recent.isEmpty() && playlists.isEmpty() && albums.isEmpty() && artists.isEmpty()
 
-/** [values] as a grid of [columns] covers a row, or as rows when [columns] is null; [emptyText] says how to fill an empty kind. */
+/** [values] as a grid of [columns] covers a row, or as rows when [columns] is null; [emptyText] says how to fill an empty kind (null: says nothing). */
 internal fun <T> LazyListScope.collection(
     values: List<T>,
     columns: Int?,
-    emptyText: String,
+    @StringRes emptyText: Int?,
     key: (T) -> String,
     tile: @Composable (T, Modifier) -> Unit,
     row: @Composable (T) -> Unit,
 ) {
     when {
-        values.isEmpty() -> item(key = "kind-empty") { LibraryMessage(emptyText) }
+        values.isEmpty() -> item(key = "kind-empty") { LibraryMessage(emptyText?.let { stringResource(it) } ?: "") }
         columns == null -> items(values, key = key) { row(it) }
         else -> items(values.chunked(columns), key = { "grid-${key(it.first())}" }) { chunk ->
             Row(Modifier.padding(horizontal = SitaraSpacing.Gutter, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(TileGap)) {
@@ -260,7 +265,7 @@ internal val TileGap = 12.dp
 @Composable
 private fun Controls(kind: LibraryKind, order: LibrarySort, layout: LibraryLayout, onSort: () -> Unit, onNewPlaylist: () -> Unit, onLayout: (LibraryLayout) -> Unit) {
     OrderAndLayout(kind.sorts.size > 1, order, layout.takeIf { kind != LibraryKind.DOWNLOADS }, onSort, onLayout) {
-        if (kind == LibraryKind.PLAYLISTS) PillButton("New playlist", onNewPlaylist, primary = false)
+        if (kind == LibraryKind.PLAYLISTS) PillButton(stringResource(R.string.library_new_playlist), onNewPlaylist, primary = false)
     }
 }
 
@@ -269,15 +274,17 @@ private fun Controls(kind: LibraryKind, order: LibrarySort, layout: LibraryLayou
 internal fun OrderAndLayout(sortable: Boolean, order: LibrarySort, layout: LibraryLayout?, onSort: () -> Unit, onLayout: (LibraryLayout) -> Unit, action: @Composable () -> Unit = {}) {
     Row(Modifier.fillMaxWidth().padding(start = 8.dp, end = 8.dp, top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
         if (sortable) {
+            val orderName = order.displayName()
+            val orderDescription = stringResource(R.string.library_order_description, orderName)
             Row(
                 Modifier.defaultMinSize(minHeight = SitaraSpacing.TouchTarget).clip(CircleShape)
-                    .clickable(role = Role.Button, onClickLabel = "Change the order", onClick = onSort)
-                    .semantics(mergeDescendants = true) { contentDescription = "Order: ${order.label}" }
+                    .clickable(role = Role.Button, onClickLabel = stringResource(R.string.library_change_order), onClick = onSort)
+                    .semantics(mergeDescendants = true) { contentDescription = orderDescription }
                     .padding(horizontal = 12.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Icon(SitaraIcons.Sort, null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(20.dp))
-                Text(order.label, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(start = 8.dp))
+                Text(orderName, style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary, modifier = Modifier.padding(start = 8.dp))
             }
         }
         Spacer(Modifier.weight(1f))
@@ -285,7 +292,7 @@ internal fun OrderAndLayout(sortable: Boolean, order: LibrarySort, layout: Libra
         if (layout != null) {
             val grid = layout == LibraryLayout.GRID
             IconButton(onClick = { onLayout(if (grid) LibraryLayout.LIST else LibraryLayout.GRID) }) {
-                Icon(if (grid) SitaraIcons.List else SitaraIcons.Grid, if (grid) "Show as a list" else "Show as a grid", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                Icon(if (grid) SitaraIcons.List else SitaraIcons.Grid, stringResource(if (grid) R.string.library_show_list else R.string.library_show_grid), tint = MaterialTheme.colorScheme.onSurfaceVariant)
             }
         }
     }
@@ -306,7 +313,7 @@ internal fun SortSheet(title: String, sorts: List<LibrarySort>, order: LibrarySo
                         .padding(horizontal = SitaraSpacing.Gutter),
                     verticalAlignment = Alignment.CenterVertically,
                 ) {
-                    Text(option.label, style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
+                    Text(option.displayName(), style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
                     RadioButton(selected = option == order, onClick = null)
                 }
             }
@@ -357,14 +364,14 @@ private fun EmptyLibrary(onFindMusic: () -> Unit, onImport: () -> Unit, onOnThis
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         FannedCovers()
-        Text("Your library starts here", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface)
+        Text(stringResource(R.string.library_empty_title), style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface)
         Text(
-            "Like songs, save albums and artists, make playlists, download for offline and play the music on your phone. They all gather here.",
+            stringResource(R.string.library_empty_body),
             style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center,
         )
-        PillButton("Find music", onFindMusic, Modifier.padding(top = 8.dp))
-        PillButton("Import a playlist", onImport, primary = false)
-        PillButton("Music on this phone", onOnThisPhone, primary = false)
+        PillButton(stringResource(R.string.library_find_music), onFindMusic, Modifier.padding(top = 8.dp))
+        PillButton(stringResource(R.string.library_import_a_playlist), onImport, primary = false)
+        PillButton(stringResource(R.string.library_music_on_this_phone), onOnThisPhone, primary = false)
     }
 }
 
@@ -372,7 +379,8 @@ private fun EmptyLibrary(onFindMusic: () -> Unit, onImport: () -> Unit, onOnThis
 @Composable
 private fun LibrarySkeleton(columns: Int) {
     val pulse = rememberPlaceholderPulse()
-    Column(Modifier.clearAndSetSemantics { contentDescription = "Loading your library" }) {
+    val loading = stringResource(R.string.library_loading)
+    Column(Modifier.clearAndSetSemantics { contentDescription = loading }) {
         Row(Modifier.padding(horizontal = SitaraSpacing.Gutter, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(TileGap)) {
             repeat(2) { PlaceholderBlock(pulse, Modifier.weight(1f).height(68.dp), RoundedCornerShape(SitaraRadius.Tile)) }
         }
@@ -402,19 +410,21 @@ private fun LazyListScope.downloadsSection(
 ) {
     item(key = "downloads-heading") {
         val summary = exportSummary(export)
-            ?: downloads.takeIf { it.isNotEmpty() }?.let { "${songCount(it.size)} · ${formatBytes(it.sumOf { download -> download.bytes })}" }
+            ?: downloads.takeIf { it.isNotEmpty() }?.let { stringResource(R.string.library_joined, songCount(it.size), formatBytes(it.sumOf { download -> download.bytes })) }
         val canExport = downloads.any { it.state == DownloadState.DOWNLOADED } && export !is DownloadExport.Working
+        val exportLabel = stringResource(R.string.library_export)
+        val exportDescription = stringResource(R.string.library_export_description)
         SectionHeader(
-            "Downloads", Modifier.padding(top = 16.dp), subtitle = summary,
+            stringResource(R.string.library_downloads), Modifier.padding(top = 16.dp), subtitle = summary,
             action = if (canExport) {
-                { HeaderAction("Export", onExport, description = "Export downloads to a folder") }
+                { HeaderAction(exportLabel, onExport, description = exportDescription) }
             } else {
                 null
             },
         )
     }
     if (downloads.isEmpty()) {
-        item(key = "downloads-empty") { LibraryMessage("Download a song from its menu, or a whole album with Download all, to play it offline.") }
+        item(key = "downloads-empty") { LibraryMessage(stringResource(R.string.library_downloads_empty)) }
     }
     val tracks = downloads.map { it.track }
     itemsIndexed(downloads, key = { _, download -> "download-${download.track.id}" }) { index, download ->
@@ -432,27 +442,54 @@ private fun DownloadRow(download: SongDownload, onPlay: () -> Unit, onRetry: () 
             color = if (download.state == DownloadState.FAILED) colors.error else colors.onSurfaceVariant,
         )
         if (download.state == DownloadState.FAILED) {
-            IconButton(onClick = onRetry) { Icon(SitaraIcons.Download, "Download $title again", tint = colors.onSurfaceVariant) }
+            IconButton(onClick = onRetry) { Icon(SitaraIcons.Download, stringResource(R.string.library_download_again, title), tint = colors.onSurfaceVariant) }
         }
         val (icon, label) = when (download.state) {
-            DownloadState.DOWNLOADED -> SitaraIcons.Delete to "Delete the download of $title"
-            DownloadState.FAILED -> SitaraIcons.Close to "Remove $title from downloads"
-            else -> SitaraIcons.Close to "Cancel the download of $title"
+            DownloadState.DOWNLOADED -> SitaraIcons.Delete to stringResource(R.string.library_delete_download_of, title)
+            DownloadState.FAILED -> SitaraIcons.Close to stringResource(R.string.library_remove_from_downloads, title)
+            else -> SitaraIcons.Close to stringResource(R.string.library_cancel_download_of, title)
         }
         IconButton(onClick = onRemove) { Icon(icon, label, tint = colors.onSurfaceVariant) }
     }
 }
 
+@Composable
 private fun downloadLabel(download: SongDownload): String = when (download.state) {
     DownloadState.DOWNLOADED -> formatBytes(download.bytes)
-    DownloadState.DOWNLOADING -> download.percent?.let { "$it%" } ?: "Downloading"
-    DownloadState.WAITING -> "Waiting"
-    DownloadState.WAITING_FOR_WIFI -> "Waiting for Wi-Fi"
-    DownloadState.WAITING_FOR_NETWORK -> "Waiting for a connection"
-    DownloadState.FAILED -> "Failed"
+    DownloadState.DOWNLOADING -> download.percent?.let { stringResource(R.string.library_download_percent, it) } ?: stringResource(R.string.library_download_downloading)
+    DownloadState.WAITING -> stringResource(R.string.library_download_waiting)
+    DownloadState.WAITING_FOR_WIFI -> stringResource(R.string.library_download_waiting_wifi)
+    DownloadState.WAITING_FOR_NETWORK -> stringResource(R.string.library_download_waiting_network)
+    DownloadState.FAILED -> stringResource(R.string.library_download_failed)
 }
 
-internal fun songCount(count: Int) = if (count == 1) "1 song" else "$count songs"
+/** "1 song", "12 songs", in the app's language. */
+@Composable
+internal fun songCount(count: Int): String = pluralStringResource(R.plurals.library_song_count, count, count)
+
+/** The kind's name on its selection pill. */
+@Composable
+internal fun LibraryKind.title(): String = stringResource(
+    when (this) {
+        LibraryKind.PLAYLISTS -> R.string.library_kind_playlists
+        LibraryKind.SONGS -> R.string.library_kind_songs
+        LibraryKind.ALBUMS -> R.string.library_kind_albums
+        LibraryKind.ARTISTS -> R.string.library_kind_artists
+        LibraryKind.DOWNLOADS -> R.string.library_kind_downloads
+    },
+)
+
+/** The order sheet's title for this kind: "Order playlists by". */
+@Composable
+private fun LibraryKind.orderTitle(): String = stringResource(
+    when (this) {
+        LibraryKind.PLAYLISTS -> R.string.library_order_playlists_by
+        LibraryKind.SONGS -> R.string.library_order_songs_by
+        LibraryKind.ALBUMS -> R.string.library_order_albums_by
+        LibraryKind.ARTISTS -> R.string.library_order_artists_by
+        LibraryKind.DOWNLOADS -> R.string.library_order_downloads_by
+    },
+)
 
 @Composable
 internal fun LibraryMessage(text: String) {

@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Rows, tiles and actions -->
+    <string name="ds_more_options">আরও বিকল্প</string>
+    <string name="ds_more_options_for">%1$s-এর আরও বিকল্প</string>
+    <string name="ds_preview">প্রিভিউ</string>
+    <string name="ds_track_by">%1$s, শিল্পী %2$s</string>
+    <string name="ds_move_up">উপরে সরান</string>
+    <string name="ds_move_down">নিচে সরান</string>
+
+    <!-- Collection preview subtitles -->
+    <string name="ds_playlist">প্লেলিস্ট</string>
+    <string name="ds_artist">শিল্পী</string>
+    <string name="ds_your_playlist">আপনার প্লেলিস্ট</string>
+
+    <!-- Share and QR code -->
+    <string name="ds_qr_code_for">%1$s-এর কিউআর কোড</string>
+    <string name="ds_send_link">লিংক পাঠান</string>
+    <string name="ds_share_qr_image">কিউআর ছবি শেয়ার করুন</string>
+    <string name="ds_share_qr_code">কিউআর কোড শেয়ার করুন</string>
+
+    <!-- Export of downloads -->
+    <string name="ds_export_getting_ready">এক্সপোর্টের প্রস্তুতি চলছে</string>
+    <string name="ds_export_progress">%2$d-এর মধ্যে %1$d এক্সপোর্ট হচ্ছে</string>
+    <string name="ds_export_finishing">এক্সপোর্ট শেষ হচ্ছে</string>
+    <plurals name="ds_export_exported">
+        <item quantity="one">%dটি গান এক্সপোর্ট হয়েছে</item>
+        <item quantity="other">%dটি গান এক্সপোর্ট হয়েছে</item>
+    </plurals>
+    <string name="ds_export_with_lyrics">লিরিকসসহ %1$dটি</string>
+    <string name="ds_export_without_tags">ট্যাগ ছাড়া %1$dটি</string>
+    <string name="ds_export_skipped">%1$dটি বাদ, পুরো ডাউনলোড হয়নি</string>
+    <string name="ds_export_nothing_downloaded">এক্সপোর্ট করার মতো এখনও কিছু ডাউনলোড হয়নি</string>
+    <string name="ds_export_folder_unwritable">ওই ফোল্ডারে লেখা গেল না। অন্য একটি বেছে নিয়ে আবার চেষ্টা করুন।</string>
+
+    <!-- SearchFilter -->
+    <string name="ds_label_search_filter_songs">গান</string>
+    <string name="ds_label_search_filter_albums">অ্যালবাম</string>
+    <string name="ds_label_search_filter_artists">শিল্পী</string>
+    <string name="ds_label_search_filter_playlists">প্লেলিস্ট</string>
+
+    <!-- ScrobbleService (service names, same in every language) -->
+    <string name="ds_label_scrobble_listenbrainz">ListenBrainz</string>
+    <string name="ds_label_scrobble_lastfm">Last.fm</string>
+
+    <!-- StatsRange -->
+    <string name="ds_label_stats_week">এই সপ্তাহ</string>
+    <string name="ds_label_stats_month">এই মাস</string>
+    <string name="ds_label_stats_year">এই বছর</string>
+    <string name="ds_label_stats_all_time">সব সময়</string>
+
+    <!-- AccentColor -->
+    <string name="ds_label_accent_saffron">জাফরান</string>
+    <string name="ds_label_accent_rose">গোলাপি</string>
+    <string name="ds_label_accent_violet">বেগুনি</string>
+    <string name="ds_label_accent_blue">নীল</string>
+    <string name="ds_label_accent_teal">টিল</string>
+    <string name="ds_label_accent_green">সবুজ</string>
+    <string name="ds_label_accent_artwork">কভার থেকে</string>
+
+    <!-- Palette -->
+    <string name="ds_label_palette_sitara">Sitara</string>
+    <string name="ds_label_palette_saffron_dusk">জাফরানি গোধূলি</string>
+    <string name="ds_label_palette_lotus">পদ্ম</string>
+    <string name="ds_label_palette_indigo_ink">নীল কালি</string>
+    <string name="ds_label_palette_harbour">বন্দর</string>
+    <string name="ds_label_palette_monsoon">বর্ষা</string>
+    <string name="ds_label_palette_tea_garden">চা বাগান</string>
+
+    <!-- AudioQuality -->
+    <string name="ds_label_quality_auto">স্বয়ংক্রিয়</string>
+    <string name="ds_label_quality_high">উচ্চ</string>
+    <string name="ds_label_quality_normal">সাধারণ</string>
+    <string name="ds_label_quality_data_saver">ডেটা সেভার</string>
+
+    <!-- LibrarySort -->
+    <string name="ds_label_sort_recently_added">সম্প্রতি যোগ করা</string>
+    <string name="ds_label_sort_recently_played">সম্প্রতি শোনা</string>
+    <string name="ds_label_sort_a_to_z">A থেকে Z</string>
+    <string name="ds_label_sort_most_played">সবচেয়ে বেশি শোনা</string>
+
+    <!-- EqualiserPreset -->
+    <string name="ds_label_eq_flat">ফ্ল্যাট</string>
+    <string name="ds_label_eq_bass_boost">বেস বুস্ট</string>
+    <string name="ds_label_eq_treble_boost">ট্রেবল বুস্ট</string>
+    <string name="ds_label_eq_vocal">ভোকাল</string>
+    <string name="ds_label_eq_rock">রক</string>
+    <string name="ds_label_eq_pop">পপ</string>
+    <string name="ds_label_eq_classical">ক্লাসিক্যাল</string>
+    <string name="ds_label_eq_electronic">ইলেকট্রনিক</string>
+    <string name="ds_label_eq_acoustic">অ্যাকুস্টিক</string>
+    <string name="ds_label_eq_late_night">গভীর রাত</string>
+</resources>

@@ -2,4 +2,55 @@
     <string name="app_name">Sitara</string>
     <string name="widget_name">Now playing</string>
     <string name="widget_description">The song that plays, with play, pause and skip. Two rows tall, it adds the heart and a progress line.</string>
+
+    <!-- Tabs of the floating dock -->
+    <string name="app_tab_home">Home</string>
+    <string name="app_tab_search">Search</string>
+    <string name="app_tab_library">Library</string>
+    <string name="app_tab_settings">Settings</string>
+    <!-- The folded dock's one button: %1$s is the open tab's name -->
+    <string name="app_tab_show_all">%1$s, show all tabs</string>
+
+    <!-- Home's greeting by time of day -->
+    <string name="app_greeting_morning">Good morning</string>
+    <string name="app_greeting_afternoon">Good afternoon</string>
+    <string name="app_greeting_evening">Good evening</string>
+
+    <!-- Sheets and the share chooser -->
+    <string name="app_share_link">Share link</string>
+    <string name="app_save_queue_as_playlist">Save queue as playlist</string>
+    <string name="app_save">Save</string>
+
+    <!-- Short messages (toasts) -->
+    <string name="app_no_browser_for_lastfm">No browser to open Last.fm in</string>
+    <string name="app_system_equaliser_unavailable">Your phone\'s equaliser could not be opened</string>
+    <string name="app_playing_next">Playing next</string>
+    <string name="app_added_to_queue">Added to queue</string>
+    <string name="app_downloading">Downloading</string>
+    <plurals name="app_downloading_songs">
+        <item quantity="one">Downloading %d song</item>
+        <item quantity="other">Downloading %d songs</item>
+    </plurals>
+    <string name="app_local_read_failed">Some music on this phone couldn’t be read</string>
+    <!-- %1$s is the playlist's name -->
+    <string name="app_added_to_playlist">Added to %1$s</string>
+    <string name="app_already_in_playlist">Already in %1$s</string>
+    <!-- %1$d songs saved, %2$s the playlist's name -->
+    <plurals name="app_saved_songs_to_playlist">
+        <item quantity="one">Saved %1$d song to %2$s</item>
+        <item quantity="other">Saved %1$d songs to %2$s</item>
+    </plurals>
+    <!-- The name of a playlist imported from a file that has no name -->
+    <string name="app_imported_playlist">Imported playlist</string>
+
+    <!-- Home-screen widget -->
+    <string name="app_widget_play_something">Play something</string>
+    <string name="app_widget_like">Like</string>
+    <string name="app_widget_unlike">Remove from liked songs</string>
+    <string name="app_widget_song_failed">Couldn’t play this song</string>
+    <string name="app_widget_previous">Previous song</string>
+    <string name="app_widget_next">Next song</string>
+    <string name="app_widget_try_again">Try again</string>
+    <string name="app_widget_pause">Pause</string>
+    <string name="app_widget_play">Play</string>
 </resources>

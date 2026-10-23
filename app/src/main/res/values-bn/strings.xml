@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Sitara</string>
+    <string name="widget_name">এখন বাজছে</string>
+    <string name="widget_description">যে গানটি বাজছে, সাথে বাজানো, বিরতি আর স্কিপ। দুই সারি উঁচু করলে পছন্দের হার্ট আর অগ্রগতির রেখাও দেখায়।</string>
+
+    <string name="app_tab_home">হোম</string>
+    <string name="app_tab_search">খুঁজুন</string>
+    <string name="app_tab_library">লাইব্রেরি</string>
+    <string name="app_tab_settings">সেটিংস</string>
+    <string name="app_tab_show_all">%1$s, সব ট্যাব দেখান</string>
+
+    <string name="app_greeting_morning">সুপ্রভাত</string>
+    <string name="app_greeting_afternoon">শুভ অপরাহ্ন</string>
+    <string name="app_greeting_evening">শুভ সন্ধ্যা</string>
+
+    <string name="app_share_link">লিংক শেয়ার করুন</string>
+    <string name="app_save_queue_as_playlist">কিউ প্লেলিস্ট হিসেবে সেভ করুন</string>
+    <string name="app_save">সেভ করুন</string>
+
+    <string name="app_no_browser_for_lastfm">Last.fm খোলার মতো কোনো ব্রাউজার নেই</string>
+    <string name="app_system_equaliser_unavailable">আপনার ফোনের ইকুয়ালাইজার খোলা গেল না</string>
+    <string name="app_playing_next">এরপর বাজবে</string>
+    <string name="app_added_to_queue">কিউতে যোগ হয়েছে</string>
+    <string name="app_downloading">ডাউনলোড হচ্ছে</string>
+    <plurals name="app_downloading_songs">
+        <item quantity="one">%dটি গান ডাউনলোড হচ্ছে</item>
+        <item quantity="other">%dটি গান ডাউনলোড হচ্ছে</item>
+    </plurals>
+    <string name="app_local_read_failed">এই ফোনের কিছু গান পড়া গেল না</string>
+    <string name="app_added_to_playlist">%1$s-এ যোগ হয়েছে</string>
+    <string name="app_already_in_playlist">%1$s-এ আগে থেকেই আছে</string>
+    <plurals name="app_saved_songs_to_playlist">
+        <item quantity="one">%1$dটি গান %2$s-এ সেভ হয়েছে</item>
+        <item quantity="other">%1$dটি গান %2$s-এ সেভ হয়েছে</item>
+    </plurals>
+    <string name="app_imported_playlist">ইমপোর্ট করা প্লেলিস্ট</string>
+
+    <string name="app_widget_play_something">কিছু বাজান</string>
+    <string name="app_widget_like">পছন্দ করুন</string>
+    <string name="app_widget_unlike">পছন্দের গান থেকে সরান</string>
+    <string name="app_widget_song_failed">গানটি বাজানো গেল না</string>
+    <string name="app_widget_previous">আগের গান</string>
+    <string name="app_widget_next">পরের গান</string>
+    <string name="app_widget_try_again">আবার চেষ্টা করুন</string>
+    <string name="app_widget_pause">বিরতি</string>
+    <string name="app_widget_play">বাজান</string>
+</resources>

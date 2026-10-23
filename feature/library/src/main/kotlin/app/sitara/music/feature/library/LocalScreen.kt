@@ -33,6 +33,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.liveRegion
@@ -142,21 +143,21 @@ fun LocalScreen(
     var kind by rememberSaveable { mutableStateOf(LocalKind.SONGS) }
     var sorting by rememberSaveable { mutableStateOf(false) }
     val order = sort.takeIf { it in kind.sorts } ?: LibrarySort.RECENTLY_ADDED
-    if (sorting) SortSheet("Order ${kind.label.lowercase()} by", kind.sorts, order, library::setLibrarySort) { sorting = false }
+    if (sorting) SortSheet(kind.orderTitle(), kind.sorts, order, library::setLibrarySort) { sorting = false }
     val songs = remember(state.songs, order, counts) { state.songs.map { it.track }.inOrder(order, counts) }
     val groups = remember(state.songs, kind, order) { state.songs.groups(kind, order) }
     BoxWithConstraints(Modifier.fillMaxSize()) {
         val columns = ((maxWidth - SitaraSpacing.Gutter * 2 + TileGap) / (TileWidth + TileGap)).toInt().coerceAtLeast(2)
         LazyColumn(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).testTag("local-content"), contentPadding = contentPadding) {
-            item(key = "header") { PageHeader("On this phone", onBack, if (state.scanning) "Looking for music…" else null) }
+            item(key = "header") { PageHeader(stringResource(R.string.library_on_this_phone), onBack, if (state.scanning) stringResource(R.string.library_local_scanning) else null) }
             if (state.songs.isEmpty()) {
                 item(key = "empty") { NoLocalMusic(state.musicAccess, onAllowAccess, onChooseFolder) }
             } else {
                 if (!state.musicAccess) item(key = "access") { AccessCard(onAllowAccess) }
                 item(key = "play") {
                     Row(Modifier.padding(horizontal = SitaraSpacing.Gutter, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        PillButton("Play", { onPlay(songs, 0) })
-                        PillButton("Shuffle", { onShuffle(songs) }, primary = false)
+                        PillButton(stringResource(R.string.library_play), { onPlay(songs, 0) })
+                        PillButton(stringResource(R.string.library_shuffle), { onShuffle(songs) }, primary = false)
                     }
                 }
                 item(key = "kinds") {
@@ -164,20 +165,20 @@ fun LocalScreen(
                         Modifier.horizontalScroll(rememberScrollState()).padding(horizontal = SitaraSpacing.Gutter).padding(top = 8.dp),
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                     ) {
-                        LocalKind.entries.forEach { SelectionPill(it.label, it == kind, { kind = it }) }
+                        LocalKind.entries.forEach { SelectionPill(it.title(), it == kind, { kind = it }) }
                     }
                 }
                 item(key = "controls") { OrderAndLayout(sortable = true, order, layout, onSort = { sorting = true }, onLayout = library::setLibraryLayout) }
                 val grid = layout.takeIf { it == LibraryLayout.GRID }?.let { columns }
                 if (kind == LocalKind.SONGS) {
                     collection(
-                        songs.withIndex().toList(), grid, "", key = { "local-song-${it.value.id}" },
+                        songs.withIndex().toList(), grid, null, key = { "local-song-${it.value.id}" },
                         tile = { (index, track), tile -> ArtworkTile(track.title, track.artist, track.artwork, { onPlay(songs, index) }, tile, onLongClick = { onTrackMenu(track) }) },
                         row = { (index, track) -> TrackRow(track, { onPlay(songs, index) }, Modifier.testTag(ROW_TAG), onMore = { onTrackMenu(track) }) },
                     )
                 } else {
                     collection(
-                        groups, grid, "", key = { "local-${kind.name}-${it.key}" },
+                        groups, grid, null, key = { "local-${kind.name}-${it.key}" },
                         tile = { group, tile -> ArtworkTile(group.title, group.subtitle, group.artwork, { onGroup(kind, group) }, tile, round = kind == LocalKind.ARTISTS) },
                         row = { group -> CollectionRow(group.title, group.subtitle, group.artwork, { onGroup(kind, group) }, Modifier.libraryRow()) },
                     )
@@ -199,15 +200,15 @@ fun LocalGroupScreen(
     contentPadding: PaddingValues,
 ) {
     LazyColumn(Modifier.fillMaxSize().background(MaterialTheme.colorScheme.background).testTag("local-group"), contentPadding = contentPadding) {
-        item(key = "header") { PageHeader(group?.title ?: "On this phone", onBack, group?.subtitle) }
+        item(key = "header") { PageHeader(group?.title ?: stringResource(R.string.library_on_this_phone), onBack, group?.subtitle) }
         if (group == null) {
-            item(key = "gone") { LibraryMessage("These songs are no longer on this phone.") }
+            item(key = "gone") { LibraryMessage(stringResource(R.string.library_local_gone)) }
             return@LazyColumn
         }
         item(key = "play") {
             Row(Modifier.padding(horizontal = SitaraSpacing.Gutter, vertical = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                PillButton("Play", { onPlay(group.songs, 0) })
-                PillButton("Shuffle", { onShuffle(group.songs) }, primary = false)
+                PillButton(stringResource(R.string.library_play), { onPlay(group.songs, 0) })
+                PillButton(stringResource(R.string.library_shuffle), { onShuffle(group.songs) }, primary = false)
             }
         }
         itemsIndexed(group.songs, key = { _, track -> "song-${track.id}" }) { index, track ->
@@ -223,7 +224,7 @@ private fun PageHeader(title: String, onBack: () -> Unit, subtitle: String?) {
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(8.dp),
     ) {
-        GlassIconButton(SitaraIcons.Back, "Back", onBack)
+        GlassIconButton(SitaraIcons.Back, stringResource(R.string.library_back), onBack)
         Column(Modifier.weight(1f)) {
             Text(
                 title, style = MaterialTheme.typography.headlineMedium, color = MaterialTheme.colorScheme.onSurface, maxLines = 2, overflow = TextOverflow.Ellipsis,
@@ -250,20 +251,16 @@ private fun NoLocalMusic(musicAccess: Boolean, onAllowAccess: () -> Unit, onChoo
     ) {
         FannedCovers()
         Text(
-            if (musicAccess) "No music found on this phone" else "Play the music on your phone",
+            stringResource(if (musicAccess) R.string.library_local_none_found else R.string.library_local_play_your_music),
             style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface, textAlign = TextAlign.Center,
         )
         Text(
-            if (musicAccess) {
-                "Songs saved on this phone show up here. Keep music somewhere else, like a card or a downloads folder? Choose that folder."
-            } else {
-                "Let Sitara see the songs saved on this phone, or choose just the folders it may read. Your files stay where they are."
-            },
+            stringResource(if (musicAccess) R.string.library_local_none_found_body else R.string.library_local_no_access_body),
             style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant, textAlign = TextAlign.Center,
         )
         FlowRow(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp, Alignment.CenterHorizontally), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            if (!musicAccess) PillButton("Allow access", onAllowAccess)
-            PillButton("Choose a folder", onChooseFolder, primary = musicAccess)
+            if (!musicAccess) PillButton(stringResource(R.string.library_local_allow_access), onAllowAccess)
+            PillButton(stringResource(R.string.library_local_choose_folder), onChooseFolder, primary = musicAccess)
         }
     }
 }
@@ -278,21 +275,24 @@ private fun AccessCard(onAllowAccess: () -> Unit) {
         horizontalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         Text(
-            "Songs saved elsewhere on this phone aren’t listed yet.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface,
+            stringResource(R.string.library_local_access_card), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.weight(1f),
         )
-        PillButton("Allow access", onAllowAccess)
+        PillButton(stringResource(R.string.library_local_allow_access), onAllowAccess)
     }
 }
 
 /** Folders the listener picked, each with its songs or a way to relink it, and Choose a folder. */
 private fun LazyListScope.pickedFolders(folders: List<LocalFolder>, onChooseFolder: () -> Unit, onRelink: (LocalFolder) -> Unit, onRemove: (LocalFolder) -> Unit) {
     item(key = "picked-heading") {
-        SectionHeader("Picked folders", Modifier.padding(top = 16.dp), subtitle = "Folders Sitara reads besides the phone’s music")
+        SectionHeader(
+            stringResource(R.string.library_local_picked_folders), Modifier.padding(top = 16.dp),
+            subtitle = stringResource(R.string.library_local_picked_folders_detail),
+        )
     }
     items(folders, key = { "picked-${it.uri}" }) { folder -> PickedFolderRow(folder, { onRelink(folder) }, { onRemove(folder) }) }
     item(key = "choose-folder") {
-        PillButton("Choose a folder", onChooseFolder, Modifier.padding(horizontal = SitaraSpacing.Gutter, vertical = 8.dp), primary = false)
+        PillButton(stringResource(R.string.library_local_choose_folder), onChooseFolder, Modifier.padding(horizontal = SitaraSpacing.Gutter, vertical = 8.dp), primary = false)
     }
 }
 
@@ -308,11 +308,33 @@ private fun PickedFolderRow(folder: LocalFolder, onRelink: () -> Unit, onRemove:
         Column(Modifier.weight(1f)) {
             Text(folder.name, style = MaterialTheme.typography.titleSmall, color = colors.onSurface, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text(
-                if (folder.linked) songCount(folder.songCount) else "Sitara can no longer read this folder · ${songCount(folder.songCount)} kept",
+                if (folder.linked) songCount(folder.songCount) else stringResource(R.string.library_local_folder_unlinked, songCount(folder.songCount)),
                 style = MaterialTheme.typography.bodySmall, color = if (folder.linked) colors.onSurfaceVariant else colors.error,
             )
         }
-        if (!folder.linked) PillButton("Relink folder", onRelink, primary = false)
-        IconButton(onClick = onRemove) { Icon(SitaraIcons.Close, "Remove ${folder.name} and its songs from Sitara", tint = colors.onSurfaceVariant) }
+        if (!folder.linked) PillButton(stringResource(R.string.library_local_relink), onRelink, primary = false)
+        IconButton(onClick = onRemove) { Icon(SitaraIcons.Close, stringResource(R.string.library_local_remove_folder, folder.name), tint = colors.onSurfaceVariant) }
     }
 }
+
+/** The kind's name on its selection pill. */
+@Composable
+private fun LocalKind.title(): String = stringResource(
+    when (this) {
+        LocalKind.SONGS -> R.string.library_kind_songs
+        LocalKind.ALBUMS -> R.string.library_kind_albums
+        LocalKind.ARTISTS -> R.string.library_kind_artists
+        LocalKind.FOLDERS -> R.string.library_kind_folders
+    },
+)
+
+/** The order sheet's title for this kind: "Order songs by". */
+@Composable
+private fun LocalKind.orderTitle(): String = stringResource(
+    when (this) {
+        LocalKind.SONGS -> R.string.library_order_songs_by
+        LocalKind.ALBUMS -> R.string.library_order_albums_by
+        LocalKind.ARTISTS -> R.string.library_order_artists_by
+        LocalKind.FOLDERS -> R.string.library_order_folders_by
+    },
+)

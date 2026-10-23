@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="home_nothing_under">%1$s-এ Sitara বাজাতে পারে এমন কিছু এখনও নেই।</string>
+    <string name="home_nothing_under_this_mood">এই মুডে Sitara বাজাতে পারে এমন কিছু এখনও নেই।</string>
+    <string name="home_make_home_yours">হোম সাজান নিজের মতো</string>
+    <string name="home_make_home_yours_description">আপনি যে গান বাজান, পছন্দ করেন আর সেভ করেন, সেগুলো এখানে দেখা যাবে।</string>
+    <string name="home_listen_again">আবার শুনুন</string>
+    <string name="home_your_likes">আপনার পছন্দ</string>
+    <string name="home_jump_back_in">আবার ফিরে যান</string>
+    <string name="home_more_failed">হোমের বাকি অংশ লোড হয়নি।</string>
+    <string name="home_try_again">আবার চেষ্টা করুন</string>
+    <string name="home_trending_now">এখন ট্রেন্ডিং</string>
+    <string name="home_nothing_charting">এখানে এখন কিছুই চার্টে নেই।</string>
+    <plurals name="home_songs">
+        <item quantity="one">%1$dটি গান</item>
+        <item quantity="other">%1$dটি গান</item>
+    </plurals>
+    <string name="home_more">আরও</string>
+    <string name="home_more_from">%1$s থেকে আরও</string>
+    <string name="home_artist">শিল্পী</string>
+    <string name="home_didnt_load">হোম লোড হয়নি</string>
+    <string name="home_offline_description">YouTube Music সাড়া দেয়নি। সংযোগ দেখে আবার চেষ্টা করুন।</string>
+    <string name="home_loading">হোম লোড হচ্ছে</string>
+    <string name="home_back">ফিরে যান</string>
+    <string name="home_loading_title">%1$s লোড হচ্ছে</string>
+    <string name="home_title_failed">%1$s লোড হয়নি। সংযোগ দেখে আবার চেষ্টা করুন।</string>
+</resources>

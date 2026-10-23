@@ -2,6 +2,7 @@ package app.sitara.music.core.designsystem
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.staticCompositionLocalOf
+import androidx.compose.ui.res.stringResource
 import app.sitara.music.core.model.Album
 import app.sitara.music.core.model.Artist
 import app.sitara.music.core.model.CollectionPreview
@@ -13,11 +14,17 @@ val LocalCollectionPreview = staticCompositionLocalOf<(CollectionPreview) -> Uni
 
 fun Album.preview() = CollectionPreview(CollectionPreview.Kind.ALBUM, id, title, byline, artwork)
 
-fun Playlist.preview() = CollectionPreview(CollectionPreview.Kind.PLAYLIST, id, title, curator.ifEmpty { "Playlist" }, artwork)
+@Composable
+fun Playlist.preview(): CollectionPreview {
+    val fallback = stringResource(R.string.ds_playlist)
+    return CollectionPreview(CollectionPreview.Kind.PLAYLIST, id, title, curator.ifEmpty { fallback }, artwork)
+}
 
-fun Artist.preview() = CollectionPreview(CollectionPreview.Kind.ARTIST, id, name, "Artist", artwork)
+@Composable
+fun Artist.preview() = CollectionPreview(CollectionPreview.Kind.ARTIST, id, name, stringResource(R.string.ds_artist), artwork)
 
-fun PlaylistSummary.preview() = CollectionPreview(CollectionPreview.Kind.OWN_PLAYLIST, id.toString(), name, "Your playlist", covers.firstOrNull() ?: EmptyCollectionArtwork)
+@Composable
+fun PlaylistSummary.preview() = CollectionPreview(CollectionPreview.Kind.OWN_PLAYLIST, id.toString(), name, stringResource(R.string.ds_your_playlist), covers.firstOrNull() ?: EmptyCollectionArtwork)
 
 /** A long-press action that opens [preview]. */
 @Composable

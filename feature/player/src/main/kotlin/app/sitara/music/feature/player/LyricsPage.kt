@@ -34,6 +34,8 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.CompositingStrategy
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
@@ -80,12 +82,12 @@ fun LyricsPage(
     onShare: () -> Unit = {},
 ) {
     when (state) {
-        LyricsState.Loading -> LyricsMessage("Looking for lyrics…", contentColor, modifier)
+        LyricsState.Loading -> LyricsMessage(stringResource(R.string.player_lyrics_loading), contentColor, modifier)
         LyricsState.NotFound -> LyricsMessage(notFoundText(sources), contentColor, modifier) {
-            PillButton("Try again", onRetry, Modifier.padding(top = 16.dp))
+            PillButton(stringResource(R.string.player_try_again), onRetry, Modifier.padding(top = 16.dp))
         }
-        LyricsState.Failed -> LyricsMessage("Lyrics didn’t load. Check your connection, then try again.", contentColor, modifier) {
-            PillButton("Try again", onRetry, Modifier.padding(top = 16.dp))
+        LyricsState.Failed -> LyricsMessage(stringResource(R.string.player_lyrics_failed), contentColor, modifier) {
+            PillButton(stringResource(R.string.player_try_again), onRetry, Modifier.padding(top = 16.dp))
         }
         is LyricsState.Found -> Box(modifier.fillMaxSize()) {
             val picking = LinePicking(selection, onSelectionChange)
@@ -96,9 +98,9 @@ fun LyricsPage(
             }
             if (selection != null) {
                 Row(Modifier.align(Alignment.BottomCenter).padding(bottom = 24.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    PillButton("Cancel", { onSelectionChange(null) }, primary = false)
+                    PillButton(stringResource(R.string.player_cancel), { onSelectionChange(null) }, primary = false)
                     val count = selection.last - selection.first + 1
-                    PillButton(if (count == 1) "Share 1 line" else "Share $count lines", onShare)
+                    PillButton(pluralStringResource(R.plurals.player_share_lines, count, count), onShare)
                 }
             }
         }
@@ -106,10 +108,11 @@ fun LyricsPage(
 }
 
 /** "No lyrics found in LRCLIB or YouTube Music". */
+@Composable
 private fun notFoundText(sources: List<String>): String = when (sources.size) {
-    0 -> "No lyrics found"
-    1 -> "No lyrics found in ${sources[0]}"
-    else -> "No lyrics found in ${sources.dropLast(1).joinToString(", ")} or ${sources.last()}"
+    0 -> stringResource(R.string.player_lyrics_not_found)
+    1 -> stringResource(R.string.player_lyrics_not_found_in, sources[0])
+    else -> stringResource(R.string.player_lyrics_not_found_in_either, sources.dropLast(1).joinToString(", "), sources.last())
 }
 
 @Composable
@@ -157,7 +160,7 @@ internal fun isRightToLeft(text: String): Boolean {
 private fun SourceCredit(source: String?, contentColor: Color) {
     if (source == null) return
     Text(
-        "Lyrics from $source",
+        stringResource(R.string.player_lyrics_credit, source),
         style = MaterialTheme.typography.labelLarge,
         color = contentColor.copy(alpha = 0.6f),
         modifier = Modifier.padding(horizontal = 28.dp, vertical = 16.dp),
@@ -166,10 +169,12 @@ private fun SourceCredit(source: String?, contentColor: Color) {
 
 @Composable
 private fun PlainLyrics(lyrics: Lyrics, translation: List<String>?, contentColor: Color, picking: LinePicking) {
+    val notSynced = stringResource(R.string.player_lyrics_not_synced)
+    val pickLabel = stringResource(R.string.player_pick_for_card)
     LazyColumn(Modifier.fillMaxSize().fadingEdges(), contentPadding = PaddingValues(top = 24.dp, bottom = 240.dp)) {
         item(contentType = "caption") {
             Text(
-                "These lyrics are not time-synced",
+                notSynced,
                 style = MaterialTheme.typography.labelLarge,
                 color = contentColor.copy(alpha = 0.6f),
                 modifier = Modifier.padding(horizontal = 28.dp, vertical = 8.dp),
@@ -179,7 +184,7 @@ private fun PlainLyrics(lyrics: Lyrics, translation: List<String>?, contentColor
             // Plain lines have nothing to seek to: a tap starts picking lines for a card, like a long press.
             Column(
                 Modifier.fillMaxWidth()
-                    .combinedClickable(onClickLabel = "Pick for a lyric card", onLongClick = { picking.longPress(i) }) { if (!picking.tap(i)) picking.longPress(i) }
+                    .combinedClickable(onClickLabel = pickLabel, onLongClick = { picking.longPress(i) }) { if (!picking.tap(i)) picking.longPress(i) }
                     .graphicsLayer { alpha = if (picking.selection == null || i in picking.selection) 1f else ArtworkScrim.InactiveLyric }
                     .padding(horizontal = 28.dp, vertical = 6.dp),
             ) {
@@ -196,6 +201,7 @@ private fun SyncedLyrics(lyrics: Lyrics, translation: List<String>?, positionMs:
     val active = LyricsCursor.activeLineIndex(lyrics, positionMs)
     val listState = rememberLazyListState()
     val reduced = LocalReducedMotion.current
+    val pickLabel = stringResource(R.string.player_pick_for_card)
     // A hand scroll means the listener is reading elsewhere: stop following until they ask to come back.
     var following by remember(lyrics) { mutableStateOf(true) }
     LaunchedEffect(listState) {
@@ -228,7 +234,7 @@ private fun SyncedLyrics(lyrics: Lyrics, translation: List<String>?, positionMs:
                 Box(
                     Modifier
                         .fillMaxWidth()
-                        .combinedClickable(role = Role.Button, onLongClickLabel = "Pick for a lyric card", onLongClick = { picking.longPress(i) }) {
+                        .combinedClickable(role = Role.Button, onLongClickLabel = pickLabel, onLongClick = { picking.longPress(i) }) {
                             if (!picking.tap(i)) onSeek(line.startMs)
                         }
                         .semantics { selected = i == active }
@@ -252,7 +258,7 @@ private fun SyncedLyrics(lyrics: Lyrics, translation: List<String>?, positionMs:
             item(contentType = "credit") { SourceCredit(lyrics.source, contentColor) }
         }
         if (!following && !isPicking) {
-            PillButton("Back to current line", { following = true }, Modifier.align(Alignment.BottomCenter).padding(bottom = 24.dp))
+            PillButton(stringResource(R.string.player_back_to_current_line), { following = true }, Modifier.align(Alignment.BottomCenter).padding(bottom = 24.dp))
         }
     }
 }

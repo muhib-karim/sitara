@@ -15,6 +15,7 @@ import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.CustomAccessibilityAction
 import androidx.compose.ui.semantics.customActions
 import androidx.compose.ui.semantics.semantics
@@ -32,9 +33,16 @@ fun reorderShift(index: Int, from: Int, target: Int): Int = when {
     else -> 0
 }
 
-/** One drag at a time over a list of equal-height rows; [onStep] runs each time the dragged row passes onto another row. */
+/**
+ * One drag at a time over a list of equal-height rows; [onStep] runs each time the dragged row passes onto another row.
+ * [moveUpLabel] and [moveDownLabel] name the TalkBack actions; [rememberReorderState] passes the localized words.
+ */
 @Stable
-class ReorderState(private val onStep: () -> Unit = {}) {
+class ReorderState(
+    private val onStep: () -> Unit = {},
+    internal val moveUpLabel: String = "Move up",
+    internal val moveDownLabel: String = "Move down",
+) {
     var dragged by mutableIntStateOf(-1)
         private set
     var offset by mutableFloatStateOf(0f)
@@ -69,7 +77,11 @@ class ReorderState(private val onStep: () -> Unit = {}) {
 @Composable
 fun rememberReorderState(): ReorderState {
     val haptics = LocalHapticFeedback.current
-    return remember(haptics) { ReorderState { haptics.performHapticFeedback(HapticFeedbackType.SegmentFrequentTick) } }
+    val moveUp = stringResource(R.string.ds_move_up)
+    val moveDown = stringResource(R.string.ds_move_down)
+    return remember(haptics, moveUp, moveDown) {
+        ReorderState(onStep = { haptics.performHapticFeedback(HapticFeedbackType.SegmentFrequentTick) }, moveUpLabel = moveUp, moveDownLabel = moveDown)
+    }
 }
 
 /**
@@ -94,8 +106,8 @@ fun Modifier.reorderableRow(
     }
     .semantics {
         customActions = actions + listOfNotNull(
-            CustomAccessibilityAction("Move up") { onMove(index, index - 1); true }.takeIf { index > 0 },
-            CustomAccessibilityAction("Move down") { onMove(index, index + 1); true }.takeIf { index < count - 1 },
+            CustomAccessibilityAction(state.moveUpLabel) { onMove(index, index - 1); true }.takeIf { index > 0 },
+            CustomAccessibilityAction(state.moveDownLabel) { onMove(index, index + 1); true }.takeIf { index < count - 1 },
         )
     }
 

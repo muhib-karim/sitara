@@ -99,7 +99,7 @@ class PlaybackService : MediaLibraryService() {
         super.onCreate()
         val dependencies = application as PlaybackDependencies
         this.dependencies = dependencies
-        libraryBrowser = LibraryBrowser(dependencies.libraryContent)
+        libraryBrowser = LibraryBrowser(dependencies.libraryContent, ResourceBrowseLabels(this))
         val streams = PrefetchingStreamResolver(dependencies.streamResolver, scope, ElapsedRealtimeTimeSource)
         lateinit var port: Media3PlayerPort
         val stream = ResolvingDataSource.Factory(DefaultDataSource.Factory(this), StreamUriResolver(streams) { port.track(it) })
@@ -154,7 +154,7 @@ class PlaybackService : MediaLibraryService() {
         }
         player.addListener(EngineListener(engine))
         this.engine = engine
-        session = MediaLibrarySession.Builder(this, WordedErrors(player), callback).build()
+        session = MediaLibrarySession.Builder(this, WordedErrors(player) { getString(R.string.player_service_song_failed) }, callback).build()
         PlaybackEngineRegistry.attach(engine)
         scope.launch {
             restoreSavedQueue(engine)
@@ -175,7 +175,7 @@ class PlaybackService : MediaLibraryService() {
             val modes = engine.state.map { it.queue.shuffled to it.queue.repeatMode }.distinctUntilChanged()
             combine(liked, modes) { isLiked, (shuffled, repeat) -> Triple(isLiked, shuffled, repeat) }.distinctUntilChanged().collect { (isLiked, shuffled, repeat) ->
                 currentLiked = isLiked
-                session?.setMediaButtonPreferences(SessionActions.buttons(isLiked, shuffled, repeat))
+                session?.setMediaButtonPreferences(SessionActions.buttons(this@PlaybackService, isLiked, shuffled, repeat))
             }
         }
         scope.launch {
@@ -314,7 +314,7 @@ class PlaybackService : MediaLibraryService() {
                 result.cancel(false)
                 throw e
             } catch (e: Exception) {
-                LibraryResult.ofError<T>(SessionError(SessionError.ERROR_IO, CATALOGUE_UNREACHABLE))
+                LibraryResult.ofError<T>(SessionError(SessionError.ERROR_IO, getString(R.string.player_service_catalogue_unreachable)))
             }
             result.set(answer)
         }
@@ -476,9 +476,5 @@ class PlaybackService : MediaLibraryService() {
             controller: MediaSession.ControllerInfo,
             mediaItems: MutableList<MediaItem>,
         ): ListenableFuture<MutableList<MediaItem>> = Futures.immediateFailedFuture(UnsupportedOperationException("Sitara does not accept external media items"))
-    }
-
-    private companion object {
-        const val CATALOGUE_UNREACHABLE = "Can’t reach YouTube Music right now. Downloads play with no connection."
     }
 }

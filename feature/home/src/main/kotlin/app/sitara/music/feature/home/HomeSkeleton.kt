@@ -17,6 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.State
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.unit.dp
@@ -40,7 +41,7 @@ internal fun ChipsSkeleton() {
 
 /** Quick picks while they load: a heading and four song rows, announced as [label]. */
 @Composable
-internal fun RowsSkeleton(modifier: Modifier = Modifier, label: String = "Loading Home") {
+internal fun RowsSkeleton(modifier: Modifier = Modifier, label: String = stringResource(R.string.home_loading)) {
     val pulse = rememberPlaceholderPulse()
     Column(modifier.clearAndSetSemantics { contentDescription = label }) {
         HeadingBone(pulse)

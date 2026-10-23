@@ -24,6 +24,7 @@ import androidx.compose.ui.input.key.onPreviewKeyEvent
 import androidx.compose.ui.input.key.type
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.unit.dp
 import app.sitara.music.core.designsystem.PillButton
@@ -53,13 +54,13 @@ fun PlaylistNameSheet(title: String, initial: String, confirmLabel: String, onCo
                     if (enter && event.type == KeyEventType.KeyUp) confirm()
                     enter
                 },
-                singleLine = true, label = { Text("Name") },
+                singleLine = true, label = { Text(stringResource(R.string.library_playlist_name)) },
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
                 keyboardActions = KeyboardActions(onDone = { confirm() }),
             )
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                 if (name.isNotBlank()) PillButton(confirmLabel, confirm)
-                PillButton("Cancel", { close {} }, primary = false)
+                PillButton(stringResource(R.string.library_cancel), { close {} }, primary = false)
             }
         }
     }
@@ -68,11 +69,11 @@ fun PlaylistNameSheet(title: String, initial: String, confirmLabel: String, onCo
 @Composable
 internal fun DeletePlaylistSheet(name: String, onConfirm: () -> Unit, onDismiss: () -> Unit) {
     SitaraSheet(onDismiss) { close ->
-        SheetForm("Delete “$name”?") {
-            Text("The playlist goes; its songs stay wherever else you saved them.", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
+        SheetForm(stringResource(R.string.library_delete_playlist_title, name)) {
+            Text(stringResource(R.string.library_delete_playlist_body), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant)
             Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                PillButton("Delete playlist", { close(onConfirm) })
-                PillButton("Cancel", { close {} }, primary = false)
+                PillButton(stringResource(R.string.library_delete_playlist), { close(onConfirm) })
+                PillButton(stringResource(R.string.library_cancel), { close {} }, primary = false)
             }
         }
     }

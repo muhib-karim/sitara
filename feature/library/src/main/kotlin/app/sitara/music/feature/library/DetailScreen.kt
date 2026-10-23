@@ -1,5 +1,6 @@
 package app.sitara.music.feature.library
 
+import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -37,6 +38,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
@@ -118,7 +121,7 @@ fun DetailScreen(
         when (dialog) {
             PlaylistDialog.NONE -> Unit
             PlaylistDialog.RENAME -> PlaylistNameSheet(
-                "Rename playlist", playlist.name, "Save",
+                stringResource(R.string.library_rename_playlist), playlist.name, stringResource(R.string.library_save),
                 onConfirm = { dialog = PlaylistDialog.NONE; library.renamePlaylist(playlist.id, it) },
                 onDismiss = { dialog = PlaylistDialog.NONE },
             )
@@ -134,37 +137,37 @@ fun DetailScreen(
         contentPadding = contentPadding,
     ) {
         when (state) {
-            DetailState.Loading -> item(key = "loading") { PageMessage("Loading…", onBack) }
+            DetailState.Loading -> item(key = "loading") { PageMessage(stringResource(R.string.library_page_loading), onBack) }
             DetailState.Failed -> item(key = "failed") {
-                PageMessage("This page didn’t load. Check your connection, then try again.", onBack) { PillButton("Try again", onRetry) }
+                PageMessage(stringResource(R.string.library_page_failed), onBack) { PillButton(stringResource(R.string.library_try_again), onRetry) }
             }
-            DetailState.Gone -> item(key = "gone") { PageMessage("This playlist was deleted.", onBack) }
+            DetailState.Gone -> item(key = "gone") { PageMessage(stringResource(R.string.library_playlist_gone), onBack) }
             is DetailState.ArtistReady -> {
                 val page = state.page
                 val songs = page.topSongs
                 item(key = "header") {
                     val isSaved = page.artist.id in saved.artists
                     DetailHeader(
-                        page.artist.artwork, page.artist.name, "Artist", artistSummary(page), null,
+                        page.artist.artwork, page.artist.name, stringResource(R.string.library_artist), artistSummary(page), null,
                         songs, settings, onBack, onPlay, onShuffle, round = true, share = page.artist.shareTarget(), onShare = onShare,
                     ) { SaveButton(isSaved) { library.setSaved(page.artist, !isSaved) } }
                 }
                 if (songs.isEmpty() && page.releases.isEmpty()) {
-                    item(key = "empty") { EmptyMessage("Nothing from this artist yet") }
+                    item(key = "empty") { EmptyMessage(stringResource(R.string.library_artist_empty)) }
                 }
                 if (songs.isNotEmpty()) {
-                    item(key = "songs-heading") { SectionHeader("Top songs", modifier = Modifier.padding(top = 16.dp)) }
+                    item(key = "songs-heading") { SectionHeader(stringResource(R.string.library_top_songs), modifier = Modifier.padding(top = 16.dp)) }
                     trackRows(songs, saved.downloads, onPlay, onTrackMenu)
                 }
                 if (page.releases.isNotEmpty()) {
-                    item(key = "releases-heading") { SectionHeader("Albums and singles", modifier = Modifier.padding(top = 16.dp)) }
+                    item(key = "releases-heading") { SectionHeader(stringResource(R.string.library_albums_and_singles), modifier = Modifier.padding(top = 16.dp)) }
                     item(key = "releases") {
                         LazyRow(
                             contentPadding = PaddingValues(horizontal = SitaraSpacing.Gutter, vertical = 8.dp),
                             horizontalArrangement = Arrangement.spacedBy(16.dp),
                         ) {
                             items(page.releases, key = { it.id }) { album ->
-                                ArtworkTile(album.title, album.year?.toString() ?: "Album", album.artwork, { onAlbum(album.id) }, Modifier.width(156.dp), onLongClick = previewOnLongClick(album.preview()))
+                                ArtworkTile(album.title, album.year?.toString() ?: stringResource(R.string.library_album), album.artwork, { onAlbum(album.id) }, Modifier.width(156.dp), onLongClick = previewOnLongClick(album.preview()))
                             }
                         }
                     }
@@ -176,7 +179,7 @@ fun DetailScreen(
                 item(key = "header") {
                     val isSaved = album.id in saved.albums
                     DetailHeader(
-                        album.artwork, album.title, listOfNotNull("Album", album.year?.toString()).joinToString(" · "), album.artist,
+                        album.artwork, album.title, listOfNotNull(stringResource(R.string.library_album), album.year?.toString()).joinToString(" · "), album.artist,
                         artistId?.let { { onArtist(it) } }, album.tracks, settings, onBack, onPlay, onShuffle,
                         share = album.shareTarget(), onShare = onShare,
                     ) {
@@ -184,42 +187,42 @@ fun DetailScreen(
                         DownloadAllButton(album.tracks, saved.downloads, library)
                     }
                 }
-                collectionTracks(album.tracks, saved.downloads, "No songs in this album", onPlay, onTrackMenu)
+                collectionTracks(album.tracks, saved.downloads, R.string.library_album_empty, onPlay, onTrackMenu)
             }
             is DetailState.PlaylistReady -> {
                 val playlist = state.playlist
                 item(key = "header") {
                     DetailHeader(
-                        playlist.artwork, playlist.title, "Playlist", playlist.curator.ifEmpty { playlist.description }, null,
+                        playlist.artwork, playlist.title, stringResource(R.string.library_playlist), playlist.curator.ifEmpty { playlist.description }, null,
                         playlist.tracks, settings, onBack, onPlay, onShuffle, share = playlist.shareTarget(), onShare = onShare,
                     ) { DownloadAllButton(playlist.tracks, saved.downloads, library) }
                 }
-                collectionTracks(playlist.tracks, saved.downloads, "No songs in this playlist", onPlay, onTrackMenu)
+                collectionTracks(playlist.tracks, saved.downloads, R.string.library_playlist_empty, onPlay, onTrackMenu)
             }
             is DetailState.LikedReady -> {
                 val tracks = state.tracks
                 item(key = "header") {
                     DetailHeader(
-                        tracks.firstOrNull()?.artwork ?: EmptyCollectionArtwork, "Liked songs", "Your library", "", null,
+                        tracks.firstOrNull()?.artwork ?: EmptyCollectionArtwork, stringResource(R.string.library_liked_songs), stringResource(R.string.library_your_library), "", null,
                         tracks, settings, onBack, onPlay, onShuffle,
                     ) { DownloadAllButton(tracks, saved.downloads, library) }
                 }
-                collectionTracks(tracks, saved.downloads, "Songs you like show up here. Tap the heart in the player, or Like in a song’s menu.", onPlay, onTrackMenu)
+                collectionTracks(tracks, saved.downloads, R.string.library_liked_empty, onPlay, onTrackMenu)
             }
             is DetailState.UserPlaylistReady -> {
                 val playlist = state.playlist
                 item(key = "header") {
                     DetailHeader(
-                        entries.firstOrNull()?.artwork ?: EmptyCollectionArtwork, playlist.name, "Your playlist", "", null,
+                        entries.firstOrNull()?.artwork ?: EmptyCollectionArtwork, playlist.name, stringResource(R.string.library_your_playlist), "", null,
                         entries, settings, onBack, onPlay, onShuffle,
                     ) {
-                        PillButton("Rename", { dialog = PlaylistDialog.RENAME }, primary = false)
-                        PillButton("Delete", { dialog = PlaylistDialog.DELETE }, primary = false)
+                        PillButton(stringResource(R.string.library_rename), { dialog = PlaylistDialog.RENAME }, primary = false)
+                        PillButton(stringResource(R.string.library_delete), { dialog = PlaylistDialog.DELETE }, primary = false)
                         DownloadAllButton(entries, saved.downloads, library)
                     }
                 }
                 if (entries.isEmpty()) {
-                    item(key = "empty") { EmptyMessage("No songs yet. Add some with “Add to playlist” in any song’s menu.") }
+                    item(key = "empty") { EmptyMessage(stringResource(R.string.library_user_playlist_empty)) }
                 } else {
                     songsHeading(entries)
                     val move = { from: Int, to: Int ->
@@ -233,7 +236,7 @@ fun DetailScreen(
                         ) {
                             if (saved.downloads[track.id] == DownloadState.DOWNLOADED) DownloadedBadge()
                             IconButton(onClick = { library.removePlaylistEntry(playlist.id, track.id) }) {
-                                Icon(SitaraIcons.Close, "Remove ${track.title} from this playlist", tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                                Icon(SitaraIcons.Close, stringResource(R.string.library_remove_from_playlist, track.title), tint = MaterialTheme.colorScheme.onSurfaceVariant)
                             }
                             Icon(
                                 SitaraIcons.DragHandle, null, tint = MaterialTheme.colorScheme.onSurfaceVariant,
@@ -251,34 +254,36 @@ private enum class PlaylistDialog { NONE, RENAME, DELETE }
 
 @Composable
 private fun SaveButton(saved: Boolean, onToggle: () -> Unit) {
-    PillButton(if (saved) "Saved" else "Save", onToggle, Modifier.semantics { stateDescription = if (saved) "In your library" else "Not in your library" }, primary = false)
+    val state = stringResource(if (saved) R.string.library_in_your_library else R.string.library_not_in_your_library)
+    PillButton(stringResource(if (saved) R.string.library_saved else R.string.library_save), onToggle, Modifier.semantics { stateDescription = state }, primary = false)
 }
 
 /** Shown while any song on the page is neither downloaded nor on its way. */
 @Composable
 private fun DownloadAllButton(tracks: List<Track>, downloads: Map<String, DownloadState>, library: LibraryActions) {
-    if (tracks.toDownload(downloads).isNotEmpty()) PillButton("Download all", { library.download(tracks) }, primary = false)
+    if (tracks.toDownload(downloads).isNotEmpty()) PillButton(stringResource(R.string.library_download_all), { library.download(tracks) }, primary = false)
 }
 
 @Composable
 private fun DownloadedBadge() {
-    Icon(SitaraIcons.Downloaded, "Downloaded", Modifier.padding(horizontal = 4.dp).size(16.dp), tint = MaterialTheme.colorScheme.primary)
+    Icon(SitaraIcons.Downloaded, stringResource(R.string.library_downloaded), Modifier.padding(horizontal = 4.dp).size(16.dp), tint = MaterialTheme.colorScheme.primary)
 }
 
+@Composable
 private fun artistSummary(page: ArtistPage): String = listOfNotNull(
-    page.topSongs.size.takeIf { it > 0 }?.let { if (it == 1) "1 song" else "$it songs" },
-    page.releases.size.takeIf { it > 0 }?.let { if (it == 1) "1 release" else "$it releases" },
+    page.topSongs.size.takeIf { it > 0 }?.let { songCount(it) },
+    page.releases.size.takeIf { it > 0 }?.let { pluralStringResource(R.plurals.library_release_count, it, it) },
 ).joinToString(" · ")
 
 private fun LazyListScope.collectionTracks(
     tracks: List<Track>,
     downloads: Map<String, DownloadState>,
-    emptyText: String,
+    @StringRes emptyText: Int,
     onPlay: (List<Track>, Int) -> Unit,
     onTrackMenu: (Track) -> Unit,
 ) {
     if (tracks.isEmpty()) {
-        item(key = "empty") { EmptyMessage(emptyText) }
+        item(key = "empty") { EmptyMessage(stringResource(emptyText)) }
         return
     }
     songsHeading(tracks)
@@ -288,7 +293,7 @@ private fun LazyListScope.collectionTracks(
 private fun LazyListScope.songsHeading(tracks: List<Track>) {
     val total = formatDuration(tracks.sumOf { it.durationMs })
     item(key = "songs-heading") {
-        SectionHeader("Songs", subtitle = "${songCount(tracks.size)} · $total", modifier = Modifier.padding(top = 16.dp))
+        SectionHeader(stringResource(R.string.library_songs), subtitle = stringResource(R.string.library_joined, songCount(tracks.size), total), modifier = Modifier.padding(top = 16.dp))
     }
 }
 
@@ -327,21 +332,22 @@ private fun DetailHeader(
             ArtworkBackdrop(artwork, Modifier.matchParentSize())
             Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                 Row(Modifier.fillMaxWidth()) {
-                    GlassIconButton(SitaraIcons.Back, "Back", onBack)
+                    GlassIconButton(SitaraIcons.Back, stringResource(R.string.library_back), onBack)
                     Spacer(Modifier.weight(1f))
-                    if (share != null) GlassIconButton(SitaraIcons.Share, "Share $title", { onShare(share) })
+                    if (share != null) GlassIconButton(SitaraIcons.Share, stringResource(R.string.library_share_page, title), { onShare(share) })
                 }
                 ArtworkImage(artwork, Modifier.size(152.dp).align(Alignment.CenterHorizontally), cornerRadius = if (round) 76.dp else SitaraRadius.Tile)
                 Text(title, color = Color.White, style = MaterialTheme.typography.headlineLarge)
                 Text(kind, color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelSmall)
                 if (subtitle.isNotEmpty()) {
-                    val link = onSubtitle?.let { Modifier.minimumInteractiveComponentSize().clickable(role = Role.Button, onClickLabel = "Open artist", onClick = it) } ?: Modifier
+                    val openArtist = stringResource(R.string.library_open_artist)
+                    val link = onSubtitle?.let { Modifier.minimumInteractiveComponentSize().clickable(role = Role.Button, onClickLabel = openArtist, onClick = it) } ?: Modifier
                     Text(subtitle, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyMedium, modifier = link)
                 }
                 FlowRow(horizontalArrangement = Arrangement.spacedBy(12.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
                     if (tracks.isNotEmpty()) {
-                        PillButton("Play all", { onPlay(tracks, 0) })
-                        PillButton("Shuffle", { onShuffle(tracks) }, primary = false)
+                        PillButton(stringResource(R.string.library_play_all), { onPlay(tracks, 0) })
+                        PillButton(stringResource(R.string.library_shuffle), { onShuffle(tracks) }, primary = false)
                     }
                     actions()
                 }
@@ -353,7 +359,7 @@ private fun DetailHeader(
 @Composable
 private fun PageMessage(message: String, onBack: () -> Unit, action: @Composable () -> Unit = {}) {
     Column(Modifier.padding(horizontal = 12.dp, vertical = 16.dp), verticalArrangement = Arrangement.spacedBy(16.dp)) {
-        GlassIconButton(SitaraIcons.Back, "Back", onBack)
+        GlassIconButton(SitaraIcons.Back, stringResource(R.string.library_back), onBack)
         Text(message, color = MaterialTheme.colorScheme.onSurfaceVariant, style = MaterialTheme.typography.bodyLarge, modifier = Modifier.padding(horizontal = 8.dp))
         Box(Modifier.padding(horizontal = 8.dp)) { action() }
     }

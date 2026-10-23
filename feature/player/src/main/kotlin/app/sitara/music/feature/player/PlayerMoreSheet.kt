@@ -16,6 +16,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -38,9 +39,9 @@ internal fun PlayerMoreSheet(state: PlayerUiState, onAddToPlaylist: () -> Unit, 
 @Composable
 fun PlayerMoreOptions(state: PlayerUiState, onAddToPlaylist: () -> Unit, onEqualiser: () -> Unit, onSongVolume: () -> Unit) {
     Column(Modifier.fillMaxWidth().navigationBarsPadding().padding(bottom = 8.dp)) {
-        MoreAction(SitaraIcons.Add, "Add to playlist", null, onAddToPlaylist)
-        MoreAction(SitaraIcons.Equaliser, "Equaliser", equaliserSummary(state.equaliser, state.systemEqualiser), onEqualiser)
-        MoreAction(SitaraIcons.Volume, "Volume for this song", decibelLabel(state.trimDb), onSongVolume)
+        MoreAction(SitaraIcons.Add, stringResource(R.string.player_add_to_playlist), null, onAddToPlaylist)
+        MoreAction(SitaraIcons.Equaliser, stringResource(R.string.player_equaliser), equaliserSummary(state.equaliser, state.systemEqualiser), onEqualiser)
+        MoreAction(SitaraIcons.Volume, stringResource(R.string.player_song_volume), decibelLabel(state.trimDb), onSongVolume)
     }
 }
 
@@ -66,16 +67,18 @@ internal fun SongVolumeSheet(state: PlayerUiState, actions: PlayerActions, onDis
 @Composable
 fun SongVolume(state: PlayerUiState, actions: PlayerActions) {
     val track = state.track ?: return
+    val trim = decibelLabel(state.trimDb)
+    val volumeFor = stringResource(R.string.player_volume_for, track.title)
     Column(Modifier.fillMaxWidth().navigationBarsPadding().padding(horizontal = SitaraSpacing.Gutter).padding(bottom = 16.dp)) {
         Row(Modifier.fillMaxWidth().heightIn(min = SitaraSpacing.TouchTarget), verticalAlignment = Alignment.CenterVertically) {
-            Text("Volume for this song", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
-            if (state.trimDb != 0) PillButton("Reset", { actions.setTrimDb(0) }, primary = false)
+            Text(stringResource(R.string.player_song_volume), style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
+            if (state.trimDb != 0) PillButton(stringResource(R.string.player_reset), { actions.setTrimDb(0) }, primary = false)
         }
         Text(
             "${track.title} · ${track.artist}", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
             maxLines = 1, overflow = TextOverflow.Ellipsis,
         )
-        SliderHeading("Trim", decibelLabel(state.trimDb), Modifier.padding(top = 12.dp))
+        SliderHeading(stringResource(R.string.player_trim), trim, Modifier.padding(top = 12.dp))
         Slider(
             value = state.trimDb.toFloat(),
             onValueChange = { it.roundToInt().let { db -> if (db != state.trimDb) actions.setTrimDb(db) } },
@@ -83,12 +86,12 @@ fun SongVolume(state: PlayerUiState, actions: PlayerActions) {
             steps = 2 * SongGain.MAX_TRIM_DB - 1,
             colors = accentSlider(),
             modifier = Modifier.semantics {
-                contentDescription = "Volume for ${track.title}"
-                stateDescription = decibelLabel(state.trimDb)
+                contentDescription = volumeFor
+                stateDescription = trim
             },
         )
         Text(
-            "For a song mastered louder or quieter than the rest. Sitara keeps it with the song and applies it every time it plays.",
+            stringResource(R.string.player_song_volume_hint),
             style = MaterialTheme.typography.bodySmall,
             color = MaterialTheme.colorScheme.onSurfaceVariant,
         )

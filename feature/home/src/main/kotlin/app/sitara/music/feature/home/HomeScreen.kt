@@ -27,6 +27,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import app.sitara.music.core.designsystem.ArtworkTile
 import app.sitara.music.core.designsystem.EmptyCollectionArtwork
@@ -97,7 +99,9 @@ fun HomeScreen(
                 if (mood == null) trending(online.trending, onPlay, onTrackMenu)
             }
             is FeedState.Ready -> if (state.shelves.isEmpty()) {
-                item(key = "nothing") { HomeMessage("Nothing under ${mood?.title ?: "this mood"} that Sitara can play yet.") }
+                item(key = "nothing") {
+                    HomeMessage(mood?.let { stringResource(R.string.home_nothing_under, it.title) } ?: stringResource(R.string.home_nothing_under_this_mood))
+                }
             } else {
                 feedShelf(0, state.shelves.first())
             }
@@ -105,13 +109,13 @@ fun HomeScreen(
         if (mood == null) {
             if (online.feed == FeedState.Failed && feed.libraryLoaded && !feed.hasLibrary) {
                 item(key = "welcome") {
-                    SectionHeader("Make Home yours", subtitle = "Songs you play, like and save show up here.", modifier = Modifier.padding(top = 20.dp))
+                    SectionHeader(stringResource(R.string.home_make_home_yours), subtitle = stringResource(R.string.home_make_home_yours_description), modifier = Modifier.padding(top = 20.dp))
                 }
             }
-            trackShelf("recent", "Listen again", feed.recent, onPlay, onTrackMenu)
-            trackShelf("likes", "Your likes", feed.fromLikes, onPlay, onTrackMenu)
+            trackShelf("recent", R.string.home_listen_again, feed.recent, onPlay, onTrackMenu)
+            trackShelf("likes", R.string.home_your_likes, feed.fromLikes, onPlay, onTrackMenu)
             if (feed.jumpBackIn.isNotEmpty()) {
-                item(key = "h-jump") { SectionHeader("Jump back in", modifier = Modifier.padding(top = 12.dp)) }
+                item(key = "h-jump") { SectionHeader(stringResource(R.string.home_jump_back_in), modifier = Modifier.padding(top = 12.dp)) }
                 item(key = "r-jump") {
                     Rail("jump") {
                         items(feed.jumpBackIn, key = { it.key }) { saved ->
@@ -139,8 +143,8 @@ fun HomeScreen(
             item(key = "paging", contentType = "skeleton") {
                 if (ready.paging == Paging.FAILED) {
                     Column(Modifier.padding(top = 12.dp)) {
-                        HomeMessage("More of Home didn’t load.")
-                        PillButton("Try again", actions::loadMoreHome, Modifier.padding(horizontal = SitaraSpacing.Gutter))
+                        HomeMessage(stringResource(R.string.home_more_failed))
+                        PillButton(stringResource(R.string.home_try_again), actions::loadMoreHome, Modifier.padding(horizontal = SitaraSpacing.Gutter))
                     }
                 } else {
                     CarouselSkeleton()
@@ -164,9 +168,9 @@ private fun LazyListScope.trending(trending: TrendingState, onPlay: (List<Track>
         // The notice above already says the network is not answering; a second error would repeat it.
         TrendingState.Failed -> Unit
         is TrendingState.Ready -> {
-            item(key = "trending-heading") { SectionHeader("Trending now", subtitle = trending.chart.label, modifier = Modifier.padding(top = 12.dp)) }
+            item(key = "trending-heading") { SectionHeader(stringResource(R.string.home_trending_now), subtitle = trending.chart.label, modifier = Modifier.padding(top = 12.dp)) }
             item(key = "trending") {
-                if (trending.chart.tracks.isEmpty()) HomeMessage("Nothing is charting here right now.") else QuickPicks(trending.chart.tracks, onPlay, onTrackMenu)
+                if (trending.chart.tracks.isEmpty()) HomeMessage(stringResource(R.string.home_nothing_charting)) else QuickPicks(trending.chart.tracks, onPlay, onTrackMenu)
             }
         }
     }
@@ -182,7 +186,8 @@ private val SavedCollection.key: String get() = when (this) {
     is SavedCollection.SavedAlbum -> "album-${album.id}"
 }
 
-private fun songCount(count: Int) = if (count == 1) "1 song" else "$count songs"
+@Composable
+private fun songCount(count: Int) = pluralStringResource(R.plurals.home_songs, count, count)
 
 /** Shelf [index] of a catalogue feed: its header with a More link where there is one, then song rows or a carousel. */
 internal fun LazyListScope.feedShelf(
@@ -199,7 +204,7 @@ internal fun LazyListScope.feedShelf(
     item(key = "feed-h-$key", contentType = "header") {
         SectionHeader(
             shelf.title, Modifier.padding(top = 12.dp), subtitle = shelf.strapline?.let(::sentenceCase),
-            action = shelf.more?.let { link -> @Composable { HeaderAction("More", { onShelfLink(link) }, description = "More from ${shelf.title}") } },
+            action = shelf.more?.let { link -> @Composable { HeaderAction(stringResource(R.string.home_more), { onShelfLink(link) }, description = stringResource(R.string.home_more_from, shelf.title)) } },
         )
     }
     item(key = "feed-$key", contentType = shelf.layout) {
@@ -210,9 +215,9 @@ internal fun LazyListScope.feedShelf(
     }
 }
 
-private fun LazyListScope.trackShelf(key: String, title: String, tracks: List<Track>, onPlay: (List<Track>, Int) -> Unit, onTrackMenu: (Track) -> Unit) {
+private fun LazyListScope.trackShelf(key: String, title: Int, tracks: List<Track>, onPlay: (List<Track>, Int) -> Unit, onTrackMenu: (Track) -> Unit) {
     if (tracks.isEmpty()) return
-    item(key = "h-$key") { SectionHeader(title, modifier = Modifier.padding(top = 12.dp)) }
+    item(key = "h-$key") { SectionHeader(stringResource(title), modifier = Modifier.padding(top = 12.dp)) }
     item(key = "r-$key") {
         Rail(key) {
             items(tracks.size, key = { tracks[it].id }) { index ->
@@ -246,7 +251,7 @@ private fun FeedCarousel(
                 is HomeItem.PlaylistCard -> ArtworkTile(
                     item.playlist.title, item.playlist.curator, item.playlist.artwork, { onPlaylist(item.playlist) }, card, onLongClick = previewOnLongClick(item.playlist.preview()),
                 )
-                is HomeItem.ArtistCard -> ArtworkTile(item.artist.name, "Artist", item.artist.artwork, { onArtist(item.artist) }, card, round = true, onLongClick = previewOnLongClick(item.artist.preview()))
+                is HomeItem.ArtistCard -> ArtworkTile(item.artist.name, stringResource(R.string.home_artist), item.artist.artwork, { onArtist(item.artist) }, card, round = true, onLongClick = previewOnLongClick(item.artist.preview()))
             }
         }
     }
@@ -279,12 +284,12 @@ private fun MoodChips(chips: List<MoodChip>, onSelect: (MoodChip) -> Unit) {
 private fun OfflineNotice(onRetry: () -> Unit) {
     GlassSurface(Modifier.padding(horizontal = SitaraSpacing.Gutter, vertical = 8.dp).fillMaxWidth(), shape = RoundedCornerShape(SitaraRadius.Artwork)) {
         Column(Modifier.padding(20.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
-            Text("Home didn’t load", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+            Text(stringResource(R.string.home_didnt_load), style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
             Text(
-                "YouTube Music didn’t answer. Check your connection, then try again.",
+                stringResource(R.string.home_offline_description),
                 style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
-            Row(Modifier.padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) { PillButton("Try again", onRetry) }
+            Row(Modifier.padding(top = 8.dp), verticalAlignment = Alignment.CenterVertically) { PillButton(stringResource(R.string.home_try_again), onRetry) }
         }
     }
 }

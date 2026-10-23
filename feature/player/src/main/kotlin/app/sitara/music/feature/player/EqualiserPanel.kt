@@ -37,6 +37,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
@@ -52,28 +53,32 @@ import app.sitara.music.core.designsystem.PillButton
 import app.sitara.music.core.designsystem.SitaraIcons
 import app.sitara.music.core.designsystem.SitaraSheet
 import app.sitara.music.core.designsystem.SitaraSpacing
+import app.sitara.music.core.designsystem.displayName
 import app.sitara.music.core.model.EqualiserPreset
 import app.sitara.music.core.model.EqualiserSettings
 import kotlin.math.roundToInt
 
 /** "31 Hz", "1 kHz", "16 kHz". */
+@Composable
 internal fun bandLabel(band: Int): String {
     val hz = EqualiserSettings.BAND_CENTRES_HZ[band]
-    return if (hz >= 1_000) "${(hz / 1_000).roundToInt()} kHz" else "${hz.toInt()} Hz"
+    return if (hz >= 1_000) stringResource(R.string.player_band_khz, (hz / 1_000).roundToInt()) else stringResource(R.string.player_band_hz, hz.toInt())
 }
 
 /** "+3 dB", "0 dB", "−4 dB". */
+@Composable
 internal fun decibelLabel(db: Int): String = when {
-    db > 0 -> "+$db dB"
-    db < 0 -> "−${-db} dB"
-    else -> "0 dB"
+    db > 0 -> stringResource(R.string.player_db_boost, db)
+    db < 0 -> stringResource(R.string.player_db_cut, -db)
+    else -> stringResource(R.string.player_db_zero)
 }
 
 /** What the equaliser is doing, in a word or two: "Off", "Rock", "Custom", "Phone equaliser". */
+@Composable
 fun equaliserSummary(equaliser: EqualiserSettings, systemEqualiser: Boolean): String = when {
-    equaliser.systemActive(systemEqualiser) -> "Phone equaliser"
-    !equaliser.enabled -> "Off"
-    else -> equaliser.preset?.label ?: "Custom"
+    equaliser.systemActive(systemEqualiser) -> stringResource(R.string.player_phone_equaliser)
+    !equaliser.enabled -> stringResource(R.string.player_state_off)
+    else -> equaliser.preset?.displayName() ?: stringResource(R.string.player_custom)
 }
 
 /** The equaliser as a page of its own, reached from Settings; pads for the dock like the other pages. */
@@ -87,8 +92,8 @@ fun EqualiserScreen(
     contentPadding: PaddingValues = PaddingValues(),
 ) {
     Column(Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(contentPadding).testTag("equaliser-content")) {
-        GlassIconButton(SitaraIcons.Back, "Back", onBack, Modifier.padding(start = 12.dp, top = 8.dp))
-        LargeTitle("Equaliser")
+        GlassIconButton(SitaraIcons.Back, stringResource(R.string.player_back), onBack, Modifier.padding(start = 12.dp, top = 8.dp))
+        LargeTitle(stringResource(R.string.player_equaliser))
         EqualiserPanel(equaliser, systemEqualiser, onChange, onOpenSystemEqualiser)
     }
 }
@@ -98,7 +103,7 @@ fun EqualiserScreen(
 internal fun EqualiserSheet(equaliser: EqualiserSettings, systemEqualiser: Boolean, actions: PlayerActions, onDismiss: () -> Unit) {
     SitaraSheet(onDismiss) { _ ->
         Column(Modifier.verticalScroll(rememberScrollState()).padding(bottom = 16.dp)) {
-            Text("Equaliser", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.padding(horizontal = SitaraSpacing.Gutter))
+            Text(stringResource(R.string.player_equaliser), style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.padding(horizontal = SitaraSpacing.Gutter))
             EqualiserPanel(equaliser, systemEqualiser, actions::setEqualiser, actions::openSystemEqualiser)
         }
     }
@@ -119,33 +124,38 @@ fun EqualiserPanel(
 ) {
     Column(modifier.fillMaxWidth().padding(horizontal = SitaraSpacing.Gutter)) {
         if (systemEqualiser) {
-            SwitchRow("Use phone equaliser", "Sitara's bands turn off while your phone's equaliser shapes the sound", equaliser.useSystem) {
+            SwitchRow(stringResource(R.string.player_use_phone_equaliser), stringResource(R.string.player_use_phone_equaliser_summary), equaliser.useSystem) {
                 onChange(equaliser.copy(useSystem = it))
             }
         }
         if (equaliser.systemActive(systemEqualiser)) {
-            PillButton("Open phone equaliser", onOpenSystemEqualiser, Modifier.padding(top = 8.dp))
+            PillButton(stringResource(R.string.player_open_phone_equaliser), onOpenSystemEqualiser, Modifier.padding(top = 8.dp))
         } else {
-            SwitchRow("Equaliser", if (equaliser.enabled) equaliser.preset?.label ?: "Custom" else "Songs play as they were mastered", equaliser.enabled) { onChange(equaliser.copy(enabled = it)) }
+            SwitchRow(
+                stringResource(R.string.player_equaliser),
+                if (equaliser.enabled) equaliser.preset?.displayName() ?: stringResource(R.string.player_custom) else stringResource(R.string.player_equaliser_off_summary),
+                equaliser.enabled,
+            ) { onChange(equaliser.copy(enabled = it)) }
             FlowRow(Modifier.padding(top = 8.dp), horizontalArrangement = Arrangement.spacedBy(8.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                 EqualiserPreset.entries.forEach { preset ->
-                    ChoicePill(preset.label, selected = equaliser.enabled && equaliser.preset == preset) { onChange(equaliser.withPreset(preset)) }
+                    ChoicePill(preset.displayName(), selected = equaliser.enabled && equaliser.preset == preset) { onChange(equaliser.withPreset(preset)) }
                 }
             }
             // Off, the bands and preamp dim: they still show the curve, and moving one switches the equaliser on.
             Column(Modifier.alpha(if (equaliser.enabled) 1f else 0.38f)) {
                 BandSliders(equaliser, onChange, Modifier.padding(top = 20.dp))
-                SliderHeading("Preamp", decibelLabel(equaliser.preampDb), Modifier.padding(top = 16.dp))
-                Fader(equaliser.preampDb, { onChange(equaliser.withPreamp(it)) }, "Preamp", vertical = false, Modifier.fillMaxWidth())
+                val preamp = stringResource(R.string.player_preamp)
+                SliderHeading(preamp, decibelLabel(equaliser.preampDb), Modifier.padding(top = 16.dp))
+                Fader(equaliser.preampDb, { onChange(equaliser.withPreamp(it)) }, preamp, vertical = false, Modifier.fillMaxWidth())
             }
             Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
                 Text(
-                    "Lower the preamp if loud songs sound squashed: a limiter keeps boosts from clipping.",
+                    stringResource(R.string.player_preamp_hint),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.weight(1f).padding(end = 12.dp),
                 )
-                if (equaliser.preampDb != 0 || equaliser.bandsDb.any { it != 0 }) PillButton("Reset", { onChange(equaliser.reset()) }, primary = false)
+                if (equaliser.preampDb != 0 || equaliser.bandsDb.any { it != 0 }) PillButton(stringResource(R.string.player_reset), { onChange(equaliser.reset()) }, primary = false)
             }
         }
     }
@@ -196,6 +206,7 @@ private fun Fader(db: Int, onChange: (Int) -> Unit, label: String, vertical: Boo
     val zero = MaterialTheme.colorScheme.onSurfaceVariant
     val rtl = LocalLayoutDirection.current == LayoutDirection.Rtl
     val max = EqualiserSettings.MAX_GAIN_DB
+    val value = decibelLabel(db)
     Box(modifier, contentAlignment = Alignment.Center) {
         Slider(
             value = db.toFloat(),
@@ -212,7 +223,7 @@ private fun Fader(db: Int, onChange: (Int) -> Unit, label: String, vertical: Boo
             // Vertical, the height is the fader's length, so it goes outside the turn.
             modifier = (if (vertical) Modifier.fillMaxHeight().vertical() else Modifier.fillMaxWidth()).semantics {
                 contentDescription = label
-                stateDescription = decibelLabel(db)
+                stateDescription = value
             },
         )
         Canvas(Modifier.matchParentSize()) {

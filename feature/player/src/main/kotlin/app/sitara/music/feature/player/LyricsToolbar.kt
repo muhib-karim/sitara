@@ -26,6 +26,8 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -58,7 +60,7 @@ internal fun LyricsToolbar(state: PlayerUiState, actions: PlayerActions, onShare
             SourceChip(found.lyrics, { picking = true }, Modifier.weight(1f, fill = false))
             Spacer(Modifier.weight(0.01f))
             TranslateToggle(state.translation != TranslationState.Off, actions::toggleTranslation)
-            GlassIconButton(SitaraIcons.Share, "Share lyrics", onShare, tint = SitaraColors.StageContent)
+            GlassIconButton(SitaraIcons.Share, stringResource(R.string.player_share_lyrics), onShare, tint = SitaraColors.StageContent)
         }
         TranslationStatus(state.translation, actions)
     }
@@ -73,7 +75,7 @@ private fun TranslateToggle(on: Boolean, onToggle: () -> Unit) {
     ) {
         GlassSurface(shape = CircleShape, tint = if (on) SitaraColors.StageContent else MaterialTheme.colorScheme.surfaceContainerHigh) {
             Text(
-                "Translate", style = MaterialTheme.typography.labelLarge, color = if (on) SitaraColors.Stage else SitaraColors.StageContent,
+                stringResource(R.string.player_translate), style = MaterialTheme.typography.labelLarge, color = if (on) SitaraColors.Stage else SitaraColors.StageContent,
                 modifier = Modifier.padding(horizontal = 14.dp, vertical = 8.dp),
             )
         }
@@ -85,27 +87,28 @@ private fun TranslateToggle(on: Boolean, onToggle: () -> Unit) {
 private fun TranslationStatus(translation: TranslationState, actions: PlayerActions) {
     val (language, message, retry) = when (translation) {
         TranslationState.Off -> return
-        is TranslationState.Translating -> Triple(translation.language, "Translating to ${languageName(translation.language)}…", false)
+        is TranslationState.Translating -> Triple(translation.language, stringResource(R.string.player_translating_to, languageName(translation.language)), false)
         is TranslationState.Translated -> Triple(
             translation.translation.toLanguage,
-            translation.translation.fromLanguage?.let { "Translated from ${languageName(it)} by MyMemory" } ?: "Translated by MyMemory",
+            translation.translation.fromLanguage?.let { stringResource(R.string.player_translated_from, languageName(it)) } ?: stringResource(R.string.player_translated),
             false,
         )
         is TranslationState.Failed -> when (translation.problem) {
-            TranslationProblem.OFFLINE -> Triple(translation.language, "You’re offline. Connect to translate.", true)
-            TranslationProblem.DAILY_LIMIT -> Triple(translation.language, "MyMemory’s free daily translations are used up. Try again tomorrow.", false)
-            TranslationProblem.SAME_LANGUAGE -> Triple(translation.language, "These lyrics are already in ${languageName(translation.language)}.", false)
-            TranslationProblem.SERVICE -> Triple(translation.language, "MyMemory couldn’t translate these lyrics.", true)
+            TranslationProblem.OFFLINE -> Triple(translation.language, stringResource(R.string.player_translation_offline), true)
+            TranslationProblem.DAILY_LIMIT -> Triple(translation.language, stringResource(R.string.player_translation_daily_limit), false)
+            TranslationProblem.SAME_LANGUAGE -> Triple(translation.language, stringResource(R.string.player_translation_same_language, languageName(translation.language)), false)
+            TranslationProblem.SERVICE -> Triple(translation.language, stringResource(R.string.player_translation_service), true)
         }
     }
     var choosing by rememberSaveable { mutableStateOf(false) }
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         Text(message, style = MaterialTheme.typography.bodySmall, color = SitaraColors.StageSecondary, modifier = Modifier.weight(1f))
-        if (retry) PillButton("Try again", actions::retryTranslation, primary = false)
+        if (retry) PillButton(stringResource(R.string.player_try_again), actions::retryTranslation, primary = false)
         val name = languageName(language)
+        val changeLanguage = stringResource(R.string.player_translate_into_change, name)
         Row(
             Modifier.heightIn(min = SitaraSpacing.TouchTarget).clickable(role = Role.Button) { choosing = true }
-                .semantics { contentDescription = "Translate into $name. Change language" },
+                .semantics { contentDescription = changeLanguage },
             verticalAlignment = Alignment.CenterVertically,
         ) {
             GlassSurface(shape = CircleShape) {
@@ -127,7 +130,7 @@ fun TranslationLanguages(current: String, onChoose: (language: String) -> Unit) 
     val appLanguage = Locale.getDefault().toLanguageTag().substringBefore('-')
     Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).navigationBarsPadding().padding(bottom = 16.dp)) {
         Text(
-            "Translate into", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface,
+            stringResource(R.string.player_translate_into), style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(horizontal = SitaraSpacing.Gutter, vertical = 8.dp),
         )
         (listOf(appLanguage) + COMMON_LANGUAGES).distinct().forEach { code ->
@@ -164,7 +167,11 @@ private fun SourceChip(lyrics: Lyrics, onClick: () -> Unit, modifier: Modifier) 
     }
 }
 
-private fun sourceLabel(lyrics: Lyrics) = "Source: ${lyrics.source ?: "unknown"}, ${if (lyrics.synced) "synced" else "plain"}"
+@Composable
+private fun sourceLabel(lyrics: Lyrics): String {
+    val source = lyrics.source ?: stringResource(R.string.player_source_unknown)
+    return stringResource(if (lyrics.synced) R.string.player_source_synced else R.string.player_source_plain, source)
+}
 
 @Composable
 private fun LyricsSourceSheet(state: PlayerUiState, actions: PlayerActions, onDismiss: () -> Unit) {
@@ -179,13 +186,13 @@ fun LyricsSourceList(state: PlayerUiState, onChoose: (providerId: String) -> Uni
     val missing = state.lyricsSources.filter { name -> found.matches.none { it.lyrics.source == name } }
     Column(Modifier.fillMaxWidth().verticalScroll(rememberScrollState()).navigationBarsPadding().padding(bottom = 16.dp)) {
         Text(
-            "Lyrics source", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface,
+            stringResource(R.string.player_lyrics_source), style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface,
             modifier = Modifier.padding(horizontal = SitaraSpacing.Gutter, vertical = 8.dp),
         )
         found.matches.forEach { match -> SourceRow(match, selected = match.lyrics == found.lyrics, songMs) { onChoose(match.providerId) } }
         missing.forEach { name ->
             Text(
-                "$name has no lyrics for this song", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                stringResource(R.string.player_source_has_none, name), style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(horizontal = SitaraSpacing.Gutter, vertical = 12.dp),
             )
         }
@@ -196,8 +203,8 @@ fun LyricsSourceList(state: PlayerUiState, onChoose: (providerId: String) -> Uni
 private fun SourceRow(match: LyricsMatch, selected: Boolean, songMs: Long, onClick: () -> Unit) {
     val lyrics = match.lyrics
     val details = listOfNotNull(
-        if (lyrics.synced) "Synced" else "Plain",
-        if (lyrics.lines.size == 1) "1 line" else "${lyrics.lines.size} lines",
+        stringResource(if (lyrics.synced) R.string.player_synced else R.string.player_plain),
+        pluralStringResource(R.plurals.player_line_count, lyrics.lines.size, lyrics.lines.size),
         lengthLabel(lyrics.matched?.durationMs, songMs),
     ).joinToString(" · ")
     Row(
@@ -218,12 +225,13 @@ private fun SourceRow(match: LyricsMatch, selected: Boolean, songMs: Long, onCli
 }
 
 /** How much longer or shorter the song the lyrics were filed under is, to the second; null when either length is unknown. */
+@Composable
 internal fun lengthLabel(matchedMs: Long?, songMs: Long): String? {
     if (matchedMs == null || matchedMs <= 0 || songMs <= 0) return null
     val seconds = (matchedMs - songMs) / 1_000
     return when {
-        seconds == 0L -> "same length"
-        seconds > 0 -> "$seconds s longer"
-        else -> "${-seconds} s shorter"
+        seconds == 0L -> stringResource(R.string.player_same_length)
+        seconds > 0 -> stringResource(R.string.player_seconds_longer, seconds)
+        else -> stringResource(R.string.player_seconds_shorter, -seconds)
     }
 }

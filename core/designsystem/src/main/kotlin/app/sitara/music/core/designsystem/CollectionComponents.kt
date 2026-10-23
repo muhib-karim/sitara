@@ -22,6 +22,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
@@ -63,10 +64,11 @@ fun ArtworkTile(
     onLongClick: (() -> Unit)? = null,
     covers: List<Artwork>? = null,
 ) {
+    val moreOptions = stringResource(R.string.ds_more_options)
     Column(
         // Only the top corners round: a full round clip cut the first letter of the subtitle's last line.
         modifier.clip(RoundedCornerShape(topStart = SitaraRadius.Tile, topEnd = SitaraRadius.Tile))
-            .combinedClickable(enabled = enabled, role = Role.Button, onClick = onClick, onLongClickLabel = onLongClick?.let { "More options" }, onLongClick = onLongClick)
+            .combinedClickable(enabled = enabled, role = Role.Button, onClick = onClick, onLongClickLabel = onLongClick?.let { moreOptions }, onLongClick = onLongClick)
             .semantics(mergeDescendants = true) {},
         verticalArrangement = Arrangement.spacedBy(4.dp),
     ) {
@@ -99,9 +101,10 @@ fun CollectionRow(
     covers: List<Artwork>? = null,
     onLongClick: (() -> Unit)? = null,
 ) {
+    val previewLabel = stringResource(R.string.ds_preview)
     Row(
         modifier.fillMaxWidth().clip(RoundedCornerShape(SitaraRadius.Cover))
-            .combinedClickable(enabled = enabled, role = Role.Button, onClick = onClick, onLongClickLabel = onLongClick?.let { "Preview" }, onLongClick = onLongClick)
+            .combinedClickable(enabled = enabled, role = Role.Button, onClick = onClick, onLongClickLabel = onLongClick?.let { previewLabel }, onLongClick = onLongClick)
             .semantics(mergeDescendants = true) {}
             .padding(vertical = 8.dp),
         verticalAlignment = Alignment.CenterVertically,

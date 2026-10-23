@@ -34,6 +34,7 @@ import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.style.TextOverflow
@@ -48,9 +49,10 @@ import app.sitara.music.core.model.ShareTarget
 @Composable
 fun QrCodeImage(text: String, modifier: Modifier = Modifier) {
     val code = remember(text) { QrCode.encode(text) }
+    val description = stringResource(R.string.ds_qr_code_for, text)
     Canvas(
         modifier.aspectRatio(1f).clip(RoundedCornerShape(SitaraRadius.Cover)).background(Color.White).testTag("qr-code")
-            .semantics { contentDescription = "QR code for $text" },
+            .semantics { contentDescription = description },
     ) {
         val cell = size.minDimension / (code.size + 2 * QUIET_ZONE)
         for (y in 0 until code.size) {
@@ -80,8 +82,8 @@ fun ShareSheetContent(target: ShareTarget, onSendLink: () -> Unit, onShareImage:
             Text(target.link, style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant, maxLines = 2, overflow = TextOverflow.Ellipsis)
         }
         Row(Modifier.padding(top = 16.dp, bottom = 8.dp), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-            PillButton("Send link", onSendLink)
-            PillButton("Share QR image", onShareImage, primary = false)
+            PillButton(stringResource(R.string.ds_send_link), onSendLink)
+            PillButton(stringResource(R.string.ds_share_qr_image), onShareImage, primary = false)
         }
     }
 }
@@ -94,7 +96,7 @@ fun shareText(context: Context, text: String, title: String) {
 
 /** A 1080 × 1280 card with [target]'s QR code and name, offered to the share sheet as a PNG. */
 suspend fun shareQrCard(context: Context, target: ShareTarget) {
-    shareImage(context, qrCard(target), "sitara-qr.png", "Share QR code")
+    shareImage(context, qrCard(target), "sitara-qr.png", context.getString(R.string.ds_share_qr_code))
 }
 
 /** The shared card: white, the code with its quiet zone, then the title and subtitle under it. */

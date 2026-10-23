@@ -1,0 +1,158 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Now Playing: top bar, tabs and heading -->
+    <string name="player_collapse">প্লেয়ার ছোট করুন</string>
+    <string name="player_tab_playing">বাজছে</string>
+    <string name="player_tab_lyrics">গানের কথা</string>
+    <string name="player_up_next">পরের গান</string>
+    <string name="player_open_artist">শিল্পীর পাতা খুলুন</string>
+    <string name="player_like">পছন্দ করুন</string>
+    <string name="player_unlike">পছন্দের গান থেকে সরান</string>
+    <string name="player_open_queue">সামনের তালিকা খুলুন</string>
+    <string name="player_more_options">আরও বিকল্প</string>
+
+    <!-- Transport and scrubber -->
+    <string name="player_shuffle">এলোমেলো</string>
+    <string name="player_state_on">চালু</string>
+    <string name="player_state_off">বন্ধ</string>
+    <string name="player_previous_track">আগের গান</string>
+    <string name="player_next_track">পরের গান</string>
+    <string name="player_try_again">আবার চেষ্টা করুন</string>
+    <string name="player_pause">থামান</string>
+    <string name="player_play">চালান</string>
+    <string name="player_repeat">রিপিট</string>
+    <string name="player_repeat_off">বন্ধ</string>
+    <string name="player_repeat_all">সব গান</string>
+    <string name="player_repeat_one">একটি গান</string>
+    <string name="player_playback_failed">এই গানটি চালানো গেল না</string>
+    <string name="player_skip">বাদ দিন</string>
+    <string name="player_seek">গানের অবস্থান</string>
+    <string name="player_automix_readout">অটোমিক্স · %1$d → %2$d BPM · %3$d বার</string>
+    <string name="player_automix_description">অটোমিক্স: %3$d বার ধরে মিনিটে %1$d থেকে %2$d বিটে মেলানো হচ্ছে</string>
+    <string name="player_stream_format">%1$s · %2$d kbps</string>
+    <string name="player_streaming_description">%1$s, প্রতি সেকেন্ডে %2$d কিলোবিট হারে স্ট্রিম হচ্ছে</string>
+
+    <!-- Mini player -->
+    <string name="player_open_player">প্লেয়ার খুলুন</string>
+    <string name="player_skip_to_next">পরের গানে যান</string>
+
+    <!-- More options and song volume -->
+    <string name="player_add_to_playlist">প্লেলিস্টে যোগ করুন</string>
+    <string name="player_equaliser">ইকুয়ালাইজার</string>
+    <string name="player_song_volume">এই গানের ভলিউম</string>
+    <string name="player_reset">রিসেট</string>
+    <string name="player_trim">সমন্বয়</string>
+    <string name="player_volume_for">%1$s-এর ভলিউম</string>
+    <string name="player_song_volume_hint">অন্য গানের চেয়ে জোরে বা আস্তে মাস্টার করা গানের জন্য। Sitara এটি গানের সঙ্গে রেখে দেয় এবং প্রতিবার বাজানোর সময় প্রয়োগ করে।</string>
+
+    <!-- Lyrics -->
+    <string name="player_lyrics_credit">গানের কথা: %1$s</string>
+    <string name="player_lyrics_loading">গানের কথা খোঁজা হচ্ছে…</string>
+    <string name="player_lyrics_not_found">গানের কথা পাওয়া যায়নি</string>
+    <string name="player_lyrics_not_found_in">%1$s-এ গানের কথা পাওয়া যায়নি</string>
+    <string name="player_lyrics_not_found_in_either">%1$s বা %2$s-এ গানের কথা পাওয়া যায়নি</string>
+    <string name="player_lyrics_failed">গানের কথা লোড হয়নি। সংযোগ দেখে আবার চেষ্টা করুন।</string>
+    <string name="player_cancel">বাতিল</string>
+    <plurals name="player_share_lines">
+        <item quantity="one">%1$d লাইন শেয়ার করুন</item>
+        <item quantity="other">%1$d লাইন শেয়ার করুন</item>
+    </plurals>
+    <string name="player_lyrics_not_synced">এই গানের কথা সময়ের সঙ্গে মেলানো নয়</string>
+    <string name="player_pick_for_card">গানের কথার কার্ডের জন্য বাছুন</string>
+    <string name="player_back_to_current_line">এখনকার লাইনে ফিরুন</string>
+
+    <!-- Lyrics toolbar, sources and translation -->
+    <string name="player_share_lyrics">গানের কথা শেয়ার করুন</string>
+    <string name="player_translate">অনুবাদ</string>
+    <string name="player_translating_to">%1$s-এ অনুবাদ হচ্ছে…</string>
+    <string name="player_translated_from">MyMemory %1$s থেকে অনুবাদ করেছে</string>
+    <string name="player_translated">MyMemory অনুবাদ করেছে</string>
+    <string name="player_translation_offline">আপনি অফলাইনে আছেন। অনুবাদ করতে ইন্টারনেটে যুক্ত হন।</string>
+    <string name="player_translation_daily_limit">MyMemory-র আজকের বিনামূল্যের অনুবাদ শেষ। কাল আবার চেষ্টা করুন।</string>
+    <string name="player_translation_same_language">এই গানের কথা আগে থেকেই %1$s-এ আছে।</string>
+    <string name="player_translation_service">MyMemory এই গানের কথা অনুবাদ করতে পারেনি।</string>
+    <string name="player_translate_into_change">%1$s-এ অনুবাদ। ভাষা বদলান</string>
+    <string name="player_translate_into">যে ভাষায় অনুবাদ হবে</string>
+    <string name="player_source_synced">উৎস: %1$s, সময়-মেলানো</string>
+    <string name="player_source_plain">উৎস: %1$s, সাধারণ</string>
+    <string name="player_source_unknown">অজানা</string>
+    <string name="player_lyrics_source">গানের কথার উৎস</string>
+    <string name="player_source_has_none">%1$s-এ এই গানের কথা নেই</string>
+    <string name="player_synced">সময়-মেলানো</string>
+    <string name="player_plain">সাধারণ</string>
+    <plurals name="player_line_count">
+        <item quantity="one">%1$d লাইন</item>
+        <item quantity="other">%1$d লাইন</item>
+    </plurals>
+    <string name="player_same_length">একই দৈর্ঘ্য</string>
+    <string name="player_seconds_longer">%1$d সেকেন্ড বেশি</string>
+    <string name="player_seconds_shorter">%1$d সেকেন্ড কম</string>
+
+    <!-- Lyric cards -->
+    <string name="player_share_image">ছবি শেয়ার করুন</string>
+    <string name="player_card_style_artwork">কভার</string>
+    <string name="player_card_style_colour">রং</string>
+    <string name="player_card_style_light">হালকা</string>
+    <string name="player_lyric_card_description">গানের কথার কার্ড: %1$s। %3$s-এর %2$s। %4$s</string>
+
+    <!-- Up next -->
+    <string name="player_removed">%1$s সরানো হয়েছে</string>
+    <string name="player_undo">ফিরিয়ে আনুন</string>
+    <string name="player_now_playing">এখন বাজছে</string>
+    <string name="player_save_as_playlist">প্লেলিস্ট হিসেবে সেভ করুন</string>
+    <string name="player_queue_end">তালিকার শেষে পৌঁছে গেছেন</string>
+    <string name="player_remove_from_queue">তালিকা থেকে সরান</string>
+    <string name="player_up_next_from_radio">রেডিও থেকে পরের গান</string>
+    <string name="player_remove_track_from_queue">%1$s তালিকা থেকে সরান</string>
+    <string name="player_start_radio">রেডিও চালু করুন</string>
+    <string name="player_radio_loading">একই ধরনের গান খোঁজা হচ্ছে…</string>
+    <string name="player_radio_unavailable">এর মতো কোনো গান পাওয়া যায়নি</string>
+
+    <!-- Sleep timer -->
+    <string name="player_sleep_timer">ঘুমের টাইমার</string>
+    <string name="player_sleep_end_of_song">এই গান শেষ হলে থামবে</string>
+    <string name="player_sleep_pauses_in">%1$s পরে থামবে</string>
+    <string name="player_minutes">%1$d মিনিট</string>
+    <string name="player_hours">%1$d ঘণ্টা</string>
+    <string name="player_hours_minutes">%1$d ঘণ্টা %2$d মিনিট</string>
+    <string name="player_extend_minutes">+%1$d মিনিট</string>
+    <string name="player_turn_off">বন্ধ করুন</string>
+    <string name="player_pause_after">কতক্ষণ পরে থামবে</string>
+    <string name="player_end_of_song">এই গানের শেষে</string>
+    <string name="player_custom">কাস্টম</string>
+    <string name="player_one_minute_less">এক মিনিট কম</string>
+    <string name="player_custom_minutes">কাস্টম মিনিট</string>
+    <string name="player_one_minute_more">এক মিনিট বেশি</string>
+    <string name="player_start_timer">%1$s-এর টাইমার চালু করুন</string>
+
+    <!-- Speed and pitch -->
+    <string name="player_speed_and_pitch">গতি ও স্বর</string>
+    <string name="player_tuning_state">%1$s, %2$s</string>
+    <string name="player_speed">গতি</string>
+    <string name="player_pitch">স্বর</string>
+    <string name="player_original_key">মূল স্কেল</string>
+    <plurals name="player_pitch_up">
+        <item quantity="one">+%1$d সেমিটোন</item>
+        <item quantity="other">+%1$d সেমিটোন</item>
+    </plurals>
+    <plurals name="player_pitch_down">
+        <item quantity="one">−%1$d সেমিটোন</item>
+        <item quantity="other">−%1$d সেমিটোন</item>
+    </plurals>
+    <string name="player_tuning_hint">স্বর গতি না বদলে স্কেল বদলায়। দুটোই প্লেব্যাক থামা পর্যন্ত থাকে; যেকোনো গতিতে গানের কথা তাল মিলিয়ে চলে।</string>
+
+    <!-- Equaliser -->
+    <string name="player_band_khz">%1$d kHz</string>
+    <string name="player_band_hz">%1$d Hz</string>
+    <string name="player_db_boost">+%1$d dB</string>
+    <string name="player_db_cut">−%1$d dB</string>
+    <string name="player_db_zero">0 dB</string>
+    <string name="player_phone_equaliser">ফোনের ইকুয়ালাইজার</string>
+    <string name="player_back">ফিরে যান</string>
+    <string name="player_use_phone_equaliser">ফোনের ইকুয়ালাইজার ব্যবহার করুন</string>
+    <string name="player_use_phone_equaliser_summary">আপনার ফোনের ইকুয়ালাইজার শব্দ সাজানোর সময় Sitara-র ব্যান্ডগুলো বন্ধ থাকে</string>
+    <string name="player_open_phone_equaliser">ফোনের ইকুয়ালাইজার খুলুন</string>
+    <string name="player_equaliser_off_summary">গান যেভাবে মাস্টার করা, সেভাবেই বাজে</string>
+    <string name="player_preamp">প্রিঅ্যাম্প</string>
+    <string name="player_preamp_hint">জোরালো গান চাপা শোনালে প্রিঅ্যাম্প কমান: লিমিটার বাড়ানো শব্দকে ক্লিপ হতে দেয় না।</string>
+</resources>

@@ -8,6 +8,7 @@ import androidx.activity.compose.BackHandler
 import androidx.activity.compose.LocalActivity
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.StringRes
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -56,6 +57,7 @@ import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.semantics
@@ -134,11 +136,11 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
 import kotlinx.coroutines.launch
 
-enum class Tab(val label: String, val icon: ImageVector) {
-    HOME("Home", SitaraIcons.Home),
-    SEARCH("Search", SitaraIcons.Search),
-    LIBRARY("Library", SitaraIcons.Library),
-    SETTINGS("Settings", SitaraIcons.Settings),
+enum class Tab(@StringRes val label: Int, val icon: ImageVector) {
+    HOME(R.string.app_tab_home, SitaraIcons.Home),
+    SEARCH(R.string.app_tab_search, SitaraIcons.Search),
+    LIBRARY(R.string.app_tab_library, SitaraIcons.Library),
+    SETTINGS(R.string.app_tab_settings, SitaraIcons.Settings),
 }
 
 @Composable
@@ -528,16 +530,17 @@ fun SitaraShell(
                 shareTarget?.let { target ->
                     val context = LocalContext.current
                     val scope = rememberCoroutineScope()
+                    val shareLinkTitle = stringResource(R.string.app_share_link)
                     SitaraSheet(onDismiss = { shareTarget = null }) { close ->
                         ShareSheetContent(
                             target,
-                            onSendLink = { close { shareText(context, "${target.title}: ${target.link}", "Share link") } },
+                            onSendLink = { close { shareText(context, "${target.title}: ${target.link}", shareLinkTitle) } },
                             onShareImage = { close { scope.launch { shareQrCard(context, target) } } },
                         )
                     }
                 }
                 queueToSave?.let { tracks ->
-                    PlaylistNameSheet("Save queue as playlist", "", "Save", onConfirm = { queueToSave = null; libraryActions.createPlaylist(it, tracks) }, onDismiss = { queueToSave = null })
+                    PlaylistNameSheet(stringResource(R.string.app_save_queue_as_playlist), "", stringResource(R.string.app_save), onConfirm = { queueToSave = null; libraryActions.createPlaylist(it, tracks) }, onDismiss = { queueToSave = null })
                 }
                 playlistTrack?.let { track ->
                     SitaraSheet(onDismiss = { playlistTrack = null }) { close ->
@@ -564,9 +567,10 @@ private fun FloatingNav(selected: Tab, accent: Color, folded: Boolean, onSelect:
     val content = MaterialTheme.colorScheme.onSurface
     val indicator = content.copy(alpha = 0.10f)
     if (folded) {
+        val unfoldLabel = stringResource(R.string.app_tab_show_all, stringResource(selected.label))
         Box(
             Modifier.padding(start = 8.dp).size(SitaraSpacing.TouchTarget).clip(CircleShape).background(indicator)
-                .clickable(role = Role.Button, onClick = onUnfold).semantics { contentDescription = "${selected.label}, show all tabs" },
+                .clickable(role = Role.Button, onClick = onUnfold).semantics { contentDescription = unfoldLabel },
             contentAlignment = Alignment.Center,
         ) {
             Icon(selected.icon, null, tint = accent, modifier = Modifier.size(22.dp))
@@ -589,7 +593,7 @@ private fun FloatingNav(selected: Tab, accent: Color, folded: Boolean, onSelect:
                     Icon(tab.icon, null, tint = if (active) accent else content.copy(alpha = 0.65f), modifier = Modifier.size(22.dp))
                 }
                 Text(
-                    tab.label,
+                    stringResource(tab.label),
                     color = if (active) content else content.copy(alpha = 0.65f),
                     style = MaterialTheme.typography.labelSmall,
                     maxLines = 1,
@@ -609,13 +613,16 @@ private val PLAYLIST_FILE_TYPES = arrayOf(
     "application/octet-stream",
 )
 
+@Composable
 private fun greeting(): String {
     val hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY)
-    return when (hour) {
-        in 5..11 -> "Good morning"
-        in 12..17 -> "Good afternoon"
-        else -> "Good evening"
-    }
+    return stringResource(
+        when (hour) {
+            in 5..11 -> R.string.app_greeting_morning
+            in 12..17 -> R.string.app_greeting_afternoon
+            else -> R.string.app_greeting_evening
+        },
+    )
 }
 
 /** Sitara's page in the system settings, where a permission the system no longer asks for can be granted. */

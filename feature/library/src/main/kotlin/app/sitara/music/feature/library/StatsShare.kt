@@ -28,6 +28,7 @@ import androidx.compose.ui.graphics.layer.drawLayer
 import androidx.compose.ui.graphics.rememberGraphicsLayer
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.text.font.FontWeight
@@ -43,6 +44,7 @@ import app.sitara.music.core.designsystem.SitaraIcons
 import app.sitara.music.core.designsystem.SitaraRadius
 import app.sitara.music.core.designsystem.SitaraSheet
 import app.sitara.music.core.designsystem.SitaraSpacing
+import app.sitara.music.core.designsystem.displayName
 import app.sitara.music.core.designsystem.shareImage
 import app.sitara.music.core.model.ListeningStats
 import app.sitara.music.core.model.StatsRange
@@ -57,11 +59,12 @@ internal fun StatsShareSheet(stats: ListeningStats, range: StatsRange, onDismiss
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val card = rememberGraphicsLayer()
+    val title = stringResource(R.string.library_stats_share)
     SitaraSheet(onDismiss) { close ->
         Column(Modifier.verticalScroll(rememberScrollState()).padding(start = SitaraSpacing.Gutter, end = SitaraSpacing.Gutter, bottom = 24.dp)) {
             Row(Modifier.fillMaxWidth().padding(bottom = 16.dp), verticalAlignment = Alignment.CenterVertically) {
-                Text("Share your stats", style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
-                PillButton("Share image", { scope.launch { shareImage(context, card.toImageBitmap().asAndroidBitmap(), "sitara-stats.png", "Share your stats"); close {} } })
+                Text(title, style = MaterialTheme.typography.titleLarge, color = MaterialTheme.colorScheme.onSurface, modifier = Modifier.weight(1f))
+                PillButton(stringResource(R.string.library_share_image), { scope.launch { shareImage(context, card.toImageBitmap().asAndroidBitmap(), "sitara-stats.png", title); close {} } })
             }
             StatsShareCard(
                 stats, range,
@@ -83,12 +86,15 @@ internal fun StatsShareSheet(stats: ListeningStats, range: StatsRange, onDismiss
 fun StatsShareCard(stats: ListeningStats, range: StatsRange, modifier: Modifier = Modifier) {
     val top = stats.topSongs.take(CARD_SONGS)
     val artist = stats.topArtists.firstOrNull()
-    val heading = "${range.label} on Sitara"
+    val heading = stringResource(R.string.library_share_heading, range.displayName())
     val summary = listOfNotNull(
         heading,
-        "${formatListening(stats.listenedMs)} listened",
-        artist?.let { "Top artist: ${it.name}" },
-        "Top songs: " + top.mapIndexed { i, song -> "${i + 1}, ${song.track.title} by ${song.track.artist}" }.joinToString("; "),
+        stringResource(R.string.library_share_listened_summary, formatListening(stats.listenedMs)),
+        artist?.let { stringResource(R.string.library_share_top_artist_summary, it.name) },
+        stringResource(
+            R.string.library_share_top_songs_summary,
+            top.mapIndexed { i, song -> stringResource(R.string.library_share_song_entry, i + 1, song.track.title, song.track.artist) }.joinToString("; "),
+        ),
     ).joinToString(". ")
     Box(
         modifier.fillMaxWidth().aspectRatio(9f / 16f).clip(RoundedCornerShape(SitaraRadius.Artwork))
@@ -103,17 +109,17 @@ fun StatsShareCard(stats: ListeningStats, range: StatsRange, modifier: Modifier 
             top.firstOrNull()?.let { ArtworkImage(it.track.artwork, Modifier.padding(top = 20.dp).fillMaxWidth(0.42f), cornerRadius = SitaraRadius.Tile) }
             Spacer(Modifier.weight(1f))
             Text(formatListening(stats.listenedMs), style = MaterialTheme.typography.displaySmall, fontWeight = FontWeight.Bold, color = SitaraColors.StageContent)
-            Text("listened", style = MaterialTheme.typography.titleMedium, color = SitaraColors.StageSecondary)
+            Text(stringResource(R.string.library_share_listened), style = MaterialTheme.typography.titleMedium, color = SitaraColors.StageSecondary)
             artist?.let {
                 Row(Modifier.padding(top = 16.dp), verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                     ArtworkImage(it.artwork, Modifier.size(44.dp), cornerRadius = 500.dp)
                     Column {
-                        Text("Top artist", style = MaterialTheme.typography.labelMedium, color = SitaraColors.StageSecondary)
+                        Text(stringResource(R.string.library_share_top_artist), style = MaterialTheme.typography.labelMedium, color = SitaraColors.StageSecondary)
                         Text(it.name, style = MaterialTheme.typography.titleMedium, color = SitaraColors.StageContent, maxLines = 1, overflow = TextOverflow.Ellipsis)
                     }
                 }
             }
-            Text("Top songs", style = MaterialTheme.typography.labelMedium, color = SitaraColors.StageSecondary, modifier = Modifier.padding(top = 16.dp))
+            Text(stringResource(R.string.library_top_songs), style = MaterialTheme.typography.labelMedium, color = SitaraColors.StageSecondary, modifier = Modifier.padding(top = 16.dp))
             top.forEachIndexed { i, song ->
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Text(
