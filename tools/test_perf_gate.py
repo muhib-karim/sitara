@@ -1,6 +1,6 @@
 import unittest
 
-from perf_gate import check, janky_percent, total_time_ms
+from perf_gate import check, frame_percentile_ms, janky_percent, total_time_ms
 
 
 class PerfGateTest(unittest.TestCase):
@@ -14,12 +14,18 @@ class PerfGateTest(unittest.TestCase):
         self.assertEqual(8.98, janky_percent(out))
         self.assertIsNone(janky_percent("No process found"))
 
+    def test_reads_frame_percentiles_from_gfxinfo(self):
+        out = "Janky frames: 412 (100.00%)\n50th percentile: 57ms\n90th percentile: 89ms\n95th percentile: 101ms\n"
+        self.assertEqual(57, frame_percentile_ms(out, 50))
+        self.assertEqual(89, frame_percentile_ms(out, 90))
+        self.assertIsNone(frame_percentile_ms("nothing", 90))
+
     def test_gates_fail_past_their_threshold_or_when_unmeasured(self):
-        limits = {"cold_start_ms": 3000, "janky_frames_percent": 20}
-        self.assertEqual([], check({"cold_start_ms": 2500, "janky_frames_percent": 10.0}, limits))
+        limits = {"cold_start_ms": 3000, "frame_p90_ms": 150}
+        self.assertEqual([], check({"cold_start_ms": 2500, "frame_p90_ms": 90, "janky_frames_percent": 100.0}, limits))
         self.assertEqual(
-            ["cold_start_ms: 3200 is over 3000", "janky_frames_percent: not measured"],
-            check({"cold_start_ms": 3200, "janky_frames_percent": None}, limits),
+            ["cold_start_ms: 3200 is over 3000", "frame_p90_ms: not measured"],
+            check({"cold_start_ms": 3200, "frame_p90_ms": None}, limits),
         )
 
 

@@ -1,5 +1,5 @@
 {
-  "comment": "Device screens (API 34 emulator, software rendering) fails when a median goes past these. Set from the first measured runs with headroom for the emulator's noise; see docs/reports/REPORT_v100.md.",
-  "cold_start_ms": 6000,
-  "janky_frames_percent": 60
+  "comment": "Device screens (API 34 emulator, software rendering) fails when a median goes past these. Cold start measured 1,549 ms (median of five) on 2026-10-23; every frame misses 16 ms there, so the scrolling gate is the 90th percentile frame time, set loose until measured runs tighten it. See docs/reports/REPORT_v100.md.",
+  "cold_start_ms": 3500,
+  "frame_p90_ms": 250
 }
