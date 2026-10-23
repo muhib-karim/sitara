@@ -133,6 +133,7 @@ class AppViewModel(private val app: SitaraApplication) :
 
     /** Settings → Backup and restore; a backup or restore under way outlives the page. */
     val backups = Backups(viewModelScope, app.library.backups, app.settings, app.contentResolver)
+    val exports get() = app.exports
 
     /** Requests to open Import playlist (a shared playlist link), buffered until the UI collects them. */
     val requestedImport: Flow<Unit> = importRequests.receiveAsFlow()

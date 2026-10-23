@@ -4,7 +4,9 @@ import android.app.Application
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.content.Context
+import android.graphics.Bitmap
 import android.net.ConnectivityManager
+import android.net.Uri
 import android.util.Log
 import androidx.glance.appwidget.updateAll
 import androidx.media3.datasource.cache.Cache
@@ -12,6 +14,7 @@ import app.sitara.music.core.data.SettingsRepository
 import app.sitara.music.core.data.library.LibraryStore
 import app.sitara.music.core.data.library.PlayHistoryRepository
 import app.sitara.music.core.data.scrobble.ScrobbleAccounts
+import app.sitara.music.core.designsystem.loadCoverArt
 import app.sitara.music.core.designsystem.sitaraImageLoader
 import app.sitara.music.core.model.AudioQuality
 import app.sitara.music.core.model.CachedLyrics
@@ -47,6 +50,7 @@ import app.sitara.music.widget.WidgetState
 import app.sitara.music.widget.shownWidgetStates
 import app.sitara.music.widget.widgetState
 import coil3.SingletonImageLoader
+import java.io.ByteArrayOutputStream
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -65,6 +69,7 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 
 /** Keeps [listen] unless the listener paused listening history; the setting is read at the moment of the play. */
 internal suspend fun PlayHistoryRepository.recordUnlessPaused(listen: Listen, settings: Flow<SitaraSettings>) {
@@ -127,6 +132,22 @@ class SitaraApplication :
     override val downloadCache: Cache get() = songDownloads.cache
     override val playbackSettings get() = settings.settings
     val player by lazy { PlayerController(this, appScope) }
+
+    /** Downloads exported to a picked folder; on the app's scope so an export outlives the screen that started it. */
+    val exports by lazy {
+        val exporter = DownloadExporter(
+            downloaded = songDownloads::downloaded,
+            readWhole = songDownloads::readWhole,
+            lyrics = library.lyrics,
+            lyricSources = listOf("lrclib", "youtube-music"),
+            cover = { track -> exportCover(track) },
+        )
+        DownloadExports(appScope, exporter) { tree -> DocumentTreeFolder(contentResolver, Uri.parse(tree)) }
+    }
+
+    private suspend fun exportCover(track: Track): ByteArray? = loadCoverArt(this, track.artwork, EXPORT_COVER_PX)?.bitmap?.let { bitmap ->
+        withContext(Dispatchers.Default) { ByteArrayOutputStream().also { bitmap.compress(Bitmap.CompressFormat.JPEG, 90, it) }.toByteArray() }
+    }
 
     /** Last.fm (when the build has its API key) and ListenBrainz; a song is in the library when it is liked or in a playlist. */
     val scrobbling by lazy {
@@ -228,5 +249,6 @@ class SitaraApplication :
 
     private companion object {
         const val RECENT_IN_CAR = 100
+        const val EXPORT_COVER_PX = 600
     }
 }

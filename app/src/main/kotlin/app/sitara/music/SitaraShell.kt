@@ -67,6 +67,7 @@ import app.sitara.music.core.designsystem.SitaraSpacing
 import app.sitara.music.core.designsystem.SitaraTheme
 import app.sitara.music.core.model.Album
 import app.sitara.music.core.model.Artist
+import app.sitara.music.core.model.DownloadExport
 import app.sitara.music.core.model.LibrarySort
 import app.sitara.music.core.model.LocalFolder
 import app.sitara.music.core.model.PlaylistSummary
@@ -145,6 +146,7 @@ fun SitaraRoot(vm: AppViewModel, systemReducedMotion: Boolean) {
     val scrobbling by vm.scrobbling.state.collectAsState()
     val local by vm.local.collectAsState()
     val backup by vm.backups.state.collectAsState()
+    val export by vm.exports.state.collectAsState()
     SitaraShell(
         settings = settings.let { if (systemReducedMotion) it.copy(reducedMotion = true) else it },
         home = home,
@@ -181,6 +183,8 @@ fun SitaraRoot(vm: AppViewModel, systemReducedMotion: Boolean) {
         localActions = vm,
         backup = backup,
         backupActions = vm.backups,
+        export = export,
+        onExportDownloads = vm.exports::export,
     )
 }
 
@@ -228,6 +232,9 @@ fun SitaraShell(
     localActions: LocalActions = LocalActions.None,
     backup: BackupStatus = BackupStatus.Idle,
     backupActions: BackupActions = BackupActions.None,
+    export: DownloadExport = DownloadExport.Idle,
+    /** Exports downloads to the folder (a tree URI) the listener picked. */
+    onExportDownloads: (String) -> Unit = {},
 ) {
     var tab by rememberSaveable { mutableStateOf(if (initialSettingsOpen) Tab.SETTINGS else initialTab) }
     var detailStack by rememberSaveable(stateSaver = DetailStackSaver) { mutableStateOf(listOfNotNull(initialDetail)) }
@@ -269,6 +276,8 @@ fun SitaraShell(
     }
     val createBackup = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument(BACKUP_TYPE)) { uri -> uri?.let { backupActions.backUp(it.toString()) } }
     val openBackup = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> uri?.let { backupActions.restore(it.toString()) } }
+    // The folder picker's grant lasts while the app runs, long enough for one export; nothing is kept.
+    val pickExportFolder = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocumentTree()) { uri -> uri?.let { onExportDownloads(it.toString()) } }
     val activity = LocalActivity.current
     val askMusicAccess = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
         // Once the system stops asking (denied for good), only Sitara's page in the system settings can grant it.
@@ -424,6 +433,8 @@ fun SitaraShell(
                                 library = libraryActions,
                                 contentPadding = contentPadding,
                                 localSongs = local.songs.size,
+                                export = export,
+                                onExportDownloads = { pickExportFolder.launch(null) },
                             )
                             Tab.SETTINGS -> if (equaliserOpen) {
                                 EqualiserScreen(
@@ -442,6 +453,8 @@ fun SitaraShell(
                                     onOpenBackup = { open(DetailRoute.Backup) },
                                     scrobblingSummary = scrobbling.summary,
                                     onOpenScrobbling = { open(DetailRoute.Scrobbling) },
+                                    export = export,
+                                    onExportDownloads = { pickExportFolder.launch(null) },
                                 )
                             }
                         }

@@ -32,6 +32,7 @@ import app.sitara.music.core.designsystem.SitaraTheme
 import app.sitara.music.core.model.AccentColor
 import app.sitara.music.core.model.Artwork
 import app.sitara.music.core.model.DarkMode
+import app.sitara.music.core.model.DownloadExport
 import app.sitara.music.core.model.DownloadState
 import app.sitara.music.core.model.EqualiserPreset
 import app.sitara.music.core.model.EqualiserSettings
@@ -212,6 +213,7 @@ class ScreenshotTest {
         scrobbling: ScrobblingState = ScrobblingState(),
         local: LocalLibraryState = LocalLibraryState(),
         backup: BackupStatus = BackupStatus.Idle,
+        export: DownloadExport = DownloadExport.Idle,
         beforeCapture: () -> Unit = {},
     ) {
         val settings = SitaraSettings(
@@ -250,6 +252,7 @@ class ScreenshotTest {
                     scrobbling = scrobbling,
                     local = local,
                     backup = backup,
+                    export = export,
                 )
             }
         }
@@ -637,6 +640,17 @@ class ScreenshotTest {
 
     @Test fun settingsDownloads() = shot("settings_downloads", dark = true, settingsOpen = true, downloads = Fixtures.downloads) {
         compose.onNodeWithTag("settings-content").performScrollToKey("downloads")
+    }
+    @Test fun settingsDownloadsExported() = shot(
+        "settings_downloads_exported", dark = true, settingsOpen = true, downloads = Fixtures.downloads,
+        export = DownloadExport.Done(exported = 12, withLyrics = 9, untagged = 0, skipped = 1),
+    ) {
+        compose.onNodeWithTag("settings-content").performScrollToKey("downloads")
+    }
+    @Test fun libraryDownloadsExporting() = shot(
+        "library_downloads_exporting", dark = false, tab = Tab.LIBRARY, downloads = Fixtures.downloads, export = DownloadExport.Working(done = 4, total = 12),
+    ) {
+        compose.onNode(hasText("Downloads") and isSelectable()).performSemanticsAction(SemanticsActions.OnClick)
     }
 
     private val rock = EqualiserSettings().withPreset(EqualiserPreset.ROCK)

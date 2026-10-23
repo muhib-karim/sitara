@@ -59,6 +59,7 @@ import app.sitara.music.core.designsystem.ArtworkImage
 import app.sitara.music.core.designsystem.ArtworkTile
 import app.sitara.music.core.designsystem.CollectionRow
 import app.sitara.music.core.designsystem.EmptyCollectionArtwork
+import app.sitara.music.core.designsystem.HeaderAction
 import app.sitara.music.core.designsystem.LargeTitle
 import app.sitara.music.core.designsystem.PillButton
 import app.sitara.music.core.designsystem.PlaceholderBlock
@@ -70,10 +71,12 @@ import app.sitara.music.core.designsystem.SitaraSheet
 import app.sitara.music.core.designsystem.SitaraSpacing
 import app.sitara.music.core.designsystem.TrackRow
 import app.sitara.music.core.designsystem.byline
+import app.sitara.music.core.designsystem.exportSummary
 import app.sitara.music.core.designsystem.rememberPlaceholderPulse
 import app.sitara.music.core.model.Album
 import app.sitara.music.core.model.Artist
 import app.sitara.music.core.model.Artwork
+import app.sitara.music.core.model.DownloadExport
 import app.sitara.music.core.model.DownloadState
 import app.sitara.music.core.model.LibraryLayout
 import app.sitara.music.core.model.LibrarySort
@@ -107,6 +110,8 @@ fun LibraryScreen(
     contentPadding: PaddingValues = PaddingValues(),
     /** Songs found on the phone, or null before the phone's music is read. */
     localSongs: Int? = null,
+    export: DownloadExport = DownloadExport.Idle,
+    onExportDownloads: () -> Unit = {},
 ) {
     var kind by rememberSaveable { mutableStateOf(LibraryKind.PLAYLISTS) }
     var naming by rememberSaveable { mutableStateOf(false) }
@@ -210,7 +215,7 @@ fun LibraryScreen(
                             tile = { artist, tile -> ArtworkTile(artist.name, "Artist", artist.artwork, { onArtist(artist) }, tile, round = true) },
                             row = { artist -> CollectionRow(artist.name, "Artist", artist.artwork, { onArtist(artist) }, Modifier.libraryRow()) },
                         )
-                        LibraryKind.DOWNLOADS -> downloadsSection(downloads, onPlay, library)
+                        LibraryKind.DOWNLOADS -> downloadsSection(downloads, onPlay, library, export, onExportDownloads)
                     }
                 }
             }
@@ -385,10 +390,25 @@ private fun LibrarySkeleton(columns: Int) {
     }
 }
 
-private fun LazyListScope.downloadsSection(downloads: List<SongDownload>, onPlay: (List<Track>, Int) -> Unit, actions: LibraryActions) {
+private fun LazyListScope.downloadsSection(
+    downloads: List<SongDownload>,
+    onPlay: (List<Track>, Int) -> Unit,
+    actions: LibraryActions,
+    export: DownloadExport,
+    onExport: () -> Unit,
+) {
     item(key = "downloads-heading") {
-        val summary = downloads.takeIf { it.isNotEmpty() }?.let { "${songCount(it.size)} · ${formatBytes(it.sumOf { download -> download.bytes })}" }
-        SectionHeader("Downloads", Modifier.padding(top = 16.dp), subtitle = summary)
+        val summary = exportSummary(export)
+            ?: downloads.takeIf { it.isNotEmpty() }?.let { "${songCount(it.size)} · ${formatBytes(it.sumOf { download -> download.bytes })}" }
+        val canExport = downloads.any { it.state == DownloadState.DOWNLOADED } && export !is DownloadExport.Working
+        SectionHeader(
+            "Downloads", Modifier.padding(top = 16.dp), subtitle = summary,
+            action = if (canExport) {
+                { HeaderAction("Export", onExport, description = "Export downloads to a folder") }
+            } else {
+                null
+            },
+        )
     }
     if (downloads.isEmpty()) {
         item(key = "downloads-empty") { LibraryMessage("Download a song from its menu, or a whole album with Download all, to play it offline.") }

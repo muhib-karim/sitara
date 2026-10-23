@@ -1,5 +1,7 @@
 package app.sitara.music
 
+import android.content.Intent
+import androidx.activity.ComponentActivity
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.assertCountEquals
@@ -7,7 +9,7 @@ import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.assertIsSelected
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isSelectable
-import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
 import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
@@ -19,6 +21,7 @@ import app.sitara.music.core.model.Album
 import app.sitara.music.core.model.Artist
 import app.sitara.music.core.model.Artwork
 import app.sitara.music.core.model.DarkMode
+import app.sitara.music.core.model.DownloadExport
 import app.sitara.music.core.model.LibraryLayout
 import app.sitara.music.core.model.LibrarySort
 import app.sitara.music.core.model.PlayCount
@@ -42,12 +45,13 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.Shadows.shadowOf
 import org.robolectric.annotation.Config
 
 @RunWith(RobolectricTestRunner::class)
 @Config(sdk = [35], qualifiers = "w411dp-h891dp-xxhdpi")
 class LibraryInteractionTest {
-    @get:Rule val compose = createComposeRule()
+    @get:Rule val compose = createAndroidComposeRule<ComponentActivity>()
 
     private fun art(color: Long) = Artwork(listOf(color.toInt()))
     private fun song(id: String, title: String) = Track(id, title, "Orchid Lane", "Paper Lanterns", 200_000, art(0xFF5B6CFF), artistId = "UC1")
@@ -71,7 +75,12 @@ class LibraryInteractionTest {
         override fun setLibrarySort(sort: LibrarySort) { settings.value = settings.value.copy(librarySort = sort) }
     }
 
-    private fun render(library: LibraryState = LibraryState.Ready(saved), downloads: List<SongDownload> = emptyList(), onPlay: (List<Track>, Int) -> Unit = { _, _ -> }) {
+    private fun render(
+        library: LibraryState = LibraryState.Ready(saved),
+        downloads: List<SongDownload> = emptyList(),
+        onPlay: (List<Track>, Int) -> Unit = { _, _ -> },
+        export: DownloadExport = DownloadExport.Idle,
+    ) {
         compose.setContent {
             SitaraShell(
                 settings = settings.value,
@@ -92,6 +101,7 @@ class LibraryInteractionTest {
                 initialTab = Tab.LIBRARY,
                 libraryActions = remembering,
                 downloads = downloads,
+                export = export,
             )
         }
     }
@@ -170,6 +180,26 @@ class LibraryInteractionTest {
         compose.onNode(hasText("A to Z") and isSelectable()).performClick()
         compose.waitForIdle()
         assertOrder("Road trip", "Weekend")
+    }
+
+    @Test fun exportingDownloadsAsksForAFolder() {
+        render(downloads = Fixtures.downloads)
+        kind("Downloads")
+        compose.onNodeWithContentDescription("Export downloads to a folder").performClick()
+        assertEquals(Intent.ACTION_OPEN_DOCUMENT_TREE, shadowOf(compose.activity).nextStartedActivity.action)
+    }
+
+    @Test fun anExportInProgressShowsItsCountAndCannotStartAnother() {
+        render(downloads = Fixtures.downloads, export = DownloadExport.Working(done = 2, total = 9))
+        kind("Downloads")
+        shows("Exporting 3 of 9")
+        compose.onNodeWithContentDescription("Export downloads to a folder").assertDoesNotExist()
+    }
+
+    @Test fun anExportSaysWhatItWroteAndWhatItSkipped() {
+        render(downloads = Fixtures.downloads, export = DownloadExport.Done(exported = 8, withLyrics = 5, untagged = 0, skipped = 1))
+        kind("Downloads")
+        shows("Exported 8 songs · 5 with lyrics · 1 skipped, not fully downloaded")
     }
 
     @Test fun downloadsAreRowsWithNoOrderOrLayoutToChoose() {

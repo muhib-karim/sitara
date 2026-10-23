@@ -49,9 +49,11 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.graphics.luminance
 import androidx.compose.ui.graphics.toArgb
 import androidx.compose.ui.platform.testTag
+import androidx.compose.ui.semantics.LiveRegionMode
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.liveRegion
 import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.unit.dp
@@ -66,9 +68,12 @@ import app.sitara.music.core.designsystem.SitaraRadius
 import app.sitara.music.core.designsystem.SitaraSheet
 import app.sitara.music.core.designsystem.SitaraSpacing
 import app.sitara.music.core.designsystem.accentTone
+import app.sitara.music.core.designsystem.exportSummary
 import app.sitara.music.core.model.AccentColor
 import app.sitara.music.core.model.AudioQuality
 import app.sitara.music.core.model.DarkMode
+import app.sitara.music.core.model.DownloadExport
+import app.sitara.music.core.model.DownloadState
 import app.sitara.music.core.model.SitaraSettings
 import app.sitara.music.core.model.SongDownload
 import kotlin.math.roundToInt
@@ -90,6 +95,8 @@ fun SettingsScreen(
     scrobblingSummary: String = "Off",
     onOpenScrobbling: () -> Unit = {},
     contentPadding: PaddingValues = PaddingValues(),
+    export: DownloadExport = DownloadExport.Idle,
+    onExportDownloads: () -> Unit = {},
 ) {
     LazyColumn(modifier.fillMaxSize().testTag("settings-content"), contentPadding = contentPadding) {
         item(key = "title") {
@@ -129,7 +136,7 @@ fun SettingsScreen(
             HistorySettings(settings, onChange, onOpenStats, onClearHistory, scrobblingSummary, onOpenScrobbling)
         }
         item(key = "downloads") {
-            DownloadSettings(settings, onChange, downloads, onRemoveAllDownloads)
+            DownloadSettings(settings, onChange, downloads, onRemoveAllDownloads, export, onExportDownloads)
         }
     }
 }
@@ -322,7 +329,14 @@ private fun HistorySettings(
 }
 
 @Composable
-private fun DownloadSettings(settings: SitaraSettings, onChange: (SitaraSettings) -> Unit, downloads: List<SongDownload>, onRemoveAll: () -> Unit) {
+private fun DownloadSettings(
+    settings: SitaraSettings,
+    onChange: (SitaraSettings) -> Unit,
+    downloads: List<SongDownload>,
+    onRemoveAll: () -> Unit,
+    export: DownloadExport,
+    onExport: () -> Unit,
+) {
     var confirming by rememberSaveable { mutableStateOf(false) }
     val songs = if (downloads.size == 1) "1 song" else "${downloads.size} songs"
     SettingsGroup("Downloads") {
@@ -339,6 +353,19 @@ private fun DownloadSettings(settings: SitaraSettings, onChange: (SitaraSettings
                 )
             }
             if (downloads.isNotEmpty() && !confirming) PillButton("Remove all", { confirming = true }, primary = false)
+        }
+        InsetDivider()
+        Row(Modifier.fillMaxWidth().padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
+            Column(Modifier.weight(1f).padding(end = 12.dp)) {
+                Text("Export to a folder", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.onSurface)
+                Text(
+                    exportSummary(export) ?: "Tagged files with their covers, and .lrc lyrics where there are synced lyrics, for any music app",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = if (export is DownloadExport.Failed) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite },
+                )
+            }
+            if (downloads.any { it.state == DownloadState.DOWNLOADED } && export !is DownloadExport.Working) PillButton("Export", onExport, primary = false)
         }
         if (downloads.isNotEmpty() && confirming) {
             Column(Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
