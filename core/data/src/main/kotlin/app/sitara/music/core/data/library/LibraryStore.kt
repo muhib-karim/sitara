@@ -7,6 +7,8 @@ import app.sitara.music.core.data.imports.ImportCatalogue
 import app.sitara.music.core.data.imports.PlaylistImporter
 import app.sitara.music.core.data.local.localIndex
 import app.sitara.music.core.data.scrobble.ScrobbleOutbox
+import app.sitara.music.core.model.SourceSongList
+import app.sitara.music.core.model.SpotifyLink
 
 /** The listener's library, songs on the phone, the saved play queue, cached lyrics, per-song volume trims, playlist imports and plays waiting to be scrobbled on this device; Room stays an implementation detail of this module. */
 class LibraryStore(context: Context) {
@@ -23,6 +25,7 @@ class LibraryStore(context: Context) {
     val backups = LibraryBackups(database.backup())
     val beats = SongBeatsRepository(database.songBeats())
 
-    /** Imports into [playlists] that look songs up in [catalogue]. */
-    fun importer(catalogue: ImportCatalogue) = PlaylistImporter(database.imports(), catalogue)
+    /** Imports into [playlists] that look songs up in [catalogue] and read public Spotify lists with [spotify]. */
+    fun importer(catalogue: ImportCatalogue, spotify: suspend (SpotifyLink) -> SourceSongList) =
+        PlaylistImporter(database.imports(), catalogue, spotify = spotify)
 }

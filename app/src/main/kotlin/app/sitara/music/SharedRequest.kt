@@ -3,6 +3,7 @@ package app.sitara.music
 import android.content.Intent
 import app.sitara.music.core.model.Track
 import app.sitara.music.feature.search.SearchState
+import app.sitara.music.source.spotify.spotifyLinkFrom
 import app.sitara.music.source.youtube.playlistIdFromLink
 import app.sitara.music.source.youtube.videoIdFromLink
 
@@ -27,12 +28,13 @@ fun autoplayTrack(state: SearchState, request: SharedRequest): Track? =
     (state as? SearchState.Loaded)?.takeIf { it.query == request.query }?.results?.tracks?.singleOrNull()?.takeIf { it.id == request.playVideoId }
 
 /**
- * A playlist link opened in or shared to Sitara, rebuilt from its validated id, for the import screen; null for anything
+ * A playlist link (YouTube, or a Spotify playlist or album) opened in or shared to Sitara, rebuilt from its validated id, for the import screen; null for anything
  * else, including a song played from a playlist, which plays the song.
  */
 fun sharedPlaylistLink(action: String?, data: String?, text: String?): String? {
     val payload = payload(action, data, text) ?: return null
     if (videoIdFromLink(payload) != null) return null
+    spotifyLinkFrom(payload)?.let { return "https://open.spotify.com/${it.kind.name.lowercase()}/${it.id}" }
     return playlistIdFromLink(payload)?.let { "https://music.youtube.com/playlist?list=$it" }
 }
 

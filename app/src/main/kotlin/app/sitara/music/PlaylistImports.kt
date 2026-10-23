@@ -9,6 +9,8 @@ import app.sitara.music.core.model.ImportResult
 import app.sitara.music.core.model.Track
 import app.sitara.music.feature.library.ImportActions
 import app.sitara.music.feature.library.ImportState
+import app.sitara.music.source.spotify.isSpotifySongLink
+import app.sitara.music.source.spotify.spotifyLinkFrom
 import app.sitara.music.source.youtube.playlistIdFromLink
 import java.io.IOException
 import kotlinx.coroutines.CoroutineScope
@@ -73,8 +75,15 @@ class PlaylistImports(
     }
 
     override fun importLink() {
-        val id = playlistIdFromLink(link.value)
-        if (id == null) phase.value = Phase.Start(ImportProblem.LINK_NOT_RECOGNISED) else start { importer.open(ImportSource.CataloguePlaylist(id)) }
+        val text = link.value
+        val spotify = spotifyLinkFrom(text)
+        val id = playlistIdFromLink(text)
+        when {
+            spotify != null -> start { importer.open(ImportSource.SpotifyList(spotify)) }
+            id != null -> start { importer.open(ImportSource.CataloguePlaylist(id)) }
+            isSpotifySongLink(text) -> phase.value = Phase.Start(ImportProblem.SPOTIFY_SONG_LINK)
+            else -> phase.value = Phase.Start(ImportProblem.LINK_NOT_RECOGNISED)
+        }
     }
 
     override fun importFile(uri: String) = start { importer.open(readFile(uri)) }

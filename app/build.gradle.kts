@@ -75,6 +75,7 @@ dependencies {
     debugImplementation(project(":source:fake"))
     implementation(project(":source:lyrics"))
     implementation(project(":source:scrobble"))
+    implementation(project(":source:spotify"))
     implementation(project(":source:youtube"))
     implementation(project(":feature:home"))
     implementation(project(":feature:search"))

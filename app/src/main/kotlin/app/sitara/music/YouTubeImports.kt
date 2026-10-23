@@ -10,7 +10,11 @@ import app.sitara.music.core.data.imports.PlaylistImporter
 import app.sitara.music.core.model.ImportProblem
 import app.sitara.music.core.model.Playlist
 import app.sitara.music.core.model.SearchFilter
+import app.sitara.music.core.model.SourceSongList
+import app.sitara.music.core.model.SpotifyLink
 import app.sitara.music.core.model.Track
+import app.sitara.music.source.spotify.SpotifyEmbedReader
+import app.sitara.music.source.spotify.SpotifyException
 import app.sitara.music.source.youtube.YouTubeMusicSource
 import app.sitara.music.source.youtube.videoIdFromLink
 import java.io.ByteArrayOutputStream
@@ -55,6 +59,16 @@ class YouTubeImportCatalogue(private val youtube: YouTubeMusicSource) : ImportCa
     } catch (e: Exception) {
         throw IOException("YouTube Music search failed", e)
     }
+}
+
+/** A public Spotify list for an import, with Spotify's answers worded as import problems. */
+suspend fun readSpotifyList(reader: SpotifyEmbedReader, link: SpotifyLink): SourceSongList = try {
+    reader.read(link)
+} catch (e: SpotifyException) {
+    throw ImportFailedException(
+        if (e.reason == SpotifyException.Reason.NOT_FOUND) ImportProblem.PLAYLIST_UNAVAILABLE else ImportProblem.SPOTIFY_UNREADABLE,
+        e,
+    )
 }
 
 private const val MAX_FILE_BYTES = 4 * 1024 * 1024

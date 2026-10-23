@@ -8,6 +8,9 @@ import app.sitara.music.core.model.ImportResult
 import app.sitara.music.core.model.ImportReviewRow
 import app.sitara.music.core.model.MatchState
 import app.sitara.music.core.model.Playlist
+import app.sitara.music.core.model.SourceSong
+import app.sitara.music.core.model.SourceSongList
+import app.sitara.music.core.model.SpotifyLink
 import app.sitara.music.core.model.Track
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
@@ -28,7 +31,15 @@ sealed interface ImportSource {
     data class PlaylistFile(val fileName: String, val text: String) : ImportSource {
         override val key: String get() = "file:$fileName"
     }
+
+    /** A public Spotify playlist or album; its songs are looked up in the catalogue like a file's. */
+    data class SpotifyList(val link: SpotifyLink) : ImportSource {
+        override val key: String get() = "$SPOTIFY_KEY_PREFIX${link.kind.name.lowercase()}:${link.id}"
+    }
 }
+
+/** How the key of every Spotify import starts. */
+const val SPOTIFY_KEY_PREFIX = "spotify:"
 
 /** The catalogue an import reads playlists from and looks songs up in. Failures the listener can act on are [ImportFailedException]s. */
 interface ImportCatalogue {
@@ -52,6 +63,8 @@ class PlaylistImporter(
     private val dao: ImportDao,
     private val catalogue: ImportCatalogue,
     private val clock: () -> Long = System::currentTimeMillis,
+    /** Reads a public Spotify list; failures the listener can act on are [ImportFailedException]s. */
+    private val spotify: suspend (SpotifyLink) -> SourceSongList = { throw ImportFailedException(ImportProblem.LINK_NOT_RECOGNISED) },
 ) {
     /** The newest import not finished yet, if any. */
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -71,6 +84,7 @@ class PlaylistImporter(
             notFound = byState[MatchState.NOT_FOUND] ?: 0,
             skipped = byState[MatchState.SKIPPED] ?: 0,
             updatesPlaylist = job.playlistId != null,
+            fromSpotify = job.sourceKey.startsWith(SPOTIFY_KEY_PREFIX),
             review = review.map { ImportReviewRow(it.position, it.source(), MatchState.valueOf(it.state), it.match?.toTrack(), offered[it.position].orEmpty()) },
         )
     }
@@ -132,10 +146,16 @@ class PlaylistImporter(
         }
         is ImportSource.PlaylistFile -> {
             val name = source.fileName.substringBeforeLast('.').ifBlank { source.fileName }
-            name to parsePlaylistFile(source.fileName, source.text).take(MAX_SONGS).mapIndexed { position, song ->
-                ImportRowEntity(0, position, song.title, song.artist, song.album, song.durationMs, song.link, MatchState.PENDING.name, false, null)
-            }
+            name to parsePlaylistFile(source.fileName, source.text).pending()
         }
+        is ImportSource.SpotifyList -> {
+            val list = spotify(source.link)
+            list.name.ifBlank { "Spotify playlist" } to list.songs.pending()
+        }
+    }
+
+    private fun List<SourceSong>.pending() = take(MAX_SONGS).mapIndexed { position, song ->
+        ImportRowEntity(0, position, song.title, song.artist, song.album, song.durationMs, song.link, MatchState.PENDING.name, false, null)
     }
 
     private suspend fun lookUp(row: ImportRowEntity): Pair<ImportRowEntity, List<ImportCandidateEntity>> {

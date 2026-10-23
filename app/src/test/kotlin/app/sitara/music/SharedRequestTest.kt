@@ -73,6 +73,16 @@ class SharedRequestTest {
     }
 
     @Test
+    fun sharedSpotifyPlaylistsAndAlbumsGoToImportAsACleanLink() {
+        assertEquals(
+            "https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M",
+            sharedPlaylistLink(send, null, "Listen to this on Spotify https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M?si=abc"),
+        )
+        assertEquals("https://open.spotify.com/album/4aawyAB9vmqN3uQ7FjRGTy", sharedPlaylistLink(send, null, "https://open.spotify.com/album/4aawyAB9vmqN3uQ7FjRGTy"))
+        assertNull(sharedPlaylistLink(send, null, "https://open.spotify.com/track/6OmhkSOpvYBokMKQxpIGx2"))
+    }
+
+    @Test
     fun aSongPlayedFromAPlaylistStillPlaysTheSong() {
         assertNull(sharedPlaylistLink(view, "https://www.youtube.com/watch?v=x7kGuhlXmFI&list=PL123abc", null))
         assertNull(sharedPlaylistLink(send, null, "Niye Jabe Ki Xefer"))

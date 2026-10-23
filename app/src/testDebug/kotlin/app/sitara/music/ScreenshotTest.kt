@@ -582,6 +582,10 @@ class ScreenshotTest {
         "import_start_problem", dark = true, tab = Tab.LIBRARY, route = DetailRoute.Import,
         imports = ImportState.Start("https://example.com/my-mix", unfinished = Fixtures.importMatching, problem = ImportProblem.LINK_NOT_RECOGNISED),
     )
+    @Test fun importSpotify() = shot(
+        "import_spotify", dark = true, tab = Tab.LIBRARY, route = DetailRoute.Import,
+        imports = ImportState.Running(Fixtures.importMatching.copy(name = "Monsoon Evenings", pending = 0, matched = 92, uncertain = 0, notFound = 8, fromSpotify = true)),
+    )
     @Test fun importMatching() = shot("import_matching", dark = true, tab = Tab.LIBRARY, route = DetailRoute.Import, imports = ImportState.Running(Fixtures.importMatching))
     @Test fun importReviewDark() = shot("import_review", dark = true, tab = Tab.LIBRARY, route = DetailRoute.Import, imports = ImportState.Running(Fixtures.importReview))
     @Test fun importReviewLight() = shot("import_review", dark = false, tab = Tab.LIBRARY, route = DetailRoute.Import, imports = ImportState.Running(Fixtures.importReview))

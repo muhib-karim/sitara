@@ -8,6 +8,9 @@ import app.sitara.music.core.model.Artwork
 import app.sitara.music.core.model.ImportProblem
 import app.sitara.music.core.model.MatchState
 import app.sitara.music.core.model.Playlist
+import app.sitara.music.core.model.SourceSong
+import app.sitara.music.core.model.SourceSongList
+import app.sitara.music.core.model.SpotifyLink
 import app.sitara.music.core.model.Track
 import java.io.IOException
 import kotlinx.coroutines.flow.first
@@ -32,7 +35,12 @@ class PlaylistImporterTest {
     private val playlists = RoomPlaylists(db.playlists())
     private val catalogue = FakeCatalogue()
     private var now = 1_000L
-    private val importer = PlaylistImporter(db.imports(), catalogue) { now++ }
+    private val spotifyLists = mutableMapOf<String, SourceSongList>()
+    private var spotifyReads = 0
+    private val importer = PlaylistImporter(db.imports(), catalogue, clock = { now++ }) { link ->
+        spotifyReads++
+        spotifyLists[link.id] ?: throw ImportFailedException(ImportProblem.PLAYLIST_UNAVAILABLE)
+    }
 
     @After
     fun close() = db.close()
@@ -72,6 +80,43 @@ class PlaylistImporterTest {
     private fun answer() {
         catalogue.results["Queen Bohemian Rhapsody"] = listOf(rhapsody)
         catalogue.results["Leonard Cohen Hallelujah"] = listOf(buckley, cale)
+    }
+
+    @Test
+    fun `a Spotify list's songs are looked up like a file's, and an interrupted import goes on without reading Spotify again`() = runTest {
+        answer()
+        spotifyLists["sp1"] = SourceSongList("Monsoon Evenings", listOf(SourceSong("Bohemian Rhapsody", "Queen", durationMs = 354_000), SourceSong("Hallelujah", "Leonard Cohen")))
+        val source = ImportSource.SpotifyList(SpotifyLink(SpotifyLink.Kind.PLAYLIST, "sp1"))
+        catalogue.offlineAfter = 1
+        val id = importer.open(source)
+        runCatching { importer.match(id) }
+
+        catalogue.offlineAfter = Int.MAX_VALUE
+        assertEquals("picked up, not started again", id, importer.open(source))
+        importer.match(id)
+
+        assertEquals(1, spotifyReads)
+        val job = importer.job(id).first()!!
+        assertEquals("Monsoon Evenings", job.name)
+        assertEquals(1, job.matched)
+        assertEquals(1, job.uncertain)
+        assertTrue(job.fromSpotify)
+        assertFalse("two songs are not the limit", job.mayHaveMore)
+        assertEquals(listOf("Queen Bohemian Rhapsody", "Leonard Cohen Hallelujah"), catalogue.searches)
+    }
+
+    @Test
+    fun `a Spotify list of a hundred songs may have more`() = runTest {
+        spotifyLists["sp2"] = SourceSongList("Long", (1..100).map { SourceSong("Song $it", "Artist") }, truncated = true)
+        val id = importer.open(ImportSource.SpotifyList(SpotifyLink(SpotifyLink.Kind.PLAYLIST, "sp2")))
+        assertTrue(importer.job(id).first()!!.mayHaveMore)
+    }
+
+    @Test
+    fun `a Spotify list that cannot be read starts nothing`() = runTest {
+        val failure = runCatching { importer.open(ImportSource.SpotifyList(SpotifyLink(SpotifyLink.Kind.ALBUM, "missing"))) }.exceptionOrNull()
+        assertEquals(ImportProblem.PLAYLIST_UNAVAILABLE, (failure as ImportFailedException).problem)
+        assertNull(importer.unfinished.first())
     }
 
     @Test

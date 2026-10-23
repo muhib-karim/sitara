@@ -8,6 +8,9 @@ import app.sitara.music.core.data.library.LibraryStore
 import app.sitara.music.core.model.Artwork
 import app.sitara.music.core.model.ImportProblem
 import app.sitara.music.core.model.Playlist
+import app.sitara.music.core.model.SourceSong
+import app.sitara.music.core.model.SourceSongList
+import app.sitara.music.core.model.SpotifyLink
 import app.sitara.music.core.model.Track
 import app.sitara.music.feature.library.ImportState
 import java.io.IOException
@@ -67,7 +70,11 @@ class PlaylistImportsTest {
     }
 
     private val catalogue = Catalogue()
-    private val imports = PlaylistImports(scope, store.importer(catalogue)) { uri ->
+    private val spotifyLists = mutableMapOf<String, SourceSongList>()
+    private val spotify: suspend (SpotifyLink) -> SourceSongList = { link ->
+        spotifyLists[link.id] ?: throw ImportFailedException(ImportProblem.PLAYLIST_UNAVAILABLE)
+    }
+    private val imports = PlaylistImports(scope, store.importer(catalogue, spotify)) { uri ->
         ImportSource.PlaylistFile("${uri.substringAfterLast('/')}.csv", "title,artist\nNiye Jabe Ki,Xefer\n")
     }
 
@@ -101,6 +108,26 @@ class PlaylistImportsTest {
         assertEquals("Road trip", done.result.name)
         assertEquals(1, done.result.added)
         assertEquals(listOf(song), await { store.playlists.playlist(done.result.playlistId).first()!!.tracks })
+    }
+
+    @Test
+    fun `a Spotify playlist link is read from Spotify and its songs looked up in YouTube Music`() {
+        spotifyLists["37i9dQZF1DXcBWIGoYBM5M"] = SourceSongList("Monsoon Evenings", listOf(SourceSong("Niye Jabe Ki", "Xefer", durationMs = 200_000)))
+        imports.setLink("https://open.spotify.com/playlist/37i9dQZF1DXcBWIGoYBM5M?si=abc")
+        imports.importLink()
+        // The catalogue offers another artist's song of that name, so it waits for a look.
+        val running = await { imports.state.first { (it as? ImportState.Running)?.job?.review?.isNotEmpty() == true } as ImportState.Running }
+        assertEquals("Monsoon Evenings", running.job.name)
+        assertTrue(running.job.fromSpotify)
+        assertEquals(SourceSong("Niye Jabe Ki", "Xefer", durationMs = 200_000), running.job.review.single().source)
+    }
+
+    @Test
+    fun `a Spotify link to one song is worded without asking the network`() {
+        imports.setLink("https://open.spotify.com/track/6OmhkSOpvYBokMKQxpIGx2")
+        imports.importLink()
+        assertEquals(ImportProblem.SPOTIFY_SONG_LINK, await { imports.state.first { (it as? ImportState.Start)?.problem != null } as ImportState.Start }.problem)
+        assertEquals(0, catalogue.calls)
     }
 
     @Test
@@ -144,6 +171,6 @@ class PlaylistImportsTest {
         val start = await { imports.state.first { it is ImportState.Start && it.unfinished == null } }
         assertTrue(start is ImportState.Start)
         assertTrue(catalogue.searchCancelled)
-        assertNull(await { store.importer(catalogue).unfinished.first() })
+        assertNull(await { store.importer(catalogue, spotify).unfinished.first() })
     }
 }

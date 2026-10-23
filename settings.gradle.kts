@@ -32,6 +32,7 @@ include(
     ":source:fake",
     ":source:lyrics",
     ":source:scrobble",
+    ":source:spotify",
     ":source:youtube",
     ":feature:home",
     ":feature:search",

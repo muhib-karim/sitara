@@ -61,6 +61,7 @@ import app.sitara.music.feature.search.withRecentSearch
 import app.sitara.music.source.api.BrowseSource
 import app.sitara.music.source.lyrics.TranslationException
 import app.sitara.music.source.lyrics.TranslationProblem
+import app.sitara.music.source.spotify.spotifyEmbedReader
 import java.time.ZoneId
 import java.time.temporal.WeekFields
 import java.util.Locale
@@ -118,7 +119,8 @@ class AppViewModel(private val app: SitaraApplication) :
     val requestedPlayer: Flow<Unit> = playerRequests.receiveAsFlow()
 
     /** Import playlist: runs here, so an import goes on while the listener browses. */
-    val imports = PlaylistImports(viewModelScope, app.library.importer(YouTubeImportCatalogue(app.youtube))) { uri ->
+    private val spotifyReader by lazy { spotifyEmbedReader() }
+    val imports = PlaylistImports(viewModelScope, app.library.importer(YouTubeImportCatalogue(app.youtube)) { readSpotifyList(spotifyReader, it) }) { uri ->
         readPlaylistFile(app.contentResolver, Uri.parse(uri))
     }
     private val importRequests = Channel<Unit>(Channel.CONFLATED)

@@ -100,7 +100,7 @@ class ImportInteractionTest {
 
     @Test fun aProblemIsWordedAndOfflineOffersTryAgain() {
         render(ImportState.Start("https://music.youtube.com/playlist?list=PL123abc", problem = ImportProblem.OFFLINE))
-        content.performScrollToNode(hasText("Couldn’t reach YouTube Music. Check your connection and try again."))
+        content.performScrollToNode(hasText("Couldn’t reach the playlist or YouTube Music. Check your connection and try again."))
         tap("Try again")
         assertEquals(listOf("import link"), calls)
     }

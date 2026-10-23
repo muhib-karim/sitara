@@ -153,7 +153,7 @@ fun LibraryScreen(
                     }
                     item(key = "import") {
                         PinnedTile(
-                            SitaraIcons.Import, "Import playlist", "From a YouTube link, M3U or CSV file", onImport,
+                            SitaraIcons.Import, "Import playlist", "From a YouTube or Spotify link, M3U or CSV file", onImport,
                             Modifier.padding(horizontal = SitaraSpacing.Gutter, vertical = 4.dp).fillMaxWidth(),
                         )
                     }

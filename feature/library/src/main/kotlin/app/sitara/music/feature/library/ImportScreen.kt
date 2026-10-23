@@ -117,7 +117,7 @@ interface ImportActions {
 }
 
 /**
- * Import playlist: paste a YouTube or YouTube Music playlist link or pick an M3U or CSV file, watch the songs being
+ * Import playlist: paste a YouTube, YouTube Music or Spotify playlist link or pick an M3U or CSV file, watch the songs being
  * found, check the uncertain matches, and finish into a playlist of the library.
  */
 @Composable
@@ -177,7 +177,7 @@ private fun LazyListScope.start(state: ImportState.Start, actions: ImportActions
             }
         }
     }
-    item(key = "link-heading") { SectionHeader("From a link", Modifier.padding(top = 8.dp), subtitle = "A YouTube or YouTube Music playlist") }
+    item(key = "link-heading") { SectionHeader("From a link", Modifier.padding(top = 8.dp), subtitle = "A YouTube, YouTube Music or public Spotify playlist or album") }
     item(key = "link") {
         val linkProblem = state.problem?.takeIf { it in LINK_PROBLEMS }
         Column(Modifier.padding(horizontal = SitaraSpacing.Gutter, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -208,7 +208,7 @@ private fun LazyListScope.start(state: ImportState.Start, actions: ImportActions
             fileProblem?.let { ProblemText(wording(it)) }
             PillButton(if (fileProblem != null) "Choose another file" else "Choose a file", onPickFile, primary = false)
             Text(
-                "Up to 2,000 songs. Songs without a YouTube link are found by searching for their title and artist.",
+                "Up to 2,000 songs (Spotify shows the first 100 of a playlist). Songs without a YouTube link are found by searching for their title and artist.",
                 style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
             )
         }
@@ -229,6 +229,12 @@ private fun LazyListScope.running(state: ImportState.Running, actions: ImportAct
                 )
             }
             Counts(job)
+            if (job.mayHaveMore) {
+                Text(
+                    "Spotify shows only the first 100 songs of a playlist without an account. For the rest, export the playlist as a CSV file and import it too.",
+                    style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant,
+                )
+            }
             when {
                 state.problem != null -> {
                     ProblemText(wording(state.problem))
@@ -388,14 +394,19 @@ private fun ProblemText(text: String) {
     Text(text, style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.error, modifier = Modifier.semantics { liveRegion = LiveRegionMode.Polite })
 }
 
-private val LINK_PROBLEMS = setOf(ImportProblem.LINK_NOT_RECOGNISED, ImportProblem.PLAYLIST_UNAVAILABLE, ImportProblem.OFFLINE)
+private val LINK_PROBLEMS = setOf(
+    ImportProblem.LINK_NOT_RECOGNISED, ImportProblem.PLAYLIST_UNAVAILABLE, ImportProblem.OFFLINE, ImportProblem.SPOTIFY_UNREADABLE,
+    ImportProblem.SPOTIFY_SONG_LINK,
+)
 
 private fun checkedOf(job: ImportJob) = "${job.total - job.pending} of ${songCount(job.total)} checked"
 
 internal fun wording(problem: ImportProblem): String = when (problem) {
-    ImportProblem.LINK_NOT_RECOGNISED -> "That isn’t a YouTube or YouTube Music playlist link. In YouTube, use Share, then Copy link."
+    ImportProblem.LINK_NOT_RECOGNISED -> "That isn’t a YouTube, YouTube Music or Spotify playlist link. In the app, use Share, then Copy link."
     ImportProblem.PLAYLIST_UNAVAILABLE -> "This playlist can’t be opened. It may be private or deleted."
-    ImportProblem.OFFLINE -> "Couldn’t reach YouTube Music. Check your connection and try again."
+    ImportProblem.OFFLINE -> "Couldn’t reach the playlist or YouTube Music. Check your connection and try again."
+    ImportProblem.SPOTIFY_UNREADABLE -> "Spotify’s page has changed and Sitara can’t read it yet. Export the playlist as a CSV file and import that."
+    ImportProblem.SPOTIFY_SONG_LINK -> "That’s a link to one song. Share the playlist or album instead, or search for the song."
     ImportProblem.NOTHING_TO_IMPORT -> "There are no songs to import there."
     ImportProblem.FILE_UNREADABLE -> "That file couldn’t be read. Choose an M3U, M3U8 or CSV file."
     ImportProblem.FILE_TOO_LARGE -> "That file is too large to import (over 4 MB)."
