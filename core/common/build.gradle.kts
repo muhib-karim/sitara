@@ -21,5 +21,6 @@ dependencies {
     api(libs.kotlinx.coroutines.core)
     testImplementation(platform(libs.junit5.bom))
     testImplementation(libs.junit5.jupiter)
+    testImplementation(libs.zxing.core)
     testRuntimeOnly(libs.junit5.launcher)
 }
