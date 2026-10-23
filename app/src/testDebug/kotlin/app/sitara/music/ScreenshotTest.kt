@@ -27,6 +27,7 @@ import androidx.compose.ui.test.swipeLeft
 import androidx.compose.ui.test.swipeUp
 import androidx.compose.ui.unit.Density
 import androidx.test.core.app.ApplicationProvider
+import app.sitara.music.core.designsystem.ShareSheetContent
 import app.sitara.music.core.designsystem.SitaraSpacing
 import app.sitara.music.core.designsystem.SitaraTheme
 import app.sitara.music.core.model.AccentColor
@@ -60,6 +61,7 @@ import app.sitara.music.core.model.StreamFormat
 import app.sitara.music.core.model.Track
 import app.sitara.music.core.model.UserPlaylist
 import app.sitara.music.core.model.localTrackId
+import app.sitara.music.core.model.shareTarget
 import app.sitara.music.feature.home.FeedState
 import app.sitara.music.feature.home.HomeFeed
 import app.sitara.music.feature.home.OnlineHome
@@ -608,6 +610,10 @@ class ScreenshotTest {
             }
         }
         compose.onRoot().captureRoboImage("src/test/screenshots/${name}_dark.png")
+    }
+
+    @Test fun shareSheet() = sheet("share_sheet") {
+        ShareSheetContent(Fixtures.album.shareTarget()!!, onSendLink = {}, onShareImage = {})
     }
 
     @Test fun searchIdleDark() = shot("search_idle", dark = true, tab = Tab.SEARCH)

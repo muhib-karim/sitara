@@ -8,6 +8,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
@@ -60,9 +62,11 @@ import app.sitara.music.core.model.ArtistPage
 import app.sitara.music.core.model.Artwork
 import app.sitara.music.core.model.DownloadState
 import app.sitara.music.core.model.Playlist
+import app.sitara.music.core.model.ShareTarget
 import app.sitara.music.core.model.SitaraSettings
 import app.sitara.music.core.model.Track
 import app.sitara.music.core.model.UserPlaylist
+import app.sitara.music.core.model.shareTarget
 import app.sitara.music.core.model.toDownload
 
 /** An artist, album or playlist page as it loads. */
@@ -100,6 +104,8 @@ fun DetailScreen(
     onAlbum: (albumId: String) -> Unit,
     onTrackMenu: (Track) -> Unit,
     contentPadding: PaddingValues,
+    /** Opens the share sheet (link and QR code) for the page. */
+    onShare: (ShareTarget) -> Unit = {},
 ) {
     var dialog by rememberSaveable { mutableStateOf(PlaylistDialog.NONE) }
     val reorder = rememberReorderState()
@@ -138,7 +144,7 @@ fun DetailScreen(
                     val isSaved = page.artist.id in saved.artists
                     DetailHeader(
                         page.artist.artwork, page.artist.name, "Artist", artistSummary(page), null,
-                        songs, settings, onBack, onPlay, onShuffle, round = true,
+                        songs, settings, onBack, onPlay, onShuffle, round = true, share = page.artist.shareTarget(), onShare = onShare,
                     ) { SaveButton(isSaved) { library.setSaved(page.artist, !isSaved) } }
                 }
                 if (songs.isEmpty() && page.releases.isEmpty()) {
@@ -170,6 +176,7 @@ fun DetailScreen(
                     DetailHeader(
                         album.artwork, album.title, listOfNotNull("Album", album.year?.toString()).joinToString(" · "), album.artist,
                         artistId?.let { { onArtist(it) } }, album.tracks, settings, onBack, onPlay, onShuffle,
+                        share = album.shareTarget(), onShare = onShare,
                     ) {
                         SaveButton(isSaved) { library.setSaved(album, !isSaved) }
                         DownloadAllButton(album.tracks, saved.downloads, library)
@@ -182,7 +189,7 @@ fun DetailScreen(
                 item(key = "header") {
                     DetailHeader(
                         playlist.artwork, playlist.title, "Playlist", playlist.curator.ifEmpty { playlist.description }, null,
-                        playlist.tracks, settings, onBack, onPlay, onShuffle,
+                        playlist.tracks, settings, onBack, onPlay, onShuffle, share = playlist.shareTarget(), onShare = onShare,
                     ) { DownloadAllButton(playlist.tracks, saved.downloads, library) }
                 }
                 collectionTracks(playlist.tracks, saved.downloads, "No songs in this playlist", onPlay, onTrackMenu)
@@ -308,6 +315,8 @@ private fun DetailHeader(
     onPlay: (List<Track>, Int) -> Unit,
     onShuffle: (List<Track>) -> Unit,
     round: Boolean = false,
+    share: ShareTarget? = null,
+    onShare: (ShareTarget) -> Unit = {},
     actions: @Composable () -> Unit = {},
 ) {
     // The shared listening stage supplies atmosphere, reduced-motion and pure black behaviour; the accent follows this page's cover.
@@ -315,7 +324,11 @@ private fun DetailHeader(
         Box(Modifier.fillMaxWidth().padding(horizontal = SitaraSpacing.Gutter).clip(RoundedCornerShape(SitaraRadius.Artwork))) {
             ArtworkBackdrop(artwork, Modifier.matchParentSize())
             Column(Modifier.fillMaxWidth().padding(16.dp), verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                GlassIconButton(SitaraIcons.Back, "Back", onBack)
+                Row(Modifier.fillMaxWidth()) {
+                    GlassIconButton(SitaraIcons.Back, "Back", onBack)
+                    Spacer(Modifier.weight(1f))
+                    if (share != null) GlassIconButton(SitaraIcons.Share, "Share $title", { onShare(share) })
+                }
                 ArtworkImage(artwork, Modifier.size(152.dp).align(Alignment.CenterHorizontally), cornerRadius = if (round) 76.dp else SitaraRadius.Tile)
                 Text(title, color = Color.White, style = MaterialTheme.typography.headlineLarge)
                 Text(kind, color = MaterialTheme.colorScheme.primary, style = MaterialTheme.typography.labelSmall)

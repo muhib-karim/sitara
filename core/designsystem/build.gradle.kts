@@ -17,6 +17,7 @@ android {
 
 dependencies {
     api(project(":core:model"))
+    implementation(project(":core:common"))
     api(libs.haze)
     implementation(libs.androidx.core.ktx)
     implementation(libs.compose.runtime)

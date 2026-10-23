@@ -41,7 +41,7 @@ import app.sitara.music.core.model.PlaylistSummary
 import app.sitara.music.core.model.Track
 import app.sitara.music.core.model.isLocal
 
-/** What can be done with one song: like it, queue it, put it in a playlist, or download it ([download] is where its download stands). */
+/** What can be done with one song: like it, queue it, put it in a playlist, download it ([download] is where its download stands) or share it. */
 @Composable
 fun SongActions(
     track: Track,
@@ -53,6 +53,7 @@ fun SongActions(
     onAddToPlaylist: () -> Unit,
     onDownload: () -> Unit,
     onRemoveDownload: () -> Unit,
+    onShare: () -> Unit = {},
 ) {
     Column(Modifier.fillMaxWidth().navigationBarsPadding().padding(bottom = 8.dp)) {
         SheetTrackHeading(track)
@@ -67,6 +68,7 @@ fun SongActions(
                 DownloadState.DOWNLOADED -> SheetAction(SitaraIcons.Delete, "Remove download", onRemoveDownload)
                 else -> SheetAction(SitaraIcons.Close, "Cancel download", onRemoveDownload)
             }
+            SheetAction(SitaraIcons.Share, "Share", onShare)
         }
     }
 }

@@ -179,12 +179,14 @@ class LocalInteractionTest {
         assertEquals(listOf(listOf("Second Light", "Saffron Morning")), played)
     }
 
-    @Test fun aSongOnThePhoneHasNoDownloadInItsMenu() {
+    @Test fun aSongOnThePhoneHasNoDownloadOrShareInItsMenu() {
         render(LocalLibraryState(songs, musicAccess = true))
         page.performScrollToNode(hasText("Night Bus"))
         compose.onNodeWithContentDescription("More options for Night Bus").performSemanticsAction(SemanticsActions.OnClick)
         compose.onNodeWithText("Add to playlist").assertIsDisplayed()
         assertThrows(AssertionError::class.java) { compose.onNodeWithText("Download").assertIsDisplayed() }
+        // It has no link either.
+        assertThrows(AssertionError::class.java) { compose.onNodeWithText("Share").assertIsDisplayed() }
     }
 
     @Test fun searchWithoutMatchesOnThePhoneShowsCatalogueResultsOnly() {

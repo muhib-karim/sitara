@@ -38,6 +38,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.saveable.listSaver
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -52,6 +53,7 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.input.nestedscroll.NestedScrollConnection
 import androidx.compose.ui.input.nestedscroll.NestedScrollSource
 import androidx.compose.ui.input.nestedscroll.nestedScroll
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.contentDescription
@@ -61,10 +63,13 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.LifecycleResumeEffect
 import app.sitara.music.core.data.local.musicPermission
 import app.sitara.music.core.designsystem.ScrollEdge
+import app.sitara.music.core.designsystem.ShareSheetContent
 import app.sitara.music.core.designsystem.SitaraIcons
 import app.sitara.music.core.designsystem.SitaraSheet
 import app.sitara.music.core.designsystem.SitaraSpacing
 import app.sitara.music.core.designsystem.SitaraTheme
+import app.sitara.music.core.designsystem.shareQrCard
+import app.sitara.music.core.designsystem.shareText
 import app.sitara.music.core.model.Album
 import app.sitara.music.core.model.Artist
 import app.sitara.music.core.model.DownloadExport
@@ -72,12 +77,14 @@ import app.sitara.music.core.model.LibrarySort
 import app.sitara.music.core.model.LocalFolder
 import app.sitara.music.core.model.PlaylistSummary
 import app.sitara.music.core.model.SearchFilter
+import app.sitara.music.core.model.ShareTarget
 import app.sitara.music.core.model.ShelfLink
 import app.sitara.music.core.model.SitaraSettings
 import app.sitara.music.core.model.SongDownload
 import app.sitara.music.core.model.StatsRange
 import app.sitara.music.core.model.Track
 import app.sitara.music.core.model.matching
+import app.sitara.music.core.model.shareTarget
 import app.sitara.music.feature.home.HomeActions
 import app.sitara.music.feature.home.HomeFeed
 import app.sitara.music.feature.home.HomeScreen
@@ -121,6 +128,7 @@ import dev.chrisbanes.haze.rememberHazeState
 import java.time.LocalDate
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emptyFlow
+import kotlinx.coroutines.launch
 
 enum class Tab(val label: String, val icon: ImageVector) {
     HOME("Home", SitaraIcons.Home),
@@ -256,6 +264,7 @@ fun SitaraShell(
             }
         }
     }
+    var shareTarget by remember { mutableStateOf<ShareTarget?>(null) }
     val openMenu: (Track) -> Unit = { menuTrack = it }
     val open: (DetailRoute) -> Unit = { detailStack = detailStack + it }
     val closeDetails: () -> Unit = { detailStack = emptyList() }
@@ -401,6 +410,7 @@ fun SitaraShell(
                             onAlbum = { open(DetailRoute.Album(it)) },
                             onTrackMenu = openMenu,
                             contentPadding = contentPadding,
+                            onShare = { shareTarget = it },
                         )
                     } else {
                         when (tab) {
@@ -491,6 +501,18 @@ fun SitaraShell(
                         onAddToPlaylist = { close { playlistTrack = track } },
                         onDownload = { close { libraryActions.download(listOf(track)) } },
                         onRemoveDownload = { close { libraryActions.removeDownload(track.id) } },
+                        onShare = { close { shareTarget = track.shareTarget() } },
+                    )
+                }
+            }
+            shareTarget?.let { target ->
+                val context = LocalContext.current
+                val scope = rememberCoroutineScope()
+                SitaraSheet(onDismiss = { shareTarget = null }) { close ->
+                    ShareSheetContent(
+                        target,
+                        onSendLink = { close { shareText(context, "${target.title}: ${target.link}", "Share link") } },
+                        onShareImage = { close { scope.launch { shareQrCard(context, target) } } },
                     )
                 }
             }
