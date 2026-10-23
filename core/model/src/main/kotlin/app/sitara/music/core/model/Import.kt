@@ -46,11 +46,13 @@ data class ImportJob(
     val review: List<ImportReviewRow>,
     /** Where the songs came from: a Spotify list shows its first 100 songs at most. */
     val fromSpotify: Boolean = false,
+    /** The source showed only part of the list. */
+    val truncated: Boolean = false,
 ) {
     val total: Int get() = pending + matched + uncertain + notFound + skipped
 
-    /** A Spotify list read up to the most Spotify shows without an account, so it may have more songs. */
-    val mayHaveMore: Boolean get() = fromSpotify && total >= SPOTIFY_PUBLIC_LIMIT
+    /** A Spotify list that showed only its first songs, so the playlist has more. */
+    val mayHaveMore: Boolean get() = fromSpotify && truncated
 }
 
 /** The most songs Spotify shows of a list without an account. */

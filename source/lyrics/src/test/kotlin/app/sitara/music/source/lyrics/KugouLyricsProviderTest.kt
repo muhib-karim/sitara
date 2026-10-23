@@ -110,6 +110,25 @@ class KugouLyricsProviderTest {
     }
 
     @Test
+    fun `a shorter title inside the song's, or another artist's song of that name, is not taken`() = runTest {
+        val loveStory = song.copy(id = "v2", title = "Love Story", artist = "Orchid Lane")
+        answers["/search"] = search(candidate("1", "Love"), candidate("2", "Love Story", singer = "Someone Else"))
+
+        assertNull(provider.lyrics(loveStory))
+        assertEquals(1, sent.size)
+    }
+
+    @Test
+    fun `bracketed notes and a featured credit do not stop a match`() = runTest {
+        answers["/search"] = search(candidate("1", "Paper Lanterns (Live)", singer = "Orchid Lane、Lumen Drift"))
+        answers["/download"] = download("[00:01.00]Paper lanterns")
+
+        provider.lyrics(song)
+
+        assertEquals("1", sent[1].url.queryParameter("id"))
+    }
+
+    @Test
     fun `no candidates is a miss remembered for a week`() = runTest {
         answers["/search"] = search()
 

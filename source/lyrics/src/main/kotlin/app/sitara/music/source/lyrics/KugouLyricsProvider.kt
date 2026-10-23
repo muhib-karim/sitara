@@ -74,7 +74,7 @@ class KugouLyricsProvider(
             if (track.durationMs > 0) addQueryParameter("duration", track.durationMs.toString())
         }
         val candidates = parse(body).getArray("candidates")?.filterIsInstance<JsonObject>().orEmpty()
-        val pick = candidates.firstOrNull { matches(it, query.title, track.durationMs) } ?: return CachedLyrics(null, null, now)
+        val pick = candidates.firstOrNull { matches(it, query.title, query.artist, track.durationMs) } ?: return CachedLyrics(null, null, now)
         val download = parse(
             get("download") {
                 addQueryParameter("ver", "1")
@@ -119,14 +119,37 @@ internal const val KUGOU_DURATION_TOLERANCE_MS = 3_000L
 
 private val TIMESTAMP = Regex("""\[\d{1,3}:\d{2}(?:[.:]\d{1,3})?]""")
 
-/** A candidate of the same length (when both are known) whose title matches the song's, ignoring case, spaces and punctuation. */
-internal fun matches(candidate: JsonObject, title: String, durationMs: Long): Boolean {
+/**
+ * A candidate of the same length (when both are known) by the same artist (when the song names one) whose title is the
+ * song's: equal once case, spaces, punctuation and bracketed notes are set aside, or one holding the other with at
+ * least [TITLE_SHARE] of its letters, so "Love" is not taken for "Love Story".
+ */
+internal fun matches(candidate: JsonObject, title: String, artist: String, durationMs: Long): Boolean {
     val length = candidate.getLong("duration")
     if (durationMs > 0 && length > 0 && abs(length - durationMs) > KUGOU_DURATION_TOLERANCE_MS) return false
-    val wanted = title.normalised()
-    val found = candidate.getString("song").orEmpty().normalised()
-    return wanted.isNotEmpty() && found.isNotEmpty() && (found.contains(wanted) || wanted.contains(found))
+    val wanted = title.withoutNotes().normalised()
+    val found = candidate.getString("song").orEmpty().withoutNotes().normalised()
+    if (wanted.isEmpty() || found.isEmpty()) return false
+    val shorter = minOf(wanted.length, found.length).toDouble()
+    val titleMatches = wanted == found || ((found.contains(wanted) || wanted.contains(found)) && shorter / maxOf(wanted.length, found.length) >= TITLE_SHARE)
+    return titleMatches && sameArtist(candidate.getString("singer").orEmpty(), artist)
 }
+
+/** Whether a credit names one of [artist]'s artists; any credit passes when the song names none. */
+private fun sameArtist(credit: String, artist: String): Boolean {
+    val wanted = artist.artistNames()
+    if (wanted.isEmpty()) return true
+    val found = credit.artistNames()
+    return found.any { name -> wanted.any { it == name || it.contains(name) || name.contains(it) } }
+}
+
+private fun String.artistNames(): List<String> = split(ARTIST_SEPARATORS).map { it.normalised() }.filter { it.isNotEmpty() }
+
+private fun String.withoutNotes(): String = replace(NOTES, " ")
+
+private const val TITLE_SHARE = 0.75
+private val NOTES = Regex("""\([^)]*\)|\[[^\]]*]|（[^）]*）""")
+private val ARTIST_SEPARATORS = Regex("""\s*(?:,|、|/|&|;|\bfeat\.?|\bft\.?|\band\b|\bx\b)\s*""", RegexOption.IGNORE_CASE)
 
 private fun String.normalised() = lowercase().filter { it.isLetterOrDigit() }
 

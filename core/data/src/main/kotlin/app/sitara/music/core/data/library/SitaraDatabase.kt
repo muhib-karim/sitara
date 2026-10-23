@@ -26,10 +26,10 @@ import app.sitara.music.core.data.scrobble.ScrobbleEntity
         ImportJobEntity::class, ImportRowEntity::class, ImportCandidateEntity::class, ScrobbleEntity::class, LocalSongEntity::class, LocalFolderEntity::class,
         SongBeatsEntity::class,
     ],
-    version = 10,
+    version = 11,
     exportSchema = true,
-    // 2 adds the saved play queue and the lyrics cache, 3 per-song volume trims: new tables only. 4 adds each play's time heard (null for older plays) and an index by start; 5 playlist imports, 6 the scrobble outbox (new tables). 7 keys cached lyrics by source as well (old rows become LRCLIB's) with the matched song and licensor, and keeps the source picked per song; 8 keeps lyric translations, 9 the index of songs on the phone and picked folders, 10 automix's beat analyses (new tables).
-    autoMigrations = [AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3), AutoMigration(from = 3, to = 4), AutoMigration(from = 4, to = 5), AutoMigration(from = 5, to = 6), AutoMigration(from = 6, to = 7), AutoMigration(from = 7, to = 8), AutoMigration(from = 8, to = 9), AutoMigration(from = 9, to = 10)],
+    // 2 adds the saved play queue and the lyrics cache, 3 per-song volume trims: new tables only. 4 adds each play's time heard (null for older plays) and an index by start; 5 playlist imports, 6 the scrobble outbox (new tables). 7 keys cached lyrics by source as well (old rows become LRCLIB's) with the matched song and licensor, and keeps the source picked per song; 8 keeps lyric translations, 9 the index of songs on the phone and picked folders, 10 automix's beat analyses (new tables), 11 whether an import's source showed only part of its list (a column with a default).
+    autoMigrations = [AutoMigration(from = 1, to = 2), AutoMigration(from = 2, to = 3), AutoMigration(from = 3, to = 4), AutoMigration(from = 4, to = 5), AutoMigration(from = 5, to = 6), AutoMigration(from = 6, to = 7), AutoMigration(from = 7, to = 8), AutoMigration(from = 8, to = 9), AutoMigration(from = 9, to = 10), AutoMigration(from = 10, to = 11)],
 )
 abstract class SitaraDatabase : RoomDatabase() {
     abstract fun likedSongs(): LikedSongsDao

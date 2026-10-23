@@ -645,7 +645,7 @@ class ScreenshotTest {
     )
     @Test fun importSpotify() = shot(
         "import_spotify", dark = true, tab = Tab.LIBRARY, route = DetailRoute.Import,
-        imports = ImportState.Running(Fixtures.importMatching.copy(name = "Monsoon Evenings", pending = 0, matched = 92, uncertain = 0, notFound = 8, fromSpotify = true)),
+        imports = ImportState.Running(Fixtures.importMatching.copy(name = "Monsoon Evenings", pending = 0, matched = 92, uncertain = 0, notFound = 8, fromSpotify = true, truncated = true)),
     )
     @Test fun importMatching() = shot("import_matching", dark = true, tab = Tab.LIBRARY, route = DetailRoute.Import, imports = ImportState.Running(Fixtures.importMatching))
     @Test fun importReviewDark() = shot("import_review", dark = true, tab = Tab.LIBRARY, route = DetailRoute.Import, imports = ImportState.Running(Fixtures.importReview))

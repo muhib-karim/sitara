@@ -21,6 +21,8 @@ data class ImportJobEntity(
     @ColumnInfo(name = "playlist_id") val playlistId: Long?,
     val finished: Boolean,
     @ColumnInfo(name = "created_at") val createdAt: Long,
+    /** The source showed only part of a longer list (Spotify's first 100 songs). */
+    @ColumnInfo(defaultValue = "0") val truncated: Boolean = false,
 )
 
 /** One song of an import, as the source named it, with its state (a [app.sitara.music.core.model.MatchState] name) and its match so far. */

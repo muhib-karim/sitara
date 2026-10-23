@@ -74,4 +74,17 @@ class SongBeatsStoreTest {
         SongBeatsRepository(db.songBeats()).put(SongBeats("kept", intro = intro), version = 1)
         assertEquals(intro, SongBeatsRepository(db.songBeats()).get("kept", 1)?.intro)
     }
+
+    @Test
+    fun `a version 10 library with an unfinished import opens as version 11, the import not marked cut short`() = runTest {
+        val name = "migration-10-11.db"
+        context.deleteDatabase(name)
+        createDatabaseAt(10, context.getDatabasePath(name)) { db ->
+            db.execSQL("INSERT INTO import_jobs (id, source_key, name, playlist_id, finished, created_at) VALUES (1, 'spotify:playlist:x', 'Old', NULL, 0, 5)")
+        }
+        val db = Room.databaseBuilder(context, SitaraDatabase::class.java, name).allowMainThreadQueries().build().also(opened::add)
+        val job = db.imports().job(1)!!
+        assertEquals("Old", job.name)
+        assertEquals(false, job.truncated)
+    }
 }

@@ -85,6 +85,7 @@ class PlaylistImporter(
             skipped = byState[MatchState.SKIPPED] ?: 0,
             updatesPlaylist = job.playlistId != null,
             fromSpotify = job.sourceKey.startsWith(SPOTIFY_KEY_PREFIX),
+            truncated = job.truncated,
             review = review.map { ImportReviewRow(it.position, it.source(), MatchState.valueOf(it.state), it.match?.toTrack(), offered[it.position].orEmpty()) },
         )
     }
@@ -96,12 +97,12 @@ class PlaylistImporter(
     suspend fun open(source: ImportSource): Long {
         val earlier = dao.jobs(source.key)
         earlier.firstOrNull { !it.finished }?.let { return it.id }
-        val (name, rows) = read(source)
+        val (name, rows, truncated) = read(source)
         if (rows.isEmpty()) throw ImportFailedException(ImportProblem.NOTHING_TO_IMPORT)
         val previous = earlier.firstOrNull { it.finished }
         val decided = previous?.let { dao.rows(it.id) }.orEmpty().filter { it.state in DECIDED }.associateBy { it.source() }
         val carried = rows.map { row -> decided[row.source()]?.let { row.copy(state = it.state, match = it.match) } ?: row }
-        return dao.create(ImportJobEntity(sourceKey = source.key, name = name, playlistId = previous?.playlistId?.takeIf { dao.playlistExists(it) }, finished = false, createdAt = clock()), carried)
+        return dao.create(ImportJobEntity(sourceKey = source.key, name = name, playlistId = previous?.playlistId?.takeIf { dao.playlistExists(it) }, finished = false, createdAt = clock(), truncated = truncated), carried)
     }
 
     /** Looks up every song still pending, keeping each answer as it comes; cancelling stops at the song being looked up. */
@@ -137,20 +138,29 @@ class PlaylistImporter(
 
     suspend fun discard(id: Long) = dao.delete(id)
 
-    private suspend fun read(source: ImportSource): Pair<String, List<ImportRowEntity>> = when (source) {
+    private class SourceRows(val name: String, val rows: List<ImportRowEntity>, val truncated: Boolean = false) {
+        operator fun component1() = name
+        operator fun component2() = rows
+        operator fun component3() = truncated
+    }
+
+    private suspend fun read(source: ImportSource): SourceRows = when (source) {
         is ImportSource.CataloguePlaylist -> {
             val playlist = catalogue.playlist(source.id)
-            playlist.title.ifBlank { source.id } to playlist.tracks.take(MAX_SONGS).mapIndexed { position, track ->
-                ImportRowEntity(0, position, track.title, track.artist, track.album, track.durationMs, null, MatchState.MATCHED.name, false, track.toColumns())
-            }
+            SourceRows(
+                playlist.title.ifBlank { source.id },
+                playlist.tracks.take(MAX_SONGS).mapIndexed { position, track ->
+                    ImportRowEntity(0, position, track.title, track.artist, track.album, track.durationMs, null, MatchState.MATCHED.name, false, track.toColumns())
+                },
+            )
         }
         is ImportSource.PlaylistFile -> {
             val name = source.fileName.substringBeforeLast('.').ifBlank { source.fileName }
-            name to parsePlaylistFile(source.fileName, source.text).pending()
+            SourceRows(name, parsePlaylistFile(source.fileName, source.text).pending())
         }
         is ImportSource.SpotifyList -> {
             val list = spotify(source.link)
-            list.name.ifBlank { "Spotify playlist" } to list.songs.pending()
+            SourceRows(list.name.ifBlank { "Spotify playlist" }, list.songs.pending(), list.truncated)
         }
     }
 

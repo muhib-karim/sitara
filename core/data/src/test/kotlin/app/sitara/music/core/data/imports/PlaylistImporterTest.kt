@@ -106,10 +106,15 @@ class PlaylistImporterTest {
     }
 
     @Test
-    fun `a Spotify list of a hundred songs may have more`() = runTest {
-        spotifyLists["sp2"] = SourceSongList("Long", (1..100).map { SourceSong("Song $it", "Artist") }, truncated = true)
-        val id = importer.open(ImportSource.SpotifyList(SpotifyLink(SpotifyLink.Kind.PLAYLIST, "sp2")))
-        assertTrue(importer.job(id).first()!!.mayHaveMore)
+    fun `a Spotify list Spotify showed only part of says so, a whole one of a hundred songs does not`() = runTest {
+        // One of the hundred shown had no title (an unavailable track), so 99 rows; it is still cut short.
+        spotifyLists["sp2"] = SourceSongList("Long", (1..99).map { SourceSong("Song $it", "Artist") }, truncated = true)
+        val cut = importer.open(ImportSource.SpotifyList(SpotifyLink(SpotifyLink.Kind.PLAYLIST, "sp2")))
+        assertTrue(importer.job(cut).first()!!.mayHaveMore)
+
+        spotifyLists["al1"] = SourceSongList("Box set", (1..100).map { SourceSong("Track $it", "Artist") }, truncated = false)
+        val whole = importer.open(ImportSource.SpotifyList(SpotifyLink(SpotifyLink.Kind.ALBUM, "al1")))
+        assertFalse(importer.job(whole).first()!!.mayHaveMore)
     }
 
     @Test
