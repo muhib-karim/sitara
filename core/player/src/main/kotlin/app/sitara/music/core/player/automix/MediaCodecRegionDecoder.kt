@@ -3,7 +3,6 @@ package app.sitara.music.core.player.automix
 import android.content.Context
 import android.media.AudioFormat
 import android.media.MediaCodec
-import android.media.MediaDataSource
 import android.media.MediaExtractor
 import android.media.MediaFormat
 import android.net.Uri
@@ -12,7 +11,7 @@ import androidx.media3.common.util.UnstableApi
 import androidx.media3.datasource.cache.Cache
 import app.sitara.music.core.model.Track
 import app.sitara.music.core.model.localUri
-import app.sitara.music.core.player.readWholeDownload
+import app.sitara.music.core.player.cachedDownloadSource
 import app.sitara.music.source.api.StreamResolver
 import java.nio.ByteOrder
 import kotlin.math.max
@@ -28,17 +27,20 @@ class MediaCodecRegionDecoder(
     private val context: Context,
     private val streams: StreamResolver,
     private val cache: Cache,
+    /** Whether streams may be read now (the service says no on metered networks); songs on the phone and downloads always may. */
+    private val streamsAllowed: () -> Boolean = { true },
 ) : RegionDecoder {
     override suspend fun decode(track: Track, side: SongSide): Pcm? {
         val local = track.localUri
-        val download = withContext(Dispatchers.IO) { if (local == null) readWholeDownload(cache, track.id) else null }
+        val download = if (local == null) cachedDownloadSource(cache, track.id) else null
+        if (local == null && download == null && !streamsAllowed()) throw AnalysisDeferredException()
         val url = if (local == null && download == null) streams.resolve(track).url else null
         return withContext(Dispatchers.IO) {
             val extractor = MediaExtractor()
             try {
                 when {
                     local != null -> extractor.setDataSource(context, Uri.parse(local), null)
-                    download != null -> extractor.setDataSource(BytesSource(download))
+                    download != null -> extractor.setDataSource(download)
                     else -> extractor.setDataSource(url!!, emptyMap())
                 }
                 decodeSide(extractor, side, track.durationMs)
@@ -46,19 +48,6 @@ class MediaCodecRegionDecoder(
                 extractor.release()
             }
         }
-    }
-
-    private class BytesSource(private val bytes: ByteArray) : MediaDataSource() {
-        override fun readAt(position: Long, buffer: ByteArray, offset: Int, size: Int): Int {
-            if (position >= bytes.size) return -1
-            val count = minOf(size.toLong(), bytes.size - position).toInt()
-            System.arraycopy(bytes, position.toInt(), buffer, offset, count)
-            return count
-        }
-
-        override fun getSize(): Long = bytes.size.toLong()
-
-        override fun close() = Unit
     }
 }
 

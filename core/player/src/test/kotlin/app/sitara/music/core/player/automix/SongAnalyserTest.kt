@@ -35,12 +35,13 @@ class SongAnalyserTest {
         }
     }
 
-    private class Decoder(private val fail: Boolean = false) : RegionDecoder {
+    private class Decoder(private val fail: Boolean = false, var deferred: Boolean = false) : RegionDecoder {
         val calls = mutableListOf<Pair<String, SongSide>>()
 
         override suspend fun decode(track: Track, side: SongSide): Pcm? {
             calls += track.id to side
             if (fail) throw IOException("offline")
+            if (deferred) throw AnalysisDeferredException()
             val fixture = BeatFixture(124.0, seconds = 12.0)
             return Pcm(fixture.samples, fixture.sampleRate, if (side == SongSide.OUTRO) track.durationMs - 12_000 else 0)
         }
@@ -117,5 +118,32 @@ class SongAnalyserTest {
         assertTrue(store.rows.isEmpty())
         assertNull(analyser.beatsOf("a"))
         assertEquals(1, decoder.calls.size)
+    }
+
+    @Test
+    fun `songs skipped past before their turn are not analysed`() = runTest {
+        val c = Track("c", "Later", "Artist", "", 200_000, Artwork(listOf(0)))
+        val d = Track("d", "Even later", "Artist", "", 200_000, Artwork(listOf(0)))
+        val decoder = Decoder()
+        val analyser = analyser(Store(), decoder)
+        analyser.follow(a, b)
+        analyser.follow(c, d) // skipped on before anything ran
+        advanceUntilIdle()
+
+        assertEquals(listOf("c" to SongSide.OUTRO, "d" to SongSide.INTRO), decoder.calls)
+    }
+
+    @Test
+    fun `a deferred analysis is asked again at the next change`() = runTest {
+        val decoder = Decoder(deferred = true)
+        val analyser = analyser(Store(), decoder)
+        analyser.follow(a, null)
+        advanceUntilIdle()
+        decoder.deferred = false
+        analyser.follow(a, null)
+        advanceUntilIdle()
+
+        assertEquals(2, decoder.calls.size)
+        assertNotNull(analyser.beatsOf("a")?.outro)
     }
 }

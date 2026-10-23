@@ -3,6 +3,7 @@ package app.sitara.music.core.player
 import android.content.Context
 import android.content.Intent
 import android.media.audiofx.AudioEffect
+import android.net.ConnectivityManager
 import android.os.Bundle
 import android.os.Process
 import androidx.annotation.OptIn
@@ -134,7 +135,10 @@ class PlaybackService : MediaLibraryService() {
         // ExoPlayer creates its audio session in the background and reports it here.
         player.addListener(EqualiserListener())
         port = Media3PlayerPort(player)
-        analyser = SongAnalyser(scope, dependencies.songBeats, MediaCodecRegionDecoder(this, streams, dependencies.downloadCache))
+        // Streams are read for analysis only off metered networks; songs on the phone and downloads always.
+        val connectivity = getSystemService(ConnectivityManager::class.java)
+        val unmetered = { connectivity?.isActiveNetworkMetered == false }
+        analyser = SongAnalyser(scope, dependencies.songBeats, MediaCodecRegionDecoder(this, streams, dependencies.downloadCache, unmetered))
         crossfader = Crossfader(
             player, tail, scope,
             trackOf = { item -> item.localConfiguration?.uri?.lastPathSegment?.let(port::track) },
